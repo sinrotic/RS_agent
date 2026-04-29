@@ -1,0 +1,25 @@
+{
+  "clean_dir": "data/processed/amazon_2023_recall_clean_smoke_e2e_electronics_100",
+  "views_dir": "data/processed/amazon_2023_recall_views_smoke_e2e_electronics_100",
+  "output_dir": "outputs/hybrid_demo_small_electronics_100",
+  "report_path": "dic/HYBRID_DEMO_SMALL_REPORT_ELECTRONICS_100.md",
+  "top_k": 5,
+  "candidate_pool_size": 50,
+  "itemcf_per_seed": 20,
+  "category_per_user": 20,
+  "popular_fallback_count": 50,
+  "topk_source_minimums": {
+    "itemcf": 1
+  },
+  "rank_weights": {
+    "popular": 1.0,
+    "itemcf_weak": 2.0,
+    "itemcf_strong": 2.5,
+    "category": 0.8,
+    "recent": 0.3,
+    "verified": 0.2,
+    "time_decay": 0.2
+  },
+  "strategy_name": "phase_1_5_deterministic_hybrid_demo",
+  "sample_examples": 3
+}

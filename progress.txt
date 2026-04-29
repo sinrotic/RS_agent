@@ -1,0 +1,26 @@
+Ralph progress log
+
+Task: 按当前计划持续推进 RS Agent：rollout 训练样本 contract、Qwen bounded rerank 对照、中文工程叙事。
+
+US-001 completed:
+- Implemented explicit training_samples in rs_core/rsagent/rollout.py.
+- Each rollout now includes sft_sample and reward_sample derived from existing AgentTurn/AgentSession fields.
+- Contract keeps selected_item_ids bounded by allowed_item_ids from current candidates.
+- Verification: ./.venv/Scripts/python.exe -m pytest tests/test_agent_rollout_schema.py -> 4 passed.
+
+US-002 completed:
+- Added fallback coverage for Qwen evaluation harness in tests/test_hybrid_demo.py.
+- Harness comparison preserves deterministic_baseline, rule_feedback_rerank, and qwen_feedback_rerank modes even when Qwen inference falls back.
+- Verification: ./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py::test_qwen_evaluation_harness_writes_three_mode_comparison tests/test_hybrid_demo.py::test_qwen_evaluation_harness_writes_fallback_comparison_without_model_dependencies tests/test_agent_rollout_schema.py -> 6 passed.
+- Smoke artifact: outputs/qwen_evaluation_harness_ralph_fallback/comparison.json shows qwen_feedback_rerank fallback_count=1 and routes={qwen_local: 1}.
+
+US-003 completed:
+- Appended a Chinese engineering narrative entry to dic/ENGINEERING_NARRATIVE_LOG.md.
+- Entry states the current work is pre-training contract and bounded rerank comparison, not completed Qwen/QLoRA/GRPO training.
+- Verification: focused pytest -> 6 passed; compileall rs_core tests scripts -> passed.
+
+Post-review cleanup completed:
+- Architect reviewer returned APPROVED against all PRD acceptance criteria.
+- Deslop pass stayed within the Ralph changed-file scope and extracted duplicated Qwen harness fixture setup in tests/test_hybrid_demo.py.
+- Post-deslop verification: focused pytest -> 6 passed; compileall rs_core tests scripts -> passed.
+

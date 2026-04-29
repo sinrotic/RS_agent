@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Frontend dependencies and build artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+node_modules/
+dist/
+
+# Local orchestration and Claude/OMC state
+.claude/
+.omc/
+
+# Local outputs, generated data, and temporary experiment configs
+outputs/
+data/raw/
+data/processed/
+data/interim/
+configs/_tmp_*.yaml
+*.parquet
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.safetensors
+*.bin
+
+# Environment and secrets
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Logs and OS/editor files
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Historical drafts not used by current project plan
+old_dic/

@@ -1,0 +1,39 @@
+{
+  "clean_dir": "data/processed/amazon_2023_recall_clean_smoke_e2e_electronics_1000",
+  "views_dir": "data/processed/amazon_2023_recall_views_smoke_e2e_electronics_1000",
+  "output_dir": "outputs/hybrid_demo_small_electronics_1000_lopo_semantic_title_semonly_penalty_5p0",
+  "report_path": "dic/HYBRID_DEMO_SMALL_REPORT_ELECTRONICS_1000_LOPO_SEMANTIC_TITLE_SEMONLY_PENALTY_5P0.md",
+  "evaluation_mode": "leave_one_positive_out",
+  "top_k": 5,
+  "candidate_pool_size": 50,
+  "itemcf_per_seed": 20,
+  "category_per_user": 20,
+  "semantic_enabled": true,
+  "semantic_per_user": 30,
+  "semantic_min_overlap": 1,
+  "semantic_text_fields": ["title_clean", "main_category", "categories_flat"],
+  "popular_fallback_count": 50,
+  "candidate_source_minimums": {
+    "itemcf": 20,
+    "semantic": 20
+  },
+  "topk_source_minimums": {
+    "itemcf": 1
+  },
+  "rank_weights": {
+    "popular": 1.0,
+    "itemcf_weak": 2.0,
+    "itemcf_strong": 2.5,
+    "category": 0.8,
+    "semantic": 1.2,
+    "recent": 0.3,
+    "verified": 0.2,
+    "time_decay": 0.2
+  },
+  "rerank_policy": {
+    "enabled": true,
+    "semantic_only_penalty": 5.0
+  },
+  "strategy_name": "phase_1_7d_title_semantic_only_penalty_5p0",
+  "sample_examples": 3
+}
