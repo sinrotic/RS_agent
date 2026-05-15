@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from rs_core.common.io import read_jsonl, write_jsonl
+import pytest
+
+pytestmark = pytest.mark.unit
+
+from rs_core.common.io import write_jsonl
 from rs_core.rsagent.rollout import session_to_rollout_records
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 

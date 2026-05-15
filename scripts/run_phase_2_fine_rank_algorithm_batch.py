@@ -35,8 +35,8 @@ from scripts.run_phase_1_26_real_ranking_experiments import _not_applicable_feat
 
 _PHASE = "phase_2_fine_rank_algorithm_batch"
 _BASELINE_METHOD_ID = "same_run_pool200_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_2_fine_rank_algorithm_batch"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_2_fine_rank_algorithm_batch"
 DEFAULT_SEED = 20260513
 LTR_STATUS_BOUNDARY = "strict_status_currently_forces_diagnostic_only"
 PHYSICAL_PIPELINE_OVERRIDE = {

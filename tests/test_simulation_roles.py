@@ -1,5 +1,7 @@
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from rs_core.simulation import (
     COMMUTER_PRACTICAL,
     GIFT_BUYER,

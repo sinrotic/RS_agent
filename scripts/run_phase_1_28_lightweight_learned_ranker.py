@@ -27,8 +27,8 @@ METRIC_FIELDS = [
 
 _PHASE = "phase_1_28_lightweight_learned_ranker"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_28_lightweight_learned_ranker"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_28_lightweight_learned_ranker"
 LTR_FEATURE_CONFIG = {"version": "ltr_v2"}
 LIGHTWEIGHT_LTR_VARIANTS = [
     {

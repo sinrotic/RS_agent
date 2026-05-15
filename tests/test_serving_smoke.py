@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+pytestmark = [pytest.mark.serving, pytest.mark.smoke]
+
 from rs_core.common.io import write_jsonl
 from rs_core.serving import app as serving_app
 from rs_core.serving.service import RecommendationService
@@ -103,9 +105,10 @@ def test_chat_returns_display_response_without_internal_fields(client: TestClien
     _assert_no_blocked_public_terms(payload)
 
 
-def test_fixed_smoke_user_returns_public_display_items_without_recovery_diagnostics():
-    service = RecommendationService("D:/sinrotic_code/python_project/summer/RS_agent/configs/hybrid_demo_electronics.yaml")
-    session_id = service.start_session("AFKZENTNBQ7A7V7UXW5JJI6UGRYQ")
+def test_fixed_smoke_user_returns_public_display_items_without_recovery_diagnostics(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    service = RecommendationService(str(config_path))
+    session_id = service.start_session("u1")
 
     result = service.chat(session_id, "For commute, prefer bluetooth and Audio")
 

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -10,7 +9,7 @@ from rs_core.common.config import load_config
 from rs_core.common.io import read_jsonl, write_json, write_jsonl
 from rs_core.recsys.two_tower import save_two_tower_artifacts, train_two_tower_model
 from rs_core.recsys.vector_index import dot_score, normalize_vector
-from rs_core.workflow.hybrid_demo import ROOT, _ensure_inputs, _leave_one_positive_out_sequences, _merge_nested, _required_paths, _resolve_path
+from rs_core.workflow.hybrid_demo import _ensure_inputs, _leave_one_positive_out_sequences, _merge_nested, _required_paths, _resolve_path
 
 
 def train_two_tower_recall(
@@ -32,7 +31,7 @@ def train_two_tower_recall(
 
     clean_dir = _resolve_path(config.get("clean_dir", "data/processed/amazon_2023_recall_clean_smoke_e2e"))
     views_dir = _resolve_path(config.get("views_dir", "data/processed/amazon_2023_recall_views_smoke_e2e"))
-    output_path = _resolve_path(output_dir or training_config.get("output_dir", f"outputs/two_tower_training/{training_config['variant']}"))
+    output_path = _resolve_path(output_dir or training_config.get("output_dir", f"outputs/training/two_tower/two_tower_training/{training_config['variant']}"))
 
     paths = _required_paths(clean_dir, views_dir)
     _ensure_inputs(paths)

@@ -1,3 +1,7 @@
+import pytest
+
+pytestmark = [pytest.mark.serving, pytest.mark.smoke]
+
 import json
 from pathlib import Path
 

@@ -60,8 +60,8 @@ from rs_core.workflow.hybrid_demo import (
     _resolve_two_tower_seed_manifest_path,
 )
 
-DEFAULT_BASELINE_CONFIG = "configs/phase_1_15_frozen_youtubednn_pool100.yaml"
-DEFAULT_OUTPUT_DIR = "outputs/phase_1_20_recall_diagnostics"
+DEFAULT_BASELINE_CONFIG = "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml"
+DEFAULT_OUTPUT_DIR = "outputs/recall/phase_1_20_recall_diagnostics"
 POOL_SIZES = [50, 100, 200, 500, 1000]
 
 

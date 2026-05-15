@@ -44,8 +44,8 @@ from rs_core.recsys.ranking import rank_candidates
 from rs_core.recsys.types import RecallCandidate
 from scripts import phase_1_20_recall_diagnostics as diagnostics
 
-DEFAULT_CONFIG = "configs/phase_1_21_recall_coverage_baseline.yaml"
-DEFAULT_OUTPUT_ROOT = "outputs/phase_1_21_recall_coverage"
+DEFAULT_CONFIG = "configs/recall/phase_1_21/phase_1_21_recall_coverage_baseline.yaml"
+DEFAULT_OUTPUT_ROOT = "outputs/recall/phase_1_21_recall_coverage"
 HASH_RULE = "sha256 of sorted holdout user_id list joined by newline"
 REQUIRED_LIMIT_USERS = 500
 REQUIRED_USERS_WITH_HOLDOUT = 138
@@ -274,7 +274,7 @@ def main() -> None:
 
     config_path = _resolve_path(args.config)
     phase_config = load_config(config_path)
-    baseline_config_path = _resolve_path(phase_config.get("baseline_config_path", "configs/phase_1_15_frozen_youtubednn_pool100.yaml"))
+    baseline_config_path = _resolve_path(phase_config.get("baseline_config_path", "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml"))
     output_dir = _resolve_path(args.output_dir or f"{DEFAULT_OUTPUT_ROOT}/{args.mode}")
     _assert_phase_output_dir(output_dir)
     _assert_limit_users(args.limit_users, phase_config)
@@ -646,25 +646,25 @@ def _blocked_missing_dependency_state(dependency_gate: dict[str, Any], output_di
 
 def _source_family_execution_command(benchmark_id: str, baseline_pool_size: int) -> str:
     config_by_benchmark = {
-        "popular_category_observation": "configs/phase_1_21_recall_coverage_baseline.yaml",
-        "itemcf_covisit_observation": "configs/phase_1_21_recall_coverage_pool200_experimental.yaml",
-        "semantic_title_category_observation": "configs/phase_1_21_recall_coverage_semantic_title_category.yaml",
-        "graph_observation": "configs/phase_1_21_recall_coverage_graph.yaml",
-        "usercf_observation": "configs/phase_1_21_recall_coverage_behavior_untried.yaml",
-        "swing_observation": "configs/phase_1_21_recall_coverage_behavior_untried.yaml",
-        "sequence_transition_observation": "configs/phase_1_21_recall_coverage_behavior_untried.yaml",
-        "implicit_svd_observation": "configs/phase_1_21_recall_coverage_behavior_untried.yaml",
-        "als_mf_observation": "configs/phase_1_21_recall_coverage_mf.yaml",
-        "bpr_mf_observation": "configs/phase_1_21_recall_coverage_mf.yaml",
-        "lightfm_mf_observation": "configs/phase_1_21_recall_coverage_mf.yaml",
-        "vector_two_tower_observation": "configs/phase_1_21_recall_coverage_vector.yaml",
-        "sequence_multi_interest_observation": "configs/phase_1_21_recall_coverage_sequence.yaml",
+        "popular_category_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_baseline.yaml",
+        "itemcf_covisit_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml",
+        "semantic_title_category_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_semantic_title_category.yaml",
+        "graph_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_graph.yaml",
+        "usercf_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_behavior_untried.yaml",
+        "swing_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_behavior_untried.yaml",
+        "sequence_transition_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_behavior_untried.yaml",
+        "implicit_svd_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_behavior_untried.yaml",
+        "als_mf_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_mf.yaml",
+        "bpr_mf_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_mf.yaml",
+        "lightfm_mf_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_mf.yaml",
+        "vector_two_tower_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_vector.yaml",
+        "sequence_multi_interest_observation": "configs/recall/phase_1_21/phase_1_21_recall_coverage_sequence.yaml",
     }
-    config_path = config_by_benchmark.get(benchmark_id, "configs/phase_1_21_recall_coverage_baseline.yaml")
+    config_path = config_by_benchmark.get(benchmark_id, "configs/recall/phase_1_21/phase_1_21_recall_coverage_baseline.yaml")
     return (
         "python scripts/phase_1_21_recall_coverage_experiments.py "
         f"--config {config_path} "
-        f"--output-dir outputs/phase_1_21_recall_coverage/source_family/{benchmark_id}_pool{baseline_pool_size} "
+        f"--output-dir outputs/recall/phase_1_21_recall_coverage/source_family/{benchmark_id}_pool{baseline_pool_size} "
         "--mode baseline --limit-users 500"
     )
 

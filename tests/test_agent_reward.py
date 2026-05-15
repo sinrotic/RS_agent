@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from rs_core.recsys.types import AgentDecision, MergedCandidate
 from rs_core.rsagent.constraint_filter import apply_constraint_filter_tool
 from rs_core.rsagent.policy import constraint_filter_tool

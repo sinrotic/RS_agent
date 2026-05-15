@@ -15,7 +15,7 @@ from rs_core.common.io import read_jsonl, write_json
 from rs_core.recsys.evaluation import build_ranking_experiment_registry_entry, build_ranking_feature_contract, compare_frozen_candidate_signatures, frozen_candidate_artifact, inspect_ranking_run_artifacts
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_23_pool200_ranking_isolation"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_23_pool200_ranking_isolation"
 FREEZE_FIELDS = [
     "users_with_holdout",
     "candidate_hit_users",
@@ -26,19 +26,19 @@ FREEZE_FIELDS = [
 VARIANTS = [
     (
         "no_rerank_baseline",
-        ROOT / "configs/phase_1_23_pool200_no_rerank_baseline.yaml",
+        ROOT / "configs/ranking/phase_1_23/phase_1_23_pool200_no_rerank_baseline.yaml",
     ),
     (
         "ranking_v2",
-        ROOT / "configs/phase_1_23_pool200_ranking_v2.yaml",
+        ROOT / "configs/ranking/phase_1_23/phase_1_23_pool200_ranking_v2.yaml",
     ),
     (
         "item_feature_rerank",
-        ROOT / "configs/phase_1_23_pool200_item_feature_rerank.yaml",
+        ROOT / "configs/ranking/phase_1_23/phase_1_23_pool200_item_feature_rerank.yaml",
     ),
     (
         "source_aware_fusion",
-        ROOT / "configs/phase_1_23_pool200_source_aware_fusion.yaml",
+        ROOT / "configs/ranking/phase_1_23/phase_1_23_pool200_source_aware_fusion.yaml",
     ),
 ]
 METRIC_FIELDS = [
@@ -189,8 +189,8 @@ def _batch0_pool200_artifact(
     baseline_frozen_rows: list[dict[str, Any]],
     variants: dict[str, dict[str, Any]],
 ) -> dict[str, Any]:
-    baseline_config = load_config(ROOT / "configs/phase_1_23_pool200_no_rerank_baseline.yaml")
-    fixed_recall_config = load_config(ROOT / "configs/phase_1_21_recall_coverage_pool200_experimental.yaml")
+    baseline_config = load_config(ROOT / "configs/ranking/phase_1_23/phase_1_23_pool200_no_rerank_baseline.yaml")
+    fixed_recall_config = load_config(ROOT / "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml")
     baseline_artifact = frozen_candidate_artifact(baseline_frozen_rows)
     return {
         "schema_version": "pool200_batch0_artifact_v1",
@@ -222,7 +222,7 @@ def _batch0_pool200_artifact(
             "reason": "pool100 historical evidence has a different candidate_pool_size boundary and cannot promote pool200 ranking experiments.",
         },
         "recall_semantics_contract": {
-            "fixed_recall_config_path": "configs/phase_1_21_recall_coverage_pool200_experimental.yaml",
+            "fixed_recall_config_path": "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml",
             "preserve_recall_settings": True,
             "ranking_variants_must_match_frozen_hash": True,
         },

@@ -10,7 +10,6 @@ from rs_core.recsys.candidate_merge import load_category_candidates, load_itemcf
 from rs_core.recsys.evaluation import heldout_positives
 from rs_core.recsys.ltr import extract_ltr_features, save_ltr_model, train_pairwise_perceptron, train_pointwise_logistic, validate_ltr_feature_contract_gate, validate_ltr_leakage_gate
 from rs_core.workflow.hybrid_demo import (
-    ROOT,
     _ensure_inputs,
     _itemcf_seed_items,
     _leave_one_positive_out_sequences,
@@ -34,7 +33,7 @@ def train_ltr_ranker(
     training_config = config.get("ltr_training", {})
     clean_dir = _resolve_path(config.get("clean_dir", "data/processed/amazon_2023_recall_clean_smoke_e2e"))
     views_dir = _resolve_path(config.get("views_dir", "data/processed/amazon_2023_recall_views_smoke_e2e"))
-    output_path = _resolve_path(output_dir or training_config.get("output_dir", "outputs/ltr_training"))
+    output_path = _resolve_path(output_dir or training_config.get("output_dir", "outputs/training/ltr/ltr_training"))
 
     paths = _required_paths(clean_dir, views_dir)
     if config.get("semantic_enabled"):

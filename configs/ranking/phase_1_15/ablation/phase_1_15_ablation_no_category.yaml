@@ -1,0 +1,103 @@
+{
+  "clean_dir": "data/processed/amazon_2023_recall_clean_10000",
+  "views_dir": "data/processed/amazon_2023_recall_views_10000",
+  "top_k": 5,
+  "candidate_pool_size": 100,
+  "itemcf_per_seed": 20,
+  "itemcf_recent_positive_window": 20,
+  "itemcf_recent_strong_window": 20,
+  "itemcf_weak_per_seed": 20,
+  "itemcf_strong_per_seed": 20,
+  "itemcf_seed_decay_enabled": true,
+  "itemcf_seed_decay_base": 0.85,
+  "category_per_user": 0,
+  "category_recent_positive_window": 20,
+  "category_per_bucket": 0,
+  "category_max_total_per_user": 0,
+  "semantic_enabled": true,
+  "semantic_per_user": 30,
+  "semantic_per_seed": 20,
+  "semantic_seed_window": 20,
+  "semantic_min_overlap": 1,
+  "semantic_text_fields": [
+    "title_clean",
+    "main_category",
+    "categories_flat"
+  ],
+  "two_tower_enabled": true,
+  "two_tower_variant": "youtube_dnn",
+  "two_tower_artifact_path": "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json",
+  "two_tower_per_user": 30,
+  "two_tower_seed_window": 50,
+  "popular_fallback_count": 50,
+  "candidate_source_minimums": {
+    "itemcf": 20,
+    "semantic": 20,
+    "two_tower": 10
+  },
+  "topk_source_minimums": {
+    "itemcf": 1
+  },
+  "rank_weights": {
+    "popular": 1.0,
+    "itemcf_weak": 2.0,
+    "itemcf_strong": 2.5,
+    "category": 0.8,
+    "semantic": 1.2,
+    "two_tower": 1.2,
+    "recent": 0.3,
+    "verified": 0.2,
+    "time_decay": 0.2
+  },
+  "two_tower_training": {
+    "variant": "youtube_dnn",
+    "source_name": "two_tower_youtube_dnn",
+    "output_dir": "outputs/training/two_tower/two_tower_training/youtube_dnn",
+    "embedding_dim": 32,
+    "epochs": 3,
+    "negative_samples": 8,
+    "learning_rate": 0.003,
+    "history_window": 50,
+    "batch_size": 128
+  },
+  "ltr_model": {
+    "enabled": false
+  },
+  "ranking_v2": {
+    "enabled": false
+  },
+  "item_feature_rerank": {
+    "enabled": false
+  },
+  "source_aware_fusion": {
+    "enabled": false
+  },
+  "phase_1_15_gate": {
+    "baseline_name": "youtubednn_pool100_recall_frozen",
+    "baseline_metrics": {
+      "candidate_hit_rate_at_pool": 0.105189,
+      "recall_at_pool": 0.042043,
+      "candidate_hit_users": 75,
+      "fallback_rate": 0.0,
+      "candidate_generation_p95_seconds": 0.418122
+    },
+    "thresholds": {
+      "max_candidate_generation_p95_seconds": 0.543559,
+      "max_fallback_rate": 0.0,
+      "min_candidate_hit_users": 75,
+      "max_pool_metric_drop_relative": 0.02,
+      "min_final_candidate_hit_rate_at_pool_lift": 0.001403,
+      "min_final_recall_at_pool_lift": 0.0005,
+      "max_popular_candidate_contribution_rate": 0.2,
+      "max_popular_topk_contribution_rate": 0.4,
+      "max_single_source_candidate_contribution_rate": 0.75,
+      "min_non_popular_source_count_with_hits": 2
+    },
+    "sorting_disabled_required": true,
+    "promotion_scope": "recall_candidate_pool_only"
+  },
+  "sample_examples": 3,
+  "output_dir": "outputs/ranking/phase_1_15_ablation_no_category",
+  "report_path": "dic/PHASE_1_15_ABLATION_NO_CATEGORY.md",
+  "strategy_name": "phase_1_15_ablation_no_category"
+}

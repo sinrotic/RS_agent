@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  python:
+    name: Python checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" -r requirements-serving.txt
+
+      - name: Run ruff on v1 scope
+        run: |
+          python -m ruff check rs_core scripts/validate_engineering_contracts.py scripts/select_tests_by_marker.py tests
+
+      - name: Validate engineering contracts
+        run: python scripts/validate_engineering_contracts.py
+
+      - name: Select minimum unit and smoke tests
+        run: |
+          python scripts/select_tests_by_marker.py --marker unit --marker smoke > .pytest-selected-tests.txt
+          test -s .pytest-selected-tests.txt
+
+      - name: Collect minimum unit and smoke tests
+        run: |
+          python -m pytest --collect-only -q -m "unit or smoke" $(cat .pytest-selected-tests.txt) > .pytest-collect.txt
+          python - <<'PY'
+          import pathlib
+          import re
+
+          output = pathlib.Path('.pytest-collect.txt').read_text(encoding='utf-8')
+          match = re.search(r'(\d+) tests? collected', output)
+          if not match or int(match.group(1)) <= 0:
+              raise SystemExit(output)
+          PY
+
+      - name: Run minimum unit and smoke tests
+        run: python -m pytest -m "unit or smoke" -q $(cat .pytest-selected-tests.txt)
+
+      - name: Select serving tests
+        run: |
+          python scripts/select_tests_by_marker.py --marker serving > .pytest-selected-serving-tests.txt
+          test -s .pytest-selected-serving-tests.txt
+
+      - name: Collect serving tests
+        run: |
+          python -m pytest --collect-only -q -m "serving" $(cat .pytest-selected-serving-tests.txt) > .pytest-serving-collect.txt
+          python - <<'PY'
+          import pathlib
+          import re
+
+          output = pathlib.Path('.pytest-serving-collect.txt').read_text(encoding='utf-8')
+          match = re.search(r'(\d+) tests? collected', output)
+          if not match or int(match.group(1)) <= 0:
+              raise SystemExit(output)
+          PY
+
+      - name: Run serving tests
+        run: python -m pytest -m "serving" -q $(cat .pytest-selected-serving-tests.txt)
+
+      - name: Check no tracked temporary configs
+        run: test -z "$(git ls-files 'configs/**/_tmp_*.yaml')"
+
+  frontend:
+    name: Frontend checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix frontend ci
+        working-directory: .
+
+      - name: Run frontend lint
+        run: npm --prefix frontend run lint
+        working-directory: .

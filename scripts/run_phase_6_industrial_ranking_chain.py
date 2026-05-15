@@ -29,10 +29,10 @@ from scripts.run_phase_1_26_real_ranking_experiments import _not_applicable_feat
 _PHASE = "phase_6_industrial_ranking_chain"
 _BASELINE_METHOD_ID = "same_run_pool200_baseline"
 _INDUSTRIAL_METHOD_ID = "industrial_coarse_fine_rerank_chain_diagnostic"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-CURRENT_RECALL_MAINLINE_CONFIG = ROOT / "configs/phase_1_21_recall_coverage_pool200_experimental.yaml"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+CURRENT_RECALL_MAINLINE_CONFIG = ROOT / "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"
 CURRENT_RECALL_MAINLINE_ID = "source_balanced_pool200_hybrid_recall"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_6_industrial_ranking_chain"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_6_industrial_ranking_chain"
 DEFAULT_SEED = 20260513
 PHYSICAL_PIPELINE_OVERRIDE = {
     "enabled": True,

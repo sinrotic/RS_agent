@@ -16,10 +16,10 @@ from rs_core.common.io import write_json
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 from rs_core.workflow.two_tower_training import build_two_tower_seed_sidecar_from_config
 
-DEFAULT_BASELINE_CONFIG = ROOT / "configs/phase_1_15_frozen_youtubednn_pool100.yaml"
-DEFAULT_EXPERIMENT_CONFIG = ROOT / "configs/phase_1_18_two_tower_seed_pool100.yaml"
-DEFAULT_LOPO_CONFIG = ROOT / "configs/phase_1_18_lopo_two_tower_seed_pool100.yaml"
-DEFAULT_OUTPUT = ROOT / "outputs/phase_1_18_two_tower_seed_gate/comparison.json"
+DEFAULT_BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml"
+DEFAULT_EXPERIMENT_CONFIG = ROOT / "configs/recall/phase_1_18/phase_1_18_two_tower_seed_pool100.yaml"
+DEFAULT_LOPO_CONFIG = ROOT / "configs/recall/phase_1_18/phase_1_18_lopo_two_tower_seed_pool100.yaml"
+DEFAULT_OUTPUT = ROOT / "outputs/recall/phase_1_18_two_tower_seed_gate/comparison.json"
 
 
 def parse_args() -> argparse.Namespace:

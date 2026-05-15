@@ -1,0 +1,68 @@
+{
+  "clean_dir": "data/processed/amazon_2023_recall_clean_10000",
+  "views_dir": "data/processed/amazon_2023_recall_views_10000",
+  "output_dir": "outputs/hybrid_demo/hybrid_demo_small_electronics_10000_semantic_title_two_tower_youtube_dnn",
+  "report_path": "dic/HYBRID_DEMO_SMALL_REPORT_ELECTRONICS_10000_SEMANTIC_TITLE_TWO_TOWER_YOUTUBE_DNN.md",
+  "top_k": 5,
+  "candidate_pool_size": 50,
+  "itemcf_per_seed": 20,
+  "category_per_user": 20,
+  "semantic_enabled": true,
+  "semantic_per_user": 30,
+  "semantic_min_overlap": 1,
+  "semantic_text_fields": [
+    "title_clean",
+    "main_category",
+    "categories_flat"
+  ],
+  "two_tower_enabled": true,
+  "two_tower_variant": "youtube_dnn",
+  "two_tower_artifact_path": "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json",
+  "two_tower_per_user": 30,
+  "two_tower_seed_window": 50,
+  "popular_fallback_count": 50,
+  "candidate_source_minimums": {
+    "itemcf": 20,
+    "semantic": 20,
+    "two_tower": 10
+  },
+  "topk_source_minimums": {
+    "itemcf": 1
+  },
+  "rank_weights": {
+    "popular": 1.0,
+    "itemcf_weak": 2.0,
+    "itemcf_strong": 2.5,
+    "category": 0.8,
+    "semantic": 1.2,
+    "two_tower": 1.2,
+    "recent": 0.3,
+    "verified": 0.2,
+    "time_decay": 0.2
+  },
+  "two_tower_training": {
+    "variant": "youtube_dnn",
+    "source_name": "two_tower_youtube_dnn",
+    "output_dir": "outputs/training/two_tower/two_tower_training/youtube_dnn",
+    "embedding_dim": 32,
+    "epochs": 3,
+    "negative_samples": 8,
+    "learning_rate": 0.003,
+    "history_window": 50,
+    "batch_size": 128
+  },
+  "strict_promotion_gate": {
+    "enabled": true,
+    "variant": "youtube_dnn",
+    "candidate_generation_p95_seconds_budget": 0.05,
+    "semantic_title_baseline_metrics_path": "outputs/hybrid_demo/hybrid_demo_small_electronics_10000_semantic_title/metrics.json",
+    "semantic_title_lopo_baseline_metrics_path": "outputs/hybrid_demo/hybrid_demo_small_electronics_10000_lopo_semantic_title/metrics.json",
+    "paired_valid_test_metrics_path": "outputs/hybrid_demo/hybrid_demo_small_electronics_10000_semantic_title_two_tower_youtube_dnn/metrics.json",
+    "paired_lopo_metrics_path": "outputs/hybrid_demo/hybrid_demo_small_electronics_10000_lopo_semantic_title_two_tower_youtube_dnn/metrics.json"
+  },
+  "ltr_model": {
+    "enabled": false
+  },
+  "strategy_name": "phase_1_13_two_tower_youtube_dnn_10000_valid_test",
+  "sample_examples": 3
+}

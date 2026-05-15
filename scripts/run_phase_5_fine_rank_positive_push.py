@@ -36,8 +36,8 @@ from scripts.run_phase_4_stage_shadow_metrics import _weak_ranking_metrics
 _PHASE = "phase_5_fine_rank_positive_push"
 _BASELINE_METHOD_ID = "same_run_pool200_baseline"
 _FINE_RANK_METHOD_ID = "fine_rank_positive_push_diagnostic"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_5_fine_rank_positive_push_smoke"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_5_fine_rank_positive_push_smoke"
 DEFAULT_SEED = 20260514
 METRIC_FIELDS = [
     "hit_rate_at_k",

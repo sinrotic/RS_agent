@@ -36,8 +36,8 @@ from scripts.run_phase_2_fine_rank_algorithm_batch import PHYSICAL_PIPELINE_OVER
 _PHASE = "phase_4_stage_shadow_metrics"
 _BASELINE_METHOD_ID = "same_run_pool200_baseline"
 _SHADOW_METHOD_ID = "coarse_shadow_retention_diagnostic"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_4_stage_shadow_metrics"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_4_stage_shadow_metrics"
 DEFAULT_SEED = 20260513
 WEAK_CUTOFFS = [10, 20]
 COARSE_SHADOW_CUTOFFS = [50, 100]

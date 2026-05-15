@@ -43,8 +43,8 @@ from scripts.run_phase_2_fine_rank_algorithm_batch import PHYSICAL_PIPELINE_OVER
 
 _PHASE = "phase_3_tree_ranking_experiments"
 _BASELINE_METHOD_ID = "same_run_pool200_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_3_tree_ranking_experiments"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_3_tree_ranking_experiments"
 DEFAULT_SEED = 20260513
 TREE_DIAGNOSTIC_BOUNDARY = "tree_training_diagnostic_only_no_serving_adapter_or_valid_test_promotion_gate"
 METRIC_FIELDS = [

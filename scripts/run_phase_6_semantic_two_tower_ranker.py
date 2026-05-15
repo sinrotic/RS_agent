@@ -18,8 +18,8 @@ from scripts.run_phase_1_23_pool200_ranking_isolation import FREEZE_FIELDS, _sta
 
 _PHASE = "phase_6_semantic_two_tower_ranker"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_6_semantic_two_tower_ranker"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_6_semantic_two_tower_ranker"
 MINIMUM_RUNS = 1
 REQUIRED_CONSISTENT_RUNS = 1
 METRIC_FIELDS = [
@@ -57,14 +57,14 @@ BLOCKED_METHODS = [
         "method_id": "dssm_artifact_candidate_rerank",
         "method_family": "dssm",
         "gpu_required": True,
-        "artifact_path": ROOT / "outputs/two_tower_training/dssm/artifact_manifest.json",
+        "artifact_path": ROOT / "outputs/training/two_tower/two_tower_training/dssm/artifact_manifest.json",
         "reasons": ["candidate_level_dssm_serving_adapter_missing", "promotion_adr_required", "must_not_regenerate_candidate_pool"],
     },
     {
         "method_id": "raw_vector_similarity_feature_fusion",
         "method_family": "vector_similarity_feature",
         "gpu_required": False,
-        "artifact_path": ROOT / "outputs/two_tower_training/youtube_dnn/artifact_manifest.json",
+        "artifact_path": ROOT / "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json",
         "reasons": ["candidate_level_vector_feature_adapter_missing", "using_vector_artifact_as_recall_source_forbidden_in_ranking_phase"],
     },
 ]

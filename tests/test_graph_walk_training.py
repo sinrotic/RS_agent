@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
-import torch
+pytestmark = [pytest.mark.experiment, pytest.mark.slow]
 
 from rs_core.common.io import write_jsonl
 from rs_core.recsys.candidate_merge import load_graph_walk_seed_recall
@@ -38,9 +38,9 @@ def test_graph_walk_training_is_deterministic_nonzero_and_writes_valid_manifest(
         "batch_size": 8,
         "neighbor_k": 2,
         "similarity_chunk_size": 2,
-        "sidecar_path": "outputs/graph_walk_seed_neighbors.jsonl",
-        "manifest_path": "outputs/graph_walk_seed_manifest.json",
-        "embeddings_path": "outputs/graph_walk_seed_embeddings.jsonl",
+        "sidecar_path": "outputs/training/graph_walk/graph_walk_seed_neighbors.jsonl",
+        "manifest_path": "outputs/training/graph_walk/graph_walk_seed_manifest.json",
+        "embeddings_path": "outputs/training/graph_walk/graph_walk_seed_embeddings.jsonl",
     }
     config_path.write_text(json.dumps({
         "clean_dir": str(clean),

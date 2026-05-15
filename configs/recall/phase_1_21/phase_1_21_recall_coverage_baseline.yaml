@@ -1,0 +1,8 @@
+baseline_config_path: configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml
+phase: phase_1_21_recall_coverage
+limit_users: 500
+evaluation_mode: valid_test
+hit_rate_denominator: users_with_holdout
+expected_users_with_holdout: 138
+output_root: outputs/recall/phase_1_21_recall_coverage
+no_leakage_note: holdout targets and miss_targets.csv are diagnostics/evaluation only, never candidate generation or parameter selection.

@@ -29,8 +29,8 @@ from scripts.run_phase_1_28_lightweight_learned_ranker import (
 
 _PHASE = "phase_1_29_terminal_ranking_route"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_29_terminal_ranking_route"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_29_terminal_ranking_route"
 MINIMUM_RUNS = 3
 REQUIRED_CONSISTENT_RUNS = 2
 MINIMUM_SEGMENT_USERS = 30

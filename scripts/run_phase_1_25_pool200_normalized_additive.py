@@ -24,39 +24,39 @@ METRIC_FIELDS = [
     *FREEZE_FIELDS,
 ]
 
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_25_pool200_normalized_additive"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_25_pool200_normalized_additive"
 VARIANTS = [
     (
         "same_run_baseline",
-        ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml",
     ),
     (
         "source_signal_0_2",
-        ROOT / "configs/phase_1_25_pool200_source_signal_0_2.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_source_signal_0_2.yaml",
     ),
     (
         "source_signal_0_4",
-        ROOT / "configs/phase_1_25_pool200_source_signal_0_4.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_source_signal_0_4.yaml",
     ),
     (
         "item_feature_0_2",
-        ROOT / "configs/phase_1_25_pool200_item_feature_0_2.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_item_feature_0_2.yaml",
     ),
     (
         "item_feature_0_4",
-        ROOT / "configs/phase_1_25_pool200_item_feature_0_4.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_item_feature_0_4.yaml",
     ),
     (
         "balanced_source_item_0_2",
-        ROOT / "configs/phase_1_25_pool200_balanced_source_item_0_2.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_balanced_source_item_0_2.yaml",
     ),
     (
         "freshness_quality_0_1",
-        ROOT / "configs/phase_1_25_pool200_freshness_quality_0_1.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_freshness_quality_0_1.yaml",
     ),
     (
         "near_miss_tiebreak_0_05",
-        ROOT / "configs/phase_1_25_pool200_near_miss_tiebreak_0_05.yaml",
+        ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_near_miss_tiebreak_0_05.yaml",
     ),
 ]
 

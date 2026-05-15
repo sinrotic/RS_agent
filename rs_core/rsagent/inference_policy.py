@@ -296,12 +296,12 @@ def _gated_diagnostics(policy: dict[str, Any], gate_reason: str) -> dict[str, An
 
 def _candidate_payload(candidate: MergedCandidate, metadata_fields: list[str], max_chars: int) -> dict[str, Any]:
     metadata: dict[str, Any] = {}
-    for field in metadata_fields:
-        value = candidate.metadata.get(field)
-        if value is None and field == "category":
+    for metadata_field in metadata_fields:
+        value = candidate.metadata.get(metadata_field)
+        if value is None and metadata_field == "category":
             value = candidate.category
         if value is not None:
-            metadata[field] = str(value)[:max_chars]
+            metadata[metadata_field] = str(value)[:max_chars]
     return {
         "item_id": candidate.item_id,
         "sources": list(candidate.sources),

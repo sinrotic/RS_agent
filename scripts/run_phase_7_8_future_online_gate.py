@@ -18,8 +18,8 @@ from scripts.run_phase_1_23_pool200_ranking_isolation import FREEZE_FIELDS, _sta
 
 _PHASE = "phase_7_8_future_online_gate"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_7_8_future_online_gate"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_7_8_future_online_gate"
 METRIC_FIELDS = [
     "hit_rate_at_k",
     "ndcg_at_k",

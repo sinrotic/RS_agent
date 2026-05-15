@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import pytest
+
 from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
+
+pytestmark = pytest.mark.unit
 from rs_core.rsagent.feedback_rerank import apply_feedback_rerank
 from rs_core.rsagent.policy import FeedbackConstraints
 from rs_core.recsys.ranking import rank_candidates

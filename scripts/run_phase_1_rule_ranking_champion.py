@@ -18,8 +18,8 @@ from scripts.run_phase_1_23_pool200_ranking_isolation import FREEZE_FIELDS, _sta
 
 _PHASE = "phase_1_rule_ranking_champion"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_rule_ranking_champion"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_rule_ranking_champion"
 MINIMUM_RUNS = 3
 REQUIRED_CONSISTENT_RUNS = 2
 METRIC_FIELDS = [

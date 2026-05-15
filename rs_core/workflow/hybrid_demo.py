@@ -46,7 +46,7 @@ def run_hybrid_demo(
         feedback_constraints = _feedback_constraints_from_config(config, feedback_text)
     clean_dir = _resolve_path(config.get("clean_dir", "data/processed/amazon_2023_recall_clean_smoke_e2e"))
     views_dir = _resolve_path(config.get("views_dir", "data/processed/amazon_2023_recall_views_smoke_e2e"))
-    output_dir = _resolve_path(config.get("output_dir", "outputs/hybrid_demo_small"))
+    output_dir = _resolve_path(config.get("output_dir", "outputs/hybrid_demo/hybrid_demo_small"))
     report_path = _resolve_path(config.get("report_path", "dic/HYBRID_DEMO_SMALL_REPORT.md"))
 
     paths = _required_paths(clean_dir, views_dir)
@@ -263,7 +263,7 @@ def run_qwen_evaluation_harness(
     qwen_max_new_tokens: int | None = None,
 ) -> dict[str, Any]:
     base_config = load_config(config_path)
-    base_output_dir = _resolve_path(output_dir or base_config.get("evaluation_harness_output_dir", "outputs/qwen_evaluation_harness"))
+    base_output_dir = _resolve_path(output_dir or base_config.get("evaluation_harness_output_dir", "outputs/agent/qwen/qwen_evaluation_harness"))
     feedback_constraints = parse_feedback(normalize_feedback_input(feedback_text))
     feedback_defaults = _feedback_evaluation_defaults(base_config)
     qwen_overrides = _merge_nested(_qwen_evaluation_defaults(base_config), feedback_defaults)

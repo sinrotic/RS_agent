@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.workflow.hybrid_demo import run_qwen_evaluation_harness
 
-DEFAULT_CONFIG = ROOT / "configs/hybrid_demo_small.yaml"
+DEFAULT_CONFIG = ROOT / "configs/demo/hybrid_demo/hybrid_demo_small.yaml"
 
 
 def parse_args() -> argparse.Namespace:

@@ -284,7 +284,7 @@ def graph_walk_pair_rows(item_ids: list[str], embeddings: torch.Tensor, neighbor
 
 def _graph_walk_training_config(config: dict[str, Any], output_dir: str | Path | None) -> dict[str, Any]:
     training_config = dict(config.get("graph_walk_training", {}) or {})
-    output_path = _resolve_path(output_dir or training_config.get("output_dir", "outputs/graph_walk_training/deepwalk"))
+    output_path = _resolve_path(output_dir or training_config.get("output_dir", "outputs/training/graph_walk/graph_walk_training/deepwalk"))
     training_config.setdefault("algorithm", ALGORITHM)
     training_config.setdefault("seed", 20260511)
     training_config.setdefault("walk_length", 20)

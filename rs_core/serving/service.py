@@ -9,7 +9,7 @@ from rs_core.display import build_display_record
 from rs_core.rsagent.schema import AgentSession
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 
-DEFAULT_CONFIG = "configs/hybrid_demo_electronics_1000_lopo_semantic_title.yaml"
+DEFAULT_CONFIG = "configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml"
 FEEDBACK_PROMPTS = {
     "like": "I like this item, show me more like this.",
     "dislike": "I don't like this item, try a different direction.",

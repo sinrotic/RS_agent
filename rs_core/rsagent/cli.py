@@ -21,7 +21,7 @@ OUTPUT_ROOT = ROOT / "outputs"
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the RS_agent CLI recommendation loop.")
-    parser.add_argument("--config", default="configs/hybrid_demo_small.yaml", help="Path to hybrid demo config.")
+    parser.add_argument("--config", default="configs/demo/hybrid_demo/hybrid_demo_small.yaml", help="Path to hybrid demo config.")
     parser.add_argument("--user-id", default=None, help="User id to run. Defaults to first loaded user.")
     parser.add_argument("--limit-users", type=int, default=None, help="Limit loaded users for smoke runs.")
     parser.add_argument("--max-turns", type=int, default=2, help="Maximum interactive turns.")

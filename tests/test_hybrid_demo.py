@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
+pytestmark = [pytest.mark.experiment, pytest.mark.slow]
+
 import hashlib
 import json
 from pathlib import Path
@@ -8,8 +12,8 @@ import yaml
 
 from rs_core.common.config import load_config
 from rs_core.common.io import write_jsonl
-from rs_core.recsys.candidate_merge import RecallCandidate, graph_walk_seed_candidates_for_user, item_graph_candidates_for_user, load_graph_walk_seed_recall, load_item_graph_recall, load_semantic_index, load_two_tower_index, load_two_tower_seed_recall, merge_candidates, merge_for_user, metadata_neighbor_candidates_for_user, semantic_candidates_for_user, two_tower_candidates_for_user, two_tower_seed_candidates_for_user
-from rs_core.recsys.evaluation import build_ranking_experiment_registry_entry, build_ranking_feature_contract, build_ranking_gpu_resource_summary, build_ranking_method_registry_entry, compare_frozen_candidate_artifacts, compare_frozen_candidate_signatures, evaluate, frozen_candidate_artifact, inspect_physical_ranking_pipeline_artifacts, inspect_ranking_run_artifacts, strict_ranking_promotion_status, terminal_ranking_promotion_gate
+from rs_core.recsys.candidate_merge import RecallCandidate, graph_walk_seed_candidates_for_user, item_graph_candidates_for_user, load_graph_walk_seed_recall, load_item_graph_recall, load_semantic_index, load_two_tower_index, load_two_tower_seed_recall, merge_candidates, merge_for_user, semantic_candidates_for_user, two_tower_candidates_for_user, two_tower_seed_candidates_for_user
+from rs_core.recsys.evaluation import build_ranking_experiment_registry_entry, build_ranking_feature_contract, build_ranking_gpu_resource_summary, build_ranking_method_registry_entry, compare_frozen_candidate_artifacts, compare_frozen_candidate_signatures, evaluate, frozen_candidate_artifact, inspect_ranking_run_artifacts, strict_ranking_promotion_status, terminal_ranking_promotion_gate
 from rs_core.recsys.ranking import phase_1_25_weight_grid, rank_candidates
 from rs_core.rsagent.decision import make_agent_decision
 from rs_core.rsagent.inference_policy import ModelUnavailableError, QWEN_POLICY_TYPE, RerankPolicyResult, RerankSignal
@@ -34,52 +38,6 @@ import scripts.run_phase_6_semantic_two_tower_ranker as phase_6_runner
 import scripts.run_phase_7_8_future_online_gate as phase_7_8_runner
 import scripts.validate_recall_registry as recall_registry_validator
 from scripts.run_phase_1_25_pool200_normalized_additive import VARIANTS as PHASE_1_25_VARIANTS, _row_is_valid
-
-
-def test_merge_dedups_sources_and_excludes_seen_items():
-    merged = merge_candidates(
-        [
-            RecallCandidate("a", "popular", 1.0),
-            RecallCandidate("a", "category", 2.0),
-            RecallCandidate("seen", "popular", 9.0),
-        ],
-        seen_items={"seen"},
-    )
-    assert len(merged) == 1
-    assert merged[0].item_id == "a"
-    assert merged[0].sources == ["popular", "category"]
-    assert merged[0].source_scores == {"popular": 1.0, "category": 2.0}
-
-
-def test_ranking_weights_and_tie_break_order():
-    candidates = merge_candidates(
-        [
-            RecallCandidate("b", "popular", 1.0),
-            RecallCandidate("a", "itemcf_weak", 1.0),
-            RecallCandidate("c", "popular", 1.0),
-        ]
-    )
-    result = rank_candidates("u1", candidates, {"top_k": 3, "rank_weights": {"popular": 1.0, "itemcf_weak": 3.0}})
-    assert [item["parent_asin"] for item in result.items] == ["a", "b", "c"]
-
-
-
-def test_metadata_neighbor_recall_uses_bucketed_training_visible_metadata():
-    metadata_index = {
-        "seed": {"title_clean": "wireless noise cancelling headphones", "main_category": "Audio"},
-        "candidate": {"title_clean": "wireless bluetooth headphones", "main_category": "Audio"},
-        "unrelated": {"title_clean": "garden hose", "main_category": "Garden"},
-    }
-
-    rows = metadata_neighbor_candidates_for_user(
-        {"recent_item_sequence": ["seed"], "recent_positive_item_sequence": ["seed"]},
-        metadata_index,
-        {"metadata_neighbor_enabled": True, "metadata_neighbor_per_user": 5, "metadata_neighbor_per_seed": 5, "metadata_neighbor_min_token_overlap": 1},
-    )
-
-    assert [row.item_id for row in rows] == ["candidate"]
-    assert rows[0].source == "metadata_neighbor_recall"
-    assert rows[0].metadata["metadata_neighbor_index_mode"] == "bucketed_train_visible_metadata"
 
 
 
@@ -392,10 +350,10 @@ def test_source_aware_fusion_penalizes_semantic_only_and_popular_only():
 
 def test_source_aware_configs_are_isolated_from_semantic_title_baselines():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title.yaml")
-    source_aware = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_source_aware.yaml")
-    lopo_baseline = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
-    lopo_source_aware = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_source_aware.yaml")
+    baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title.yaml")
+    source_aware = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_source_aware.yaml")
+    lopo_baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
+    lopo_source_aware = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_source_aware.yaml")
 
     assert not baseline.get("source_aware_fusion", {}).get("enabled", False)
     assert not lopo_baseline.get("source_aware_fusion", {}).get("enabled", False)
@@ -485,10 +443,10 @@ def test_ranking_score_trace_records_coarse_fine_and_rerank_stages():
 
 def test_ltr_configs_are_isolated_from_semantic_title_baselines():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title.yaml")
-    ltr = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_ltr.yaml")
-    lopo_baseline = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
-    lopo_ltr = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_ltr.yaml")
+    baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title.yaml")
+    ltr = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_ltr.yaml")
+    lopo_baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
+    lopo_ltr = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_ltr.yaml")
 
     assert not baseline.get("ltr_model", {}).get("enabled", False)
     assert not lopo_baseline.get("ltr_model", {}).get("enabled", False)
@@ -503,10 +461,10 @@ def test_ltr_configs_are_isolated_from_semantic_title_baselines():
 
 def test_phase_1_11_configs_are_isolated_from_semantic_title_baselines():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title.yaml")
-    phase_1_11 = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_phase_1_11.yaml")
-    lopo_baseline = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
-    lopo_phase_1_11 = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_phase_1_11.yaml")
+    baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title.yaml")
+    phase_1_11 = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_phase_1_11.yaml")
+    lopo_baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
+    lopo_phase_1_11 = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_phase_1_11.yaml")
 
     assert baseline.get("candidate_pool_strategy") != "balanced_source_budget"
     assert lopo_baseline.get("candidate_pool_strategy") != "balanced_source_budget"
@@ -532,10 +490,10 @@ def test_phase_1_11_configs_are_isolated_from_semantic_title_baselines():
 
 def test_two_tower_configs_are_isolated_from_semantic_title_baselines():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title.yaml")
-    two_tower = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_two_tower_poc.yaml")
-    lopo_baseline = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
-    lopo_two_tower = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_poc.yaml")
+    baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title.yaml")
+    two_tower = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_two_tower_poc.yaml")
+    lopo_baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
+    lopo_two_tower = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_poc.yaml")
 
     assert baseline.get("two_tower_enabled") is not True
     assert lopo_baseline.get("two_tower_enabled") is not True
@@ -553,8 +511,8 @@ def test_two_tower_configs_are_isolated_from_semantic_title_baselines():
 
 def test_two_tower_variant_configs_are_isolated_and_default_off():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title.yaml")
-    lopo_baseline = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
+    baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title.yaml")
+    lopo_baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
     config_names = [
         "hybrid_demo_electronics_10000_semantic_title_two_tower_dssm.yaml",
         "hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_dssm.yaml",
@@ -592,8 +550,8 @@ def test_two_tower_variant_configs_are_isolated_and_default_off():
 
 def test_phase_1_13_youtube_dnn_configs_use_isolated_outputs_and_training_artifacts():
     root = Path(__file__).resolve().parents[1]
-    valid_test = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_two_tower_youtube_dnn.yaml")
-    lopo = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_youtube_dnn.yaml")
+    valid_test = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_two_tower_youtube_dnn.yaml")
+    lopo = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_youtube_dnn.yaml")
 
     assert valid_test["strategy_name"] == "phase_1_13_two_tower_youtube_dnn_10000_valid_test"
     assert lopo["strategy_name"] == "phase_1_13_two_tower_youtube_dnn_10000_lopo"
@@ -602,8 +560,8 @@ def test_phase_1_13_youtube_dnn_configs_use_isolated_outputs_and_training_artifa
         assert config["two_tower_variant"] == "youtube_dnn"
         assert config["two_tower_training"]["variant"] == "youtube_dnn"
         assert config["two_tower_training"]["source_name"] == "two_tower_youtube_dnn"
-        assert config["two_tower_artifact_path"] == "outputs/two_tower_training/youtube_dnn/artifact_manifest.json"
-        assert config["two_tower_training"]["output_dir"] == "outputs/two_tower_training/youtube_dnn"
+        assert config["two_tower_artifact_path"] == "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json"
+        assert config["two_tower_training"]["output_dir"] == "outputs/training/two_tower/two_tower_training/youtube_dnn"
         assert config["ltr_model"]["enabled"] is False
         assert config.get("item_feature_rerank", {}).get("enabled") is not True
         assert config.get("source_aware_fusion", {}).get("enabled") is not True
@@ -616,12 +574,12 @@ def test_phase_1_13_youtube_dnn_configs_use_isolated_outputs_and_training_artifa
 
 def test_phase_1_14_ranking_v2_ltr_v2_configs_are_isolated_and_use_pool100_youtube_dnn():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title.yaml")
-    lopo_baseline = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
-    phase_1_13 = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_phase_1_13_two_tower_youtube_dnn_rerank_ltr.yaml")
-    lopo_phase_1_13 = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_phase_1_13_two_tower_youtube_dnn_rerank_ltr.yaml")
-    valid_test = load_config(root / "configs/hybrid_demo_electronics_10000_semantic_title_phase_1_14_pool100_youtube_dnn_ranking_v2_ltr_v2.yaml")
-    lopo = load_config(root / "configs/hybrid_demo_electronics_10000_lopo_semantic_title_phase_1_14_pool100_youtube_dnn_ranking_v2_ltr_v2.yaml")
+    baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title.yaml")
+    lopo_baseline = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml")
+    phase_1_13 = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_phase_1_13_two_tower_youtube_dnn_rerank_ltr.yaml")
+    lopo_phase_1_13 = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_phase_1_13_two_tower_youtube_dnn_rerank_ltr.yaml")
+    valid_test = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_semantic_title_phase_1_14_pool100_youtube_dnn_ranking_v2_ltr_v2.yaml")
+    lopo = load_config(root / "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title_phase_1_14_pool100_youtube_dnn_ranking_v2_ltr_v2.yaml")
 
     assert baseline.get("ranking_v2", {}).get("enabled") is not True
     assert lopo_baseline.get("ranking_v2", {}).get("enabled") is not True
@@ -633,7 +591,7 @@ def test_phase_1_14_ranking_v2_ltr_v2_configs_are_isolated_and_use_pool100_youtu
         assert config["semantic_text_fields"] == ["title_clean", "main_category", "categories_flat"]
         assert config["two_tower_enabled"] is True
         assert config["two_tower_variant"] == "youtube_dnn"
-        assert config["two_tower_artifact_path"] == "outputs/two_tower_training/youtube_dnn/artifact_manifest.json"
+        assert config["two_tower_artifact_path"] == "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json"
         assert config["ranking_v2"] == {
             "enabled": True,
             "feature_version": "ranking_v2",
@@ -663,10 +621,10 @@ def test_phase_1_14_ranking_v2_ltr_v2_configs_are_isolated_and_use_pool100_youtu
 
 def test_phase_1_16_item_graph_configs_are_isolated_and_keep_sorting_disabled():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/phase_1_15_frozen_youtubednn_pool100.yaml")
-    lopo_baseline = load_config(root / "configs/phase_1_15_lopo_sanity.yaml")
-    valid_test = load_config(root / "configs/phase_1_16_item_graph_pool100.yaml")
-    lopo = load_config(root / "configs/phase_1_16_lopo_item_graph_pool100.yaml")
+    baseline = load_config(root / "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml")
+    lopo_baseline = load_config(root / "configs/ranking/phase_1_15/phase_1_15_lopo_sanity.yaml")
+    valid_test = load_config(root / "configs/recall/phase_1_16/phase_1_16_item_graph_pool100.yaml")
+    lopo = load_config(root / "configs/recall/phase_1_16/phase_1_16_lopo_item_graph_pool100.yaml")
 
     assert baseline.get("item_graph_enabled") is not True
     assert lopo_baseline.get("item_graph_enabled") is not True
@@ -697,7 +655,7 @@ def test_phase_1_16_item_graph_configs_are_isolated_and_keep_sorting_disabled():
 
 def test_phase_1_17_rank_weight_configs_are_isolated_from_frozen_baseline():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/phase_1_15_frozen_youtubednn_pool100.yaml")
+    baseline = load_config(root / "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml")
     configs = sorted(path for path in (root / "configs").glob("phase_1_17_rank_weight_*.yaml") if "baseline_same_run" not in path.name)
     assert len(configs) == 9
 
@@ -795,10 +753,10 @@ def test_phase_1_18_recall_gate_requires_same_run_lift_source_contribution_and_d
 
 def test_phase_1_18_two_tower_seed_configs_are_isolated_and_keep_sorting_disabled():
     root = Path(__file__).resolve().parents[1]
-    baseline = load_config(root / "configs/phase_1_15_frozen_youtubednn_pool100.yaml")
-    lopo_baseline = load_config(root / "configs/phase_1_15_lopo_sanity.yaml")
-    valid_test = load_config(root / "configs/phase_1_18_two_tower_seed_pool100.yaml")
-    lopo = load_config(root / "configs/phase_1_18_lopo_two_tower_seed_pool100.yaml")
+    baseline = load_config(root / "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml")
+    lopo_baseline = load_config(root / "configs/ranking/phase_1_15/phase_1_15_lopo_sanity.yaml")
+    valid_test = load_config(root / "configs/recall/phase_1_18/phase_1_18_two_tower_seed_pool100.yaml")
+    lopo = load_config(root / "configs/recall/phase_1_18/phase_1_18_lopo_two_tower_seed_pool100.yaml")
 
     assert baseline.get("two_tower_seed_enabled") is not True
     assert lopo_baseline.get("two_tower_seed_enabled") is not True
@@ -807,14 +765,14 @@ def test_phase_1_18_two_tower_seed_configs_are_isolated_and_keep_sorting_disable
         assert config["semantic_enabled"] is True
         assert config["two_tower_enabled"] is True
         assert config["two_tower_variant"] == "youtube_dnn"
-        assert config["two_tower_artifact_path"] == "outputs/two_tower_training/youtube_dnn/artifact_manifest.json"
+        assert config["two_tower_artifact_path"] == "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json"
         assert config["two_tower_seed_enabled"] is True
-        assert config["two_tower_seed_artifact_path"] == "outputs/two_tower_training/youtube_dnn/two_tower_seed_neighbors.jsonl"
-        assert config["two_tower_seed_manifest_path"] == "outputs/two_tower_training/youtube_dnn/two_tower_seed_manifest.json"
+        assert config["two_tower_seed_artifact_path"] == "outputs/training/two_tower/two_tower_training/youtube_dnn/two_tower_seed_neighbors.jsonl"
+        assert config["two_tower_seed_manifest_path"] == "outputs/training/two_tower/two_tower_training/youtube_dnn/two_tower_seed_manifest.json"
         assert config["two_tower_seed_sidecar"] == {
-            "embedding_input_path": "outputs/two_tower_training/youtube_dnn/item_embeddings.jsonl",
-            "sidecar_path": "outputs/two_tower_training/youtube_dnn/two_tower_seed_neighbors.jsonl",
-            "manifest_path": "outputs/two_tower_training/youtube_dnn/two_tower_seed_manifest.json",
+            "embedding_input_path": "outputs/training/two_tower/two_tower_training/youtube_dnn/item_embeddings.jsonl",
+            "sidecar_path": "outputs/training/two_tower/two_tower_training/youtube_dnn/two_tower_seed_neighbors.jsonl",
+            "manifest_path": "outputs/training/two_tower/two_tower_training/youtube_dnn/two_tower_seed_manifest.json",
             "neighbor_k": 100,
         }
         assert config["fail_on_missing_sidecar"] is True
@@ -842,62 +800,62 @@ def test_phase_1_15_configs_match_recall_mainline_plan_and_keep_sorting_disabled
     expected_configs = {
         "phase_1_15_frozen_youtubednn_pool100.yaml": (
             "phase_1_15_frozen_youtubednn_pool100",
-            "outputs/phase_1_15_frozen_youtubednn_pool100",
+            "outputs/ranking/phase_1_15_frozen_youtubednn_pool100",
             "dic/PHASE_1_15_FROZEN_YOUTUBEDNN_POOL100.md",
         ),
         "phase_1_15_valid_final_candidate.yaml": (
             "phase_1_15_valid_final_candidate",
-            "outputs/phase_1_15_valid_final_candidate",
+            "outputs/ranking/phase_1_15_valid_final_candidate",
             "dic/PHASE_1_15_VALID_FINAL_CANDIDATE.md",
         ),
         "phase_1_15_test_final_candidate.yaml": (
             "phase_1_15_test_final_candidate",
-            "outputs/phase_1_15_test_final_candidate",
+            "outputs/ranking/phase_1_15_test_final_candidate",
             "dic/PHASE_1_15_TEST_FINAL_CANDIDATE.md",
         ),
         "phase_1_15_lopo_sanity.yaml": (
             "phase_1_15_lopo_sanity",
-            "outputs/phase_1_15_lopo_sanity",
+            "outputs/ranking/phase_1_15_lopo_sanity",
             "dic/PHASE_1_15_LOPO_SANITY.md",
         ),
         "phase_1_15_ablation_no_popular.yaml": (
             "phase_1_15_ablation_no_popular",
-            "outputs/phase_1_15_ablation_no_popular",
+            "outputs/ranking/phase_1_15_ablation_no_popular",
             "dic/PHASE_1_15_ABLATION_NO_POPULAR.md",
         ),
         "phase_1_15_ablation_no_category.yaml": (
             "phase_1_15_ablation_no_category",
-            "outputs/phase_1_15_ablation_no_category",
+            "outputs/ranking/phase_1_15_ablation_no_category",
             "dic/PHASE_1_15_ABLATION_NO_CATEGORY.md",
         ),
         "phase_1_15_ablation_no_itemcf_weak.yaml": (
             "phase_1_15_ablation_no_itemcf_weak",
-            "outputs/phase_1_15_ablation_no_itemcf_weak",
+            "outputs/ranking/phase_1_15_ablation_no_itemcf_weak",
             "dic/PHASE_1_15_ABLATION_NO_ITEMCF_WEAK.md",
         ),
         "phase_1_15_ablation_no_itemcf_strong.yaml": (
             "phase_1_15_ablation_no_itemcf_strong",
-            "outputs/phase_1_15_ablation_no_itemcf_strong",
+            "outputs/ranking/phase_1_15_ablation_no_itemcf_strong",
             "dic/PHASE_1_15_ABLATION_NO_ITEMCF_STRONG.md",
         ),
         "phase_1_15_ablation_no_semantic.yaml": (
             "phase_1_15_ablation_no_semantic",
-            "outputs/phase_1_15_ablation_no_semantic",
+            "outputs/ranking/phase_1_15_ablation_no_semantic",
             "dic/PHASE_1_15_ABLATION_NO_SEMANTIC.md",
         ),
         "phase_1_15_ablation_no_two_tower.yaml": (
             "phase_1_15_ablation_no_two_tower",
-            "outputs/phase_1_15_ablation_no_two_tower",
+            "outputs/ranking/phase_1_15_ablation_no_two_tower",
             "dic/PHASE_1_15_ABLATION_NO_TWO_TOWER.md",
         ),
         "phase_1_15_ablation_semantic_idf_budget.yaml": (
             "phase_1_15_ablation_semantic_idf_budget",
-            "outputs/phase_1_15_ablation_semantic_idf_budget",
+            "outputs/ranking/phase_1_15_ablation_semantic_idf_budget",
             "dic/PHASE_1_15_ABLATION_SEMANTIC_IDF_BUDGET.md",
         ),
         "phase_1_15_ablation_balanced_budget_caps.yaml": (
             "phase_1_15_ablation_balanced_budget_caps",
-            "outputs/phase_1_15_ablation_balanced_budget_caps",
+            "outputs/ranking/phase_1_15_ablation_balanced_budget_caps",
             "dic/PHASE_1_15_ABLATION_BALANCED_BUDGET_CAPS.md",
         ),
     }
@@ -943,7 +901,7 @@ def test_phase_1_15_configs_match_recall_mainline_plan_and_keep_sorting_disabled
             assert config["two_tower_enabled"] is True
             assert config["two_tower_variant"] == "youtube_dnn"
 
-    lopo = load_config(root / "configs/phase_1_15_lopo_sanity.yaml")
+    lopo = load_config(root / "configs/ranking/phase_1_15/phase_1_15_lopo_sanity.yaml")
     assert lopo["evaluation_mode"] == "leave_one_positive_out"
     assert lopo["phase_1_15_lopo_gate"]["baseline_metrics"]
     assert lopo["phase_1_15_lopo_gate"]["thresholds"]
@@ -2036,7 +1994,7 @@ def test_phase_1_26_registry_entry_records_frozen_candidate_artifact_and_scope()
 
 
 def test_phase_1_26_runner_contract_keeps_pool200_baseline_and_blocks_gpu_tree_methods():
-    assert phase_1_26_runner._command_text(Path("outputs/phase_1_26"), 3).startswith("./.venv/Scripts/python.exe")
+    assert phase_1_26_runner._command_text(Path("outputs/ranking/phase_1_26"), 3).startswith("./.venv/Scripts/python.exe")
     assert phase_1_26_runner.BASELINE_CONFIG.name == "phase_1_25_pool200_same_run_baseline.yaml"
 
     tree_rows = phase_1_26_runner._tree_method_registry_rows()
@@ -2081,7 +2039,7 @@ def test_phase_1_26_learned_gbdt_contract_records_real_training_and_blocked_gpu_
     by_id = {row["method_id"]: row for row in rows}
     strategy = phase_1_26_learned_gbdt_runner._gpu_resource_strategy(dependency_status)
 
-    assert phase_1_26_learned_gbdt_runner._command_text(Path("outputs/phase_1_26"), 2, 123).startswith("./.venv/Scripts/python.exe")
+    assert phase_1_26_learned_gbdt_runner._command_text(Path("outputs/ranking/phase_1_26"), 2, 123).startswith("./.venv/Scripts/python.exe")
     assert phase_1_26_learned_gbdt_runner.BASELINE_CONFIG.name == "phase_1_25_pool200_same_run_baseline.yaml"
     assert strategy["current_phase_gpu_required"] is False
     assert strategy["unavailable_status"] == "blocked-gpu-unavailable"
@@ -3185,14 +3143,14 @@ def test_phase_1_23_pool200_isolation_configs_keep_frozen_pool_contract():
         assert config["phase_1_23_isolation"]["candidate_pool_size"] == 200
         assert config["export_frozen_candidates"] is True
         assert config["pool200_fixed_baseline"]["frozen_candidate_export"] is True
-        assert config["phase_1_23_isolation"]["fixed_recall_config_path"] == "configs/phase_1_21_recall_coverage_pool200_experimental.yaml"
+        assert config["phase_1_23_isolation"]["fixed_recall_config_path"] == "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"
         assert str(config_path).startswith(str(root / "configs"))
         if variant_name == "no_rerank_baseline":
             assert config["ranking_v2"]["enabled"] is False
             assert config["item_feature_rerank"]["enabled"] is False
             assert config["source_aware_fusion"]["enabled"] is False
         else:
-            assert config["phase_1_23_isolation"]["baseline_config_path"] == "configs/phase_1_23_pool200_no_rerank_baseline.yaml"
+            assert config["phase_1_23_isolation"]["baseline_config_path"] == "configs/ranking/phase_1_23/phase_1_23_pool200_no_rerank_baseline.yaml"
 
 
 
@@ -3260,13 +3218,13 @@ def test_phase_1_24_semantic_rescue_config_keeps_pool200_contract_and_isolated_p
     variant_names = [name for name, _ in PHASE_1_24_VARIANTS]
 
     assert variant_names == ["no_rerank_baseline", "semantic_near_miss_rescue"]
-    baseline = load_config(root / "configs/phase_1_23_pool200_no_rerank_baseline.yaml")
-    rescue = load_config(root / "configs/phase_1_24_pool200_semantic_near_miss_rescue.yaml")
+    baseline = load_config(root / "configs/ranking/phase_1_23/phase_1_23_pool200_no_rerank_baseline.yaml")
+    rescue = load_config(root / "configs/ranking/phase_1_24/phase_1_24_pool200_semantic_near_miss_rescue.yaml")
 
     assert rescue["candidate_pool_size"] == baseline["candidate_pool_size"] == 200
     assert rescue["pool200_fixed_baseline"]["candidate_pool_size"] == 200
-    assert rescue["phase_1_24_isolation"]["fixed_recall_config_path"] == "configs/phase_1_21_recall_coverage_pool200_experimental.yaml"
-    assert rescue["phase_1_24_isolation"]["baseline_config_path"] == "configs/phase_1_23_pool200_no_rerank_baseline.yaml"
+    assert rescue["phase_1_24_isolation"]["fixed_recall_config_path"] == "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"
+    assert rescue["phase_1_24_isolation"]["baseline_config_path"] == "configs/ranking/phase_1_23/phase_1_23_pool200_no_rerank_baseline.yaml"
     assert rescue["export_frozen_candidates"] is True
     assert rescue["pool200_fixed_baseline"]["frozen_candidate_export"] is True
     assert rescue["ranking_v2"]["enabled"] is False
@@ -3281,7 +3239,7 @@ def test_phase_1_24_semantic_rescue_config_keeps_pool200_contract_and_isolated_p
 def test_phase_1_25_pool200_configs_use_same_frozen_pool_and_finite_additive_grid():
     root = Path(__file__).resolve().parents[1]
     variant_names = [name for name, _ in PHASE_1_25_VARIANTS]
-    baseline = load_config(root / "configs/phase_1_25_pool200_same_run_baseline.yaml")
+    baseline = load_config(root / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml")
     allowed_grid = baseline["phase_1_25_isolation"]["allowed_normalized_additive_grid"]
 
     assert variant_names[0] == "same_run_baseline"
@@ -3302,8 +3260,8 @@ def test_phase_1_25_pool200_configs_use_same_frozen_pool_and_finite_additive_gri
         assert config["top_k"] == baseline["top_k"] == 5
         assert config["pool200_fixed_baseline"]["candidate_pool_size"] == 200
         assert config["pool200_fixed_baseline"]["frozen_candidate_export"] is True
-        assert config["phase_1_25_isolation"]["fixed_recall_config_path"] == "configs/phase_1_21_recall_coverage_pool200_experimental.yaml"
-        assert config["phase_1_25_isolation"]["baseline_config_path"] == "configs/phase_1_25_pool200_same_run_baseline.yaml"
+        assert config["phase_1_25_isolation"]["fixed_recall_config_path"] == "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"
+        assert config["phase_1_25_isolation"]["baseline_config_path"] == "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
         assert config["export_frozen_candidates"] is True
         assert config["ranking_v2"]["enabled"] is False
         assert config["item_feature_rerank"]["enabled"] is False
@@ -4287,7 +4245,7 @@ def _sha256_file(path: Path) -> str:
 
 
 def test_config_loads_json_compatible_yaml():
-    config = load_config("D:/sinrotic_code/python_project/summer/RS_agent/configs/hybrid_demo_small.yaml")
+    config = load_config("D:/sinrotic_code/python_project/summer/RS_agent/configs/demo/hybrid_demo/hybrid_demo_small.yaml")
     assert config["top_k"] == 5
 
 

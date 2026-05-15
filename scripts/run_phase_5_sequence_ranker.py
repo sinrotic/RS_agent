@@ -20,8 +20,8 @@ from scripts.run_phase_1_23_pool200_ranking_isolation import FREEZE_FIELDS, _sta
 
 _PHASE = "phase_5_sequence_attention_ranker"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_5_sequence_attention_ranker"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_5_sequence_attention_ranker"
 MINIMUM_RUNS = 1
 REQUIRED_CONSISTENT_RUNS = 1
 METRIC_FIELDS = [

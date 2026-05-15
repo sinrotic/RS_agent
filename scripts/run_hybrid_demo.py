@@ -9,7 +9,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
-DEFAULT_CONFIG = ROOT / "configs/hybrid_demo_small.yaml"
+DEFAULT_CONFIG = ROOT / "configs/demo/hybrid_demo/hybrid_demo_small.yaml"
 
 
 def parse_args() -> argparse.Namespace:

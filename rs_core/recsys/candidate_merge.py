@@ -4,7 +4,7 @@ import hashlib
 import heapq
 import math
 import re
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +17,20 @@ _SEMANTIC_SEED_CONTEXT_CACHE_LIMIT = 4
 _SEMANTIC_SEED_CONTEXT_CACHE: dict[tuple[int, tuple[str, ...], float, int], dict[str, Any]] = {}
 _METADATA_NEIGHBOR_INDEX_CACHE_LIMIT = 4
 _METADATA_NEIGHBOR_INDEX_CACHE: dict[tuple[int, tuple[str, ...]], dict[str, Any]] = {}
+
+
+def unique_recent_items(items: list[str], max_items_per_user: int) -> list[str]:
+    recent = deque(maxlen=max_items_per_user)
+    seen: set[str] = set()
+    for item_id in reversed(items):
+        if item_id in seen:
+            continue
+        seen.add(item_id)
+        recent.appendleft(item_id)
+        if len(recent) >= max_items_per_user:
+            break
+    return list(recent)
+
 
 
 def load_popular_candidates(path: str | Path, limit: int | None = None) -> list[RecallCandidate]:

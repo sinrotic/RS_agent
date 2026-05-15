@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.experiment
+
 from rs_core.common.io import write_jsonl
 from scripts import phase_1_20_recall_diagnostics as diagnostics
 

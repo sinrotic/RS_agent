@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.experiment
+
 from rs_core.common.io import write_jsonl
 from scripts import phase_1_21_recall_coverage_experiments as phase_1_21
 
@@ -113,11 +115,11 @@ def test_phase_1_21_baseline_and_audit_write_required_artifacts(tmp_path: Path, 
     assert benchmark_by_name["ItemCF/co-visit"]["execution_status"] == "READY_TO_RUN"
     assert benchmark_by_name["semantic/title-category"]["execution_status"] == "READY_TO_RUN"
     assert benchmark_by_name["graph"]["execution_status"] == "READY_TO_RUN"
-    assert "configs/phase_1_21_recall_coverage_graph.yaml" in benchmark_by_name["graph"]["execution_command"]
+    assert "configs/recall/phase_1_21/phase_1_21_recall_coverage_graph.yaml" in benchmark_by_name["graph"]["execution_command"]
     assert benchmark_by_name["graph"]["config_patch"]["item_graph_enabled"] is True
     assert benchmark_by_name["graph"]["config_patch"]["graph_walk_seed_enabled"] is False
     assert benchmark_by_name["vector/two-tower"]["execution_status"] == "READY_TO_RUN"
-    assert "configs/phase_1_21_recall_coverage_vector.yaml" in benchmark_by_name["vector/two-tower"]["execution_command"]
+    assert "configs/recall/phase_1_21/phase_1_21_recall_coverage_vector.yaml" in benchmark_by_name["vector/two-tower"]["execution_command"]
     assert benchmark_by_name["UserCF"]["execution_status"] == "READY_TO_RUN"
     assert benchmark_by_name["Swing"]["execution_status"] == "READY_TO_RUN"
     assert benchmark_by_name["session/transition"]["execution_status"] == "READY_TO_RUN"
@@ -125,7 +127,7 @@ def test_phase_1_21_baseline_and_audit_write_required_artifacts(tmp_path: Path, 
     for name in ["ALS MF", "BPR MF", "LightFM MF"]:
         assert benchmark_by_name[name]["execution_status"] in {"blocked_missing_dependency", "READY_TO_RUN"}
         assert benchmark_by_name[name]["dependency_gate"]["required_modules"]
-        assert "configs/phase_1_21_recall_coverage_mf.yaml" in benchmark_by_name[name]["execution_command"]
+        assert "configs/recall/phase_1_21/phase_1_21_recall_coverage_mf.yaml" in benchmark_by_name[name]["execution_command"]
         if benchmark_by_name[name]["execution_status"] == "blocked_missing_dependency":
             assert benchmark_by_name[name]["next_action"] == "defer_until_dependency_available"
             assert benchmark_by_name[name]["dependency_gate"]["missing_modules"]
@@ -463,7 +465,7 @@ def test_phase_1_21_rejects_ranking_route_config(
 def test_phase_1_21_rejects_no_leakage_source_config(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     config_path, _ = _write_fixture(tmp_path)
     config = json.loads(config_path.read_text(encoding="utf-8"))
-    config["miss_targets_path"] = "outputs/phase_1_21_recall_coverage/audit/miss_targets.csv"
+    config["miss_targets_path"] = "outputs/recall/phase_1_21_recall_coverage/audit/miss_targets.csv"
     config_path.write_text(json.dumps(config), encoding="utf-8")
     monkeypatch.setattr(phase_1_21, "DEFAULT_OUTPUT_ROOT", str(tmp_path / "outputs" / "phase_1_21_recall_coverage"))
     monkeypatch.setattr(

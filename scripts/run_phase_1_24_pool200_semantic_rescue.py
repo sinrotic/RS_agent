@@ -14,15 +14,15 @@ from rs_core.common.io import write_json
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 from scripts.run_phase_1_23_pool200_ranking_isolation import FREEZE_FIELDS, METRIC_FIELDS, _status_and_drift
 
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_24_pool200_semantic_near_miss_rescue"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_24_pool200_semantic_near_miss_rescue"
 VARIANTS = [
     (
         "no_rerank_baseline",
-        ROOT / "configs/phase_1_23_pool200_no_rerank_baseline.yaml",
+        ROOT / "configs/ranking/phase_1_23/phase_1_23_pool200_no_rerank_baseline.yaml",
     ),
     (
         "semantic_near_miss_rescue",
-        ROOT / "configs/phase_1_24_pool200_semantic_near_miss_rescue.yaml",
+        ROOT / "configs/ranking/phase_1_24/phase_1_24_pool200_semantic_near_miss_rescue.yaml",
     ),
 ]
 

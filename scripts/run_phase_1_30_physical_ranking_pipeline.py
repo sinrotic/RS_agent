@@ -27,8 +27,8 @@ from scripts.run_phase_1_28_lightweight_learned_ranker import _not_applicable_fe
 
 _PHASE = "phase_1_30_physical_ranking_pipeline"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_30_physical_ranking_pipeline"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_30_physical_ranking_pipeline"
 METRIC_FIELDS = [
     "hit_rate_at_k",
     "ndcg_at_k",

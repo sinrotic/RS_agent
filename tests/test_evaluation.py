@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+import pytest
+
 from rs_core.recsys.evaluation import evaluate, inspect_physical_ranking_pipeline_artifacts
+
+pytestmark = pytest.mark.unit
 from rs_core.recsys.types import MergedCandidate, RankingResult
 
 

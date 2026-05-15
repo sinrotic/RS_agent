@@ -4,6 +4,8 @@ import hashlib
 from pathlib import Path
 
 import pytest
+pytestmark = pytest.mark.experiment
+
 import torch
 
 from rs_core.common.io import write_json, write_jsonl

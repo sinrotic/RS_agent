@@ -24,8 +24,8 @@
 - **Phase 1.7**：rerank / 排序曝光诊断已形成阶段性结论：source-level 调参接近边界，不应继续盲目调 semantic exposure
 - **Phase 1.8**：item-level feature rerank 第一版已完成，Top-K 命中不变，但 LOPO target 平均排名从 25.13 改善到 23.46，说明它更适合作为可解释排序特征入口而不是单独的 hit-rate 提升方案
 - **Phase 1.9**：DSSM-style / YouTubeDNN-style 双塔向量召回旁路已完成第一版，包含 PyTorch 训练 artifact、向量索引、默认关闭配置和 strict promotion gate；当前只作为实验旁路，不默认替代主路。现有证据是训练 `limit_users=10` 与评估 `limit_users=30` 的 smoke，不是完整 10k 双塔结论，且两类双塔 smoke 均未通过晋升 gate
-- **CLI Agent feedback canonical demo**：已在 2026-04-28 固化为可复现入口，产物见 `outputs/agent_feedback_demo_canonical/`
-- **Conversational Agent MVP**：已支持 deterministic 多轮对话雏形，包括模糊请求追问、澄清后更新约束、解释上一轮推荐、换一批推荐和 unsupported 文本保留，产物见 `outputs/agent_conversation_demo_canonical/`
+- **CLI Agent feedback canonical demo**：已在 2026-04-28 固化为可复现入口，产物见 `outputs/agent/canonical/agent_feedback_demo_canonical/`
+- **Conversational Agent MVP**：已支持 deterministic 多轮对话雏形，包括模糊请求追问、澄清后更新约束、解释上一轮推荐、换一批推荐和 unsupported 文本保留，产物见 `outputs/agent/canonical/agent_conversation_demo_canonical/`
 - **Phase 2 展示与服务闭环**：已完成 `DisplayResponse` 商品卡 contract、single-process HTTP 服务、结构化 `/feedback`、`GET /session/{session_id}` 安全导出和 React Web Demo 第一版
 - **Session Replay 与一键 E2E Demo**：已完成前端 Session Replay 时间线和 `/demo/e2e` 闭环入口，可证明反馈后第二轮推荐发生变化
 - **Phase 3 多角色仿真第一版**：已完成角色内在模型、Simulation Scene、批量 Simulation Evaluation 和模型驱动模拟用户策略，产物包括 `simulation_batch.json`、`metrics.json` 和中文评估报告
@@ -42,27 +42,27 @@
 
 ```bash
 ./.venv/Scripts/python.exe -m rs_core.rsagent.cli \
-  --config configs/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
+  --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
   --limit-users 3 \
   --simulate-two-turn \
   --output-dir agent_feedback_demo_canonical \
   --inference-policy off
 ```
 
-产物：`outputs/agent_feedback_demo_canonical/rs_agent_cli_baseline_comparison.md`
+产物：`outputs/agent/canonical/agent_feedback_demo_canonical/rs_agent_cli_baseline_comparison.md`
 
 ### Conversational Agent MVP demo
 
 ```bash
 ./.venv/Scripts/python.exe -m rs_core.rsagent.cli \
-  --config configs/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
+  --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
   --limit-users 3 \
   --simulate-conversation \
   --output-dir agent_conversation_demo_canonical \
   --inference-policy off
 ```
 
-产物：`outputs/agent_conversation_demo_canonical/rs_agent_cli_baseline_comparison.md`
+产物：`outputs/agent/canonical/agent_conversation_demo_canonical/rs_agent_cli_baseline_comparison.md`
 
 当前 conversational 能力是 deterministic dialogue manager：用于证明 Agent 能追问、澄清、解释和根据反馈再推荐；它不是完整 LLM chatbot，也不代表 Qwen / QLoRA / GRPO 训练已经完成。
 
@@ -70,10 +70,10 @@
 
 ```bash
 ./.venv/Scripts/python.exe scripts/run_hybrid_demo.py \
-  --config configs/hybrid_demo_electronics_1000_lopo_semantic_title_item_feature.yaml
+  --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title_item_feature.yaml
 ```
 
-产物：`outputs/hybrid_demo_small_electronics_1000_lopo_semantic_title_item_feature/metrics.json`
+产物：`outputs/hybrid_demo/hybrid_demo_small_electronics_1000_lopo_semantic_title_item_feature/metrics.json`
 
 当前结论：Top-K hit 与 Phase 1.7 title baseline 持平，但 LOPO target 平均排名从 25.128205 改善到 23.461538。
 
@@ -89,13 +89,22 @@
 
 ## 推荐阅读顺序
 
-1. `ARCHITECTURE.md`
-2. `IMPLEMENTATION_PLAN.md`
-3. `PROJECT_STRUCTURE.md`
-4. `RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`
-5. `OPTIMIZATION_NARRATIVE.md`
-6. `PHASE_1_5_DEMO_SUMMARY.md`
-7. `ENGINEERING_NARRATIVE_LOG.md`
+1. `architecture/ARCHITECTURE.md`：总体架构和分层职责。
+2. `architecture/IMPLEMENTATION_PLAN.md`：当前实现路线和阶段边界。
+3. `PROJECT_STRUCTURE.md`：目录职责和演进边界。
+4. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
+5. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
+6. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
+
+## 文档分区
+
+- `guides/`：文档、产物和配置路由规范。
+- `architecture/`：架构、实现路线和模块边界。
+- `decisions/`：ADR 和阶段性技术决策。
+- `phases/`：阶段计划、阶段总结和长期路线。
+- `experiments/`：排序、召回、hybrid demo 和消融实验报告。
+- `standards/`：工程规范和质量门禁说明。
+- `archive/`：历史证据归档，不作为当前规划主入口。
 
 ---
 

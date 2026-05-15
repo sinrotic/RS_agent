@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.experiment, pytest.mark.slow]
+
 from rs_core.workflow.ranking_experiments import (
     REQUIRED_CANDIDATE_POOL_SIZE,
     REQUIRED_TOP_K,

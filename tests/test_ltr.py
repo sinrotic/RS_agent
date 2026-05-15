@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+pytestmark = pytest.mark.unit
+
 from rs_core.recsys.ltr import (
     build_ltr_feature_contract_gate_summary,
     build_ltr_leakage_gate_summary,

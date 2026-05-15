@@ -16,9 +16,9 @@ from rs_core.common.io import read_json, read_jsonl, write_json
 from rs_core.workflow.graph_walk_training import train_graph_walk_seed
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 
-DEFAULT_BASELINE_CONFIG = ROOT / "configs/phase_1_15_frozen_youtubednn_pool100.yaml"
-DEFAULT_EXPERIMENT_CONFIG = ROOT / "configs/phase_1_19_graph_walk_seed_deepwalk.yaml"
-DEFAULT_OUTPUT = ROOT / "outputs/phase_1_19_graph_walk_seed_gate/comparison.json"
+DEFAULT_BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml"
+DEFAULT_EXPERIMENT_CONFIG = ROOT / "configs/recall/phase_1_19/phase_1_19_graph_walk_seed_deepwalk.yaml"
+DEFAULT_OUTPUT = ROOT / "outputs/recall/phase_1_19_graph_walk_seed_gate/comparison.json"
 SOURCE = "graph_walk_seed"
 CONFLICTING_SOURCE = "item_graph"
 REQUIRED_DIAGNOSTIC_FIELDS = {

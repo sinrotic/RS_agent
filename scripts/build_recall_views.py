@@ -1,14 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
-import sqlite3
-from collections import Counter, defaultdict, deque
+import re
+import shutil
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from itertools import combinations
 from pathlib import Path
 from typing import Any
+
+from rs_core.recsys.candidate_merge import unique_recent_items
 
 DEFAULT_INPUT_DIR = "./data/processed/amazon_2023_recall_clean"
 DEFAULT_OUTPUT_DIR = "./data/processed/amazon_2023_recall_views"
@@ -19,6 +23,10 @@ DEFAULT_ITEM_GRAPH_WINDOW = 5
 DEFAULT_ITEM_GRAPH_TOP_K = 100
 DEFAULT_ITEM_GRAPH_MIN_SCORE = 0.0
 DEFAULT_ITEM_GRAPH_STRONG_MULTIPLIER = 1.5
+DEFAULT_LIGHTWEIGHT_MAX_OUTPUT_BYTES = 2 * 1024 * 1024 * 1024
+DEFAULT_LIGHTWEIGHT_MIN_FREE_BYTES = 5 * 1024 * 1024 * 1024
+DEFAULT_SEMANTIC_INVERTED_TOP_K = 2000
+SEMANTIC_TOKEN_PATTERN = re.compile(r"[a-z0-9]+")
 
 
 def parse_args() -> argparse.Namespace:
@@ -77,6 +85,29 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_ITEM_GRAPH_STRONG_MULTIPLIER,
         help="Score multiplier applied when destination item is in the strong-positive sequence.",
     )
+    parser.add_argument(
+        "--lightweight-full-safe",
+        action="store_true",
+        help="Build only full-safe lightweight recall views and skip ItemCF/item_graph outputs.",
+    )
+    parser.add_argument(
+        "--lightweight-max-output-bytes",
+        type=int,
+        default=DEFAULT_LIGHTWEIGHT_MAX_OUTPUT_BYTES,
+        help="Hard cap for total lightweight output bytes before promotion.",
+    )
+    parser.add_argument(
+        "--lightweight-min-free-bytes",
+        type=int,
+        default=DEFAULT_LIGHTWEIGHT_MIN_FREE_BYTES,
+        help="Minimum free bytes required on the output filesystem before building lightweight views.",
+    )
+    parser.add_argument(
+        "--semantic-inverted-top-k",
+        type=int,
+        default=DEFAULT_SEMANTIC_INVERTED_TOP_K,
+        help="Maximum item postings retained per semantic inverted-index token in lightweight mode.",
+    )
     return parser.parse_args()
 
 
@@ -90,6 +121,126 @@ def iter_jsonl(path: Path):
 
 def compact_json(record: dict[str, Any]) -> str:
     return json.dumps(record, ensure_ascii=False)
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def jsonl_file_signature(path: Path) -> dict[str, Any]:
+    digest = hashlib.sha256()
+    rows = 0
+    with path.open("rb") as handle:
+        for line in handle:
+            if line.strip():
+                rows += 1
+            digest.update(line)
+    return {
+        "size_bytes": path.stat().st_size,
+        "row_count": rows,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def directory_size_bytes(path: Path) -> int:
+    total = 0
+    for file_path in path.rglob("*"):
+        if file_path.is_file():
+            total += file_path.stat().st_size
+    return total
+
+
+def ensure_lightweight_output_target(output_dir: Path) -> Path:
+    tmp_output_dir = output_dir.with_name(f"{output_dir.name}_tmp")
+    if output_dir.exists():
+        raise FileExistsError(
+            f"Refusing to overwrite existing lightweight output directory: {output_dir}"
+        )
+    if tmp_output_dir.exists():
+        raise FileExistsError(
+            f"Refusing to reuse existing lightweight temp output directory: {tmp_output_dir}"
+        )
+    return tmp_output_dir
+
+
+def semantic_tokens(record: dict[str, Any]) -> set[str]:
+    text_parts: list[str] = []
+    for field_name in ("title_clean", "main_category", "description_text", "features_text", "item_text"):
+        value = record.get(field_name)
+        if value:
+            text_parts.append(str(value))
+    for value in record.get("categories_flat", []):
+        if value:
+            text_parts.append(str(value))
+    return {token for token in SEMANTIC_TOKEN_PATTERN.findall(" ".join(text_parts).lower()) if len(token) >= 2}
+
+
+def build_semantic_inverted_index(items_path: Path, output_dir: Path, top_k: int) -> dict[str, Any]:
+    if top_k < 1:
+        raise ValueError("semantic_inverted_top_k must be >= 1")
+    token_items: defaultdict[str, list[tuple[float, str]]] = defaultdict(list)
+    item_rows = 0
+    for record in iter_jsonl(items_path):
+        item_rows += 1
+        item_id = record["parent_asin"]
+        score = float(record.get("rating_number") or 0.0)
+        for token in semantic_tokens(record):
+            token_items[token].append((score, item_id))
+
+    output_path = output_dir / "semantic_inverted_index.jsonl"
+    rows_written = 0
+    postings_written = 0
+    with output_path.open("w", encoding="utf-8") as sink:
+        for token, scored_items in sorted(token_items.items()):
+            seen: set[str] = set()
+            postings: list[str] = []
+            for _score, item_id in sorted(scored_items, key=lambda item: (-item[0], item[1])):
+                if item_id in seen:
+                    continue
+                seen.add(item_id)
+                postings.append(item_id)
+                if len(postings) >= top_k:
+                    break
+            sink.write(compact_json({"token": token, "parent_asins": postings}) + "\n")
+            rows_written += 1
+            postings_written += len(postings)
+
+    return {
+        "output_path": str(output_path),
+        "rows_written": rows_written,
+        "postings_written": postings_written,
+        "items_indexed": item_rows,
+        "top_k": top_k,
+    }
+
+
+def build_source_signature(input_dir: Path, required_paths: list[Path]) -> dict[str, Any]:
+    manifest_path = input_dir / "manifest.json"
+    stats_path = input_dir / "stats.json"
+    manifest_hash = file_sha256(manifest_path) if manifest_path.exists() else None
+    stats_hash = file_sha256(stats_path) if stats_path.exists() else None
+    canonical_file_signatures = {
+        path.name: jsonl_file_signature(path)
+        for path in required_paths
+    }
+    combined_parts = [str(input_dir), str(manifest_hash), str(stats_hash)]
+    combined_parts.extend(
+        f"{name}:{payload['size_bytes']}:{payload['row_count']}"
+        for name, payload in sorted(canonical_file_signatures.items())
+    )
+    return {
+        "input_dir": str(input_dir),
+        "manifest_path": str(manifest_path) if manifest_path.exists() else None,
+        "stats_path": str(stats_path) if stats_path.exists() else None,
+        "manifest_sha256": manifest_hash,
+        "stats_sha256": stats_hash,
+        "canonical_file_signatures": canonical_file_signatures,
+        "combined_signature": hashlib.sha256("|".join(combined_parts).encode("utf-8")).hexdigest(),
+    }
 
 
 def ensure_args(
@@ -193,19 +344,6 @@ def build_popularity_view(
         "positive_rows_used": positive_rows,
         "recent_threshold": recent_threshold,
     }
-
-
-def unique_recent_items(items: list[str], max_items_per_user: int) -> list[str]:
-    recent = deque(maxlen=max_items_per_user)
-    seen: set[str] = set()
-    for item_id in reversed(items):
-        if item_id in seen:
-            continue
-        seen.add(item_id)
-        recent.appendleft(item_id)
-        if len(recent) >= max_items_per_user:
-            break
-    return list(recent)
 
 
 def build_itemcf_edges(
@@ -465,6 +603,127 @@ def build_category_and_semantic_views(
     }
 
 
+def replace_path_prefix(payload: Any, old_prefix: str, new_prefix: str) -> Any:
+    if isinstance(payload, dict):
+        return {key: replace_path_prefix(value, old_prefix, new_prefix) for key, value in payload.items()}
+    if isinstance(payload, list):
+        return [replace_path_prefix(value, old_prefix, new_prefix) for value in payload]
+    if isinstance(payload, str):
+        return payload.replace(old_prefix, new_prefix)
+    return payload
+
+
+def build_lightweight_full_safe_views(
+    input_dir: Path,
+    output_dir: Path,
+    recent_window_ratio: float,
+    category_top_k: int,
+    min_free_bytes: int,
+    max_output_bytes: int,
+    semantic_inverted_top_k: int,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if min_free_bytes < 0:
+        raise ValueError("lightweight_min_free_bytes must be >= 0")
+    if max_output_bytes < 1:
+        raise ValueError("lightweight_max_output_bytes must be >= 1")
+
+    train_path = input_dir / "canonical_interactions.train.jsonl"
+    items_path = input_dir / "canonical_items.jsonl"
+    if not train_path.exists():
+        raise FileNotFoundError(f"Missing train interactions file: {train_path}")
+    if not items_path.exists():
+        raise FileNotFoundError(f"Missing canonical items file: {items_path}")
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    free_bytes = shutil.disk_usage(output_dir.parent).free
+    if free_bytes < min_free_bytes:
+        raise RuntimeError(
+            f"Insufficient free space for lightweight recall views: {free_bytes} < {min_free_bytes}"
+        )
+
+    tmp_output_dir = ensure_lightweight_output_target(output_dir)
+    tmp_output_dir.mkdir(parents=True)
+    try:
+        source_signature = build_source_signature(input_dir, [train_path, items_path])
+        popularity_view, popularity_stats = build_popularity_view(
+            train_path,
+            tmp_output_dir,
+            recent_window_ratio,
+        )
+        category_stats = build_category_and_semantic_views(
+            items_path,
+            tmp_output_dir,
+            popularity_view,
+            category_top_k,
+        )
+        semantic_inverted_stats = build_semantic_inverted_index(
+            items_path,
+            tmp_output_dir,
+            semantic_inverted_top_k,
+        )
+        artifact_size_bytes = directory_size_bytes(tmp_output_dir)
+
+        manifest_payload = {
+            "schema_version": "1.2",
+            "mode": "lightweight_full_safe",
+            "generated_at": datetime.now(UTC).isoformat(),
+            "source_clean_dir": str(input_dir),
+            "source_signature": source_signature,
+            "outputs": {
+                "popular_recall": popularity_stats["output_path"],
+                "category_recall_items": category_stats["category_items_path"],
+                "category_top_items": category_stats["category_top_path"],
+                "semantic_recall_inputs": category_stats["semantic_path"],
+                "semantic_inverted_index": semantic_inverted_stats["output_path"],
+            },
+            "skipped_outputs": ["itemcf_recall_weak", "itemcf_recall_strong", "item_graph_recall"],
+        }
+        stats_payload = {
+            "schema_version": "1.2",
+            "mode": "lightweight_full_safe",
+            "generated_at": datetime.now(UTC).isoformat(),
+            "config": {
+                "recent_window_ratio": recent_window_ratio,
+                "category_top_k": category_top_k,
+                "lightweight_min_free_bytes": min_free_bytes,
+                "lightweight_max_output_bytes": max_output_bytes,
+                "semantic_inverted_top_k": semantic_inverted_top_k,
+            },
+            "safety": {
+                "free_bytes_before_build": free_bytes,
+                "artifact_size_bytes_before_manifest": artifact_size_bytes,
+                "atomic_tmp_dir": str(tmp_output_dir),
+                "promoted_output_dir": str(output_dir),
+            },
+            "source_signature": source_signature,
+            "popular_recall": popularity_stats,
+            "category_recall": category_stats,
+            "semantic_inverted_index": semantic_inverted_stats,
+            "skipped_outputs": ["itemcf_recall_weak", "itemcf_recall_strong", "item_graph_recall"],
+        }
+        manifest_payload = replace_path_prefix(manifest_payload, str(tmp_output_dir), str(output_dir))
+        stats_payload = replace_path_prefix(stats_payload, str(tmp_output_dir), str(output_dir))
+        stats_payload["safety"]["atomic_tmp_dir"] = str(tmp_output_dir)
+        manifest_path = write_manifest(tmp_output_dir, manifest_payload)
+        stats_path = write_stats(tmp_output_dir, stats_payload)
+        stats_payload["safety"]["final_output_size_bytes"] = directory_size_bytes(tmp_output_dir)
+        write_stats(tmp_output_dir, stats_payload)
+        final_output_size_bytes = directory_size_bytes(tmp_output_dir)
+        if final_output_size_bytes > max_output_bytes:
+            raise RuntimeError(
+                f"Lightweight recall view output exceeds hard cap: {final_output_size_bytes} > {max_output_bytes}"
+            )
+        stats_payload["safety"]["final_output_size_bytes"] = final_output_size_bytes
+        write_stats(tmp_output_dir, stats_payload)
+        tmp_output_dir.rename(output_dir)
+        manifest_payload["manifest_path"] = str(output_dir / manifest_path.name)
+        stats_payload["stats_path"] = str(output_dir / stats_path.name)
+        return manifest_payload, stats_payload
+    except Exception:
+        shutil.rmtree(tmp_output_dir, ignore_errors=True)
+        raise
+
+
 def write_manifest(output_dir: Path, payload: dict[str, Any]) -> Path:
     manifest_path = output_dir / "manifest.json"
     manifest_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -491,6 +750,21 @@ def main() -> None:
 
     input_dir = Path(args.input_dir)
     output_dir = Path(args.output_dir)
+    if args.lightweight_full_safe:
+        manifest_payload, stats_payload = build_lightweight_full_safe_views(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            recent_window_ratio=args.recent_window_ratio,
+            category_top_k=args.category_top_k,
+            min_free_bytes=args.lightweight_min_free_bytes,
+            max_output_bytes=args.lightweight_max_output_bytes,
+            semantic_inverted_top_k=args.semantic_inverted_top_k,
+        )
+        print(f"Lightweight full-safe recall views written to: {output_dir}")
+        print(f"Manifest written to: {manifest_payload['manifest_path']}")
+        print(f"Stats written to: {stats_payload['stats_path']}")
+        return
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     train_path = input_dir / "canonical_interactions.train.jsonl"

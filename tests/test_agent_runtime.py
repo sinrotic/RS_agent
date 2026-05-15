@@ -4,12 +4,15 @@ import inspect
 import json
 from pathlib import Path
 
+import pytest
+
+pytestmark = [pytest.mark.unit, pytest.mark.serving]
+
 from rs_core.common.io import write_jsonl
 from rs_core.recsys.types import AgentDecision
 from rs_core.rsagent.reward import build_reward_evidence
 from rs_core.rsagent.runtime import RUNTIME_TRACE_STEP_ORDER
 from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
-from rs_core.workflow import hybrid_environment
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 
 

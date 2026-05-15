@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 import json
 
 from rs_core.evaluation.agent_artifact import build_agent_eval_artifact, build_training_signals

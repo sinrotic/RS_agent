@@ -38,8 +38,8 @@ from scripts.run_phase_1_26_real_ranking_experiments import _not_applicable_feat
 
 _PHASE = "phase_1_31_ranking_algorithm_scaffold"
 _BASELINE_METHOD_ID = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_1_31_ranking_algorithm_scaffold"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_31_ranking_algorithm_scaffold"
 DEFAULT_SEED = 20260513
 PHYSICAL_PIPELINE_OVERRIDE = {
     "enabled": True,

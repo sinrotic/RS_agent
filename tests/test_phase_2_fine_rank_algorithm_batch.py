@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.experiment, pytest.mark.slow]
+
 from rs_core.workflow.ranking_experiments import (
     REQUIRED_CANDIDATE_POOL_SIZE,
     REQUIRED_TOP_K,
@@ -142,7 +144,6 @@ def test_learned_ltr_specs_are_diagnostic_only_and_explicitly_not_promotion_cand
 
 
 def test_fine_rank_batch_runner_records_diagnostics_blockers_and_no_rerank_or_online_promotion(tmp_path, monkeypatch, runner):
-    specs = runner.build_method_specs()
     monkeypatch.setattr(runner, "_run_id", lambda: "test-run", raising=False)
     monkeypatch.setattr(
         runner,

@@ -28,7 +28,7 @@ _PHASE = "phase_c_ranking_actionability_diagnostic"
 _BASELINE_METHOD_ID = "same_run_pool200_baseline"
 _DIAGNOSTIC_METHOD_ID = "phase_c_ranking_actionability_diagnostic"
 _PHASE_6_DIAGNOSTIC_METHOD_ID = "industrial_coarse_fine_rerank_chain_diagnostic"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_c_ranking_actionability_diagnostic"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_c_ranking_actionability_diagnostic"
 DEFAULT_SEED = 20260514
 ONLINE_METRIC_NAMES = ["ctr", "cvr", "gmv", "p95", "slo", "agent_feedback"]
 

@@ -5,6 +5,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = [pytest.mark.experiment, pytest.mark.gpu]
+
 from rs_core.common.io import read_jsonl
 from rs_core.recsys.candidate_merge import load_two_tower_index, two_tower_candidates_for_user
 from rs_core.recsys.vector_index import VectorIndex

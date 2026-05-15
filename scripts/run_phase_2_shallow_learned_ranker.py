@@ -19,8 +19,8 @@ from scripts.run_phase_1_28_lightweight_learned_ranker import LTR_FEATURE_CONFIG
 
 _PHASE = "phase_2_shallow_learned_ranker"
 _BASELINE_VARIANT = "same_run_baseline"
-BASELINE_CONFIG = ROOT / "configs/phase_1_25_pool200_same_run_baseline.yaml"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs/phase_2_shallow_learned_ranker"
+BASELINE_CONFIG = ROOT / "configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml"
+DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_2_shallow_learned_ranker"
 MINIMUM_RUNS = 1
 REQUIRED_CONSISTENT_RUNS = 1
 METRIC_FIELDS = [

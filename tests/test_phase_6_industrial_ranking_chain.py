@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
+pytestmark = [pytest.mark.experiment, pytest.mark.slow]
+
 import json
 from pathlib import Path
 
@@ -52,7 +56,7 @@ def _fake_hybrid_result(config_path: Path, limit_users: int | None, config_overr
             "topk_source_minimums": config_overrides.get("topk_source_minimums", {}),
             "ltr_model": config_overrides.get("ltr_model", {"enabled": False}),
             "pool200_fixed_baseline": {
-                "fixed_recall_config_path": "configs/phase_1_21_recall_coverage_pool200_experimental.yaml",
+                "fixed_recall_config_path": "configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml",
                 "candidate_pool_size": REQUIRED_CANDIDATE_POOL_SIZE,
             },
         },

@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import importlib
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
 from rs_core.recsys.ranking import rank_candidates
 from rs_core.rsagent.inference_policy import (

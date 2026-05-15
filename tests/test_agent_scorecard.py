@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import pytest
+
+pytestmark = pytest.mark.unit
+
 from rs_core.evaluation.agent_scorecard import build_agent_scorecard
 from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
 from rs_core.recsys.types import AgentDecision

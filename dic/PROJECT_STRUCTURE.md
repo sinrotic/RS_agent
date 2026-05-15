@@ -18,7 +18,13 @@ RS_agent/
 ├─ outputs/               # 运行产物与结果输出
 ├─ frontend/              # React Web Demo、商品卡、反馈按钮和 Session Replay
 ├─ tests/                 # 测试代码
-├─ dic/                   # 当前说明文档与过程记录
+├─ dic/                   # 当前说明文档、工程叙事、实验结论和规范入口
+│  ├─ guides/             # 文档、产物和配置路由规范
+│  ├─ architecture/       # 架构说明、实现路线和模块边界
+│  ├─ decisions/          # ADR 和阶段性技术决策
+│  ├─ phases/             # 阶段计划、阶段总结和长期路线
+│  ├─ experiments/        # 排序、召回、demo 和消融实验报告
+│  ├─ standards/          # 工程规范和质量门禁说明
 │  └─ archive/            # 旧实验报告和数据画像归档
 └─ old_dic/               # 历史草稿，仅作归档
    ├─ historical_plans/   # 早期方案文档
@@ -109,7 +115,7 @@ React Web Demo 入口，目标是消费服务层和展示层 contract，而不�
 
 当前说明文档、架构说明、目录说明和过程记录所在目录。
 
-这里写的是当前项目该怎么理解、怎么讲、怎么对齐，而不是历史备忘。`dic/` 根目录只保留核心入口文档；旧实验报告、数据画像和阶段性产物统一放入 `dic/archive/`，作为证据归档而不是主阅读路径。
+这里写的是当前项目该怎么理解、怎么讲、怎么对齐，而不是历史备忘。`dic/` 根目录只保留 `README.md`、`PROJECT_STRUCTURE.md`、`ENGINEERING_NARRATIVE_LOG.md`、`OPTIMIZATION_NARRATIVE.md` 等核心入口和高频维护文档；架构、决策、阶段、实验、规范和路由说明进入对应子目录。`dic/archive/` 只作为历史证据归档，不作为当前规划主阅读路径。
 
 ### 3.8 `old_dic/`
 

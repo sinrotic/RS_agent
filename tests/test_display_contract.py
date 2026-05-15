@@ -1,4 +1,8 @@
+import pytest
+
 from rs_core.display import build_display_record
+
+pytestmark = pytest.mark.unit
 from rs_core.recsys.types import AgentDecision
 from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
 
