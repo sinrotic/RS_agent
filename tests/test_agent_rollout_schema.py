@@ -35,9 +35,10 @@ def test_cli_simulated_two_turn_writes_rollout_schema(tmp_path: Path):
     assert display_response["turn_index"] == rollouts[1]["turn_index"]
     assert display_response["items"][0]["parent_asin"] == rollouts[1]["agent_decision"]["final_items"][0]["parent_asin"]
     assert "missing_image" in display_response["items"][0]["badges"]
-    blocked_display_keys = {"score", "base_score", "agent_boost", "final_score", "diagnostics", "reward_evidence", "training_samples"}
+    blocked_display_keys = {"score", "base_score", "agent_boost", "coarse_score", "fine_score", "rerank_score", "final_score", "score_trace", "rank_movement", "diagnostics", "reward_evidence", "training_samples"}
     assert not blocked_display_keys & set(display_response)
     assert not blocked_display_keys & set(display_response["items"][0])
+    assert "constraint_filter_events" not in json.dumps(display_response)
     sft_sample = rollouts[1]["training_samples"]["sft_sample"]
     reward_sample = rollouts[1]["training_samples"]["reward_sample"]
     assert sft_sample["user_input"] == "I dislike charger_1 and Accessories, prefer Audio and itemcf_weak and bluetooth"

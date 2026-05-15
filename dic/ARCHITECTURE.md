@@ -14,11 +14,11 @@
   - 负责训练数据、对齐目标和模型行为优化
   - 不承担主链路业务定义
 
-后期规划再补三层产品化与仿真能力：
+当前已经补齐三层产品化与仿真能力的第一版：
 
 - **展示层**：把推荐结果聚合成商品展示卡和可解释推荐回复
-- **前端 / 服务层**：提供聊天窗口、商品卡片、反馈按钮和 API 边界
-- **仿真 / 动画层**：用多角色模拟客户生成合成交互，并将 session / rollout 可视化回放
+- **前端 / 服务层**：提供聊天窗口、商品卡片、结构化反馈按钮、Session Replay 和 API 边界
+- **仿真 / 动画层**：用多角色模拟客户生成合成交互、批量评估报告，并将 session / rollout 以安全视图回放
 
 一句话概括：**底层先回答“能推荐什么”，上层决定“最终怎么推荐”，展示与仿真层再负责“如何被用户看到、如何被系统化测试”。**
 
@@ -96,56 +96,61 @@ Agent 的输出通常是：
 
 前端和服务层负责真实交互入口。
 
-规划中的能力包括：
+已完成第一版的能力包括：
 
-- 聊天窗口
-- 商品卡片展示
-- 喜欢、不喜欢、换一批、预算约束等反馈按钮
-- `chat / recommendation / feedback` API 边界
+- React 聊天窗口和商品卡片展示
+- 喜欢、不喜欢、换一批、why 等结构化反馈入口
+- `/session/start`、`/chat`、`/feedback`、`GET /session/{session_id}` 和 `/demo/e2e` API 边界
+- Session Replay 时间线，用于复盘多轮对话、反馈事件和商品卡变化
 
 前端只消费展示层和服务层 contract，不直接读取推荐内部中间字段。
 
 ### 2.6 仿真 / 动画层
 
-仿真层用于后期构建类似游戏或沙盒的多角色模拟客户场景。
+仿真层已经具备多角色模拟客户场景的第一版能力。
 
 它主要负责：
 
-- 维护多个 persona，例如预算敏感用户、科技玩家、家庭用户、品牌敏感用户等
-- 通过模型 API 驱动角色提出需求、追问和反馈
-- 与推荐系统 Agent 交互并产出 session / rollout 轨迹
+- 维护多个 persona、角色状态、购物目标、偏好、预算敏感度和反馈风格
+- 通过 deterministic policy 或模型 API 驱动角色提出需求、追问、接受、拒绝和换榜反馈
+- 与推荐系统 Agent 交互并产出安全 session export、simulation scene 和 batch metrics
 - 将合成交互数据与真实用户行为分开标记
 
-动画层只负责可视化展示和回放，例如角色状态、商品曝光、满意度变化和反馈过程，不参与推荐决策或 reward 定义。
+动画 / replay 层只负责可视化展示和回放，例如角色状态、商品曝光、满意度变化和反馈过程，不参与推荐决策或 reward 定义。
 
 ---
 
 ## 3. 当前实现状态
 
-### 已实现
+### 已实现第一版
 
 - 召回清洗与 views 相关链路
 - popular / category / ItemCF recall
 - semantic / text recall 第一版
-- deterministic policy stub
-- CLI feedback smoke 修复
+- item-level feature rerank 第一版
+- DSSM-style / YouTubeDNN-style 双塔向量召回旁路第一版：PyTorch 训练 artifact、向量索引、默认关闭配置和 strict promotion gate 已接入；当前只有训练 `limit_users=10`、评估 `limit_users=30` 的 smoke 证据，尚无完整 10k 双塔晋升结论
+- deterministic conversational Agent MVP
+- CLI feedback canonical demo 与训练样本 `training_samples` contract
+- `DisplayResponse` 商品卡 contract 和前端安全展示层
+- single-process HTTP 服务：`/session/start`、`/chat`、`/feedback`、`GET /session/{session_id}`、`/demo/e2e`
+- React Web Demo：聊天窗口、商品卡、结构化反馈、Session Replay 和一键 E2E 闭环
+- 多角色 Simulation：角色内在模型、Simulation Scene、批量 Evaluation 和模型驱动模拟用户策略
 
 ### 进行中
 
-- Phase 1.7 rerank / 排序曝光诊断
-- Agent demo 展示固化
+- 将 Web Demo、feedback、session replay 和 simulation batch 轨迹整理成可校验训练样本
+- 将现有评估产物收敛成阶段性报告和面试演示主入口
 
-### 规划中
+### 尚未完成 / 不应夸大
 
-- Qwen3.5-4B + 8-bit QLoRA SFT + GRPO
-- 商品展示卡 contract 与轻量前端 demo
-- 多角色模拟客户和 session / rollout 动画回放
-- 复杂 Tool-use / ReAct 训练
-- 全量服务化
+- Qwen3.5-4B + 8-bit QLoRA SFT + GRPO 尚未完整训练落地
+- 当前服务是 single-process demo，不是全量工业化在线服务
+- 当前 React Web Demo 和 Simulation 是展示 / 仿真评估第一版，不代表生产级前端、真实用户实验或完整动画系统
+- 复杂 Tool-use / ReAct 训练仍是后续增强方向
 
 ### 阶段边界
 
-第一阶段不做双塔，先把小样本端到端闭环跑通，再逐步扩展到更大规模和更完整的服务形态。
+当前双塔只作为默认关闭的向量召回旁路：DSSM-style 和 YouTubeDNN-style 都可以产出可追溯 artifact 并接入本地向量索引，但是否晋升主路必须由 valid/test 主口径、LOPO sanity、source contribution / overlap 和 candidate generation p95 strict gate 共同决定。当前只跑过 paired smoke：训练 `limit_users=10`，评估 `limit_users=30`；DSSM / YouTubeDNN valid/test smoke 均 `hit_rate_at_k=0.0` 且 latency 超过 `0.05s` gate 预算，因此保持 `default_off_side_lane_only`。Node2Vec / DeepWalk 图召回、MIND / SDM 多兴趣召回、TDM、DeepFM / NCF 暂不在本批实现，避免同时扩张多个高成本召回和粗排方向。
 
 ---
 

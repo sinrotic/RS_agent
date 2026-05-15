@@ -6,9 +6,34 @@ BLOCKED_DISPLAY_KEYS = {
     "score",
     "base_score",
     "agent_boost",
+    "coarse_score",
+    "fine_score",
+    "rerank_score",
     "final_score",
+    "score_trace",
+    "rank_movement",
     "diagnostics",
     "reward_evidence",
+    "training_samples",
+}
+BLOCKED_DISPLAY_TERMS = {
+    "agent_boost",
+    "base_score",
+    "coarse_score",
+    "diagnostic",
+    "feedback_source",
+    "fine_score",
+    "final_score",
+    "itemcf",
+    "ranking",
+    "rank_movement",
+    "recall source",
+    "rerank_score",
+    "score_trace",
+    "reward",
+    "reward_evidence",
+    "source",
+    "training",
     "training_samples",
 }
 
@@ -34,7 +59,7 @@ def test_display_response_exposes_only_frontend_safe_fields():
         "features": ["bluetooth", "portable"],
         "description": "Small speaker for commute.",
         "image_url": None,
-        "badges": ["multi_source", "matches_feedback", "missing_image"],
+        "badges": ["blended_signal", "matches_feedback", "missing_image"],
         "summary": "Good commute audio pick",
     }
     assert display["feedback_actions"] == [
@@ -46,6 +71,7 @@ def test_display_response_exposes_only_frontend_safe_fields():
     assert display["ui_state"] == {"image_fallback_enabled": True, "can_request_more": True}
     assert not BLOCKED_DISPLAY_KEYS & set(item)
     assert not BLOCKED_DISPLAY_KEYS & set(display)
+    _assert_no_blocked_display_terms(display)
 
 
 def test_display_response_tolerates_missing_metadata_and_skips_items_without_parent_asin():
@@ -89,6 +115,21 @@ def test_display_response_tolerates_missing_metadata_and_skips_items_without_par
         "badges": ["missing_image"],
         "summary": None,
     }
+    _assert_no_blocked_display_terms(display)
+
+
+def _assert_no_blocked_display_terms(value):
+    if isinstance(value, dict):
+        for child in value.values():
+            _assert_no_blocked_display_terms(child)
+    elif isinstance(value, list):
+        for child in value:
+            _assert_no_blocked_display_terms(child)
+    elif isinstance(value, str):
+        lowered = value.lower()
+        for term in BLOCKED_DISPLAY_TERMS:
+            assert term not in lowered
+
 
 
 def _session_with_turn():

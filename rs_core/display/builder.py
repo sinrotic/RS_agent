@@ -89,7 +89,7 @@ def _badges(item: dict[str, Any], image_url: str | None) -> list[str]:
     badges: list[str] = []
     sources = item.get("sources", [])
     if isinstance(sources, list) and len(sources) > 1:
-        badges.append("multi_source")
+        badges.append("blended_signal")
     if _has_feedback_match(sources):
         badges.append("matches_feedback")
     if not image_url:

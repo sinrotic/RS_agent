@@ -72,6 +72,19 @@ class SimulationSceneResponse(BaseModel):
     session: dict[str, Any]
 
 
+class SimulationBatchRequest(BaseModel):
+    role_ids: list[str] | None = None
+    max_turns: int = Field(default=4, ge=1, le=8)
+    repeats: int = Field(default=1, ge=1, le=5)
+    user_id: str | None = None
+
+
+class SimulationBatchResponse(BaseModel):
+    batch_id: str
+    summary: dict[str, Any]
+    scenes: list[dict[str, Any]]
+
+
 class ErrorDetail(BaseModel):
     code: str
     message: str

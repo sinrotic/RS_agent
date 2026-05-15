@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from rs_core.rsagent.schema import AgentReward, AgentTurn, RewardEvidence
+from rs_core.rsagent.tools import collect_diagnostic_tool_events
 
 
 def build_reward_evidence(turn: AgentTurn, holdout_items: set[str] | None = None) -> RewardEvidence:
@@ -42,6 +43,7 @@ def build_reward_evidence(turn: AgentTurn, holdout_items: set[str] | None = None
             "feedback_effect_observed": feedback_effect_observed,
         },
         item_sources=item_sources,
+        tool_events=collect_diagnostic_tool_events(turn.diagnostics),
         risk_flags=list(turn.recommendation.risk_flags),
         unsupported_explanation_claims=unsupported_claims,
     )

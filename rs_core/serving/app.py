@@ -14,13 +14,15 @@ from rs_core.serving.schema import (
     FeedbackRequest,
     FeedbackResponse,
     SessionExportResponse,
+    SimulationBatchRequest,
+    SimulationBatchResponse,
     SimulationSceneRequest,
     SimulationSceneResponse,
     StartSessionRequest,
     StartSessionResponse,
 )
 from rs_core.serving.service import DEFAULT_CONFIG, RecommendationService, SessionNotFoundError
-from rs_core.simulation import run_simulation_scene
+from rs_core.simulation import run_simulation_batch, run_simulation_scene
 
 app = FastAPI(title="RS Agent Serving Demo")
 app.add_middleware(
@@ -107,3 +109,19 @@ def simulation_scene(request: SimulationSceneRequest) -> SimulationSceneResponse
     except KeyError as exc:
         raise HTTPException(status_code=422, detail=f"Unknown simulation role_id: {request.role_id}") from exc
     return SimulationSceneResponse(**scene)
+
+
+@app.post("/simulation/batch", response_model=SimulationBatchResponse)
+def simulation_batch(request: SimulationBatchRequest) -> SimulationBatchResponse:
+    try:
+        batch = run_simulation_batch(
+            get_service(),
+            role_ids=request.role_ids,
+            max_turns=request.max_turns,
+            repeats=request.repeats,
+            user_id=request.user_id,
+        )
+    except KeyError as exc:
+        role_id = exc.args[0] if exc.args else "unknown"
+        raise HTTPException(status_code=422, detail=f"Unknown simulation role_id: {role_id}") from exc
+    return SimulationBatchResponse(**batch)

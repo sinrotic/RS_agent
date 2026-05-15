@@ -8,10 +8,23 @@ from rs_core.workflow.hybrid_demo import recommend_for_user
 def test_parse_feedback_keeps_mixed_positive_and_negative_intents_separate():
     feedback = parse_feedback("I dislike charger_1 and Accessories, prefer Audio and semantic")
 
+    assert feedback.liked_item_ids == set()
     assert feedback.disliked_item_ids == {"charger_1"}
     assert feedback.disliked_categories == {"Accessories"}
     assert feedback.preferred_categories == {"Audio": 1.0}
     assert feedback.preferred_sources == {"semantic": 1.0}
+
+
+def test_parse_feedback_records_explicit_item_like_and_dislike_events():
+    liked = parse_feedback("I like this item, show me more like this. item_id=item_1")
+    disliked = parse_feedback("I don't like this item, try a different direction. item_id=item_2")
+
+    assert liked.liked_item_ids == {"item_1"}
+    assert liked.disliked_item_ids == set()
+    assert liked.item_feedback_events == [{"action": "like", "item_id": "item_1", "source": "explicit_item_id"}]
+    assert disliked.disliked_item_ids == {"item_2"}
+    assert disliked.liked_item_ids == set()
+    assert disliked.item_feedback_events == [{"action": "dislike", "item_id": "item_2", "source": "explicit_item_id"}]
 
 
 def test_parse_feedback_extracts_keyword_signals():
@@ -19,8 +32,18 @@ def test_parse_feedback_extracts_keyword_signals():
 
     assert feedback.preferred_keywords == {"bluetooth": 1.0, "long_battery": 1.0, "commute": 1.0}
     assert feedback.disliked_keywords == {"wired": 1.0}
+    assert feedback.use_cases == {"commute": 1.0}
     assert feedback.preferred_categories == {}
     assert feedback.disliked_categories == set()
+    assert feedback.unsupported_free_text == []
+
+
+def test_parse_feedback_extracts_price_and_gift_constraints():
+    feedback = parse_feedback("I prefer a gift under $50")
+
+    assert feedback.max_price == 50.0
+    assert feedback.preferred_keywords == {"gift": 1.0}
+    assert feedback.use_cases == {"gift": 1.0}
     assert feedback.unsupported_free_text == []
 
 
@@ -72,7 +95,24 @@ def test_recommend_for_user_applies_feedback_exclusion_and_boosts():
         {"type": "preferred_source", "matched_value": "itemcf_weak", "configured_value": "ITEMCF_WEAK", "score_key": "feedback_source_itemcf_weak", "boost": 1.0},
     ]
     assert second.diagnostics["filter_events"] == [
-        {"item_id": "charger_1", "type": "disliked_item", "matched_value": "charger_1", "configured_value": "charger_1"}
+        {
+            "type": "constraint_filter",
+            "action": "filter",
+            "target_item_id": "charger_1",
+            "reason": "disliked_category",
+            "item_id": "charger_1",
+            "matched_value": "Accessories",
+            "configured_value": "accessories",
+        },
+        {
+            "type": "constraint_filter",
+            "action": "filter",
+            "target_item_id": "charger_1",
+            "reason": "disliked_item",
+            "item_id": "charger_1",
+            "matched_value": "charger_1",
+            "configured_value": "charger_1",
+        },
     ]
     assert second.ranking.items[0]["base_score"] == 2.0
     assert second.ranking.items[0]["agent_boost"] == 20.0
@@ -156,7 +196,7 @@ def test_prior_turn_filter_excludes_repeated_items():
     filtered, diagnostics = apply_feedback_to_candidates(
         candidates,
         FeedbackConstraints(filter_prior_turn_items=True),
-        {},
+        {"top_k": 1},
         prior_turn_items={"a"},
     )
 
@@ -164,5 +204,85 @@ def test_prior_turn_filter_excludes_repeated_items():
     assert diagnostics["prior_turn_items"] == ["a"]
     assert diagnostics["excluded_prior_turn_items"] == ["a"]
     assert diagnostics["filter_events"] == [
-        {"item_id": "a", "type": "prior_turn_item", "matched_value": "a", "configured_value": "a"}
+        {
+            "type": "constraint_filter",
+            "action": "filter",
+            "target_item_id": "a",
+            "reason": "prior_turn_item",
+            "item_id": "a",
+            "matched_value": "a",
+            "configured_value": "a",
+        }
+    ]
+    assert diagnostics["constraint_filter_summary"] == {
+        "input_candidate_count": 2,
+        "output_candidate_count": 1,
+        "filtered_candidate_count": 1,
+        "restored_candidate_count": 0,
+        "min_candidate_count": 1,
+        "over_filter_protection_applied": False,
+    }
+
+
+def test_constraint_filter_excludes_price_above_maximum():
+    candidates = merge_candidates([
+        RecallCandidate("cheap", "popular", 2.0, metadata={"price": "$39.99"}),
+        RecallCandidate("expensive", "popular", 3.0, metadata={"price": "$79.99"}),
+    ])
+    filtered, diagnostics = apply_feedback_to_candidates(
+        candidates,
+        FeedbackConstraints(max_price=50.0),
+        {"top_k": 1},
+    )
+
+    assert [candidate.item_id for candidate in filtered] == ["cheap"]
+    assert diagnostics["excluded_price_items"] == ["expensive"]
+    assert diagnostics["constraint_filter_events"] == [
+        {
+            "type": "constraint_filter",
+            "action": "filter",
+            "target_item_id": "expensive",
+            "reason": "max_price",
+            "item_id": "expensive",
+            "matched_value": 79.99,
+            "configured_value": 50.0,
+        }
+    ]
+
+
+def test_constraint_filter_restores_candidates_when_hard_filters_overfilter():
+    candidates = merge_candidates([
+        RecallCandidate("a", "popular", 3.0, category="Audio"),
+        RecallCandidate("b", "popular", 2.0, category="Audio"),
+    ])
+    filtered, diagnostics = apply_feedback_to_candidates(
+        candidates,
+        FeedbackConstraints(disliked_categories={"Audio"}),
+        {"constraint_filter_min_candidates": 2},
+    )
+
+    assert [candidate.item_id for candidate in filtered] == ["a", "b"]
+    assert all(candidate.metadata.get("constraint_filter_restored") for candidate in filtered)
+    assert diagnostics["excluded_category_items"] == []
+    assert diagnostics["constraint_filter_summary"]["over_filter_protection_applied"] is True
+    assert diagnostics["constraint_filter_summary"]["restored_candidate_count"] == 2
+    assert diagnostics["constraint_filter_events"] == [
+        {
+            "type": "constraint_filter",
+            "action": "protect",
+            "target_item_id": "a",
+            "reason": "over_filter_restored",
+            "item_id": "a",
+            "matched_value": "a",
+            "configured_value": "min_candidate_protection",
+        },
+        {
+            "type": "constraint_filter",
+            "action": "protect",
+            "target_item_id": "b",
+            "reason": "over_filter_restored",
+            "item_id": "b",
+            "matched_value": "b",
+            "configured_value": "min_candidate_protection",
+        },
     ]

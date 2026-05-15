@@ -15,6 +15,10 @@ DEFAULT_OUTPUT_DIR = "./data/processed/amazon_2023_recall_views"
 DEFAULT_RECENT_WINDOW_RATIO = 0.2
 DEFAULT_MAX_ITEMS_PER_USER_FOR_ITEMCF = 50
 DEFAULT_CATEGORY_TOP_K = 100
+DEFAULT_ITEM_GRAPH_WINDOW = 5
+DEFAULT_ITEM_GRAPH_TOP_K = 100
+DEFAULT_ITEM_GRAPH_MIN_SCORE = 0.0
+DEFAULT_ITEM_GRAPH_STRONG_MULTIPLIER = 1.5
 
 
 def parse_args() -> argparse.Namespace:
@@ -49,6 +53,30 @@ def parse_args() -> argparse.Namespace:
         default=DEFAULT_CATEGORY_TOP_K,
         help="Top-K items retained per category bucket in category recall outputs.",
     )
+    parser.add_argument(
+        "--item-graph-window",
+        type=int,
+        default=DEFAULT_ITEM_GRAPH_WINDOW,
+        help="Maximum forward sequence distance used for directed item graph edges.",
+    )
+    parser.add_argument(
+        "--item-graph-top-k",
+        type=int,
+        default=DEFAULT_ITEM_GRAPH_TOP_K,
+        help="Maximum outgoing item graph neighbors retained per source item.",
+    )
+    parser.add_argument(
+        "--item-graph-min-score",
+        type=float,
+        default=DEFAULT_ITEM_GRAPH_MIN_SCORE,
+        help="Minimum item graph edge score retained in the output.",
+    )
+    parser.add_argument(
+        "--item-graph-strong-multiplier",
+        type=float,
+        default=DEFAULT_ITEM_GRAPH_STRONG_MULTIPLIER,
+        help="Score multiplier applied when destination item is in the strong-positive sequence.",
+    )
     return parser.parse_args()
 
 
@@ -64,13 +92,29 @@ def compact_json(record: dict[str, Any]) -> str:
     return json.dumps(record, ensure_ascii=False)
 
 
-def ensure_args(recent_window_ratio: float, max_items_per_user: int, category_top_k: int) -> None:
+def ensure_args(
+    recent_window_ratio: float,
+    max_items_per_user: int,
+    category_top_k: int,
+    item_graph_window: int,
+    item_graph_top_k: int,
+    item_graph_min_score: float,
+    item_graph_strong_multiplier: float,
+) -> None:
     if not 0 <= recent_window_ratio <= 1:
         raise ValueError("recent_window_ratio must be between 0 and 1")
     if max_items_per_user < 1 or max_items_per_user > 500:
         raise ValueError("max_items_per_user_for_itemcf must be between 1 and 500")
     if category_top_k < 1:
         raise ValueError("category_top_k must be >= 1")
+    if item_graph_window < 1 or item_graph_window > 100:
+        raise ValueError("item_graph_window must be between 1 and 100")
+    if item_graph_top_k < 1:
+        raise ValueError("item_graph_top_k must be >= 1")
+    if item_graph_min_score < 0:
+        raise ValueError("item_graph_min_score must be >= 0")
+    if item_graph_strong_multiplier < 1:
+        raise ValueError("item_graph_strong_multiplier must be >= 1")
 
 
 def quality_bucket(average_rating: float | None, rating_number: int | None) -> str:
@@ -243,6 +287,87 @@ def build_itemcf_views(
     }
 
 
+def build_item_graph_view(
+    user_sequences_path: Path,
+    output_dir: Path,
+    window: int,
+    top_k: int,
+    min_score: float,
+    strong_multiplier: float,
+) -> dict[str, Any]:
+    edge_scores: defaultdict[tuple[str, str], float] = defaultdict(float)
+    edge_support: Counter[tuple[str, str]] = Counter()
+    strong_support: Counter[tuple[str, str]] = Counter()
+    item_occurrence_count: Counter[str] = Counter()
+    users_used = 0
+
+    for record in iter_jsonl(user_sequences_path):
+        sequence = record.get("recent_positive_item_sequence", [])
+        if not sequence:
+            continue
+        strong_items = set(record.get("recent_strong_positive_item_sequence", []))
+        item_occurrence_count.update(sequence)
+        users_used += 1
+        for src_index, src_item in enumerate(sequence):
+            max_dst_index = min(len(sequence), src_index + window + 1)
+            for dst_index in range(src_index + 1, max_dst_index):
+                dst_item = sequence[dst_index]
+                if src_item == dst_item:
+                    continue
+                distance = dst_index - src_index
+                recency_weight = (dst_index + 1) / len(sequence)
+                distance_weight = 1 / distance
+                strong_weight = strong_multiplier if dst_item in strong_items else 1.0
+                edge = (src_item, dst_item)
+                edge_scores[edge] += recency_weight * distance_weight * strong_weight
+                edge_support[edge] += 1
+                if dst_item in strong_items:
+                    strong_support[edge] += 1
+
+    outgoing_edges: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+    for (src_item, dst_item), raw_score in edge_scores.items():
+        score = round(raw_score, 6)
+        if score < min_score:
+            continue
+        outgoing_edges[src_item].append(
+            {
+                "src_item": src_item,
+                "dst_item": dst_item,
+                "score": score,
+                "cooc_cnt": edge_support[(src_item, dst_item)],
+                "strong_dst_cnt": strong_support[(src_item, dst_item)],
+                "src_occurrence_cnt": item_occurrence_count[src_item],
+                "dst_occurrence_cnt": item_occurrence_count[dst_item],
+                "window": window,
+                "strong_multiplier": strong_multiplier,
+            }
+        )
+
+    output_path = output_dir / "item_graph_recall.jsonl"
+    rows_written = 0
+    with output_path.open("w", encoding="utf-8") as sink:
+        for src_item in sorted(outgoing_edges):
+            neighbors = sorted(
+                outgoing_edges[src_item],
+                key=lambda item: (-item["score"], -item["cooc_cnt"], item["dst_item"]),
+            )[:top_k]
+            for neighbor in neighbors:
+                sink.write(compact_json(neighbor) + "\n")
+                rows_written += 1
+
+    return {
+        "output_path": str(output_path),
+        "rows_written": rows_written,
+        "users_used": users_used,
+        "unique_src_item_count": len(outgoing_edges),
+        "unique_edge_count": sum(len(edges) for edges in outgoing_edges.values()),
+        "window": window,
+        "top_k": top_k,
+        "min_score": min_score,
+        "strong_multiplier": strong_multiplier,
+    }
+
+
 def build_category_and_semantic_views(
     items_path: Path,
     output_dir: Path,
@@ -358,6 +483,10 @@ def main() -> None:
         args.recent_window_ratio,
         args.max_items_per_user_for_itemcf,
         args.category_top_k,
+        args.item_graph_window,
+        args.item_graph_top_k,
+        args.item_graph_min_score,
+        args.item_graph_strong_multiplier,
     )
 
     input_dir = Path(args.input_dir)
@@ -384,6 +513,14 @@ def main() -> None:
         output_dir,
         args.max_items_per_user_for_itemcf,
     )
+    item_graph_stats = build_item_graph_view(
+        train_user_sequences_path,
+        output_dir,
+        args.item_graph_window,
+        args.item_graph_top_k,
+        args.item_graph_min_score,
+        args.item_graph_strong_multiplier,
+    )
     category_stats = build_category_and_semantic_views(
         items_path,
         output_dir,
@@ -399,6 +536,7 @@ def main() -> None:
             "popular_recall": popularity_stats["output_path"],
             "itemcf_recall_weak": itemcf_stats["weak"]["output_path"],
             "itemcf_recall_strong": itemcf_stats["strong"]["output_path"],
+            "item_graph_recall": item_graph_stats["output_path"],
             "category_recall_items": category_stats["category_items_path"],
             "category_top_items": category_stats["category_top_path"],
             "semantic_recall_inputs": category_stats["semantic_path"],
@@ -411,9 +549,14 @@ def main() -> None:
             "recent_window_ratio": args.recent_window_ratio,
             "max_items_per_user_for_itemcf": args.max_items_per_user_for_itemcf,
             "category_top_k": args.category_top_k,
+            "item_graph_window": args.item_graph_window,
+            "item_graph_top_k": args.item_graph_top_k,
+            "item_graph_min_score": args.item_graph_min_score,
+            "item_graph_strong_multiplier": args.item_graph_strong_multiplier,
         },
         "popular_recall": popularity_stats,
         "itemcf_recall": itemcf_stats,
+        "item_graph_recall": item_graph_stats,
         "category_recall": category_stats,
     }
     manifest_path = write_manifest(output_dir, manifest_payload)
@@ -422,6 +565,7 @@ def main() -> None:
     print(f"Popularity recall written to: {popularity_stats['output_path']}")
     print(f"Weak ItemCF recall written to: {itemcf_stats['weak']['output_path']}")
     print(f"Strong ItemCF recall written to: {itemcf_stats['strong']['output_path']}")
+    print(f"Item graph recall written to: {item_graph_stats['output_path']}")
     print(f"Category recall written to: {category_stats['category_items_path']}")
     print(f"Semantic recall inputs written to: {category_stats['semantic_path']}")
     print(f"Manifest written to: {manifest_path}")

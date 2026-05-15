@@ -1,22 +1,29 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import Counter
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 from rs_core.common.config import load_config
 from rs_core.common.io import read_jsonl, write_json, write_jsonl
 from rs_core.recsys.candidate_merge import (
     load_category_candidates,
+    load_graph_walk_seed_recall,
+    load_item_graph_recall,
     load_itemcf_by_source,
     load_popular_candidates,
     load_semantic_index,
+    load_two_tower_index,
+    load_two_tower_seed_recall,
     merge_for_user,
 )
-from rs_core.recsys.evaluation import evaluate, heldout_positives
+from rs_core.recsys.evaluation import evaluate, frozen_candidate_signature, heldout_positives, inspect_physical_ranking_pipeline_artifacts
 from rs_core.recsys.ranking import rank_candidates
 from rs_core.rsagent.decision import make_agent_decision
+from rs_core.rsagent.feedback_rerank import apply_feedback_rerank
 from rs_core.rsagent.inference_policy import RerankPolicyClient, apply_optional_inference_policy, resolve_inference_policy_config
 from rs_core.rsagent.policy import apply_feedback_to_candidates, normalize_feedback_input, parse_feedback
 from rs_core.rsagent.schema import FeedbackConstraints, RecommendationTurnResult
@@ -43,8 +50,19 @@ def run_hybrid_demo(
     report_path = _resolve_path(config.get("report_path", "dic/HYBRID_DEMO_SMALL_REPORT.md"))
 
     paths = _required_paths(clean_dir, views_dir)
-    if config.get("semantic_enabled"):
+    if config.get("semantic_enabled") or config.get("metadata_neighbor_enabled"):
         paths["semantic"] = views_dir / "semantic_recall_inputs.jsonl"
+    if config.get("two_tower_enabled"):
+        paths["two_tower"] = _resolve_two_tower_artifact_path(config, views_dir)
+    if config.get("two_tower_seed_enabled"):
+        paths["two_tower_seed"] = _resolve_two_tower_seed_artifact_path(config, views_dir)
+        if config.get("fail_on_missing_sidecar"):
+            paths["two_tower_seed_manifest"] = _resolve_two_tower_seed_manifest_path(config, views_dir)
+    if config.get("item_graph_enabled"):
+        paths["item_graph"] = _resolve_item_graph_artifact_path(config, views_dir)
+    if config.get("graph_walk_seed_enabled"):
+        paths["graph_walk_seed"] = _resolve_graph_walk_seed_artifact_path(config, views_dir)
+        paths["graph_walk_seed_manifest"] = _resolve_graph_walk_seed_manifest_path(config, views_dir)
     _ensure_inputs(paths)
 
     popular = load_popular_candidates(paths["popular"], limit=int(config.get("popular_fallback_count", 50)))
@@ -53,6 +71,7 @@ def run_hybrid_demo(
     if evaluation_mode not in {"valid_test", "leave_one_positive_out"}:
         raise ValueError(f"Unsupported evaluation_mode: {evaluation_mode}")
 
+    run_started_at = perf_counter()
     train_sequences = read_jsonl(paths["sequences"])
     if limit_users is not None:
         train_sequences = train_sequences[:limit_users]
@@ -63,14 +82,37 @@ def run_hybrid_demo(
     itemcf_seed_items = _itemcf_seed_items(train_sequences)
     itemcf_weak = load_itemcf_by_source(paths["itemcf_weak"], "itemcf_weak", itemcf_seed_items)
     itemcf_strong = load_itemcf_by_source(paths["itemcf_strong"], "itemcf_strong", itemcf_seed_items)
+    item_graph = load_item_graph_recall(paths["item_graph"], itemcf_seed_items) if config.get("item_graph_enabled") else {}
+    graph_walk_seed = (
+        load_graph_walk_seed_recall(paths["graph_walk_seed"], itemcf_seed_items, paths["graph_walk_seed_manifest"])
+        if config.get("graph_walk_seed_enabled")
+        else {}
+    )
+    two_tower_seed = (
+        load_two_tower_seed_recall(
+            paths["two_tower_seed"],
+            itemcf_seed_items,
+            paths.get("two_tower_seed_manifest") if config.get("fail_on_missing_sidecar") else None,
+        )
+        if config.get("two_tower_seed_enabled")
+        else {}
+    )
     item_category = _load_item_category(paths["category_items"])
-    semantic_index = load_semantic_index(paths["semantic"], config.get("semantic_text_fields")) if config.get("semantic_enabled") else {}
+    semantic_index = load_semantic_index(paths["semantic"], config.get("semantic_text_fields")) if config.get("semantic_enabled") or config.get("metadata_neighbor_enabled") else {}
+    two_tower_index = (
+        load_two_tower_index(paths["two_tower"], config.get("two_tower_text_fields"))
+        if config.get("two_tower_enabled")
+        else {}
+    )
 
     candidates_by_user = {}
     rankings_by_user = {}
     fallback_users: set[str] = set()
-    source_diagnostics = _source_diagnostics(train_sequences, itemcf_weak, itemcf_strong)
+    source_diagnostics = _source_diagnostics(train_sequences, itemcf_weak, itemcf_strong, item_graph, two_tower_seed, graph_walk_seed)
     recommendation_rows = []
+    candidate_generation_latencies: list[float] = []
+    ranking_latencies: list[float] = []
+    recommendation_latencies: list[float] = []
     for sequence in train_sequences:
         user_id = sequence.get("user_id", "")
         result = recommend_for_user(
@@ -82,6 +124,10 @@ def run_hybrid_demo(
             item_category,
             config,
             semantic_index,
+            two_tower_index,
+            item_graph,
+            two_tower_seed,
+            graph_walk_seed,
             feedback_constraints=feedback_constraints,
             inference_client=inference_client,
             turn_index=2 if feedback_constraints else 1,
@@ -94,6 +140,10 @@ def run_hybrid_demo(
         rankings_by_user[user_id] = ranking
         if fallback_used:
             fallback_users.add(user_id)
+        timing = result.diagnostics.get("timing", {})
+        candidate_generation_latencies.append(float(timing.get("candidate_generation_seconds", 0.0)))
+        ranking_latencies.append(float(timing.get("ranking_seconds", 0.0)))
+        recommendation_latencies.append(float(timing.get("total_recommendation_seconds", 0.0)))
         row = decision.to_dict()
         row["candidate_count"] = len(candidates)
         row["diagnostics"] = result.diagnostics
@@ -107,6 +157,13 @@ def run_hybrid_demo(
     metrics = evaluate(candidates_by_user, rankings_by_user, holdout, config, fallback_users).to_dict()
     metrics["evaluation_mode"] = evaluation_mode
     metrics["source_diagnostics"] = source_diagnostics
+    metrics["latency"] = _latency_summary(
+        candidate_generation_latencies,
+        ranking_latencies,
+        recommendation_latencies,
+        perf_counter() - run_started_at,
+    )
+    metrics["diagnostic_gate"] = _diagnostic_gate(metrics, config)
     if evaluation_mode == "leave_one_positive_out":
         metrics.update(lopo_stats)
     metrics["agent_evaluation_feedback"] = feedback_constraints.to_dict() if feedback_constraints else {}
@@ -128,20 +185,72 @@ def run_hybrid_demo(
     metrics_path = output_dir / "metrics.json"
     ranking_cases_path = output_dir / "ranking_hit_cases.jsonl"
     ranking_case_summary_path = output_dir / "ranking_case_summary.json"
+    recall_registry_artifact_path = output_dir / "recall_registry_artifact.json"
+    source_coverage_path = output_dir / "recall_source_coverage.json"
+    pool_curve_path = output_dir / "recall_pool_curve.json"
+    latency_report_path = output_dir / "recall_latency_report.json"
+    fallback_report_path = output_dir / "recall_fallback_report.json"
+    overlap_report_path = output_dir / "recall_overlap_source_contribution.json"
+    frozen_candidates_path = output_dir / "frozen_candidates.jsonl"
+    ranking_stage_trace_path = output_dir / "ranking_stage_trace.jsonl"
+    ranking_stage_summary_path = output_dir / "ranking_stage_summary.json"
+    if config.get("export_frozen_candidates", False):
+        frozen_rows = _frozen_candidate_export_rows(candidates_by_user)
+        write_jsonl(frozen_candidates_path, frozen_rows)
+        metrics["frozen_candidates_path"] = str(frozen_candidates_path)
+        metrics["frozen_candidates_signature"] = frozen_candidate_signature(frozen_rows)
+        metrics["config_summary"]["export_frozen_candidates"] = True
+        metrics["config_summary"]["frozen_candidates_path"] = str(frozen_candidates_path)
+    else:
+        frozen_candidates_path = None
+        metrics["config_summary"]["export_frozen_candidates"] = False
+    if config.get("export_ranking_stage_artifacts", False):
+        ranking_stage_trace_rows = _ranking_stage_trace_rows(candidates_by_user, config)
+        ranking_stage_summary = _ranking_stage_summary(ranking_stage_trace_rows, config, ranking_stage_trace_path, ranking_stage_summary_path)
+        write_jsonl(ranking_stage_trace_path, ranking_stage_trace_rows)
+        write_json(ranking_stage_summary_path, ranking_stage_summary)
+        metrics["ranking_stage_artifact_paths"] = {
+            "trace": str(ranking_stage_trace_path),
+            "summary": str(ranking_stage_summary_path),
+        }
+        metrics["ranking_stage_artifact_inspection"] = inspect_physical_ranking_pipeline_artifacts(ranking_stage_summary)
+        metrics["config_summary"]["export_ranking_stage_artifacts"] = True
+    else:
+        metrics["config_summary"]["export_ranking_stage_artifacts"] = False
+    promotion_artifact_paths = {
+        "source_coverage": source_coverage_path,
+        "pool_curve": pool_curve_path,
+        "latency": latency_report_path,
+        "fallback": fallback_report_path,
+        "overlap_source_contribution": overlap_report_path,
+    }
     write_jsonl(recommendations_path, recommendation_rows)
     write_jsonl(ranking_cases_path, ranking_cases)
     write_json(ranking_case_summary_path, ranking_case_summary)
+    _write_recall_promotion_artifacts(metrics, promotion_artifact_paths)
+    metrics["recall_registry_artifact_path"] = str(recall_registry_artifact_path)
+    metrics["recall_promotion_artifact_paths"] = {name: str(path) for name, path in promotion_artifact_paths.items()}
     write_json(metrics_path, metrics)
+    recall_registry_artifact = _recall_registry_artifact(config, metrics, metrics_path, frozen_candidates_path, promotion_artifact_paths)
+    write_json(recall_registry_artifact_path, recall_registry_artifact)
     _write_report(report_path, config, metrics, recommendation_rows, ranking_case_summary)
 
-    return {
+    result = {
         "recommendations_path": str(recommendations_path),
         "metrics_path": str(metrics_path),
         "ranking_cases_path": str(ranking_cases_path),
         "ranking_case_summary_path": str(ranking_case_summary_path),
+        "recall_registry_artifact_path": str(recall_registry_artifact_path),
+        "recall_promotion_artifact_paths": {name: str(path) for name, path in promotion_artifact_paths.items()},
         "report_path": str(report_path),
         "metrics": metrics,
     }
+    if frozen_candidates_path is not None:
+        result["frozen_candidates_path"] = str(frozen_candidates_path)
+    if config.get("export_ranking_stage_artifacts", False):
+        result["ranking_stage_trace_path"] = str(ranking_stage_trace_path)
+        result["ranking_stage_summary_path"] = str(ranking_stage_summary_path)
+    return result
 
 
 def run_qwen_evaluation_harness(
@@ -213,6 +322,297 @@ def _feedback_constraints_from_config(config: dict[str, Any], feedback_text: str
     if not text:
         return None
     return parse_feedback(normalize_feedback_input(str(text)))
+
+
+def _recall_registry_artifact(
+    config: dict[str, Any],
+    metrics: dict[str, Any],
+    metrics_path: Path,
+    frozen_candidates_path: Path | None,
+    artifact_paths: dict[str, Path] | None = None,
+) -> dict[str, Any]:
+    promotion_artifacts = _recall_promotion_artifacts(metrics, frozen_candidates_path, artifact_paths or {})
+    missing_promotion_artifacts = [
+        name for name, artifact in promotion_artifacts.items()
+        if not artifact.get("available")
+    ]
+    missing_promotion_next_actions = {
+        name: artifact.get("next_action", "Produce and attach the missing recall promotion artifact before promotion.")
+        for name, artifact in promotion_artifacts.items()
+        if not artifact.get("available")
+    }
+    gate_status = "INCONCLUSIVE_MISSING_ARTIFACT" if missing_promotion_artifacts else "PASS_OBSERVATION_ONLY"
+    allowed_metrics = [
+        "empty_candidate_rate",
+        "empty_user_count",
+        "candidate_count_p50",
+        "candidate_count_p90",
+        "candidate_count_max",
+        "candidate_hit_users",
+        "candidate_hit_rate",
+        "candidate_recall_at_candidate_k",
+        "candidate_hit_at_candidate_k",
+        "catalog_coverage",
+        "source_coverage",
+        "source_marginal_candidate_hit",
+        "source_overlap_jaccard",
+        "source_pair_overlap",
+        "fallback_trigger_rate",
+        "fallback_success_rate",
+        "candidate_generation_latency_p50",
+        "candidate_generation_latency_p95",
+        "candidate_generation_latency_p99",
+        "artifact_completeness",
+        "reproducibility",
+        "leakage_risk",
+    ]
+    forbidden_metrics = [
+        "hit_rate_at_k",
+        "ndcg",
+        "mrr",
+        "map",
+        "topk_hit_rate",
+        "topk_hit_users",
+        "ranking_gap_pool_has_target",
+        "ltr_score",
+        "rerank_score",
+        "ctr",
+        "cvr",
+        "gmv",
+    ]
+    diagnostic_only_metrics = ["hit_rate_at_k", "ndcg_at_k", "mrr_at_k", "map_at_k", "candidate_hit_missed_topk_users"]
+    diagnostic_excluded_metrics = ["topk_hit_rate", "topk_hit_users", "ranking_gap_pool_has_target", "ltr_score", "rerank_score", "ctr", "cvr", "gmv"]
+    method_card_evidence = _method_card_evidence(config, metrics)
+    return {
+        "schema_version": "recall_experiment_registry_artifact_v1",
+        "schema_path": ".omc/recall/schema/recall_experiment_registry.schema.yaml",
+        "source_registry_path": ".omc/recall/registry/source_group_registry.yaml",
+        "experiment_id": str(config.get("strategy_name") or "hybrid_demo_recall_observation"),
+        "method_family": "hybrid_merge",
+        "source_group": "hybrid_merge",
+        "source_name": "hybrid_merge",
+        "lane": "observation",
+        "scope_contract": "recall_only",
+        "promotion_scope": "recall_only_candidate_pool_default",
+        "evaluation_contract": str(metrics.get("evaluation_mode") or metrics.get("config_summary", {}).get("evaluation_mode") or "unknown"),
+        "candidate_pool_size": int(config.get("candidate_pool_size", 50)),
+        "input_signature": {
+            "evaluation_mode": metrics.get("evaluation_mode"),
+            "users_total": metrics.get("users_total"),
+            "users_with_holdout": metrics.get("users_with_holdout"),
+            "hit_rate_denominator": metrics.get("hit_rate_denominator", "users_with_holdout"),
+        },
+        "artifact_signature": {
+            "metrics_json_sha256": _sha256_file(metrics_path),
+            "frozen_candidates_jsonl_sha256": _sha256_file(frozen_candidates_path) if frozen_candidates_path else None,
+        },
+        "method_card_evidence": method_card_evidence,
+        "canonical_baseline": method_card_evidence["canonical_baseline"],
+        "baseline_vs_source": method_card_evidence["baseline_vs_source"],
+        "evidence_level": method_card_evidence["evidence_level"],
+        "experiment_scope": method_card_evidence["experiment_scope"],
+        "pool_displacement_risk": method_card_evidence["pool_displacement_risk"],
+        "source_candidate_counts": method_card_evidence["source_candidate_counts"],
+        "legacy_migration": method_card_evidence["legacy_migration"],
+        "promotion_blockers": method_card_evidence["promotion_blockers"],
+        "promotion_required_artifacts": promotion_artifacts,
+        "allowed_metrics": allowed_metrics,
+        "diagnostic_only_metrics": diagnostic_only_metrics,
+        "diagnostic_excluded_metrics": diagnostic_excluded_metrics,
+        "forbidden_metrics": forbidden_metrics,
+        "metrics_path": str(metrics_path),
+        "frozen_candidates_path": str(frozen_candidates_path) if frozen_candidates_path else None,
+        "missing_promotion_required_artifacts": missing_promotion_artifacts,
+        "missing_promotion_next_actions": missing_promotion_next_actions,
+        "gate_status": gate_status,
+        "decision_reason": "Hybrid workflow emits a recall-only registry artifact; promotion requires complete frozen candidates, source ablation, latency, fallback, and overlap/source contribution evidence without ranking or online business metrics.",
+        "rollback_baseline": gate_status != "PASS_OBSERVATION_ONLY",
+    }
+
+
+def _method_card_evidence(config: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+    canonical_baseline = "semantic_title_category_expansion"
+    source_name = str(config.get("source_name") or config.get("strategy_name") or "hybrid_merge")
+    candidate_pool_size = int(config.get("candidate_pool_size", 50))
+    before_cap = _source_candidate_counts_before_cap(metrics)
+    after_cap = dict(metrics.get("source_item_coverage", {}) or {})
+    pool_displacement_risk = str(config.get("pool_displacement_risk", "unknown"))
+    promotion_blockers = []
+    if pool_displacement_risk == "unknown":
+        promotion_blockers.append("pool_displacement_risk_unknown")
+    return {
+        "schema_version": "recall_method_card_evidence_v1",
+        "canonical_baseline": canonical_baseline,
+        "baseline_vs_source": {
+            "baseline_source_name": canonical_baseline,
+            "source_name": source_name,
+            "comparison_scope": "candidate_pool_recall_only",
+            "candidate_pool_size": candidate_pool_size,
+            "recall_only_metrics": {
+                "candidate_hit_rate_at_pool": metrics.get("candidate_hit_rate_at_pool"),
+                "recall_at_pool": metrics.get("recall_at_pool"),
+                "candidate_hit_users": metrics.get("candidate_hit_users"),
+                "empty_candidate_rate": metrics.get("empty_candidate_rate"),
+                "fallback_rate": metrics.get("fallback_rate"),
+            },
+        },
+        "evidence_level": str(config.get("evidence_level", "observation")),
+        "experiment_scope": str(config.get("experiment_scope", metrics.get("evaluation_mode", "unknown"))),
+        "pool_displacement_risk": pool_displacement_risk,
+        "source_candidate_counts": {
+            "before_cap": before_cap,
+            "after_cap": after_cap,
+            "candidate_pool_size": candidate_pool_size,
+        },
+        "legacy_migration": {
+            "legacy_source_name": config.get("legacy_source_name"),
+            "legacy_artifact_path": config.get("legacy_artifact_path"),
+            "migration_status": str(config.get("legacy_migration_status", "not_declared")),
+            "migration_notes": str(config.get("legacy_migration_notes", "")),
+        },
+        "promotion_blockers": promotion_blockers,
+    }
+
+
+
+def _source_candidate_counts_before_cap(metrics: dict[str, Any]) -> dict[str, int]:
+    diagnostics = dict(metrics.get("source_diagnostics", {}) or {})
+    mapping = {
+        "itemcf": "itemcf_raw_unseen_candidates",
+        "item_graph": "item_graph_raw_unseen_candidates",
+        "two_tower_seed": "two_tower_seed_raw_unseen_candidates",
+        "graph_walk_seed": "graph_walk_seed_raw_unseen_candidates",
+    }
+    counts = {
+        source: int(diagnostics[key])
+        for source, key in mapping.items()
+        if key in diagnostics
+    }
+    for source, count in (metrics.get("recall_source_coverage", {}) or {}).items():
+        counts.setdefault(str(source), int(count))
+    return dict(sorted(counts.items()))
+
+
+
+def _recall_promotion_artifacts(
+    metrics: dict[str, Any],
+    frozen_candidates_path: Path | None,
+    artifact_paths: dict[str, Path],
+) -> dict[str, dict[str, Any]]:
+    latency = metrics.get("latency") if isinstance(metrics.get("latency"), dict) else {}
+    source_overlap = metrics.get("source_overlap") if isinstance(metrics.get("source_overlap"), dict) else {}
+    source_contribution = {
+        "candidate_hit_source_coverage": metrics.get("candidate_hit_source_coverage"),
+        "per_source_candidate_contribution": metrics.get("per_source_candidate_contribution"),
+        "source_marginal_candidate_hit_users": metrics.get("source_marginal_candidate_hit_users"),
+        "source_marginal_candidate_hit_rate": metrics.get("source_marginal_candidate_hit_rate"),
+    }
+    return {
+        "frozen_candidates": {
+            "available": frozen_candidates_path is not None and frozen_candidates_path.exists(),
+            "path": str(frozen_candidates_path) if frozen_candidates_path else None,
+            "sha256": _sha256_file(frozen_candidates_path),
+            "signature": metrics.get("frozen_candidates_signature"),
+        },
+        "ablation": {
+            "available": False,
+            "path": None,
+            "sha256": None,
+            "metrics": source_contribution,
+            "reason": "Dedicated leave-one-source-out ablation is not produced by run_hybrid_demo.",
+            "next_action": "Run the dedicated recall ablation workflow and attach its evidence manifest before promotion.",
+        },
+        "latency": {
+            "available": "candidate_generation_p95_seconds" in latency and _path_exists(artifact_paths.get("latency")),
+            "path": _path_string(artifact_paths.get("latency")),
+            "sha256": _sha256_file(artifact_paths.get("latency")),
+            "metrics": {
+                "candidate_generation_avg_seconds": latency.get("candidate_generation_avg_seconds"),
+                "candidate_generation_p95_seconds": latency.get("candidate_generation_p95_seconds"),
+            },
+        },
+        "fallback": {
+            "available": metrics.get("fallback_rate") is not None and _path_exists(artifact_paths.get("fallback")),
+            "path": _path_string(artifact_paths.get("fallback")),
+            "sha256": _sha256_file(artifact_paths.get("fallback")),
+            "metrics": {
+                "fallback_rate": metrics.get("fallback_rate"),
+                "empty_candidate_users": metrics.get("empty_candidate_users"),
+                "empty_candidate_rate": metrics.get("empty_candidate_rate"),
+            },
+        },
+        "overlap_source_contribution": {
+            "available": bool(source_overlap) and _path_exists(artifact_paths.get("overlap_source_contribution")),
+            "path": _path_string(artifact_paths.get("overlap_source_contribution")),
+            "sha256": _sha256_file(artifact_paths.get("overlap_source_contribution")),
+            "metrics": {
+                "source_overlap": source_overlap,
+                "source_user_coverage": metrics.get("source_user_coverage"),
+                "source_item_coverage": metrics.get("source_item_coverage"),
+                "recall_source_coverage": metrics.get("recall_source_coverage"),
+            },
+        },
+    }
+
+
+def _write_recall_promotion_artifacts(metrics: dict[str, Any], artifact_paths: dict[str, Path]) -> None:
+    source_coverage = {
+        "source_user_coverage": metrics.get("source_user_coverage"),
+        "source_item_coverage": metrics.get("source_item_coverage"),
+        "recall_source_coverage": metrics.get("recall_source_coverage"),
+        "candidate_hit_source_coverage": metrics.get("candidate_hit_source_coverage"),
+        "per_source_candidate_contribution": metrics.get("per_source_candidate_contribution"),
+    }
+    pool_curve = {
+        "candidate_hit_rate_at_cutoffs": metrics.get("candidate_hit_rate_at_cutoffs"),
+        "candidate_recall_at_cutoffs": metrics.get("candidate_recall_at_cutoffs"),
+        "source_marginal_candidate_hit_users": metrics.get("source_marginal_candidate_hit_users"),
+        "source_marginal_candidate_hit_rate": metrics.get("source_marginal_candidate_hit_rate"),
+    }
+    latency = {
+        "candidate_generation_avg_seconds": (metrics.get("latency") or {}).get("candidate_generation_avg_seconds"),
+        "candidate_generation_p95_seconds": (metrics.get("latency") or {}).get("candidate_generation_p95_seconds"),
+    }
+    fallback = {
+        "fallback_rate": metrics.get("fallback_rate"),
+        "empty_candidate_users": metrics.get("empty_candidate_users"),
+        "empty_candidate_rate": metrics.get("empty_candidate_rate"),
+    }
+    overlap = {
+        "source_overlap": metrics.get("source_overlap"),
+        "source_user_coverage": metrics.get("source_user_coverage"),
+        "source_item_coverage": metrics.get("source_item_coverage"),
+        "recall_source_coverage": metrics.get("recall_source_coverage"),
+    }
+    payloads = {
+        "source_coverage": source_coverage,
+        "pool_curve": pool_curve,
+        "latency": latency,
+        "fallback": fallback,
+        "overlap_source_contribution": overlap,
+    }
+    for name, payload in payloads.items():
+        path = artifact_paths.get(name)
+        if path is not None:
+            write_json(path, payload)
+
+
+def _path_exists(path: Path | None) -> bool:
+    return path is not None and path.exists()
+
+
+def _path_string(path: Path | None) -> str | None:
+    return str(path) if path is not None else None
+
+
+def _sha256_file(path: Path | None) -> str | None:
+    if path is None or not path.exists():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as file:
+        for chunk in iter(lambda: file.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _qwen_evaluation_defaults(config: dict[str, Any]) -> dict[str, Any]:
@@ -491,17 +891,37 @@ def recommend_for_user(
     item_category: dict[str, str],
     config: dict[str, Any],
     semantic_index: dict[str, dict[str, Any]] | None = None,
+    two_tower_index: dict[str, dict[str, Any]] | None = None,
+    item_graph: dict[str, list[Any]] | None = None,
+    two_tower_seed: dict[str, list[Any]] | None = None,
+    graph_walk_seed: dict[str, list[Any]] | None = None,
     feedback_constraints: FeedbackConstraints | None = None,
     prior_turn_items: set[str] | None = None,
     inference_client: RerankPolicyClient | None = None,
     turn_index: int | None = None,
 ) -> RecommendationTurnResult:
     user_id = user_sequence.get("user_id", "")
+    started_at = perf_counter()
+    candidate_started_at = perf_counter()
     candidates, fallback_used = merge_for_user(
-        user_sequence, popular, itemcf_weak, itemcf_strong, category_top, item_category, config, semantic_index
+        user_sequence,
+        popular,
+        itemcf_weak,
+        itemcf_strong,
+        category_top,
+        item_category,
+        config,
+        semantic_index,
+        two_tower_index,
+        item_graph,
+        two_tower_seed,
+        graph_walk_seed,
     )
     candidates, feedback_diagnostics = apply_feedback_to_candidates(
         candidates, feedback_constraints, config, prior_turn_items
+    )
+    candidates, feedback_rerank_diagnostics = apply_feedback_rerank(
+        candidates, feedback_constraints, itemcf_weak, itemcf_strong, config, turn_index
     )
     candidates, inference_diagnostics = apply_optional_inference_policy(
         user_sequence=user_sequence,
@@ -511,12 +931,22 @@ def recommend_for_user(
         client=inference_client,
         turn_index=turn_index,
     )
+    candidate_generation_seconds = perf_counter() - candidate_started_at
+    ranking_started_at = perf_counter()
     ranking = rank_candidates(user_id, candidates, config)
+    ranking_seconds = perf_counter() - ranking_started_at
     ranking.fallback_used = fallback_used
     diagnostics = {
         "candidate_count": len(candidates),
         "source_coverage": _candidate_source_coverage(candidates),
+        "timing": {
+            "candidate_generation_seconds": round(candidate_generation_seconds, 6),
+            "ranking_seconds": round(ranking_seconds, 6),
+            "total_recommendation_seconds": round(perf_counter() - started_at, 6),
+        },
+        **_internal_fallback_diagnostics(candidates),
         **feedback_diagnostics,
+        **feedback_rerank_diagnostics,
         **inference_diagnostics,
     }
     decision = make_agent_decision(user_id, ranking, config, diagnostics)
@@ -545,6 +975,119 @@ def _candidate_source_coverage(candidates: list[Any]) -> dict[str, int]:
         for source in candidate.sources:
             coverage[source] += 1
     return dict(sorted(coverage.items()))
+
+
+def _frozen_candidate_export_rows(candidates_by_user: dict[str, list[Any]]) -> list[dict[str, Any]]:
+    rows = []
+    for user_id, candidates in candidates_by_user.items():
+        for rank, candidate in enumerate(candidates, start=1):
+            rows.append({
+                "user_id": user_id,
+                "candidate_rank": rank,
+                "item_id": candidate.item_id,
+                "sources": list(candidate.sources),
+                "source_scores": {source: float(score) for source, score in sorted(candidate.source_scores.items())},
+                "category": candidate.category,
+                "metadata": candidate.metadata,
+            })
+    return rows
+
+
+def _ranking_stage_trace_rows(candidates_by_user: dict[str, list[Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for user_id in sorted(candidates_by_user):
+        candidates = candidates_by_user[user_id]
+        full_ranking = rank_candidates(user_id, candidates, config, top_k=len(candidates) or int(config.get("top_k", 5))).items
+        for item in full_ranking:
+            score_trace = item.get("score_trace", []) or []
+            rows.append({
+                "user_id": user_id,
+                "item_id": item.get("parent_asin"),
+                "candidate_pool_size": int(config.get("candidate_pool_size", 50)),
+                "top_k": int(config.get("top_k", 5)),
+                "input_candidate_count": len(candidates),
+                "coarse_rank": item.get("coarse_rank"),
+                "fine_rank": item.get("fine_rank"),
+                "final_rank": item.get("final_rank"),
+                "coarse_score": item.get("coarse_score"),
+                "fine_score": item.get("fine_score"),
+                "rerank_score": item.get("rerank_score"),
+                "final_score": item.get("final_score"),
+                "score": item.get("score"),
+                "rank_movement": item.get("rank_movement", {}),
+                "stage_trace": score_trace,
+                "stage_names": [str(stage.get("stage")) for stage in score_trace if stage.get("stage")],
+                "sources": item.get("sources", []),
+                "score_components": item.get("score_components", {}),
+                "rerank_events": item.get("rerank_events", []),
+            })
+    return rows
+
+
+
+def _ranking_stage_summary(
+    rows: list[dict[str, Any]],
+    config: dict[str, Any],
+    trace_path: Path,
+    summary_path: Path,
+) -> dict[str, Any]:
+    expected_stages = ["coarse", "fine", "rerank"]
+    stage_counts = {stage: 0 for stage in expected_stages}
+    pass_through_stage_counts = {stage: 0 for stage in expected_stages}
+    input_candidate_counts_by_user: dict[str, int] = {}
+    for row in rows:
+        user_id = str(row.get("user_id", ""))
+        if user_id and user_id not in input_candidate_counts_by_user:
+            input_candidate_counts_by_user[user_id] = int(row.get("input_candidate_count", 0) or 0)
+        stages = set(row.get("stage_names", []))
+        for stage in expected_stages:
+            if stage in stages:
+                stage_counts[stage] += 1
+    total_ranked_items = len(rows)
+    for stage in expected_stages:
+        if stage_counts[stage] == total_ranked_items:
+            pass_through_stage_counts[stage] = stage_counts[stage]
+    user_count = len(input_candidate_counts_by_user)
+    return {
+        "schema_version": "ranking_stage_artifact_v1",
+        "trace_path": str(trace_path),
+        "summary_path": str(summary_path),
+        "candidate_pool_size": int(config.get("candidate_pool_size", 50)),
+        "top_k": int(config.get("top_k", 5)),
+        "expected_stages": expected_stages,
+        "stage_counts": stage_counts,
+        "pass_through_stage_counts": pass_through_stage_counts,
+        "total_ranked_items": total_ranked_items,
+        "user_count": user_count,
+        "input_candidate_count_total": sum(input_candidate_counts_by_user.values()),
+        "input_candidate_count_min": min(input_candidate_counts_by_user.values()) if input_candidate_counts_by_user else 0,
+        "input_candidate_count_max": max(input_candidate_counts_by_user.values()) if input_candidate_counts_by_user else 0,
+        "online_metrics": {},
+        "online_metric_claims": [],
+    }
+
+
+
+def _internal_fallback_diagnostics(candidates: list[Any]) -> dict[str, Any]:
+    reasons = Counter(
+        str(candidate.metadata.get("_internal_fallback_reason"))
+        for candidate in candidates
+        if candidate.metadata.get("_internal_fallback_reason")
+    )
+    sources = Counter(
+        str(candidate.metadata.get("_internal_fallback_source"))
+        for candidate in candidates
+        if candidate.metadata.get("_internal_fallback_source")
+    )
+    if not reasons and not sources:
+        return {}
+    return {
+        "fallback_recovery": {
+            "used": True,
+            "reasons": dict(sorted(reasons.items())),
+            "sources": dict(sorted(sources.items())),
+        }
+    }
 
 
 def _resolve_path(value: str | Path) -> Path:
@@ -636,17 +1179,275 @@ def _remove_item_timestamps(
     return updated_items, updated_timestamps
 
 
+def _resolve_two_tower_artifact_path(config: dict[str, Any], views_dir: Path) -> Path:
+    configured_path = config.get("two_tower_artifact_path")
+    if configured_path:
+        return _resolve_path(configured_path)
+    return views_dir / str(config.get("two_tower_artifact_name", "semantic_recall_inputs.jsonl"))
+
+
+def _resolve_item_graph_artifact_path(config: dict[str, Any], views_dir: Path) -> Path:
+    configured_path = config.get("item_graph_artifact_path")
+    if configured_path:
+        return _resolve_path(configured_path)
+    return views_dir / str(config.get("item_graph_artifact_name", "item_graph_recall.jsonl"))
+
+
+def _resolve_two_tower_seed_artifact_path(config: dict[str, Any], views_dir: Path) -> Path:
+    configured_path = config.get("two_tower_seed_artifact_path") or config.get("two_tower_seed_sidecar_path")
+    if configured_path:
+        return _resolve_path(configured_path)
+    return views_dir / str(config.get("two_tower_seed_artifact_name", config.get("two_tower_seed_sidecar_name", "two_tower_seed_recall.jsonl")))
+
+
+def _resolve_two_tower_seed_manifest_path(config: dict[str, Any], views_dir: Path) -> Path:
+    configured_path = config.get("two_tower_seed_manifest_path")
+    if configured_path:
+        return _resolve_path(configured_path)
+    return views_dir / str(config.get("two_tower_seed_manifest_name", "two_tower_seed_manifest.json"))
+
+
+
+def _resolve_graph_walk_seed_artifact_path(config: dict[str, Any], views_dir: Path) -> Path:
+    configured_path = config.get("graph_walk_seed_artifact_path") or config.get("graph_walk_seed_sidecar_path")
+    if configured_path:
+        return _resolve_path(configured_path)
+    return views_dir / str(config.get("graph_walk_seed_artifact_name", config.get("graph_walk_seed_sidecar_name", "graph_walk_seed_neighbors.jsonl")))
+
+
+
+def _resolve_graph_walk_seed_manifest_path(config: dict[str, Any], views_dir: Path) -> Path:
+    configured_path = config.get("graph_walk_seed_manifest_path")
+    if configured_path:
+        return _resolve_path(configured_path)
+    return views_dir / str(config.get("graph_walk_seed_manifest_name", "graph_walk_seed_manifest.json"))
+
+
+def _latency_summary(
+    candidate_generation_latencies: list[float],
+    ranking_latencies: list[float],
+    recommendation_latencies: list[float],
+    total_run_seconds: float,
+) -> dict[str, float]:
+    return {
+        "candidate_generation_avg_seconds": _avg(candidate_generation_latencies),
+        "candidate_generation_p95_seconds": _percentile(candidate_generation_latencies, 0.95),
+        "ranking_avg_seconds": _avg(ranking_latencies),
+        "ranking_p95_seconds": _percentile(ranking_latencies, 0.95),
+        "recommendation_avg_seconds": _avg(recommendation_latencies),
+        "recommendation_p95_seconds": _percentile(recommendation_latencies, 0.95),
+        "total_run_seconds": round(total_run_seconds, 6),
+    }
+
+
+def _diagnostic_gate(metrics: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    top_k = int(config.get("top_k", 5))
+    candidate_pool_size = int(config.get("candidate_pool_size", 50))
+    candidate_hit_rate = float(metrics.get("candidate_hit_rate_at_pool") or 0.0)
+    hit_rate = float(metrics.get("hit_rate_at_k") or 0.0)
+    ndcg = float(metrics.get("ndcg_at_k") or 0.0)
+    mrr = float(metrics.get("mrr_at_k") or 0.0)
+    rank_p50 = metrics.get("candidate_hit_rank_p50")
+    rank_p90 = metrics.get("candidate_hit_rank_p90")
+    missed_topk = int(metrics.get("candidate_hit_missed_topk_users") or 0)
+    candidate_hit_users = int(metrics.get("candidate_hit_users") or 0)
+    fallback_rate = float(metrics.get("fallback_rate") or 0.0)
+    overlap = metrics.get("source_overlap", {}) or {}
+    multi_source_rate = float(overlap.get("multi_source_candidate_rate") or 0.0)
+    latency = metrics.get("latency", {}) or {}
+    ranking_p95 = float(latency.get("ranking_p95_seconds") or 0.0)
+    candidate_generation_p95 = float(latency.get("candidate_generation_p95_seconds") or 0.0)
+    recall_bottleneck = candidate_hit_rate < 0.1 or candidate_hit_users == 0
+    ranking_bottleneck = (
+        candidate_hit_users > 0
+        and (hit_rate + 0.001 < candidate_hit_rate)
+        and (missed_topk > 0 or (rank_p50 is not None and float(rank_p50) > top_k))
+    )
+    source_merge_bottleneck = fallback_rate >= 0.2 or (multi_source_rate < 0.1 and candidate_pool_size > top_k)
+    latency_bottleneck = candidate_pool_size >= 200 and ranking_p95 > 0.05
+    architecture_escalation = bool(latency_bottleneck or (recall_bottleneck and candidate_pool_size >= 200))
+    if recall_bottleneck or source_merge_bottleneck:
+        recommended_next_phase = "phase_1_11_recall_source_merge"
+    elif ranking_bottleneck:
+        recommended_next_phase = "phase_1_12_ranking_ltr_gate"
+    elif architecture_escalation:
+        recommended_next_phase = "phase_2_architecture_poc_review"
+    else:
+        recommended_next_phase = "phase_1_10_baseline_ready"
+    gate = {
+        "recall_bottleneck": recall_bottleneck,
+        "ranking_bottleneck": ranking_bottleneck,
+        "source_merge_bottleneck": source_merge_bottleneck,
+        "latency_bottleneck": latency_bottleneck,
+        "architecture_escalation": architecture_escalation,
+        "recommended_next_phase": recommended_next_phase,
+        "evidence": {
+            "top_k": top_k,
+            "candidate_pool_size": candidate_pool_size,
+            "candidate_hit_rate_at_pool": candidate_hit_rate,
+            "hit_rate_at_k": hit_rate,
+            "ndcg_at_k": ndcg,
+            "mrr_at_k": mrr,
+            "candidate_hit_users": candidate_hit_users,
+            "candidate_hit_missed_topk_users": missed_topk,
+            "candidate_hit_rank_p50": rank_p50,
+            "candidate_hit_rank_p90": rank_p90,
+            "fallback_rate": fallback_rate,
+            "multi_source_candidate_rate": multi_source_rate,
+            "ranking_p95_seconds": ranking_p95,
+            "candidate_generation_p95_seconds": candidate_generation_p95,
+        },
+    }
+    if config.get("two_tower_enabled") and config.get("strict_promotion_gate", {}).get("enabled", False):
+        gate["two_tower_strict_promotion_gate"] = _two_tower_strict_promotion_gate(metrics, config)
+    return gate
+
+
+def _two_tower_strict_promotion_gate(metrics: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
+    gate_config = dict(config.get("strict_promotion_gate", {}) or {})
+    evaluation_mode = str(metrics.get("evaluation_mode") or config.get("evaluation_mode", "valid_test"))
+    baseline = _strict_gate_metric_baseline(gate_config, "semantic_title_baseline")
+    lopo_baseline = _strict_gate_metric_baseline(gate_config, "semantic_title_lopo_baseline")
+    paired_valid_test = _strict_gate_metric_baseline(gate_config, "paired_valid_test")
+    paired_lopo = _strict_gate_metric_baseline(gate_config, "paired_lopo")
+    latency_budget = float(gate_config.get("candidate_generation_p95_seconds_budget", 0.05))
+    required_metrics = ["candidate_hit_rate_at_pool", "recall_at_pool"]
+    metric_checks = {
+        name: _metric_not_below(metrics, baseline, name)
+        for name in required_metrics
+    }
+    candidate_hit_users_check = _metric_not_below(metrics, baseline, "candidate_hit_users")
+    latency_check = float((metrics.get("latency") or {}).get("candidate_generation_p95_seconds") or 0.0) <= latency_budget
+    source_contribution = metrics.get("per_source_candidate_contribution", {}) or {}
+    source_overlap = metrics.get("source_overlap", {}) or {}
+    source_evidence_check = "two_tower" in (metrics.get("recall_source_coverage", {}) or {}) and bool(source_contribution) and bool(source_overlap)
+    lopo_reference = lopo_baseline if evaluation_mode == "leave_one_positive_out" else lopo_baseline
+    lopo_current = metrics if evaluation_mode == "leave_one_positive_out" else paired_lopo
+    lopo_checks = {
+        name: _metric_not_below(lopo_current, lopo_reference, name)
+        for name in required_metrics
+    } if lopo_current and lopo_reference else {}
+    paired_lopo_no_regression = bool(lopo_checks) and all(lopo_checks.values())
+    valid_test_mode = evaluation_mode == "valid_test"
+    promotable = bool(
+        valid_test_mode
+        and baseline
+        and all(metric_checks.values())
+        and candidate_hit_users_check
+        and paired_lopo_no_regression
+        and latency_check
+        and source_evidence_check
+    )
+    if evaluation_mode == "leave_one_positive_out":
+        decision = "lopo_sanity_only_no_promotion"
+    elif promotable:
+        decision = "eligible_for_manual_promotion_review"
+    else:
+        decision = "default_off_side_lane_only"
+    return {
+        "enabled": True,
+        "variant": gate_config.get("variant", config.get("two_tower_variant", "two_tower")),
+        "evaluation_mode": evaluation_mode,
+        "promotable": promotable,
+        "decision": decision,
+        "checks": {
+            "valid_test_mode": valid_test_mode,
+            "semantic_title_baseline_present": bool(baseline),
+            "valid_test_metrics_not_below_semantic_title_baseline": metric_checks,
+            "candidate_hit_users_not_down": candidate_hit_users_check,
+            "paired_lopo_no_regression": paired_lopo_no_regression,
+            "candidate_generation_p95_within_budget": latency_check,
+            "source_contribution_and_overlap_present": source_evidence_check,
+        },
+        "evidence": {
+            "current_metrics": {name: metrics.get(name) for name in required_metrics + ["candidate_hit_users"]},
+            "diagnostic_excluded_metrics": {name: metrics.get(name) for name in ["hit_rate_at_k", "ndcg_at_k", "mrr_at_k", "map_at_k"] if name in metrics},
+            "semantic_title_baseline_metrics": baseline,
+            "semantic_title_lopo_baseline_metrics": lopo_baseline,
+            "paired_valid_test_metrics": paired_valid_test,
+            "paired_lopo_metrics": paired_lopo,
+            "evidence_paths": _strict_gate_evidence_paths(gate_config),
+            "lopo_checks": lopo_checks,
+            "candidate_generation_p95_seconds": (metrics.get("latency") or {}).get("candidate_generation_p95_seconds"),
+            "candidate_generation_p95_seconds_budget": latency_budget,
+            "two_tower_candidate_contribution": source_contribution.get("two_tower", 0),
+            "source_overlap": source_overlap,
+        },
+    }
+
+
+def _metric_not_below(metrics: dict[str, Any], baseline: dict[str, Any], name: str) -> bool:
+    if name not in baseline:
+        return False
+    return float(metrics.get(name) or 0.0) + 1e-9 >= float(baseline.get(name) or 0.0)
+
+
+def _strict_gate_metric_baseline(gate_config: dict[str, Any], prefix: str) -> dict[str, Any]:
+    baseline = dict(gate_config.get(f"{prefix}_metrics", {}) or {})
+    path = gate_config.get(f"{prefix}_metrics_path")
+    if path:
+        metrics_path = _resolve_path(path)
+        if metrics_path.exists():
+            loaded = json.loads(metrics_path.read_text(encoding="utf-8"))
+            baseline.update({key: loaded.get(key) for key in ["candidate_hit_rate_at_pool", "recall_at_pool", "candidate_hit_users"] if key in loaded})
+    return baseline
+
+
+def _strict_gate_evidence_paths(gate_config: dict[str, Any]) -> dict[str, Any]:
+    paths = {}
+    for key in [
+        "semantic_title_baseline_metrics_path",
+        "semantic_title_lopo_baseline_metrics_path",
+        "paired_valid_test_metrics_path",
+        "paired_lopo_metrics_path",
+    ]:
+        configured = gate_config.get(key)
+        if configured:
+            resolved = _resolve_path(configured)
+            paths[key] = {"path": str(resolved), "exists": resolved.exists()}
+    return paths
+
+
+def _percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    rows = sorted(values)
+    index = min(len(rows) - 1, max(0, int(round((len(rows) - 1) * percentile))))
+    return round(rows[index], 6)
+
+
 def _source_diagnostics(
     train_sequences: list[dict[str, Any]],
     itemcf_weak: dict[str, list[Any]],
     itemcf_strong: dict[str, list[Any]],
+    item_graph: dict[str, list[Any]] | None = None,
+    two_tower_seed: dict[str, list[Any]] | None = None,
+    graph_walk_seed: dict[str, list[Any]] | None = None,
 ) -> dict[str, int]:
     users_with_positive_seeds = 0
     users_with_itemcf_seed_hits = 0
     users_with_itemcf_raw_candidates = 0
     itemcf_raw_candidates = 0
     itemcf_raw_unseen_candidates = 0
+    item_graph = item_graph or {}
+    two_tower_seed = two_tower_seed or {}
+    graph_walk_seed = graph_walk_seed or {}
+    users_with_item_graph_seed_hits = 0
+    users_with_item_graph_raw_candidates = 0
+    item_graph_raw_candidates = 0
+    item_graph_raw_unseen_candidates = 0
+    users_with_two_tower_seed_hits = 0
+    users_with_two_tower_seed_raw_candidates = 0
+    two_tower_seed_raw_candidates = 0
+    two_tower_seed_raw_unseen_candidates = 0
+    users_with_graph_walk_seed_hits = 0
+    users_with_graph_walk_seed_raw_candidates = 0
+    graph_walk_seed_raw_candidates = 0
+    graph_walk_seed_raw_unseen_candidates = 0
     itemcf_seed_items = set(itemcf_weak) | set(itemcf_strong)
+    item_graph_seed_items = set(item_graph)
+    two_tower_seed_items = set(two_tower_seed)
+    graph_walk_seed_items = set(graph_walk_seed)
     for sequence in train_sequences:
         seen_items = set(sequence.get("recent_item_sequence", []))
         seeds = set(sequence.get("recent_positive_item_sequence", [])) | set(
@@ -656,20 +1457,56 @@ def _source_diagnostics(
             users_with_positive_seeds += 1
         if seeds & itemcf_seed_items:
             users_with_itemcf_seed_hits += 1
+        if seeds & item_graph_seed_items:
+            users_with_item_graph_seed_hits += 1
+        if seeds & two_tower_seed_items:
+            users_with_two_tower_seed_hits += 1
+        if seeds & graph_walk_seed_items:
+            users_with_graph_walk_seed_hits += 1
         raw_items = []
+        graph_items = []
+        two_tower_seed_items_for_user = []
+        graph_walk_seed_items_for_user = []
         for seed in seeds:
             raw_items.extend(candidate.item_id for candidate in itemcf_weak.get(seed, []))
             raw_items.extend(candidate.item_id for candidate in itemcf_strong.get(seed, []))
+            graph_items.extend(candidate.item_id for candidate in item_graph.get(seed, []))
+            two_tower_seed_items_for_user.extend(candidate.item_id for candidate in two_tower_seed.get(seed, []))
+            graph_walk_seed_items_for_user.extend(candidate.item_id for candidate in graph_walk_seed.get(seed, []))
         if raw_items:
             users_with_itemcf_raw_candidates += 1
+        if graph_items:
+            users_with_item_graph_raw_candidates += 1
+        if two_tower_seed_items_for_user:
+            users_with_two_tower_seed_raw_candidates += 1
+        if graph_walk_seed_items_for_user:
+            users_with_graph_walk_seed_raw_candidates += 1
         itemcf_raw_candidates += len(raw_items)
         itemcf_raw_unseen_candidates += sum(1 for item_id in raw_items if item_id not in seen_items)
+        item_graph_raw_candidates += len(graph_items)
+        item_graph_raw_unseen_candidates += sum(1 for item_id in graph_items if item_id not in seen_items)
+        two_tower_seed_raw_candidates += len(two_tower_seed_items_for_user)
+        two_tower_seed_raw_unseen_candidates += sum(1 for item_id in two_tower_seed_items_for_user if item_id not in seen_items)
+        graph_walk_seed_raw_candidates += len(graph_walk_seed_items_for_user)
+        graph_walk_seed_raw_unseen_candidates += sum(1 for item_id in graph_walk_seed_items_for_user if item_id not in seen_items)
     return {
         "users_with_positive_seeds": users_with_positive_seeds,
         "users_with_itemcf_seed_hits": users_with_itemcf_seed_hits,
         "users_with_itemcf_raw_candidates": users_with_itemcf_raw_candidates,
         "itemcf_raw_candidates": itemcf_raw_candidates,
         "itemcf_raw_unseen_candidates": itemcf_raw_unseen_candidates,
+        "users_with_item_graph_seed_hits": users_with_item_graph_seed_hits,
+        "users_with_item_graph_raw_candidates": users_with_item_graph_raw_candidates,
+        "item_graph_raw_candidates": item_graph_raw_candidates,
+        "item_graph_raw_unseen_candidates": item_graph_raw_unseen_candidates,
+        "users_with_two_tower_seed_hits": users_with_two_tower_seed_hits,
+        "users_with_two_tower_seed_raw_candidates": users_with_two_tower_seed_raw_candidates,
+        "two_tower_seed_raw_candidates": two_tower_seed_raw_candidates,
+        "two_tower_seed_raw_unseen_candidates": two_tower_seed_raw_unseen_candidates,
+        "users_with_graph_walk_seed_hits": users_with_graph_walk_seed_hits,
+        "users_with_graph_walk_seed_raw_candidates": users_with_graph_walk_seed_raw_candidates,
+        "graph_walk_seed_raw_candidates": graph_walk_seed_raw_candidates,
+        "graph_walk_seed_raw_unseen_candidates": graph_walk_seed_raw_unseen_candidates,
     }
 
 
@@ -704,12 +1541,28 @@ def _ranking_hit_cases(
                 "target_item": target,
                 "target_rank": rank,
                 "target_score": item.get("score"),
+                "target_coarse_score": item.get("coarse_score"),
+                "target_fine_score": item.get("fine_score"),
+                "target_rerank_score": item.get("rerank_score"),
+                "target_final_score": item.get("final_score"),
+                "target_coarse_rank": item.get("coarse_rank"),
+                "target_fine_rank": item.get("fine_rank"),
+                "target_final_rank": item.get("final_rank"),
+                "target_rank_movement": item.get("rank_movement", {}),
+                "target_reason_codes": _score_trace_reason_codes(item),
+                "target_score_trace": item.get("score_trace", []),
                 "target_sources": item.get("sources", []),
                 "target_source_scores": _candidate_source_scores(candidates, target),
+                "target_score_components": item.get("score_components", {}),
                 "top_k": int(config.get("top_k", 5)),
                 "is_topk_hit": rank <= int(config.get("top_k", 5)),
+                "affected_user_id": user_id,
+                "target_item_id": target,
+                "baseline_rank": rank,
+                "variant_rank": rank,
                 "items_above_target": full_ranking[: rank - 1],
                 "top_items": full_ranking[: int(config.get("top_k", 5))],
+                "topk_replacement_reason": _topk_replacement_reason(full_ranking, target, int(config.get("top_k", 5))),
             })
     return rows
 
@@ -751,6 +1604,42 @@ def _ranking_case_summary(ranking_cases: list[dict[str, Any]]) -> dict[str, Any]
     }
 
 
+def _topk_replacement_reason(items: list[dict[str, Any]], target: str, top_k: int) -> dict[str, Any]:
+    target_rank = _rank_of_item(items, target)
+    target_item = items[target_rank - 1] if target_rank else {}
+    if target_rank is None:
+        return {"reason": "target_not_in_candidate_ranking", "replaced_by": []}
+    if target_rank <= top_k:
+        return {"reason": "target_in_topk", "replaced_by": []}
+    replaced_by = []
+    for item in items[:top_k]:
+        replaced_by.append({
+            "item_id": item.get("parent_asin"),
+            "score": item.get("score"),
+            "score_advantage": round(float(item.get("score") or 0.0) - float(target_item.get("score") or 0.0), 6),
+            "dominant_score_component": _dominant_score_component(item),
+            "near_miss_tiebreak_triggered": any(event.get("type") == "stable_tie_break" for event in item.get("rerank_events", [])),
+        })
+    return {"reason": "target_below_topk", "replaced_by": replaced_by}
+
+
+def _dominant_score_component(item: dict[str, Any]) -> str | None:
+    components = item.get("score_components", {}) or {}
+    if not components:
+        return None
+    return max(components, key=lambda key: abs(float((components.get(key) or {}).get("contribution") or 0.0)))
+
+
+
+def _score_trace_reason_codes(item: dict[str, Any]) -> dict[str, list[str]]:
+    reason_codes: dict[str, list[str]] = {}
+    for stage in item.get("score_trace", []) or []:
+        stage_name = stage.get("stage")
+        if stage_name:
+            reason_codes[str(stage_name)] = list(stage.get("reason_codes", []) or [])
+    return reason_codes
+
+
 def _source_key(sources: list[Any]) -> str:
     return "+".join(sorted(str(source) for source in sources)) or "unknown"
 
@@ -790,7 +1679,9 @@ def _config_summary(
         "limit_users": limit_users,
         "rank_weights": config.get("rank_weights", {}),
         "rerank_policy": config.get("rerank_policy", {}),
+        "source_aware_fusion": config.get("source_aware_fusion", {}),
         "item_feature_rerank": config.get("item_feature_rerank", {}),
+        "ltr_model": config.get("ltr_model", {}),
         "topk_source_minimums": config.get("topk_source_minimums", {}),
         "candidate_source_minimums": config.get("candidate_source_minimums", {}),
         "semantic_enabled": bool(config.get("semantic_enabled", False)),
@@ -799,6 +1690,51 @@ def _config_summary(
         "semantic_score_mode": config.get("semantic_score_mode", "raw"),
         "semantic_category_weight": config.get("semantic_category_weight", 2.0),
         "semantic_text_fields": config.get("semantic_text_fields"),
+        "two_tower_enabled": bool(config.get("two_tower_enabled", False)),
+        "two_tower_variant": config.get("two_tower_variant"),
+        "two_tower_artifact_path": config.get("two_tower_artifact_path"),
+        "two_tower_artifact_name": config.get("two_tower_artifact_name", "semantic_recall_inputs.jsonl"),
+        "two_tower_per_user": config.get("two_tower_per_user"),
+        "two_tower_text_fields": config.get("two_tower_text_fields"),
+        "two_tower_min_overlap": config.get("two_tower_min_overlap"),
+        "two_tower_recency_decay": config.get("two_tower_recency_decay"),
+        "two_tower_seed_enabled": bool(config.get("two_tower_seed_enabled", False)),
+        "two_tower_seed_artifact_path": config.get("two_tower_seed_artifact_path") or config.get("two_tower_seed_sidecar_path"),
+        "two_tower_seed_artifact_name": config.get("two_tower_seed_artifact_name", config.get("two_tower_seed_sidecar_name", "two_tower_seed_recall.jsonl")),
+        "two_tower_seed_manifest_path": config.get("two_tower_seed_manifest_path"),
+        "two_tower_seed_manifest_name": config.get("two_tower_seed_manifest_name", "two_tower_seed_manifest.json"),
+        "fail_on_missing_sidecar": bool(config.get("fail_on_missing_sidecar", False)),
+        "two_tower_seed_per_seed": config.get("two_tower_seed_per_seed"),
+        "two_tower_seed_per_user": config.get("two_tower_seed_per_user"),
+        "two_tower_seed_window": config.get("two_tower_seed_window"),
+        "two_tower_seed_recent_positive_window": config.get("two_tower_seed_recent_positive_window"),
+        "two_tower_seed_recent_strong_window": config.get("two_tower_seed_recent_strong_window"),
+        "two_tower_seed_recency_decay": config.get("two_tower_seed_recency_decay"),
+        "two_tower_seed_score_floor": config.get("two_tower_seed_score_floor"),
+        "item_graph_enabled": bool(config.get("item_graph_enabled", False)),
+        "item_graph_artifact_path": config.get("item_graph_artifact_path"),
+        "item_graph_artifact_name": config.get("item_graph_artifact_name", "item_graph_recall.jsonl"),
+        "item_graph_per_seed": config.get("item_graph_per_seed"),
+        "item_graph_per_user": config.get("item_graph_per_user"),
+        "item_graph_seed_window": config.get("item_graph_seed_window"),
+        "item_graph_recent_positive_window": config.get("item_graph_recent_positive_window"),
+        "item_graph_recent_strong_window": config.get("item_graph_recent_strong_window"),
+        "graph_walk_seed_enabled": bool(config.get("graph_walk_seed_enabled", False)),
+        "graph_walk_seed_algorithm": config.get("graph_walk_seed_algorithm", "deepwalk"),
+        "graph_walk_seed_artifact_path": config.get("graph_walk_seed_artifact_path") or config.get("graph_walk_seed_sidecar_path"),
+        "graph_walk_seed_artifact_name": config.get("graph_walk_seed_artifact_name", config.get("graph_walk_seed_sidecar_name", "graph_walk_seed_neighbors.jsonl")),
+        "graph_walk_seed_manifest_path": config.get("graph_walk_seed_manifest_path"),
+        "graph_walk_seed_manifest_name": config.get("graph_walk_seed_manifest_name", "graph_walk_seed_manifest.json"),
+        "graph_walk_seed_per_seed": config.get("graph_walk_seed_per_seed"),
+        "graph_walk_seed_per_user": config.get("graph_walk_seed_per_user"),
+        "graph_walk_seed_window": config.get("graph_walk_seed_window"),
+        "graph_walk_seed_recent_positive_window": config.get("graph_walk_seed_recent_positive_window"),
+        "graph_walk_seed_recent_strong_window": config.get("graph_walk_seed_recent_strong_window"),
+        "graph_walk_seed_recency_decay": config.get("graph_walk_seed_recency_decay"),
+        "graph_walk_seed_score_floor": config.get("graph_walk_seed_score_floor"),
+        "graph_walk_training": config.get("graph_walk_training", {}),
+        "candidate_source_maximums": config.get("candidate_source_maximums", {}),
+        "candidate_pool_strategy": config.get("candidate_pool_strategy"),
     }
     if lopo_stats:
         summary.update(lopo_stats)
@@ -844,8 +1780,14 @@ def _write_report(
         "candidate_hit_rank_min",
         "candidate_hit_rank_avg",
         "candidate_hit_rank_p50",
+        "candidate_hit_rank_p90",
         "candidate_hit_missed_topk_users",
         "ranked_hit_users",
+        "recall_at_k",
+        "recall_at_pool",
+        "ndcg_at_k",
+        "mrr_at_k",
+        "map_at_k",
         "hit_rate_at_k",
         "popular_only_hit_rate_at_k",
         "itemcf_only_hit_rate_at_k",
@@ -861,7 +1803,22 @@ def _write_report(
         f"- fallback_rate: {metrics.get('fallback_rate')}",
         f"- recall_source_coverage: `{json.dumps(metrics.get('recall_source_coverage', {}), ensure_ascii=False)}`",
         f"- topk_source_coverage: `{json.dumps(metrics.get('topk_source_coverage', {}), ensure_ascii=False)}`",
+        f"- per_source_candidate_contribution: `{json.dumps(metrics.get('per_source_candidate_contribution', {}), ensure_ascii=False)}`",
+        f"- per_source_topk_contribution: `{json.dumps(metrics.get('per_source_topk_contribution', {}), ensure_ascii=False)}`",
+        f"- source_overlap: `{json.dumps(metrics.get('source_overlap', {}), ensure_ascii=False)}`",
         f"- source_diagnostics: `{json.dumps(metrics.get('source_diagnostics', {}), ensure_ascii=False)}`",
+        "",
+        "## Diagnostic Gate",
+        "",
+        "```json",
+        json.dumps(metrics.get("diagnostic_gate", {}), ensure_ascii=False, indent=2),
+        "```",
+        "",
+        "## Latency Diagnostics",
+        "",
+        "```json",
+        json.dumps(metrics.get("latency", {}), ensure_ascii=False, indent=2),
+        "```",
         "",
         "## Recall Bottleneck Diagnostics",
         "",
@@ -872,6 +1829,7 @@ def _write_report(
         f"- candidate_hit_rank_min: {metrics.get('candidate_hit_rank_min')}",
         f"- candidate_hit_rank_avg: {metrics.get('candidate_hit_rank_avg')}",
         f"- candidate_hit_rank_p50: {metrics.get('candidate_hit_rank_p50')}",
+        f"- candidate_hit_rank_p90: {metrics.get('candidate_hit_rank_p90')}",
         f"- candidate_hit_source_coverage: `{json.dumps(metrics.get('candidate_hit_source_coverage', {}), ensure_ascii=False)}`",
         "",
         "## Ranking Case Summary",

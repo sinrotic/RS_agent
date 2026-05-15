@@ -24,6 +24,7 @@ from rs_core.common.io import read_jsonl
 from rs_core.rsagent.dialogue import apply_dialogue_plan, plan_dialogue_turn
 from rs_core.rsagent.inference_policy import RerankPolicyClient
 from rs_core.rsagent.policy import merge_feedback, normalize_feedback_input, parse_feedback
+from rs_core.rsagent.runtime import AgentRuntime
 from rs_core.rsagent.schema import AgentSession, AgentTurn
 
 
@@ -54,6 +55,7 @@ class HybridRecommendationEnvironment:
         self.semantic_index = semantic_index
         self.holdout_records = holdout_records
         self.inference_client = inference_client
+        self.runtime = AgentRuntime()
 
     @classmethod
     def from_config(
@@ -119,21 +121,27 @@ class HybridRecommendationEnvironment:
     def step(self, session: AgentSession, user_input: str = "") -> AgentTurn:
         return self._recommendation_step(session, user_input)
 
-    def converse(self, session: AgentSession, user_input: str = "") -> AgentTurn:
+    def converse(self, session: AgentSession, user_input: str = "", explanation_item_id: str | None = None) -> AgentTurn:
         user_input = normalize_feedback_input(user_input) if user_input else ""
-        plan = plan_dialogue_turn(user_input, session)
-        apply_dialogue_plan(session, plan)
-        if plan.should_recommend:
-            turn = self._recommendation_step(session, user_input, plan.assistant_response, merge_user_input=False)
-        else:
-            turn = self._dialogue_only_turn(session, user_input, plan.assistant_response)
-        turn.diagnostics.update({
-            "conversation_intent": plan.intent,
-            "agent_action": plan.action,
-            "assistant_response": plan.assistant_response,
-            **plan.diagnostics,
-        })
-        return turn
+        return self.runtime.run_turn(self, session, user_input, explanation_item_id)
+
+    def plan_dialogue(self, user_input: str, session: AgentSession, explanation_item_id: str | None = None) -> Any:
+        return plan_dialogue_turn(user_input, session, explanation_item_id=explanation_item_id)
+
+    def apply_dialogue_plan(self, session: AgentSession, plan: Any) -> Any:
+        return apply_dialogue_plan(session, plan)
+
+    def build_recommendation_turn(
+        self,
+        session: AgentSession,
+        user_input: str,
+        assistant_response: str,
+        merge_user_input: bool,
+    ) -> AgentTurn:
+        return self._recommendation_step(session, user_input, assistant_response, merge_user_input=merge_user_input)
+
+    def build_dialogue_turn(self, session: AgentSession, user_input: str, assistant_response: str) -> AgentTurn:
+        return self._dialogue_only_turn(session, user_input, assistant_response)
 
     def _recommendation_step(
         self,
@@ -156,10 +164,10 @@ class HybridRecommendationEnvironment:
             self.category_top,
             self.item_category,
             self.config,
-            self.semantic_index,
-            session.active_constraints,
-            session.prior_turn_items(),
-            self.inference_client,
+            semantic_index=self.semantic_index,
+            feedback_constraints=session.active_constraints,
+            prior_turn_items=session.prior_turn_items(),
+            inference_client=self.inference_client,
             turn_index=len(session.turns) + 1,
         )
         candidates = [asdict(candidate) for candidate in result.candidates]

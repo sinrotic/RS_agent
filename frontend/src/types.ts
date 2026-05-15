@@ -129,10 +129,52 @@ export interface SimulationAction {
   comment?: string;
 }
 
+export interface SimulationSceneMetrics {
+  turn_count: number;
+  action_count: number;
+  final_action: string;
+  accepted_item_id: string | null;
+  accepted: boolean;
+  feedback_count: number;
+  why_count: number;
+  show_different_count: number;
+  unique_seen_items: number;
+  satisfaction: number;
+  action_counts: Record<string, number>;
+}
+
 export interface SimulationSceneResponse {
   scene_id: string;
   role: SimulationRole;
   state: SimulationState;
   actions: SimulationAction[];
   session: SessionExportResponse;
+  metrics?: SimulationSceneMetrics;
+}
+
+export interface SimulationBatchRequest {
+  role_ids?: string[];
+  max_turns?: number;
+  repeats?: number;
+  user_id?: string | null;
+}
+
+export interface SimulationBatchSummary {
+  scene_count: number;
+  avg_turn_count: number;
+  accept_rate: number;
+  avg_satisfaction: number;
+  avg_unique_seen_items: number;
+  feedback_count: number;
+  why_count: number;
+  show_different_count: number;
+  action_counts: Record<string, number>;
+  role_count?: number;
+  roles?: Record<string, any>;
+}
+
+export interface SimulationBatchResponse {
+  batch_id: string;
+  summary: SimulationBatchSummary;
+  scenes: SimulationSceneResponse[];
 }

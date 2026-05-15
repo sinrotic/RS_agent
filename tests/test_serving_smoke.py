@@ -10,7 +10,51 @@ from rs_core.common.io import write_jsonl
 from rs_core.serving import app as serving_app
 from rs_core.serving.service import RecommendationService
 
-BLOCKED_PUBLIC_KEYS = {"ranking", "diagnostics", "reward", "reward_evidence", "score"}
+BLOCKED_PUBLIC_KEYS = {
+    "ranking",
+    "diagnostics",
+    "reward",
+    "reward_evidence",
+    "score",
+    "base_score",
+    "agent_boost",
+    "coarse_score",
+    "fine_score",
+    "rerank_score",
+    "final_score",
+    "score_trace",
+    "rank_movement",
+    "training_samples",
+    "tool_events",
+    "constraint_filter_events",
+    "scorecard",
+    "judge_scores",
+}
+BLOCKED_PUBLIC_TERMS = {
+    "agent_boost",
+    "base_score",
+    "coarse_score",
+    "diagnostic",
+    "constraint_filter",
+    "feedback_source",
+    "fine_score",
+    "final_score",
+    "hybrid recall",
+    "itemcf",
+    "rank_weights",
+    "ranked highest",
+    "ranking",
+    "rank_movement",
+    "recall source",
+    "rerank_score",
+    "score_trace",
+    "reward",
+    "reward_evidence",
+    "scorecard",
+    "source",
+    "training",
+    "training_samples",
+}
 
 
 @pytest.fixture()
@@ -56,6 +100,20 @@ def test_chat_returns_display_response_without_internal_fields(client: TestClien
     assert display["items"]
     assert display["items"][0]["parent_asin"] == "speaker_1"
     _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
+
+
+def test_fixed_smoke_user_returns_public_display_items_without_recovery_diagnostics():
+    service = RecommendationService("D:/sinrotic_code/python_project/summer/RS_agent/configs/hybrid_demo_electronics.yaml")
+    session_id = service.start_session("AFKZENTNBQ7A7V7UXW5JJI6UGRYQ")
+
+    result = service.chat(session_id, "For commute, prefer bluetooth and Audio")
+
+    assert result.display["session_id"] == session_id
+    assert result.display["schema_version"] == "rs_agent_display_v1"
+    assert result.display["items"]
+    _assert_no_blocked_keys(result.display)
+    _assert_no_blocked_public_terms(result.display)
 
 
 def test_repeated_user_sessions_do_not_conflict(client: TestClient):
@@ -90,6 +148,7 @@ def test_feedback_show_different_returns_display_response(client: TestClient):
     assert payload["display"]["session_id"] == session_id
     assert payload["display"]["items"] != first["display"]["items"]
     _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
 
 
 def test_feedback_why_can_return_dialogue_only_display(client: TestClient):
@@ -103,6 +162,50 @@ def test_feedback_why_can_return_dialogue_only_display(client: TestClient):
     assert payload["display"]["items"] == []
     assert "speaker_1" in payload["display"]["assistant_message"]
     _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
+
+
+def test_feedback_why_explains_requested_latest_item(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+    recommendation = client.post("/chat", json={"session_id": session_id, "message": "For commute, prefer bluetooth and Audio"}).json()
+    item = recommendation["display"]["items"][0]
+
+    response = client.post("/feedback", json={"session_id": session_id, "action_type": "why", "item_id": item["parent_asin"]})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["display"]["items"] == []
+    assert item["parent_asin"] in payload["display"]["assistant_message"]
+    assert payload["display"]["assistant_message"] != "我只能解释最近一次推荐列表里的商品。"
+    _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
+
+
+def test_feedback_why_rejects_stale_item_with_exact_public_text(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+    client.post("/chat", json={"session_id": session_id, "message": "For commute, prefer bluetooth and Audio"})
+
+    response = client.post("/feedback", json={"session_id": session_id, "action_type": "why", "item_id": "stale_item_1"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["display"]["assistant_message"] == "我只能解释最近一次推荐列表里的商品。"
+    assert payload["display"]["items"] == []
+    _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
+
+
+def test_feedback_why_without_prior_recommendation_returns_exact_public_text(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+
+    response = client.post("/feedback", json={"session_id": session_id, "action_type": "why"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["display"]["assistant_message"] == "我现在还没有可以解释的最近推荐。你可以先让我推荐一些商品，然后再问为什么推荐其中某一件。"
+    assert payload["display"]["items"] == []
+    _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
 
 
 def test_feedback_rejects_unknown_action_type(client: TestClient):
@@ -143,6 +246,7 @@ def test_demo_roundtrip_returns_two_safe_display_responses(client: TestClient):
     assert payload["change_summary"]["changed"] is True
     assert payload["change_summary"]["first_item_ids"] != payload["change_summary"]["feedback_item_ids"]
     _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
 
 
 def test_demo_roundtrip_rejects_unknown_feedback_action(client: TestClient):
@@ -194,6 +298,7 @@ def test_session_export_returns_safe_turn_history(client: TestClient):
     ]
     assert payload["display_responses"] == [chat["display"], feedback["display"]]
     _assert_no_blocked_keys(payload)
+    _assert_no_blocked_public_terms(payload)
 
 
 def test_session_export_unknown_session_returns_stable_404_error(client: TestClient):
@@ -211,6 +316,19 @@ def _assert_no_blocked_keys(value):
     elif isinstance(value, list):
         for child in value:
             _assert_no_blocked_keys(child)
+
+
+def _assert_no_blocked_public_terms(value):
+    if isinstance(value, dict):
+        for child in value.values():
+            _assert_no_blocked_public_terms(child)
+    elif isinstance(value, list):
+        for child in value:
+            _assert_no_blocked_public_terms(child)
+    elif isinstance(value, str):
+        lowered = value.lower()
+        for term in BLOCKED_PUBLIC_TERMS:
+            assert term not in lowered
 
 
 def _is_uuid(value: str) -> bool:

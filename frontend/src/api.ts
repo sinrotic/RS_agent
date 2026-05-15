@@ -1,4 +1,4 @@
-import type { ChatResponse, DemoRoundtripRequest, DemoRoundtripResponse, FeedbackResponse, StartSessionResponse, SessionExportResponse, SimulationSceneRequest, SimulationSceneResponse } from './types';
+import type { ChatResponse, DemoRoundtripRequest, DemoRoundtripResponse, FeedbackResponse, StartSessionResponse, SessionExportResponse, SimulationSceneRequest, SimulationSceneResponse, SimulationBatchRequest, SimulationBatchResponse } from './types';
 
 const API_BASE_URL = import.meta.env.VITE_RS_AGENT_API_URL ?? 'http://127.0.0.1:8000';
 
@@ -17,6 +17,10 @@ export async function fetchSessionExport(sessionId: string): Promise<SessionExpo
 
 export async function runSimulationScene(request: SimulationSceneRequest): Promise<SimulationSceneResponse> {
   return postJson<SimulationSceneResponse>('/simulation/scene', request);
+}
+
+export async function runSimulationBatch(request: SimulationBatchRequest): Promise<SimulationBatchResponse> {
+  return postJson<SimulationBatchResponse>('/simulation/batch', request);
 }
 
 export async function runDemoRoundtrip(request: DemoRoundtripRequest): Promise<DemoRoundtripResponse> {

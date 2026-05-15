@@ -55,6 +55,41 @@ def test_why_request_explains_prior_turn_without_changing_constraints(tmp_path: 
     assert turn.ranking == []
 
 
+def test_why_request_without_prior_recommendation_returns_public_fallback(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session()
+
+    turn = env.converse(session, "为什么推荐？")
+
+    assert turn.assistant_response == "我现在还没有可以解释的最近推荐。你可以先让我推荐一些商品，然后再问为什么推荐其中某一件。"
+    assert turn.ranking == []
+
+
+def test_why_request_for_stale_item_returns_public_fallback(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session()
+    env.converse(session, "For commute, prefer bluetooth and Audio")
+
+    turn = env.converse(session, "why? item_id=stale_item_1")
+
+    assert turn.assistant_response == "我只能解释最近一次推荐列表里的商品。"
+    assert turn.ranking == []
+
+
+def test_why_request_targets_latest_recommendation_item_after_dialogue_only_turns(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session()
+    env.converse(session, "For commute, prefer bluetooth and Audio")
+    env.converse(session, "why? item_id=speaker_1")
+
+    turn = env.converse(session, "why? item_id=speaker_1")
+
+    assert "speaker_1" in turn.assistant_response
+    assert turn.assistant_response != "我只能解释最近一次推荐列表里的商品。"
+    assert turn.diagnostics["explanation_source_turn"] == 1
+    assert turn.ranking == []
+
+
 def test_show_different_filters_prior_turn_items(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
     session = env.start_session()

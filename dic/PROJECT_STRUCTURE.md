@@ -16,7 +16,7 @@ RS_agent/
 ├─ scripts/               # 入口脚本与命令封装
 ├─ configs/               # 配置文件
 ├─ outputs/               # 运行产物与结果输出
-├─ frontend/              # 后期前端展示入口，当前仅预留
+├─ frontend/              # React Web Demo、商品卡、反馈按钮和 Session Replay
 ├─ tests/                 # 测试代码
 ├─ dic/                   # 当前说明文档与过程记录
 │  └─ archive/            # 旧实验报告和数据画像归档
@@ -38,28 +38,30 @@ RS_agent/
 - `common/`：配置、路径、日志、通用工具
 - `dataproc/`：数据清洗、切分、采样、数据集构造
 - `features/`：推荐与排序所需的特征工程
-- `recsys/`：传统推荐 backbone，负责召回、排序、规则过滤和基线能力
+- `recsys/`：传统推荐 backbone，负责召回、排序、规则过滤、基线能力、PyTorch 双塔训练表示和本地向量索引旁路
 - `rsagent/`：Agent 决策层，负责意图理解、约束抽取、工具调用和推荐编排
 - `llm/`：模型训练与推理支撑，承载当前固定路线相关封装
 - `workflow/`：串联推荐、Agent 和模型相关流程
 - `evaluation/`：离线评估、案例分析、对比分析
 - `serving/`：服务接口和在线推理封装
-- `display/`：商品展示卡、推荐回复结构和前端消费 contract，当前仅预留
-- `simulation/`：多角色模拟客户、persona 和合成交互评估环境，当前仅预留
-- `animation/`：动画化展示或 session / rollout 回放支撑，当前仅预留
+- `display/`：商品展示卡、推荐回复结构和前端消费 contract，已实现第一版
+- `simulation/`：多角色模拟客户、persona、scene runner、batch evaluation 和模型驱动用户策略，已实现第一版
+- `animation/`：动画化展示或 session / rollout 回放支撑，目前主要由前端 Session Replay 承担轻量回放
 
 ### 3.2 `frontend/`
 
-后期前端展示入口，目标是消费服务层和展示层 contract，而不是直接依赖推荐内部字段。
+React Web Demo 入口，目标是消费服务层和展示层 contract，而不是直接依赖推荐内部字段。
 
-规划中适合放：
+当前已经包含：
 
 - 聊天窗口
 - 商品卡片组件
-- 反馈按钮与交互状态
-- 多角色模拟客户或动画回放的可视化入口
+- 结构化反馈按钮与交互状态
+- Session Replay 时间线
+- Simulation Scene 可视化入口
+- 一键 E2E Demo 触发入口
 
-当前该目录只做架构边界预留，不代表完整前端已经实现。
+当前前端是面试演示和本地验证版本，不代表生产级完整前端。
 
 ### 3.3 `scripts/`
 
@@ -68,7 +70,7 @@ RS_agent/
 适合放：
 
 - 数据准备脚本
-- 训练脚本
+- 训练脚本，包括 `train_two_tower.py` 这类双塔召回 artifact 生成入口
 - 评估脚本
 - 服务启动脚本
 - smoke / demo 入口脚本

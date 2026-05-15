@@ -18,13 +18,17 @@ def _jsonable(value: Any) -> Any:
 
 @dataclass
 class FeedbackConstraints:
+    liked_item_ids: set[str] = field(default_factory=set)
     disliked_item_ids: set[str] = field(default_factory=set)
     disliked_categories: set[str] = field(default_factory=set)
     preferred_categories: dict[str, float] = field(default_factory=dict)
     preferred_sources: dict[str, float] = field(default_factory=dict)
     preferred_keywords: dict[str, float] = field(default_factory=dict)
     disliked_keywords: dict[str, float] = field(default_factory=dict)
+    max_price: float | None = None
+    use_cases: dict[str, float] = field(default_factory=dict)
     filter_prior_turn_items: bool = False
+    item_feedback_events: list[dict[str, Any]] = field(default_factory=list)
     unsupported_free_text: list[str] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
@@ -36,6 +40,7 @@ class RewardEvidence:
     holdout_hits: list[str] = field(default_factory=list)
     feedback_constraints_satisfied: dict[str, bool] = field(default_factory=dict)
     item_sources: dict[str, list[str]] = field(default_factory=dict)
+    tool_events: list[dict[str, Any]] = field(default_factory=list)
     risk_flags: list[str] = field(default_factory=list)
     unsupported_explanation_claims: list[str] = field(default_factory=list)
 
@@ -141,11 +146,15 @@ class AgentSession:
     active_constraints: FeedbackConstraints = field(default_factory=FeedbackConstraints)
     conversation_state: ConversationState = field(default_factory=ConversationState)
     turns: list[AgentTurn] = field(default_factory=list)
+    runtime_trace: list[dict[str, Any]] = field(default_factory=list)
+    session_summary: dict[str, Any] = field(default_factory=dict)
 
     def prior_turn_items(self) -> set[str]:
         items: set[str] = set()
         for turn in self.turns:
-            items.update(str(item.get("parent_asin")) for item in turn.ranking if item.get("parent_asin"))
+            if not turn.recommendation.final_items:
+                continue
+            items.update(str(item.get("parent_asin")) for item in turn.recommendation.final_items if item.get("parent_asin"))
         return items
 
     def to_dict(self) -> dict[str, Any]:
@@ -154,6 +163,8 @@ class AgentSession:
             "user_id": self.user_id,
             "active_constraints": self.active_constraints.to_dict(),
             "conversation_state": self.conversation_state.to_dict(),
+            "runtime_trace": _jsonable(self.runtime_trace),
+            "session_summary": _jsonable(self.session_summary),
             "turns": [turn.to_dict() for turn in self.turns],
         }
 

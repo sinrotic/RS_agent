@@ -4,6 +4,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from rs_core.rsagent.explanation import build_recommendation_explanation, latest_recommendation_turn, requested_item_id
 from rs_core.rsagent.policy import merge_feedback, parse_feedback
 from rs_core.rsagent.schema import AgentSession, FeedbackConstraints
 
@@ -18,7 +19,7 @@ class DialoguePlan:
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
 
-def plan_dialogue_turn(user_input: str, session: AgentSession) -> DialoguePlan:
+def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_id: str | None = None) -> DialoguePlan:
     text = user_input.strip()
     if not text:
         return DialoguePlan(
@@ -30,11 +31,12 @@ def plan_dialogue_turn(user_input: str, session: AgentSession) -> DialoguePlan:
 
     lowered = text.lower()
     if _is_explanation_request(lowered):
+        source_turn = latest_recommendation_turn(session)
         return DialoguePlan(
             intent="ask_explanation",
             action="explain_recommendation",
-            assistant_response=_prior_recommendation_explanation(session),
-            diagnostics={"explanation_source_turn": session.turns[-1].turn_index if session.turns else None},
+            assistant_response=build_recommendation_explanation(session, explanation_item_id or requested_item_id(text)),
+            diagnostics={"explanation_source_turn": source_turn.turn_index if source_turn else None},
         )
 
     parsed = parse_feedback(text)
@@ -112,17 +114,6 @@ def _is_explanation_request(lowered: str) -> bool:
 
 def _is_vague_recommendation_request(lowered: str) -> bool:
     return bool(re.search(r"\b(want|need|looking for|recommend|suggest|buy)\b|想要|推荐", lowered))
-
-
-def _prior_recommendation_explanation(session: AgentSession) -> str:
-    if not session.turns:
-        return "There is no previous recommendation to explain yet."
-    previous = session.turns[-1]
-    items = [str(item.get("parent_asin")) for item in previous.ranking[:3] if item.get("parent_asin")]
-    sources = sorted({source for item in previous.ranking[:3] for source in item.get("sources", [])})
-    item_text = ", ".join(items) if items else "the previous recommendation"
-    source_text = ", ".join(sources) if sources else "the available recall sources"
-    return f"I recommended {item_text} because they ranked highest after applying the current hybrid recall, feedback constraints, and sources: {source_text}."
 
 
 def _has_supported_constraint(constraints: FeedbackConstraints) -> bool:

@@ -8,7 +8,7 @@
 - 中间层完成召回与排序
 - 上层由 Agent 负责决策和解释
 - 训练层作为支撑，不作为主叙事
-- 后期补商品展示、前端交互、多角色模拟客户和动画回放能力
+- 已补商品展示、前端交互、Session Replay、多角色模拟客户和批量仿真评估第一版
 
 ---
 
@@ -146,27 +146,41 @@
 
 当前结论：item-feature rerank 没有提升 Top-K hit，但改善了 LOPO target 的候选池内排名分布，适合作为后续 Agent 反馈和学习排序的特征接口。
 
-### Phase 2：展示 contract 与训练前闭环，规划中
+### Phase 1.9：双塔向量召回旁路，已完成第一版
 
-这一阶段的重点不是先做完整前端，而是先稳定推荐结果到商品展示卡的接口：
+这一阶段把复杂召回从 token overlap POC 推进到默认关闭的双塔向量召回实验链路：
 
-- 定义 `ItemDisplayCard` 或等价结构
-- 用 `parent_asin` join 商品 metadata，补齐 title、price、store、rating、features、description 等字段
-- 允许 `image_url` 暂时为空，后续再补真实图片数据源
-- 让 session / rollout 同时保留推荐诊断字段和前端展示字段
+- 已实现 DSSM-style 与 YouTubeDNN-style 两类 U2I 双塔训练入口，分别输出独立 variant / model type。
+- 训练 artifact 合约包含 `train_config`、`model`、`item_embeddings`、`user_embeddings`、`item_id_map`、`user_id_map`、`train_metrics`、`recall_index` 和 `artifact_manifest`。
+- 当前环境中 PyTorch 可用时训练 backend 为 `pytorch`；`backend: python_fallback` 不能在 torch 可导入时绕过 PyTorch，只有 `_import_torch()` 返回空时才进入 no-torch fallback。
+- candidate merge 支持从 manifest 加载本地向量索引，保留 seen-item filtering、per-user limit、source/model metadata 和默认关闭行为。
+- valid/test 与 LOPO 配置已拆分为 DSSM / YouTubeDNN 旁路实验；LOPO 只作为 sanity，不单独触发晋升。
+- `strict_promotion_gate` 会读取 paired valid/test 与 paired LOPO metrics；要求 valid/test 的候选池命中、召回、Top-K 命中、candidate hit users、LOPO sanity 和 candidate generation p95 同时达标，不达标时继续作为 default-off side lane。
 
-这一阶段完成后，再进入轻量 API、Web Demo 或 Qwen / QLoRA / GRPO 的小样本训练闭环。
+已验证证据是 smoke 级别：训练 smoke 使用 `limit_users=10`、`epochs=1`、`negative_samples=1`、`embedding_dim=8`、`hidden_dim=8`，评估 smoke 使用 `limit_users=30`。这不是完整 10k 双塔评估，不能据此宣称双塔可晋升。当前 smoke valid/test 中 DSSM 与 YouTubeDNN 的 `candidate_hit_rate_at_pool=0.111111`、`recall_at_pool=0.111111`、`hit_rate_at_k=0.0`、`candidate_hit_users=1`；DSSM `candidate_generation_p95_seconds=0.270462`，YouTubeDNN `candidate_generation_p95_seconds=0.246153`，均因 latency gate 等条件保持 `promotable=false` / `default_off_side_lane_only`。
 
-### Phase 3：前端与多角色模拟客户沙盒，规划中
+### Phase 2：展示 contract、服务层与 Web Demo，已完成第一版
 
-这一阶段面向产品化展示和交互评估：
+这一阶段已经把 Agent 推荐结果稳定封装为前端安全展示接口，并接入轻量交互入口：
 
-- 前端提供聊天窗口、商品卡片和反馈按钮
-- 多个模拟客户 persona 由模型 API 驱动，与推荐系统 Agent 自动对话
-- 动画层读取 session / rollout 进行可视化回放
-- 合成客户数据与真实用户数据分开标记，避免评估污染
+- 已定义 `ItemDisplayCard` / `DisplayResponse` contract，只暴露商品卡、推荐文案和展示状态
+- 已实现 single-process HTTP 服务，包含 `/session/start`、`/chat`、结构化 `/feedback` 和 `GET /session/{session_id}`
+- 已接入 React Web Demo，支持聊天输入、商品卡展示、具体商品喜欢/不喜欢反馈和 Session Replay
+- 已新增 `/demo/e2e` 一键闭环入口，用于演示首轮推荐、结构化反馈、第二轮推荐变化和安全字段边界
 
-这一阶段可以作为后期亮点，不应打断当前推荐、Agent feedback、reward 和 rollout contract 的主线。
+这一阶段的边界是：服务与前端只消费展示 contract，不读取 `ranking`、`diagnostics`、`reward`、`score` 等内部训练/诊断字段。
+
+### Phase 3：多角色模拟客户沙盒，已完成第一版
+
+这一阶段已经从展示 demo 扩展到可复现的合成交互评估：
+
+- 已实现角色画像、角色状态、反馈风格和 deterministic 行为策略
+- 已实现 Simulation Scene，让单个 persona 驱动真实 Agent session 并导出安全 scene contract
+- 已实现批量 Simulation Evaluation，输出 `simulation_batch.json`、`metrics.json` 和中文评估报告
+- 已接入模型驱动模拟用户策略，外部模型只生成受约束的用户侧 action，并保留 deterministic fallback
+- 合成客户数据与真实用户行为仍需分开标记，不能直接等同真实用户评估
+
+下一步应把 Web Demo 和 Simulation 轨迹整理为可校验训练样本，而不是继续扩张展示功能。
 
 ---
 
@@ -188,6 +202,13 @@
 - `configs/hybrid_demo_electronics_1000_semantic_title_item_feature.yaml`
 - `configs/hybrid_demo_electronics_1000_lopo_semantic_title_item_feature.yaml`
 
+双塔向量召回旁路观察入口：
+
+- `configs/hybrid_demo_electronics_10000_semantic_title_two_tower_dssm.yaml`
+- `configs/hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_dssm.yaml`
+- `configs/hybrid_demo_electronics_10000_semantic_title_two_tower_youtube_dnn.yaml`
+- `configs/hybrid_demo_electronics_10000_lopo_semantic_title_two_tower_youtube_dnn.yaml`
+
 这些入口用于做对照、诊断和阶段性展示，不默认承诺同一组指标的最终最优结果。
 
 ---
@@ -202,10 +223,14 @@
 
 ## 当前不做
 
-- 第一阶段不做双塔
-- 不把项目直接推进到全量工业化服务
-- 不把训练路线写成已经落地完成的能力
-- 不把前端、动画或多角色仿真写成已经完成的能力
+- 不把双塔向量召回默认并入主路；DSSM / YouTubeDNN 只有通过 strict promotion gate 后才进入人工晋升评审
+- 不在本批实现 Node2Vec / DeepWalk；图召回成本更高，后续更适合作为 item graph 补充旁路或第二阶段召回源
+- 不在本批实现 MIND / SDM；多兴趣召回需要更完整的用户兴趣拆分、兴趣数选择和线上向量索引策略，先保留路线规划
+- 不在本批实现 TDM；树构建、层级召回和训练闭环成本较高，暂不打断当前双塔验证主线
+- 不把 DeepFM / NCF 直接当高效 Top-N 主召回；它们更偏打分 / 粗排 / 重排，若召回化需要离线批量打分、向量化近似或先召回后重排
+- 不把当前 single-process demo 写成全量工业化服务
+- 不把训练路线写成已经完整训练落地的能力
+- 不把当前 React Demo / Simulation 第一版写成生产级前端、真实用户评估或完整动画系统
 - 不让模拟客户数据直接等同真实用户反馈
 - 不依赖 `old_dic` 作为当前规划依据
 

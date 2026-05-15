@@ -39,8 +39,13 @@ class SessionNotFoundError(KeyError):
 class RecommendationService:
     """Single-process demo service; session state is in memory and not production-safe."""
 
-    def __init__(self, config: str | Path = DEFAULT_CONFIG, limit_users: int | None = None) -> None:
-        self.env = HybridRecommendationEnvironment.from_config(config, limit_users=limit_users)
+    def __init__(
+        self,
+        config: str | Path = DEFAULT_CONFIG,
+        limit_users: int | None = None,
+        config_overrides: dict[str, Any] | None = None,
+    ) -> None:
+        self.env = HybridRecommendationEnvironment.from_config(config, limit_users=limit_users, config_overrides=config_overrides)
         self.sessions: dict[str, AgentSession] = {}
         self.session_events: dict[str, list[dict[str, Any]]] = {}
 
@@ -60,7 +65,7 @@ class RecommendationService:
     def feedback(self, session_id: str, action_type: str, item_id: str | None = None, comment: str | None = None) -> ChatResult:
         session = self._session(session_id)
         prompt = feedback_prompt(action_type, item_id, comment)
-        turn = self.env.converse(session, prompt)
+        turn = self.env.converse(session, prompt, explanation_item_id=item_id if action_type.strip().lower() == "why" else None)
         self.session_events[session_id].append({
             "type": "feedback",
             "action_type": action_type.strip().lower(),
@@ -68,6 +73,9 @@ class RecommendationService:
             "comment": comment,
         })
         return ChatResult(session_id=session_id, display=build_display_record(turn, session))
+
+    def get_agent_session(self, session_id: str) -> AgentSession:
+        return self._session(session_id)
 
     def export_session(self, session_id: str) -> dict[str, Any]:
         session = self._session(session_id)
