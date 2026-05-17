@@ -5,7 +5,7 @@
 ## 1. 目录职责
 
 - `rs_core/`：核心源码，只放可复用业务逻辑和工程模块。
-- `scripts/`：命令入口，只做参数解析与流程触发，不堆业务实现；统一使用 `main()` 和 `if __name__ == "__main__"` 入口保护。
+- `scripts/`：稳定命令入口，只做参数解析与流程触发，不堆业务实现；统一使用 `main()` 和 `if __name__ == "__main__"` 入口保护。阶段性实验入口放在 `scripts/experiments/recall/` 或 `scripts/experiments/ranking/`，历史入口放在 `scripts/archive/`。
 - `configs/`：配置集中管理，避免把实验参数散落在代码里。
 - `outputs/`：运行产物、日志、评估结果和临时报告，不放源码。
 - `tests/`：测试代码，按 unit、smoke、slow、gpu、experiment、serving、frontend 等层级标记。
@@ -20,7 +20,7 @@
 - 临时搜索、网格调参或一次性实验配置必须命名为 `configs/**/_tmp_*.yaml`，且不得加入 git。
 - 配置字段使用小写 snake_case；新增配置必须说明适用范围、输入数据、输出目录和关键阈值。
 - 不把绝对路径、个人机器路径、密钥或临时调参值写入默认配置。
-- 配置 contract 通过 `scripts/validate_engineering_contracts.py` 做轻量校验：tracked 配置必须可被项目 loader 读取，路径字段不得使用个人机器绝对路径，tracked 临时配置不得出现。
+- 配置 contract 通过 `scripts/ci/validate_engineering_contracts.py` 做轻量校验：tracked 配置必须可被项目 loader 读取，路径字段不得使用个人机器绝对路径，tracked 临时配置不得出现。
 
 ## 3. 实验产物
 
@@ -38,7 +38,7 @@
 - `experiment`：实验性评估，不作为普通提交的默认门禁。
 - `serving`：服务 API、session、chat、feedback 等接口验证。
 - `frontend`：前端构建、类型检查或端到端演示相关验证。
-- 所有 `tests/test_*.py` 必须声明文件级 `pytestmark`；普通 CI 通过 `scripts/select_tests_by_marker.py --marker unit --marker smoke` 自动选择快速门禁测试，避免维护测试文件白名单。
+- 所有 `tests/test_*.py` 必须声明文件级 `pytestmark`；普通 CI 通过 `scripts/ci/select_tests_by_marker.py --marker unit --marker smoke` 自动选择快速门禁测试，避免维护测试文件白名单。
 - v1.3 开始允许组合 marker：服务冒烟可同时标记 `serving + smoke`，服务运行时单测可标记 `unit + serving`，GPU 训练实验标记 `experiment + gpu`，长耗时离线实验标记 `experiment + slow`。默认 CI 仍只跑 `unit or smoke`，serving 作为专项门禁单独选择；`gpu`、`slow`、`experiment` 不进入默认门禁。
 
 ## 5. 日志与异常
@@ -48,7 +48,19 @@
 - 异常信息要说明失败对象和关键上下文，不吞异常。
 - 对外部输入、文件路径、模型输出和 API 请求做边界校验；内部可信调用不堆防御式样板。
 
-## 6. 新代码规则
+## 6. `scripts/` 使用规范
+
+- `scripts/` 只放命令入口，不放可复用业务逻辑；可复用逻辑必须进入 `rs_core/`。
+- 脚本中允许保留 `argparse`、默认路径、环境检查调用、调用 `rs_core.workflow`、最终打印/写出摘要、`main()` 和入口保护。
+- 算法、数据转换、候选生成、评估指标、实验 gate、artifact audit、registry/report 数据结构构建、被多个脚本或测试 import 的 helper 必须迁入 `rs_core/`。
+- 新测试默认 import `rs_core`；只有验证 CLI wrapper 入口形态时才 import `scripts`。
+- 稳定入口使用动词开头，例如 `build_*`、`train_*`、`run_*`、`validate_*`；阶段性实验保留 `run_phase_*` 或 `run_pool*_`，但新增阶段脚本要说明所属实验线和输出目录。
+- 无测试、无文档、无其他脚本引用且已被主路替代的历史入口移入 `scripts/archive/`；归档不等于删除，后续确认无用后再清理。
+- 脚本默认写 `outputs/` 任务子目录；一次性 debug、smoke、tuning 产物验证后清理，不把临时产物当主路证据。
+- 本项目本地命令默认使用 `.venv/Scripts/python.exe`；GPU、slow、experiment 脚本必须通过 marker 或文档说明隔离出默认门禁。
+- 脚本打印关键输入、输出路径、样本规模和核心结论；模块内部返回结构化结果，避免裸 `print`。
+
+## 7. 新代码规则
 
 - 先放到职责匹配的目录，不把核心逻辑写进脚本或 notebook。
 - 新增公共能力优先复用 `rs_core/` 已有结构。
@@ -56,7 +68,7 @@
 - 不修改召回、排序、Agent、服务或前端 contract 时，不顺手改业务逻辑。
 - 文档、命令和过程日志默认使用中文；代码标识符、配置项和模型名保持原文。
 
-## 7. 本地命令
+## 8. 本地命令
 
 在 Windows 本地默认使用项目虚拟环境：
 
@@ -64,7 +76,7 @@
 ./.venv/Scripts/python.exe -m pytest -m unit
 ./.venv/Scripts/python.exe -m pytest -m smoke
 ./.venv/Scripts/python.exe -m ruff check rs_core
-./.venv/Scripts/python.exe scripts/validate_engineering_contracts.py
+./.venv/Scripts/python.exe scripts/ci/validate_engineering_contracts.py
 ```
 
 前端命令从项目根目录执行：
@@ -77,14 +89,14 @@ npm --prefix frontend run build
 
 GPU、slow、experiment 标记默认不进入快速本地验证，按任务需要显式运行。
 
-## 8. CI v1
+## 9. CI v1
 
 - CI v1 只做最低工程门禁：Python 依赖安装、ruff、unit/smoke 测试。
 - CI v1 不跑 GPU、slow、experiment 或完整前端 E2E。
 - CI v1 不发布包、不部署服务、不上传实验产物。
 - 后续如果服务和前端进入稳定演示阶段，再扩展 serving/frontend 专项门禁。
 
-## 9. 非目标
+## 10. 非目标
 
 - 当前规范不是生产级 MLOps、在线 AB 实验或全量 CI/CD 方案。
 - 不要求所有历史脚本一次性迁移。

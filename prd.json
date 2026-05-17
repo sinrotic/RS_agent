@@ -19,7 +19,7 @@
       "priority": 2,
       "passes": true,
       "acceptanceCriteria": [
-        "scripts/run_qwen_evaluation_harness.py 能在 inference fallback 环境下生成 deterministic_baseline、rule_feedback_rerank、qwen_feedback_rerank 三种模式的 comparison JSON/report",
+        "scripts/evaluation/run_qwen_evaluation_harness.py 能在 inference fallback 环境下生成 deterministic_baseline、rule_feedback_rerank、qwen_feedback_rerank 三种模式的 comparison JSON/report",
         "comparison JSON 包含 rank_delta、mode_order、各模式 paths 与 inference_policy diagnostics",
         "对应测试覆盖 fallback/诊断摘要路径，且不要求本机已安装 torch/transformers",
         "相关 pytest 目标通过"

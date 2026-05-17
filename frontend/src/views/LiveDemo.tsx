@@ -32,7 +32,7 @@ export function LiveDemo() {
       })
       .catch((error: Error) => {
         if (cancelled) return;
-        setStatus(`后端服务未连接：${error.message}。请先启动 scripts/run_service.py，并刷新页面。`);
+        setStatus(`后端服务未连接：${error.message}。请先启动 scripts/serving/run_service.py，并刷新页面。`);
       });
     return () => { cancelled = true; };
   }, []);

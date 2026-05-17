@@ -198,7 +198,6 @@ def _validate_frozen_pool_config(config: dict[str, Any]) -> None:
     if top_k != REQUIRED_TOP_K:
         raise ValueError(f"ranking experiments require top_k={REQUIRED_TOP_K}")
 
-
 def _registry_config(config: dict[str, Any], strategy_name: str) -> dict[str, Any]:
     registry_config = dict(config.get("config_summary", {}) or {})
     registry_config.update(config)
@@ -206,7 +205,6 @@ def _registry_config(config: dict[str, Any], strategy_name: str) -> dict[str, An
     registry_config["candidate_pool_size"] = REQUIRED_CANDIDATE_POOL_SIZE
     registry_config["top_k"] = REQUIRED_TOP_K
     return registry_config
-
 
 def _default_status(run_kind: RankingRunKind) -> dict[str, Any]:
     if run_kind == "baseline":

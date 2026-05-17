@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_full_lightweight_recall_e2e import run_representative_e2e
+from scripts.experiments.recall.run_full_lightweight_recall_e2e import run_representative_e2e
 
 
 def write_json(path: Path, payload: dict) -> None:

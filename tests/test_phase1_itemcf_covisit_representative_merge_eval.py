@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_phase1_itemcf_covisit_representative_merge_eval import run_phase1_itemcf_covisit_representative_merge_eval
+from scripts.experiments.recall.run_phase1_itemcf_covisit_representative_merge_eval import run_phase1_itemcf_covisit_representative_merge_eval
 
 
 def write_json(path: Path, payload: dict) -> None:

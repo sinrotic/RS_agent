@@ -172,7 +172,7 @@
 
 | 项 | 结果 |
 | --- | --- |
-| 运行命令 | `.venv/Scripts/python.exe scripts/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_family/worker_cpu_itemcf_covisit_hybrid_pool200 --mode baseline --limit-users 500` |
+| 运行命令 | `.venv/Scripts/python.exe scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_family/worker_cpu_itemcf_covisit_hybrid_pool200 --mode baseline --limit-users 500` |
 | scope | `fixed_contract_candidate_eval` / `recall_only` |
 | split | `valid_test` |
 | users_total / users_with_holdout | `500 / 138` |
@@ -218,7 +218,7 @@
 
 | 项 | popular/category baseline | ItemCF/co-visit pool200 observation |
 | --- | --- | --- |
-| 运行命令 | `.venv/Scripts/python.exe scripts/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_baseline.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/worker_light_20260513/baseline_popular_category --mode baseline --limit-users 500` | `.venv/Scripts/python.exe scripts/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/worker_light_20260513/itemcf_covisit_pool200 --mode baseline --limit-users 500` |
+| 运行命令 | `.venv/Scripts/python.exe scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_baseline.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/worker_light_20260513/baseline_popular_category --mode baseline --limit-users 500` | `.venv/Scripts/python.exe scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/worker_light_20260513/itemcf_covisit_pool200 --mode baseline --limit-users 500` |
 | scope | `fixed_contract_candidate_eval` / `recall_only` | `fixed_contract_candidate_eval` / `recall_only` |
 | split | `valid_test` | `valid_test` |
 | users_total / users_with_holdout | `500 / 138` | `500 / 138` |
@@ -266,7 +266,7 @@
 
 | 项 | 结果 |
 | --- | --- |
-| 运行命令 | `.venv/Scripts/python.exe scripts/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_behavior_untried.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_family/worker_behavior_untried_pool200 --mode baseline --limit-users 500` |
+| 运行命令 | `.venv/Scripts/python.exe scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_behavior_untried.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_family/worker_behavior_untried_pool200 --mode baseline --limit-users 500` |
 | scope | `fixed_contract_candidate_eval` / `recall_only` |
 | split | `valid_test` |
 | users_total / users_with_holdout | `500 / 138` |
@@ -326,8 +326,8 @@
 
 | 项 | 结果 |
 | --- | --- |
-| baseline 命令 | `.venv/Scripts/python.exe scripts/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_source_aware.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_aware/baseline --mode baseline --limit-users 500` |
-| comparison 命令 | `.venv/Scripts/python.exe scripts/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_source_aware.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_aware/comparison --mode source-aware --limit-users 500 --holdout-user-ids outputs/recall/phase_1_21_recall_coverage/source_aware/baseline/holdout_user_ids.json` |
+| baseline 命令 | `.venv/Scripts/python.exe scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_source_aware.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_aware/baseline --mode baseline --limit-users 500` |
+| comparison 命令 | `.venv/Scripts/python.exe scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py --config configs/recall/phase_1_21/phase_1_21_recall_coverage_source_aware.yaml --output-dir outputs/recall/phase_1_21_recall_coverage/source_aware/comparison --mode source-aware --limit-users 500 --holdout-user-ids outputs/recall/phase_1_21_recall_coverage/source_aware/baseline/holdout_user_ids.json` |
 | scope | `recall_only_observation` |
 | split | `valid_test` |
 | users_total / users_with_holdout | `500 / 138` |
@@ -552,7 +552,7 @@ Source 级诊断：`als_mf_recall` 覆盖 `500` users / `1207` items，但没有
 
 | 项 | 结果 |
 | --- | --- |
-| 脚本 | `scripts/run_phase0_contract_precheck.py` |
+| 脚本 | `scripts/experiments/recall/run_phase0_contract_precheck.py` |
 | 输出目录 | `outputs/recall/full_main_route_other_methods/phase0_contract_precheck/` |
 | 必要产物 | `manifest.json`、`source_audit.json`、`resolved_inputs.json` |
 | 真实状态 | `INVALID_SCOPE_DRIFT` |
@@ -563,7 +563,7 @@ Source 级诊断：`als_mf_recall` 覆盖 `500` users / `1207` items，但没有
 ### 20.2 验证证据
 
 - `.venv/Scripts/python.exe -m pytest tests/test_phase0_contract_precheck.py`：`5 passed`。
-- `.venv/Scripts/python.exe -m ruff check scripts/run_phase0_contract_precheck.py tests/test_phase0_contract_precheck.py`：`All checks passed`。
+- `.venv/Scripts/python.exe -m ruff check scripts/experiments/recall/run_phase0_contract_precheck.py tests/test_phase0_contract_precheck.py`：`All checks passed`。
 - 独立 verifier 结论：`APPROVE`，确认 Phase 0 三份产物、scope drift 阻断、no holdout candidate read、`.venv` 测试证据满足 US-001。
 
 ### 20.3 当前结论
@@ -652,7 +652,7 @@ P5 方法观察显示，201-500 区间新增命中来自现有 lightweight sourc
 ### 22.4 验证证据
 
 - `.venv/Scripts/python.exe -m pytest tests/test_pool500_representative.py`：`5 passed`。
-- `.venv/Scripts/python.exe -m ruff check scripts/run_pool500_representative_p0_p2.py scripts/run_pool500_representative_p3_p4_audit.py scripts/run_pool500_representative_p5_method_observations.py scripts/run_pool500_representative_p6_promote_stop_gate.py tests/test_pool500_representative.py`：`All checks passed`。
+- `.venv/Scripts/python.exe -m ruff check scripts/experiments/recall/run_pool500_representative_p0_p2.py scripts/experiments/recall/run_pool500_representative_p3_p4_audit.py scripts/experiments/recall/run_pool500_representative_p5_method_observations.py scripts/experiments/recall/run_pool500_representative_p6_promote_stop_gate.py tests/test_pool500_representative.py`：`All checks passed`。
 - 独立 verifier 只读复核：`APPROVED`，0 blockers；确认 P0-P6 artifacts、审计、P6 Gate 与测试证据一致。
 
 ### 22.5 当前结论
@@ -700,7 +700,7 @@ P5 方法观察显示，201-500 区间新增命中来自现有 lightweight sourc
 ### 23.4 验证证据
 
 - `.venv/Scripts/python.exe -m pytest tests/test_pool500_all_methods_representative.py`：`5 passed in 0.09s`。
-- `.venv/Scripts/python.exe -m ruff check scripts/build_pool500_all_methods_custom_index.py scripts/run_pool500_all_methods_lightweight_cf.py scripts/run_pool500_all_methods_heavy_indexed_probes.py scripts/run_pool500_all_methods_gate.py tests/test_pool500_all_methods_representative.py`：`All checks passed`。
+- `.venv/Scripts/python.exe -m ruff check scripts/experiments/recall/build_pool500_all_methods_custom_index.py scripts/experiments/recall/run_pool500_all_methods_lightweight_cf.py scripts/experiments/recall/run_pool500_all_methods_heavy_indexed_probes.py scripts/experiments/recall/run_pool500_all_methods_gate.py tests/test_pool500_all_methods_representative.py`：`All checks passed`。
 - 独立 verifier：`APPROVED`，0 blockers；确认 no 10k、no full clean copy、no pool1000、no ranking replacement、no heavy training、bounded resource invariants 均成立。
 
 ### 23.5 当前结论
@@ -791,3 +791,35 @@ candidate_multi_source_boost: 0.1
 - 不允许用 all-method custom-index observation 重新选择主路。
 - 不允许静默移除 YouTubeDNN/two_tower、ItemCF、UserCF、Swing、co-visit repair 或 source-balanced 截断。
 - P7 route gate 必须把 YouTubeDNN/two_tower artifact、sidecar/schema/hash/freshness 纳入 route signature；若 artifact 校验失败，应阻塞为 `BLOCKED_TWO_TOWER_ARTIFACT`，而不是降级为 probe 或禁用双塔。
+
+## 25. P7 route precheck / gate 实现与阻断（2026-05-17）
+
+### 25.1 变更范围
+
+本轮补齐 P7 route precheck / gate 逻辑，新增 `scripts/experiments/recall/run_p7_full_pool500_route_gate.py` 与 `tests/test_p7_full_pool500_route_gate.py`。gate 只负责校验主路继承关系与路由签名，不替代 full pool500 召回实验本身；当前只允许 `STOP`、`DIAGNOSTIC_ONLY`、`PASS_CONTINUATION` 三态决策。
+
+### 25.2 当前权威阻断
+
+| 项 | 结果 |
+| --- | --- |
+| gate 当前状态 | `STOP / BLOCKED_TWO_TOWER_ARTIFACT` |
+| 直接原因 | YouTubeDNN manifest 内部路径仍指向旧目录，路由签名未通过 |
+| 处理方式 | 未绕过、未降级、未关闭双塔、未启动 full pool500 |
+| 允许范围 | 仅保留 diagnostic 复核与后续 continuation 入口 |
+
+### 25.3 验证证据
+
+- `tests/test_p7_full_pool500_route_gate.py` 对 gate 三态与阻断条件做了覆盖。
+- `.venv/Scripts/python.exe -m pytest tests/test_p7_full_pool500_route_gate.py`：`7 passed`。
+- `.venv/Scripts/python.exe -m ruff check scripts/experiments/recall/run_p7_full_pool500_route_gate.py tests/test_p7_full_pool500_route_gate.py`：`All checks passed`。
+- `.venv/Scripts/python.exe -m pytest tests -k "pool500 or p7"`：`18 passed`。
+
+### 25.4 当前结论
+
+- P7 现在是“先证实路由签名可用，再决定是否 continuation”，不是直接宣称 full pool500 已完成。
+- 当前最重要的边界是：双塔权威 artifact 仍未通过旧目录路径校验，因此 gate 停在 `BLOCKED_TWO_TOWER_ARTIFACT`。
+- 后续只有在 artifact 路径与签名一致后，才允许进入 `PASS_CONTINUATION`；在此之前不能把 gate 结果写成 full pool500 已跑通。
+
+### 25.5 面试可讲点
+
+这次的重点不是“把实验跑完”，而是把 P7 的路由前置检查做成了可验证的安全闸门：先用单测和 lint 把三态决策、双塔 artifact 校验、阻断语义固定下来，再用验证命令确认 gate 能稳定拦住旧目录路径问题，避免把错误的双塔继承关系带进后续 pool500 扩池。

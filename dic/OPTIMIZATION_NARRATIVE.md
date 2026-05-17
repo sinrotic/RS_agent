@@ -40,13 +40,13 @@ Phase 4：Agent 综合评估闭环与训练信号收口               已完成�
 
 Phase 1.31 已把 `ranking_algorithm_experiment` scaffold 固化为统一底座，统一接入 method spec、registry、comparison report 和 baseline / variant / blocked 四类 row。Phase 1.32 则只做首批诊断性运行：规则 champion 复验、浅层 learned fine-ranker 变体和树模型准备都按 diagnostic-only / blocked 收口，tree / LambdaMART 仍停留在依赖与导出准备，不写成晋升结论。
 
-这轮运行始终保持 `frozen pool200`、`candidate_pool_size=200`、`top_k=5`，`online_metric_claims=[]` 继续为 future-only。已验证 `./.venv/Scripts/python.exe -m py_compile rs_core/recsys/ranking.py rs_core/recsys/evaluation.py rs_core/workflow/hybrid_demo.py scripts/run_phase_1_30_physical_ranking_pipeline.py scripts/run_phase_1_26_real_ranking_experiments.py` 与 `./.venv/Scripts/python.exe -m pytest tests/test_evaluation.py tests/test_hybrid_demo.py tests/test_ltr.py tests/test_phase_1_31_ranking_scaffold.py -q`，并保留 `outputs/ranking/phase_1_30_physical_ranking_pipeline_regression/comparison.json`、`outputs/ranking/phase_1_26_real_ranking_experiments_regression/comparison.json`、`outputs/ranking/phase_1_31_ranking_algorithm_scaffold_smoke/comparison.json` 作为回填证据。
+这轮运行始终保持 `frozen pool200`、`candidate_pool_size=200`、`top_k=5`，`online_metric_claims=[]` 继续为 future-only。已验证 `./.venv/Scripts/python.exe -m py_compile rs_core/recsys/ranking.py rs_core/recsys/evaluation.py rs_core/workflow/hybrid_demo.py scripts/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py` 与 `./.venv/Scripts/python.exe -m pytest tests/test_evaluation.py tests/test_hybrid_demo.py tests/test_ltr.py tests/test_phase_1_31_ranking_scaffold.py -q`，并保留 `outputs/ranking/phase_1_30_physical_ranking_pipeline_regression/comparison.json`、`outputs/ranking/phase_1_26_real_ranking_experiments_regression/comparison.json`、`outputs/ranking/phase_1_31_ranking_algorithm_scaffold_smoke/comparison.json` 作为回填证据。
 
 ### Phase 3 树模型 / LambdaMART 诊断回填
 
 Phase 3 的关键不是把 GBDT / LambdaMART 名称跑出来，而是确认树模型是否真的具备训练依赖、group/objective 与 serving 迁移条件。当前结果显示，tree 路线已经能导出训练行，但仍不能把依赖检查误写成晋升证据。
 
-已核验证据：`scripts/run_phase_3_tree_ranking_experiments.py`、`tests/test_phase_3_tree_ranking_experiments.py`、`outputs/ranking/phase_3_tree_ranking_experiments_smoke/comparison.json`。smoke 口径保持 `candidate_pool_size=200`、`top_k=5`、training rows=2217、positive=16、negative=2201；`py_compile` 通过，Phase3/Phase2/Phase1 scaffold/evaluation pytest 12 passed，recall regression pytest 23 passed，`limit_users=20` smoke 通过。
+已核验证据：`scripts/experiments/ranking/run_phase_3_tree_ranking_experiments.py`、`tests/test_phase_3_tree_ranking_experiments.py`、`outputs/ranking/phase_3_tree_ranking_experiments_smoke/comparison.json`。smoke 口径保持 `candidate_pool_size=200`、`top_k=5`、training rows=2217、positive=16、negative=2201；`py_compile` 通过，Phase3/Phase2/Phase1 scaffold/evaluation pytest 12 passed，recall regression pytest 23 passed，`limit_users=20` smoke 通过。
 
 因此本轮只把 `sklearn` GBDT 保留为 diagnostic-only；LambdaMART 即使依赖或 GPU 可用，仍因 serving adapter、valid-test promotion gate、objective recovery condition 不完整而 blocked。`merge_for_user`、召回语义和 future-only 在线指标都没有变化。
 
@@ -579,7 +579,7 @@ valid/test hit_rate_at_k = 0.019635 -> 0.011220
 基于 source-aware fusion 暴露出的手写规则边界，新增默认关闭的 pure-Python LTR baseline：
 
 - `rs_core/recsys/ltr.py`：抽取 source / score / interaction / metadata 特征，提供 pairwise perceptron 训练与线性打分。
-- `rs_core/workflow/ltr_training.py` + `scripts/train_ltr_ranker.py`：复用 hybrid demo 候选生成和 LOPO / valid_test holdout label 生成训练样本。
+- `rs_core/workflow/ltr_training.py` + `scripts/training/train_ltr_ranker.py`：复用 hybrid demo 候选生成和 LOPO / valid_test holdout label 生成训练样本。
 - `rank_candidates()`：当 `ltr_model.enabled=true` 时额外输出 `ltr_score` 和 `ltr_model` rerank event；默认关闭时原排序不变。
 
 10k LOPO 训练结果：
@@ -630,7 +630,7 @@ candidate_hit_rank_avg = 15.416667 -> 17.833333
 
 ### 2026-05-13 - Phase 2 fine-rank batch 收口
 
-补齐 `scripts/run_phase_2_fine_rank_algorithm_batch.py` 和 `tests/test_phase_2_fine_rank_algorithm_batch.py` 后，Phase 2 learned/tree 批量实验统一收口到 fine_rank full-pool scoring 入口。`./.venv/Scripts/python.exe -m py_compile scripts/run_phase_2_fine_rank_algorithm_batch.py tests/test_phase_2_fine_rank_algorithm_batch.py` 与 `./.venv/Scripts/python.exe -m pytest tests/test_phase_2_fine_rank_algorithm_batch.py -q` 已通过（`3 passed`）；当前 learned rows 仅保留 diagnostic-only，tree/LambdaMART 仅做 blocked/preparation，不把任何 LTR/GBDT/LambdaMART 结果写成 promotion evidence，也不改变 frozen pool200 / `candidate_pool_size=200` / `top_k=5` / recall 语义边界。
+补齐 `scripts/experiments/ranking/run_phase_2_fine_rank_algorithm_batch.py` 和 `tests/test_phase_2_fine_rank_algorithm_batch.py` 后，Phase 2 learned/tree 批量实验统一收口到 fine_rank full-pool scoring 入口。`./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_2_fine_rank_algorithm_batch.py tests/test_phase_2_fine_rank_algorithm_batch.py` 与 `./.venv/Scripts/python.exe -m pytest tests/test_phase_2_fine_rank_algorithm_batch.py -q` 已通过（`3 passed`）；当前 learned rows 仅保留 diagnostic-only，tree/LambdaMART 仅做 blocked/preparation，不把任何 LTR/GBDT/LambdaMART 结果写成 promotion evidence，也不改变 frozen pool200 / `candidate_pool_size=200` / `top_k=5` / recall 语义边界。
 
 ### Phase 1.10：推荐底座工业化诊断层
 
@@ -686,7 +686,7 @@ Backbone readiness 判断：
 本轮只把 valid/test 作为默认晋升口径，LOPO 只作为 sanity / 诊断口径。实验入口均为：
 
 ```text
-./.venv/Scripts/python.exe scripts/run_hybrid_demo.py --config <config>
+./.venv/Scripts/python.exe scripts/evaluation/run_hybrid_demo.py --config <config>
 ```
 
 召回 source key 的审计边界为：`popular`、`category`、`itemcf_weak`、`itemcf_strong`、`semantic`。`semantic_title` 是配置 / 实验变体，不是新的 source key；`user_profile` 只作为 Agent 偏好信号，不作为 10k 独立召回源；`two_tower` POC 配置与报告存在，但不纳入本次默认晋升 gate。
@@ -1217,7 +1217,7 @@ top1_score_gap_avg: 24.742213 -> 24.047873
 Phase A 产物能把 pool200 冻结快照跑通，但如果直接引用它来讲“召回变好”，会把 observation contract 和 algorithm improvement 混为一谈；同时目前 pool200 只有 observation/frozen baseline diagnostic snapshot，缺 frozen_candidates、ablation、latency 和 fallback promotion artifacts，不能晋升成可证明的提升证据。
 
 **定位：**
-对照 `.omc/recall/schema/recall_experiment_registry.schema.yaml`、`.omc/recall/schema/source_group_registry.schema.yaml`、`.omc/recall/registry/*.yaml`、`.omc/recall/artifacts/phase_1_25_pool200_frozen_baseline/{manifest,signature,contract,metrics}.yaml` 和 `scripts/validate_recall_registry.py`，核对 registry validation 输出 `Recall registry validation passed: 1 record(s)`，并检查 frozen baseline 只提供诊断快照，不提供晋升证据链。
+对照 `.omc/recall/schema/recall_experiment_registry.schema.yaml`、`.omc/recall/schema/source_group_registry.schema.yaml`、`.omc/recall/registry/*.yaml`、`.omc/recall/artifacts/phase_1_25_pool200_frozen_baseline/{manifest,signature,contract,metrics}.yaml` 和 `scripts/data/validate_recall_registry.py`，核对 registry validation 输出 `Recall registry validation passed: 1 record(s)`，并检查 frozen baseline 只提供诊断快照，不提供晋升证据链。
 
 **解决：**
 把 Phase A 边界写成“持久化合同落地 + 冻结快照诊断”，明确只做 schema/registry/manifest/contract 对齐；pool200 统一标注为 `INCONCLUSIVE_MISSING_ARTIFACT`，不伪造 frozen_candidates、ablation、latency 或 fallback promotion 证据，也不引入 ranking/LTR/Top-K/线上指标叙事。随后把 `recall_registry_artifact.json` 接入 `run_hybrid_demo` 的实际产物路径，让每次 workflow 输出都带 recall-only registry artifact 摘要，而不是只停留在 `.omc` 静态合同。
@@ -1243,7 +1243,7 @@ registry 校验命令已通过；相关 schema/registry/artifact 文件已落盘
 新增 workflow 级 promotion sidecar 输出：source coverage、pool curve、latency、fallback、overlap/source contribution，并在 `metrics.json` 和 `recall_registry_artifact.json` 中记录路径与 sha256。新增 `source_family_observation_benchmarks.json`，把六类主流召回方法统一成 observation lane 的注册模板；当前只做框架和小样本 baseline 继承，不跑全量昂贵实验，也不把 missing ablation 包装成 promotion。
 
 **验证结果：**
-`./.venv/Scripts/python.exe scripts/validate_recall_registry.py` 输出 `Recall registry validation passed: 1 record(s)`；`./.venv/Scripts/python.exe -m pytest tests/test_phase_1_21_recall_coverage.py tests/test_hybrid_demo.py::test_workflow_writes_outputs_report_and_metrics` 输出 20 passed。workflow 测试验证了 artifact path/hash、missing frozen_candidates/ablation 下仍 `INCONCLUSIVE_MISSING_ARTIFACT`、forbidden metrics 包含 ranking/online 指标；Phase 1.21 测试验证六类 source family 都是 recall-only observation。
+`./.venv/Scripts/python.exe scripts/data/validate_recall_registry.py` 输出 `Recall registry validation passed: 1 record(s)`；`./.venv/Scripts/python.exe -m pytest tests/test_phase_1_21_recall_coverage.py tests/test_hybrid_demo.py::test_workflow_writes_outputs_report_and_metrics` 输出 20 passed。workflow 测试验证了 artifact path/hash、missing frozen_candidates/ablation 下仍 `INCONCLUSIVE_MISSING_ARTIFACT`、forbidden metrics 包含 ranking/online 指标；Phase 1.21 测试验证六类 source family 都是 recall-only observation。
 
 **面试可讲点：**
 可以讲成“用工程治理支撑算法路线探索”：不是一次性堆所有召回模型，而是先建可复现 artifact、registry gate 和 family benchmark，让 agent 持续探索组合时有统一证据标准；最终路线必须等完整 ablation/frozen/latency/fallback/overlap 证据齐全后再定。
@@ -1260,13 +1260,13 @@ registry 校验命令已通过；相关 schema/registry/artifact 文件已落盘
 之前 `source_family_observation_benchmarks.json` 更像模板清单，如果没有 `execution_status` 和 `evidence_level`，后续 agent 容易把未运行的 family-specific variant 误当作 executed evidence；同时 promotion gate 如果不强制 `frozen_candidates_path`，会让缺冻结候选的 promotion record 漏过校验。
 
 **定位方式：**
-检查 `.omc/recall/schema/recall_experiment_registry.schema.yaml`、`scripts/validate_recall_registry.py`、`scripts/phase_1_21_recall_coverage_experiments.py` 和相关测试，确认 validator 已按 schema 的 `promotion_required_paths` 校验 promotion lane，并用 targeted pytest 验证 forbidden metrics、missing frozen candidates 和 missing ablation 的负向路径。
+检查 `.omc/recall/schema/recall_experiment_registry.schema.yaml`、`scripts/data/validate_recall_registry.py`、`scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py` 和相关测试，确认 validator 已按 schema 的 `promotion_required_paths` 校验 promotion lane，并用 targeted pytest 验证 forbidden metrics、missing frozen candidates 和 missing ablation 的负向路径。
 
 **解决方式：**
 将 `frozen_candidates_path` 纳入 promotion required paths，validator 对 allowed/forbidden overlap、diagnostic-only metrics、decision_reason 引用 forbidden metrics 做负向校验；source family benchmark 增加 `execution_status`、`evidence_level`、`metrics_path`、`metrics_sha256`、`next_action` 等字段，只有当前真实 baseline 的 popular/category 标为 `EXECUTED_PASS`，ItemCF 和 semantic 标为 `READY_TO_RUN`，graph/vector/sequence 保持 template/missing-artifact 状态。ablation 模式新增 dedicated ablation evidence manifest 和 frozen promotion evidence checklist，但缺真实 frozen artifacts 时仍保持 `INCONCLUSIVE_MISSING_ARTIFACT`。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py::test_recall_registry_validator_accepts_source_alias_and_rejects_forbidden_metric_overlap` 通过；`./.venv/Scripts/python.exe -m compileall scripts/phase_1_21_recall_coverage_experiments.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_1_21_recall_coverage.py` 通过 19/19。当前 `baseline_vNext` 仍不得晋升，因为完整 frozen candidates、promotion artifact bundle 和可审计 ablation 证据仍未闭环。
+`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py::test_recall_registry_validator_accepts_source_alias_and_rejects_forbidden_metric_overlap` 通过；`./.venv/Scripts/python.exe -m compileall scripts/experiments/recall/phase_1_21_recall_coverage_experiments.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_1_21_recall_coverage.py` 通过 19/19。当前 `baseline_vNext` 仍不得晋升，因为完整 frozen candidates、promotion artifact bundle 和可审计 ablation 证据仍未闭环。
 
 **面试可讲点：**
 这轮可以讲成“把长期召回探索从计划变成状态机”：不是声称新召回方法已经提升，而是把每个 source family 的真实执行状态、缺失 artifact 和下一步动作写进机器可校验产物，避免 agent 在长期实验中伪完成或误晋升。
@@ -1286,7 +1286,7 @@ registry 校验命令已通过；相关 schema/registry/artifact 文件已落盘
 修正 ablation base config，只让每个实验 patch 启用当前待测 source，重新生成 summary、exclusive hits、overlap、latency、fallback 与 frozen promotion checklist；随后在 `.omc/recall/registry/recall_experiment_registry.yaml` 写入 `phase_1_21_semantic_title_category_promotion_candidate`，并在 `.omc/recall/artifacts/phase_1_21_semantic_title_category_promotion_candidate/` 落盘 manifest、metrics、signature。独立 verifier 通过后，再写入 `phase_1_21_semantic_title_category_baseline_vnext`，gate status 为 `PASS_PROMOTE_DEFAULT`，回滚基线为 `phase_1_25_pool200_frozen_baseline`。
 
 **验证结果：**
-修正后 baseline_only 为 `candidate_hit_users=17`、`candidate_hit_rate=0.123188`；`semantic_title_category` 为 `candidate_hit_users=19`、`candidate_hit_rate=0.137681`、`exclusive_hit_users=2`；`co_visit_fallback` 和 `category_long_tail` 均仍为 17 个 candidate-hit users。`frozen_promotion_evidence_checklist.json` 为 `READY_FOR_PROMOTION_REVIEW` 且无缺失 artifact；独立 verifier 结论为 APPROVE；`./.venv/Scripts/python.exe scripts/validate_recall_registry.py` 通过并识别 3 条 registry records。
+修正后 baseline_only 为 `candidate_hit_users=17`、`candidate_hit_rate=0.123188`；`semantic_title_category` 为 `candidate_hit_users=19`、`candidate_hit_rate=0.137681`、`exclusive_hit_users=2`；`co_visit_fallback` 和 `category_long_tail` 均仍为 17 个 candidate-hit users。`frozen_promotion_evidence_checklist.json` 为 `READY_FOR_PROMOTION_REVIEW` 且无缺失 artifact；独立 verifier 结论为 APPROVE；`./.venv/Scripts/python.exe scripts/data/validate_recall_registry.py` 通过并识别 3 条 registry records。
 
 **面试可讲点：**
 这轮可以讲成“用消融修正单 source 归因，并通过 registry/verifier 完成默认基线晋升”：先发现配置污染导致 ablation 失真，再用干净 patch 重跑并把证据写进 registry。最终只晋升 semantic/title-category，没有把 co-visit、long-tail 或 Top-K/ranking 指标包装成召回收益。
@@ -1507,7 +1507,7 @@ Phase 1.15 冻结了当前最强的 `semantic_title + YouTubeDNN pool100` 召回
 - 在 `rs_core/recsys/candidate_merge.py` 增加新 schema loader、manifest 校验、seen filtering、recency decay、score floor、per-seed/per-user 限制和 `two_tower_seed` source attribution。
 - 在 `rs_core/workflow/hybrid_demo.py` 中仅当 `two_tower_seed_enabled=true` 时加载 sidecar，并在 `fail_on_missing_sidecar=true` 时要求 manifest。
 - 新增 `configs/recall/phase_1_18/phase_1_18_two_tower_seed_pool100.yaml` 与 `configs/recall/phase_1_18/phase_1_18_lopo_two_tower_seed_pool100.yaml`，保持 frozen 主路不变，排序增强全部 disabled。
-- 新增 `scripts/run_phase_1_18_recall_gate.py`，生成 same-run baseline / experiment / LOPO 对照 JSON，避免用历史 baseline 包装实验结论。
+- 新增 `scripts/experiments/recall/run_phase_1_18_recall_gate.py`，生成 same-run baseline / experiment / LOPO 对照 JSON，避免用历史 baseline 包装实验结论。
 
 ### 验证结果
 
@@ -1515,7 +1515,7 @@ Phase 1.15 冻结了当前最强的 `semantic_title + YouTubeDNN pool100` 召回
 ./.venv/Scripts/python.exe -m pytest tests/test_two_tower_training.py tests/test_hybrid_demo.py tests/test_build_recall_views.py
 75 passed
 
-./.venv/Scripts/python.exe scripts/run_phase_1_18_recall_gate.py --skip-sidecar-build --output outputs/recall/phase_1_18_two_tower_seed_gate/comparison.json
+./.venv/Scripts/python.exe scripts/experiments/recall/run_phase_1_18_recall_gate.py --skip-sidecar-build --output outputs/recall/phase_1_18_two_tower_seed_gate/comparison.json
 exit 1 by gate, comparison JSON written
 ```
 
@@ -1584,7 +1584,7 @@ Phase 1.18 的 `two_tower_seed` 证明 learned embedding I2I 旁路可以工程�
 ### 实现内容
 
 - 新增 `rs_core/workflow/graph_walk_training.py`，基于正反馈相邻 item 建图，生成随机游走、skip-gram pairs，并用 PyTorch 训练 embedding；manifest 记录 `device=cuda` 或 `cpu`、输入/config/artifact hash 和 deterministic sort 约束。
-- 新增 `scripts/train_graph_walk_seed.py` 与 `scripts/run_phase_1_19_graph_walk_seed_gate.py`，gate 同跑 baseline、default-off disabled、experiment、source-only、without_graph_walk，并输出 graph_walk diagnostics。
+- 新增 `scripts/training/train_graph_walk_seed.py` 与 `scripts/experiments/recall/run_phase_1_19_graph_walk_seed_gate.py`，gate 同跑 baseline、default-off disabled、experiment、source-only、without_graph_walk，并输出 graph_walk diagnostics。
 - 在 `rs_core/recsys/candidate_merge.py` 和 `rs_core/workflow/hybrid_demo.py` 接入 `graph_walk_seed`，要求 manifest + sidecar hash 校验，保持 source label 独立、seen filtering、recency decay、score floor、per-seed/per-user 限制。
 - 新增 `configs/recall/phase_1_19/phase_1_19_graph_walk_seed_deepwalk.yaml`，保持排序增强关闭，gate 通过 overrides 启用实验 source。
 
@@ -1603,7 +1603,7 @@ Phase 1.18 的 `two_tower_seed` 证明 learned embedding I2I 旁路可以工程�
 full gate：
 
 ```text
-./.venv/Scripts/python.exe scripts/run_phase_1_19_graph_walk_seed_gate.py --output outputs/recall/phase_1_19_graph_walk_seed_gate/comparison.json
+./.venv/Scripts/python.exe scripts/experiments/recall/run_phase_1_19_graph_walk_seed_gate.py --output outputs/recall/phase_1_19_graph_walk_seed_gate/comparison.json
 exit 1 by promotion gate, comparison JSON written
 ```
 
@@ -1808,7 +1808,7 @@ Phase 1.19 之后，需要把 recall 诊断从“能跑”收紧到“能稳定�
 
 ### 定位方式
 
-运行 `scripts/run_phase_1_20_recall_diagnostics.py --limit-users 500`，对照 `outputs/recall/phase_1_20_recall_diagnostics_large_limit500/` 下的 artifact、manifest 和保护性 diff 检查结果；再用 `compileall` 和专项测试确认脚本本身没有回归。
+运行 `scripts/experiments/recall/phase_1_20_recall_diagnostics.py --limit-users 500`，对照 `outputs/recall/phase_1_20_recall_diagnostics_large_limit500/` 下的 artifact、manifest 和保护性 diff 检查结果；再用 `compileall` 和专项测试确认脚本本身没有回归。
 
 ### 结果
 
@@ -1961,13 +1961,13 @@ ablation 的非 baseline 行均为 time_limited_inconclusive_not_rerun，因此�
 Phase 1.22 å¤�æ ¸é‡Œï¼Œpromoted baseline ç¼ºå°‘ per-user `recommendations.jsonl` / `candidates.jsonl` / `ranking_hit_cases.jsonl`ï¼Œå�Žç»­ deterministic rerun è¿˜å‡ºçŽ°å€™é€‰æ± å†»ç»“å­—æ®µæ¼‚ç§»ï¼Œå¯¼è‡´ `candidate_hit_users` ä»Ž 19 å�˜æˆ� 17ï¼Œ`candidate_hit_rate_at_pool` å’Œ `candidate_count_avg` ä¹Ÿå�Œæ­¥å�˜åŒ–ï¼›è¿™è¯´æ˜ŽæŽ’åº�ç»“æžœå’Œå€™é€‰æ± çŠ¶æ€�æ²¡æœ‰çœŸæ­£è§£è€¦ã€‚
 
 **å®šä½�æ–¹å¼�ï¼š**
-å¯¹ç…§ Phase 1.22 çš„ comparison / metrics / hit cases è¾“å‡ºï¼Œç¡®è®¤é—®é¢˜ä¸�æ˜¯æŸ�ä¸ªæŽ’åº�ç­–ç•¥æœ¬èº«ï¼Œè€Œæ˜¯è¯„ä¼°å…¥å�£æ²¡æœ‰å›ºå®šå€™é€‰æ± ï¼›å†�æ ¸å¯¹ Phase 1.23 çš„ isolated configsã€�`scripts/run_phase_1_23_pool200_ranking_isolation.py` å’Œæ–°å¢žæµ‹è¯•ï¼Œç¡®è®¤ä¿®å¤�ç‚¹é›†ä¸­åœ¨å¯¼å‡º frozen candidates ä¸Žå�Œè·‘ baseline gateã€‚
+å¯¹ç…§ Phase 1.22 çš„ comparison / metrics / hit cases è¾“å‡ºï¼Œç¡®è®¤é—®é¢˜ä¸�æ˜¯æŸ�ä¸ªæŽ’åº�ç­–ç•¥æœ¬èº«ï¼Œè€Œæ˜¯è¯„ä¼°å…¥å�£æ²¡æœ‰å›ºå®šå€™é€‰æ± ï¼›å†�æ ¸å¯¹ Phase 1.23 çš„ isolated configsã€�`scripts/experiments/ranking/run_phase_1_23_pool200_ranking_isolation.py` å’Œæ–°å¢žæµ‹è¯•ï¼Œç¡®è®¤ä¿®å¤�ç‚¹é›†ä¸­åœ¨å¯¼å‡º frozen candidates ä¸Žå�Œè·‘ baseline gateã€‚
 
 **è§£å†³æ–¹å¼�ï¼š**
 æ–°å¢ž `export_frozen_candidates/frozen_candidates.jsonl`ï¼Œè¡¥é½� Phase 1.23 é…�ç½®ç»„ï¼Œè®©å�Œä¸€æ¬¡è¿�è¡Œå�Œæ—¶äº§å‡º no-rerank baseline ä¸Ž ranking variantsï¼Œå¹¶æŠŠæ¯”è¾ƒé€»è¾‘æ”¶æ•›åˆ° frozen candidate æ± ï¼›è¿™æ ·æŽ’åº�æ–¹æ³•å�ªå½±å“�é‡�æŽ’ï¼Œä¸�å†�è¢«å€™é€‰æ± æ¼‚ç§»æ±¡æŸ“ã€‚
 
 **éªŒè¯�ç»“æžœï¼š**
-`.venv` ä¸‹ `python -m compileall -q rs_core tests scripts` é€šè¿‡ï¼›`pytest tests/test_hybrid_demo.py -k "phase_1_23 or frozen_candidate"` ç»“æžœä¸º `3 passed`ï¼›`scripts/run_phase_1_23_pool200_ranking_isolation.py --limit 20` äº§å‡ºäº† comparison.json / comparison.md å’Œå››ä»½ frozen candidate å¯¼å‡ºï¼Œæ‰€æœ‰å�˜ä½“å�‡ä¸º `VALID`ï¼Œä¸”æ²¡æœ‰å€™é€‰æ± æ¼‚ç§»ã€‚
+`.venv` ä¸‹ `python -m compileall -q rs_core tests scripts` é€šè¿‡ï¼›`pytest tests/test_hybrid_demo.py -k "phase_1_23 or frozen_candidate"` ç»“æžœä¸º `3 passed`ï¼›`scripts/experiments/ranking/run_phase_1_23_pool200_ranking_isolation.py --limit 20` äº§å‡ºäº† comparison.json / comparison.md å’Œå››ä»½ frozen candidate å¯¼å‡ºï¼Œæ‰€æœ‰å�˜ä½“å�‡ä¸º `VALID`ï¼Œä¸”æ²¡æœ‰å€™é€‰æ± æ¼‚ç§»ã€‚
 
 **é�¢è¯•å�¯è®²ç‚¹ï¼š**
 è¿™è½®å�¯ä»¥è®²æˆ�â€œå…ˆä¿®è¯„ä¼°æ¡†æž¶ï¼Œå†�è°ˆæŽ’åº�æ”¶ç›Šâ€�ã€‚æˆ‘å…ˆå�‘çŽ°æŽ’åº�æ¯”è¾ƒè¢«å€™é€‰æ± æ¼‚ç§»æ±¡æŸ“ï¼Œç„¶å�ŽæŠŠ frozen candidate export å’Œ same-run no-rerank baseline gate è¡¥ä¸Šï¼Œæœ€å�Žç”¨ compileallã€�å®šå�‘ pytest å’Œ limit-20 smoke æŠŠç»“è®ºé”�æ­»åœ¨å�Œä¸€å€™é€‰æ± ä¸Šã€‚
@@ -2030,7 +2030,7 @@ Phase 1.22 å¤�æ ¸é‡Œï¼Œpromoted baseline ç¼ºå°‘ per-user `r
 按治理口径记录 Phase 1.27：allowed features 只保留 source、item metadata、candidate score、user history aggregates 和 near-miss diagnostics；forbidden features 明确排除 holdout target、future interaction，以及在 valid/test 上训练后再当 promotion evidence 的字段；label split leakage gate 专门覆盖 target item、future interaction 和 holdout leak；registry metadata 记录 feature contract version 与作用范围，供后续 learned ranker 复用。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_evaluation.py tests/test_ltr.py` 通过 106/106；`./.venv/Scripts/python.exe -m compileall rs_core scripts tests` 通过；`./.venv/Scripts/python.exe scripts/run_phase_1_25_pool200_normalized_additive.py --limit-users 50` 成功生成 `outputs/ranking/phase_1_25_pool200_normalized_additive/comparison.json`，registry 中已记录 `feature_contract_version=ranking_feature_contract_v1`、`feature_contract_gate_summary.schema_version=ranking_feature_contract_gate_v1` 和 `leakage_gate_summary.schema_version=ranking_feature_leakage_gate_v1`。非 LTR 排序变体的 feature/leakage gate 明确标记为 `NOT_APPLICABLE`，LTR 训练路径会对真实 feature rows 执行 gate；验证期间没有改 `candidate_pool_size`、`top_k` 或 recall baseline，也没有把 Phase 1.27 写成模型 lift。
+`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_evaluation.py tests/test_ltr.py` 通过 106/106；`./.venv/Scripts/python.exe -m compileall rs_core scripts tests` 通过；`./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_25_pool200_normalized_additive.py --limit-users 50` 成功生成 `outputs/ranking/phase_1_25_pool200_normalized_additive/comparison.json`，registry 中已记录 `feature_contract_version=ranking_feature_contract_v1`、`feature_contract_gate_summary.schema_version=ranking_feature_contract_gate_v1` 和 `leakage_gate_summary.schema_version=ranking_feature_leakage_gate_v1`。非 LTR 排序变体的 feature/leakage gate 明确标记为 `NOT_APPLICABLE`，LTR 训练路径会对真实 feature rows 执行 gate；验证期间没有改 `candidate_pool_size`、`top_k` 或 recall baseline，也没有把 Phase 1.27 写成模型 lift。
 
 **面试可讲点：**
 先把 learned ranker 的输入契约和泄漏边界定清楚，再谈模型本身。这里不是追求数字上升，而是先把特征、标签和切分门禁做成可审计的治理层，保证后续排序学习的证据不会被 holdout leak 污染。
@@ -2047,10 +2047,10 @@ Phase 1.22 å¤�æ ¸é‡Œï¼Œpromoted baseline ç¼ºå°‘ per-user `r
 检查 `rs_core/recsys/ranking.py`，确认 `ltr_model.enabled` 已经在 `rank_candidates()` 中走真实排序推理路径；检查 `rs_core/recsys/ltr.py` 和 `rs_core/workflow/ltr_training.py`，确认 pointwise logistic 与 pairwise perceptron 都输出兼容 `score_ltr()` 的线性权重，并会用真实候选 feature rows 执行 `validate_ltr_feature_contract_gate()` 与 `validate_ltr_leakage_gate()`。同时确认 baseline 配置仍来自 `configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml`，保持 `candidate_pool_size=200`、`top_k=5` 和召回参数不变。
 
 **解决方式：**
-新增并扩展 `scripts/run_phase_1_28_lightweight_learned_ranker.py`，形成 baseline → LOPO/internal LTR training → LTR variant evaluation → registry/comparison/report 的最小闭环。runner 写出 `same_run_baseline`、`pointwise_logistic_lopo_ltr` 和 `pairwise_perceptron_lopo_ltr`；两个 LTR 变体都复用 Phase 1.27 gate summary，并把 `strict_ranking_promotion_status(..., ltr_enabled=True)` 的结果写入 registry，明确标记为 `PARTIAL diagnostic-only`，不允许作为 frozen-pool promotion evidence。
+新增并扩展 `scripts/experiments/ranking/run_phase_1_28_lightweight_learned_ranker.py`，形成 baseline → LOPO/internal LTR training → LTR variant evaluation → registry/comparison/report 的最小闭环。runner 写出 `same_run_baseline`、`pointwise_logistic_lopo_ltr` 和 `pairwise_perceptron_lopo_ltr`；两个 LTR 变体都复用 Phase 1.27 gate summary，并把 `strict_ranking_promotion_status(..., ltr_enabled=True)` 的结果写入 registry，明确标记为 `PARTIAL diagnostic-only`，不允许作为 frozen-pool promotion evidence。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k phase_1_28 -vv` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_ltr.py tests/test_hybrid_demo.py` 通过 107/107；`./.venv/Scripts/python.exe -m compileall rs_core scripts tests` 通过；`./.venv/Scripts/python.exe scripts/run_phase_1_28_lightweight_learned_ranker.py --limit-users 50` 生成 `outputs/ranking/phase_1_28_lightweight_learned_ranker/comparison.json` 和 `comparison.md`。artifact 摘要显示 `all_variants_valid=true`，baseline、`pointwise_logistic_lopo_ltr` 与 `pairwise_perceptron_lopo_ltr` 的 frozen candidate comparison 均匹配，`candidate_pool_size=200`、`top_k=5`、`fallback_rate=0.0`；两个 LTR 训练均为 `feature_contract_gate=PASS`、`leakage_gate=PASS`、`label_source=leave_one_positive_out_train`、`training_split=train`、`rows=4366`、`positive_rows=32`，并分别记录 `model_type=pointwise_logistic_ltr_v1` 与 `pairwise_perceptron_ltr_v1`。小样本 smoke 中 Top-K 指标未提升，两个 LTR 变体状态均保持 `PARTIAL diagnostic-only`、`promotable=false`。
+`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k phase_1_28 -vv` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_ltr.py tests/test_hybrid_demo.py` 通过 107/107；`./.venv/Scripts/python.exe -m compileall rs_core scripts tests` 通过；`./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_28_lightweight_learned_ranker.py --limit-users 50` 生成 `outputs/ranking/phase_1_28_lightweight_learned_ranker/comparison.json` 和 `comparison.md`。artifact 摘要显示 `all_variants_valid=true`，baseline、`pointwise_logistic_lopo_ltr` 与 `pairwise_perceptron_lopo_ltr` 的 frozen candidate comparison 均匹配，`candidate_pool_size=200`、`top_k=5`、`fallback_rate=0.0`；两个 LTR 训练均为 `feature_contract_gate=PASS`、`leakage_gate=PASS`、`label_source=leave_one_positive_out_train`、`training_split=train`、`rows=4366`、`positive_rows=32`，并分别记录 `model_type=pointwise_logistic_ltr_v1` 与 `pairwise_perceptron_ltr_v1`。小样本 smoke 中 Top-K 指标未提升，两个 LTR 变体状态均保持 `PARTIAL diagnostic-only`、`promotable=false`。
 
 **面试可讲点：**
 这轮可以讲成“把 learned ranker 从概念接成可审计生产路径”：先用最轻量线性模型验证训练/推理/registry/gate/frozen equality 是否闭环，再决定是否升级到 LR、GBDT、LambdaMART 或深度排序。这样能避免把复杂模型失败误判为路线失败，也能避免把 LOPO sanity 包装成 valid/test 晋升。
@@ -2067,10 +2067,10 @@ Phase 7/8 的方法依赖 CTR/CVR/GMV 等业务 label、线上或准线上评估
 对照 `dic/phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md` 中 Phase 7/8 的进入条件，确认当前状态分别是 `future-online` 和 `future-agent-online`；同时复用 Phase 0 后续形成的 registry/artifact inspection 结构，确保 baseline artifact 仍保持 `candidate_pool_size=200`、`top_k=5` 与 frozen candidate 可审计。
 
 **解决方式：**
-新增 `scripts/run_phase_7_8_future_online_gate.py`，只运行 same-run baseline 以保留当前离线产物完整性；将 `esmm_ctr_cvr_ranker`、`mmoe_multi_task_ranker`、`ple_multi_task_ranker`、`contextual_bandit_ranker`、`rl_grpo_preference_ranker` 等方法写入 blocked registry，lane 分别标注为 `future-online` / `future-agent-online`，并在 `future_online_readiness` 中明确缺失业务 label、线上评估、serving/monitoring、交互日志、安全探索和 replay/A/B。
+新增 `scripts/experiments/ranking/run_phase_7_8_future_online_gate.py`，只运行 same-run baseline 以保留当前离线产物完整性；将 `esmm_ctr_cvr_ranker`、`mmoe_multi_task_ranker`、`ple_multi_task_ranker`、`contextual_bandit_ranker`、`rl_grpo_preference_ranker` 等方法写入 blocked registry，lane 分别标注为 `future-online` / `future-agent-online`，并在 `future_online_readiness` 中明确缺失业务 label、线上评估、serving/monitoring、交互日志、安全探索和 replay/A/B。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m compileall scripts/run_phase_6_semantic_two_tower_ranker.py scripts/run_phase_7_8_future_online_gate.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_7_8_future_online_gate or phase_6_semantic_two_tower_ranker or phase_5_sequence_ranker"` 通过 3 个目标测试；真实 smoke `./.venv/Scripts/python.exe scripts/run_phase_7_8_future_online_gate.py --output-dir outputs/ranking/phase_7_8_future_online_gate_smoke --limit-users 200` 通过，`comparison.json` 中 artifact inspection 为 PASS，最终路线保持 `same_run_baseline`，线上指标被列为当前禁用证据。
+`./.venv/Scripts/python.exe -m compileall scripts/experiments/ranking/run_phase_6_semantic_two_tower_ranker.py scripts/experiments/ranking/run_phase_7_8_future_online_gate.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_7_8_future_online_gate or phase_6_semantic_two_tower_ranker or phase_5_sequence_ranker"` 通过 3 个目标测试；真实 smoke `./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_7_8_future_online_gate.py --output-dir outputs/ranking/phase_7_8_future_online_gate_smoke --limit-users 200` 通过，`comparison.json` 中 artifact inspection 为 PASS，最终路线保持 `same_run_baseline`，线上指标被列为当前禁用证据。
 
 **面试可讲点：**
 这轮可以讲成“知道什么时候不该做实验”：多目标和在线学习是工业推荐系统的重要方向，但没有业务 label、线上链路和安全探索时，最专业的做法是建立 future gate 和证据边界，而不是拿离线 Top-K 指标冒充 CTR/CVR/GMV 收益。
@@ -2087,10 +2087,10 @@ Phase 7/8 的方法依赖 CTR/CVR/GMV 等业务 label、线上或准线上评估
 检查 `configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml` 确认 `candidate_pool_size=200`、`top_k=5`、semantic/two_tower 源已存在且排序开关关闭；检查 `rs_core/recsys/ranking.py`、`rs_core/recsys/ltr.py` 和 two-tower artifact，确认候选内可用的是 semantic/two_tower source score 与 source cross features，而不是新的候选生成路径。
 
 **解决方式：**
-新增 `scripts/run_phase_6_semantic_two_tower_ranker.py`，在 same-run frozen pool200 baseline 上运行三个排序侧对照：`semantic_score_feature_rerank`、`two_tower_score_feature_rerank`、`semantic_two_tower_cross_feature_fusion`；同时把 `dssm_artifact_candidate_rerank` 与 `raw_vector_similarity_feature_fusion` 写入 blocked registry，原因是缺 candidate-level adapter 且不得重建候选池。
+新增 `scripts/experiments/ranking/run_phase_6_semantic_two_tower_ranker.py`，在 same-run frozen pool200 baseline 上运行三个排序侧对照：`semantic_score_feature_rerank`、`two_tower_score_feature_rerank`、`semantic_two_tower_cross_feature_fusion`；同时把 `dssm_artifact_candidate_rerank` 与 `raw_vector_similarity_feature_fusion` 写入 blocked registry，原因是缺 candidate-level adapter 且不得重建候选池。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m compileall scripts/run_phase_6_semantic_two_tower_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_6_semantic_two_tower_ranker or phase_5_sequence_ranker"` 通过 2 个目标测试；真实 smoke `./.venv/Scripts/python.exe scripts/run_phase_6_semantic_two_tower_ranker.py --output-dir outputs/ranking/phase_6_semantic_two_tower_ranker_smoke --limit-users 200` 通过，`comparison.json` 中 artifact inspection 为 PASS、frozen candidate status 全部 PASS。指标上 baseline `hit_rate_at_k=0.037037`、`ndcg_at_k=0.007103`、`mrr_at_k=0.015432`；semantic score rerank 下降到 `hit_rate_at_k=0.018519`；two-tower score 与 cross-feature fusion 持平但没有减少 missed-topk users，因此全部为 diagnostic-only，最终路线保持 `same_run_baseline`。
+`./.venv/Scripts/python.exe -m compileall scripts/experiments/ranking/run_phase_6_semantic_two_tower_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_6_semantic_two_tower_ranker or phase_5_sequence_ranker"` 通过 2 个目标测试；真实 smoke `./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_6_semantic_two_tower_ranker.py --output-dir outputs/ranking/phase_6_semantic_two_tower_ranker_smoke --limit-users 200` 通过，`comparison.json` 中 artifact inspection 为 PASS、frozen candidate status 全部 PASS。指标上 baseline `hit_rate_at_k=0.037037`、`ndcg_at_k=0.007103`、`mrr_at_k=0.015432`；semantic score rerank 下降到 `hit_rate_at_k=0.018519`；two-tower score 与 cross-feature fusion 持平但没有减少 missed-topk users，因此全部为 diagnostic-only，最终路线保持 `same_run_baseline`。
 
 **面试可讲点：**
 这轮体现的是“向量/双塔不是万能增强”的实验纪律：已有 embedding artifact 不等于可以改变候选池，也不等于有排序收益。先把候选内可审计分数做 frozen-pool 对照，再把缺 adapter 的 DSSM/vector 路线明确 blocked，能展示对召回、排序和特征证据边界的把控。
@@ -2107,10 +2107,10 @@ Phase 7/8 的方法依赖 CTR/CVR/GMV 等业务 label、线上或准线上评估
 检查 `configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml` 指向的 `data/processed/amazon_2023_recall_clean_10000/user_sequences.train.jsonl`，统计序列质量：200 用户 smoke 中 `positive_len_ge_2_rate=0.575`、`positive_len_ge_10_rate=0.11`、`timestamp_ordered_rate=1.0`。这说明时间顺序可靠，短序列诊断可用，但长行为序列模型的数据覆盖不达标。
 
 **解决方式：**
-新增 `scripts/run_phase_5_sequence_ranker.py`：只输出 sequence data readiness、same-run baseline artifact inspection 和 method registry。`session_aware_reranker_short_history_diagnostic` 与 `attention_over_user_history_diagnostic` 标记为 diagnostic；DIN、DIEN、BST、SIM 因 `long_sequence_coverage_below_threshold` 及 adapter 缺失标记为 blocked，不进行伪训练。
+新增 `scripts/experiments/ranking/run_phase_5_sequence_ranker.py`：只输出 sequence data readiness、same-run baseline artifact inspection 和 method registry。`session_aware_reranker_short_history_diagnostic` 与 `attention_over_user_history_diagnostic` 标记为 diagnostic；DIN、DIEN、BST、SIM 因 `long_sequence_coverage_below_threshold` 及 adapter 缺失标记为 blocked，不进行伪训练。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m compileall scripts/run_phase_5_sequence_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_5_sequence_ranker or phase_4_neural_ranker"` 通过 2/2；真实 smoke `./.venv/Scripts/python.exe scripts/run_phase_5_sequence_ranker.py --output-dir outputs/ranking/phase_5_sequence_attention_ranker_smoke --limit-users 200` 产出 `comparison.json`，artifact inspection PASS，短序列方法 diagnostic，DIN/DIEN/BST/SIM blocked，最终路线仍为 same-run baseline。
+`./.venv/Scripts/python.exe -m compileall scripts/experiments/ranking/run_phase_5_sequence_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_5_sequence_ranker or phase_4_neural_ranker"` 通过 2/2；真实 smoke `./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_5_sequence_ranker.py --output-dir outputs/ranking/phase_5_sequence_attention_ranker_smoke --limit-users 200` 产出 `comparison.json`，artifact inspection PASS，短序列方法 diagnostic，DIN/DIEN/BST/SIM blocked，最终路线仍为 same-run baseline。
 
 **面试可讲点：**
 这轮可以讲成“序列模型先过数据门禁”：我没有因为项目里有时间序列字段就强行堆 DIN/DIEN/BST，而是先量化历史长度、时间顺序和未来泄漏边界，把可做的短历史诊断与当前不能做的长序列模型清晰拆开。
@@ -2130,7 +2130,7 @@ Phase 5 smoke 能证明诊断链路和合同检查通过，但不能把序列/�
 把 Phase 5 结果明确收口为 diagnostic / blocked：短历史与注意力诊断保留，DIN / DIEN / BST / SIM 仍因序列覆盖和 adapter 条件不足维持 blocked，不把 positive push smoke 叙述成 promotion。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m py_compile scripts/run_phase_5_sequence_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_5_fine_rank_positive_push.py -q` 通过 `7 passed`；`outputs/ranking/phase_5_fine_rank_positive_push_smoke/comparison.json` 通过 contract 检查。
+`./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_5_sequence_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_5_fine_rank_positive_push.py -q` 通过 `7 passed`；`outputs/ranking/phase_5_fine_rank_positive_push_smoke/comparison.json` 通过 contract 检查。
 
 **面试可讲点：**
 这轮可以讲成“把序列模型也放进同一套证据门禁”：不是因为模型名更高级就放松标准，而是先用合同检查证明冻结候选、诊断成功和在线承诺为空，再决定哪些方法只能留在 diagnostic lane。
@@ -2150,7 +2150,7 @@ Phase 5 smoke 能证明诊断链路和合同检查通过，但不能把序列/�
 新增 Phase 6 runner：`coarse_rank` 使用 source-weighted metadata shadow score，不裁剪 pool；`fine_rank` 启用 normalized additive、source-aware fusion、item-feature rerank；`rerank` 保留 Top-5 source minimum 和 stable tie-break。GBDT/LambdaMART、神经序列和 Agent/online feedback 继续作为 blocked future route。越界权重已收回到允许网格 `0.2`。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m py_compile scripts/run_phase_6_industrial_ranking_chain.py tests/test_phase_6_industrial_ranking_chain.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_6_industrial_ranking_chain.py -q` 通过 `4 passed`；真实 smoke `outputs/ranking/phase_6_industrial_ranking_chain_smoke/comparison.json` 显示 `candidate_pool_size=200`、`top_k=5`、`artifact_inspection=PASS`、`promotion_success=false`、`promotion_eligible=false`。
+`./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_6_industrial_ranking_chain.py tests/test_phase_6_industrial_ranking_chain.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_6_industrial_ranking_chain.py -q` 通过 `4 passed`；真实 smoke `outputs/ranking/phase_6_industrial_ranking_chain_smoke/comparison.json` 显示 `candidate_pool_size=200`、`top_k=5`、`artifact_inspection=PASS`、`promotion_success=false`、`promotion_eligible=false`。
 
 **面试可讲点：**
 这轮亮点是“工业化不是堆模型名，而是把每个阶段放到正确证据边界里”。粗排、精排、重排都有可运行算法和 artifact，但不把 smoke 成功说成晋升；同时有限网格直接拦住越界调参，体现实验平台治理能力。
@@ -2167,10 +2167,10 @@ Phase 4 不能为了“深度排序”名词覆盖而直接宣称晋升。虽然
 检查依赖显示 `torch 2.11.0+cu128`、CUDA 可用、设备为 `NVIDIA GeForce RTX 4070 Ti SUPER`，但 `tensorflow/keras` 不可用；同时复用 LTR candidate rows，确认有 `features`、`label`、`user_id` 可支持 pointwise/pairwise diagnostic smoke。
 
 **解决方式：**
-新增 `scripts/run_phase_4_neural_ranker.py`：导出候选行后，用 PyTorch/CUDA 训练 `mlp_pointwise_cuda_diagnostic` 与 `ranknet_pairwise_cuda_diagnostic` 的轻量诊断模型，记录 device、loss、row count、feature count、peak CUDA memory；`lambdarank`、`listwise`、`wide_deep/deepfm/dcn/xdeepfm` 因 objective/schema/adapter 缺失写为 blocked。所有神经方法默认 `promotion_eligible=false`、`diagnostic_only=true`，baseline 仍为最终路线。
+新增 `scripts/experiments/ranking/run_phase_4_neural_ranker.py`：导出候选行后，用 PyTorch/CUDA 训练 `mlp_pointwise_cuda_diagnostic` 与 `ranknet_pairwise_cuda_diagnostic` 的轻量诊断模型，记录 device、loss、row count、feature count、peak CUDA memory；`lambdarank`、`listwise`、`wide_deep/deepfm/dcn/xdeepfm` 因 objective/schema/adapter 缺失写为 blocked。所有神经方法默认 `promotion_eligible=false`、`diagnostic_only=true`，baseline 仍为最终路线。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m compileall scripts/run_phase_4_neural_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_4_neural_ranker or phase_3_tree_ranker"` 通过 2/2；真实 smoke `./.venv/Scripts/python.exe scripts/run_phase_4_neural_ranker.py --output-dir outputs/ranking/phase_4_neural_ranker_smoke --limit-users 3` 产出 `comparison.json`，artifact inspection PASS，MLP/RankNet 为 diagnostic，LambdaRank/Listwise/Wide&Deep 系列为 blocked，final decision 仍是 `same_run_baseline`。
+`./.venv/Scripts/python.exe -m compileall scripts/experiments/ranking/run_phase_4_neural_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_4_neural_ranker or phase_3_tree_ranker"` 通过 2/2；真实 smoke `./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_4_neural_ranker.py --output-dir outputs/ranking/phase_4_neural_ranker_smoke --limit-users 3` 产出 `comparison.json`，artifact inspection PASS，MLP/RankNet 为 diagnostic，LambdaRank/Listwise/Wide&Deep 系列为 blocked，final decision 仍是 `same_run_baseline`。
 
 **面试可讲点：**
 这轮可以讲成“GPU 不是晋升捷径，而是实验能力边界”：我用真实 CUDA 证明神经排序训练闭环可运行，但仍用 registry 和 promotion policy 锁住证据边界，只有 serving adapter、valid/test split、ADR 和稳定离线 lift 都补齐后，神经排序才可能从 diagnostic 转向 promotion。
@@ -2187,10 +2187,10 @@ Phase 4 不能为了“深度排序”名词覆盖而直接宣称晋升。虽然
 用项目默认 `.venv` 检查依赖状态，确认三类树模型依赖均不可用；同时检查 LTR 训练链路，确认它能导出候选行作为未来树模型训练数据，但不能训练真实 GBDT/LambdaMART。对照 Phase 3 的目标，决定本阶段只做 dependency gate、candidate-row export 和 blocked registry，不做虚假 promotion。
 
 **解决方式：**
-新增 `scripts/run_phase_3_tree_ranker.py`：运行 same-run baseline 与候选训练行导出；把 `sklearn_gbdt_valid_test_promotion`、`xgboost_lambdamart_gpu_promotion`、`lightgbm_lambdamart_gpu_promotion` 写入 `method_registry` 的 blocked 状态；GPU 相关方法写入 `blocked-gpu-unavailable`；`candidate_row_export` 明确标记为 diagnostic-only、not a tree ranker model。
+新增 `scripts/experiments/ranking/run_phase_3_tree_ranker.py`：运行 same-run baseline 与候选训练行导出；把 `sklearn_gbdt_valid_test_promotion`、`xgboost_lambdamart_gpu_promotion`、`lightgbm_lambdamart_gpu_promotion` 写入 `method_registry` 的 blocked 状态；GPU 相关方法写入 `blocked-gpu-unavailable`；`candidate_row_export` 明确标记为 diagnostic-only、not a tree ranker model。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m compileall scripts/run_phase_3_tree_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_3_tree_ranker or phase_2_shallow_learned_runner"` 通过 2/2。新增测试验证 Phase 3 保持 pool200/top_k/frozen candidate equality，缺失依赖方法全部 blocked，候选行导出不具备 promotion eligibility。
+`./.venv/Scripts/python.exe -m compileall scripts/experiments/ranking/run_phase_3_tree_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_3_tree_ranker or phase_2_shallow_learned_runner"` 通过 2/2。新增测试验证 Phase 3 保持 pool200/top_k/frozen candidate equality，缺失依赖方法全部 blocked，候选行导出不具备 promotion eligibility。
 
 **面试可讲点：**
 这轮可以讲成“复杂模型不满足工程前置条件时，先把失败变成可审计资产”：不是为了覆盖 GBDT/LambdaMART 名词而伪造模型收益，而是明确依赖、GPU、训练 adapter、valid/test split 的缺口，并产出未来真实树模型可复用的候选行数据。
@@ -2204,13 +2204,13 @@ Phase 4 不能为了“深度排序”名词覆盖而直接宣称晋升。虽然
 现有 Phase 1.28 已经能训练轻量 LTR，但它的训练口径是 leave-one-positive-out。LOPO 可以验证训练/推理链路，却不能当作当前 valid/test 晋升证据；同时项目里还没有独立 valid/test promotion 训练 split 的线性 ranker，因此不能为了补方法矩阵而伪造“线性模型已晋升”。
 
 **定位方式：**
-检查 `scripts/run_phase_1_28_lightweight_learned_ranker.py` 与 `rs_core/workflow/ltr_training.py`，确认可复用 `train_ltr_ranker()`、feature contract gate 与 leakage gate，但只支持 pointwise logistic / pairwise perceptron 的 LOPO 诊断训练。对照长期计划 Phase 2 的要求，决定把 pointwise/pairwise 纳入 diagnostic lane，把 valid/test promotion 线性 ranker 标记为 blocked。
+检查 `scripts/experiments/ranking/run_phase_1_28_lightweight_learned_ranker.py` 与 `rs_core/workflow/ltr_training.py`，确认可复用 `train_ltr_ranker()`、feature contract gate 与 leakage gate，但只支持 pointwise logistic / pairwise perceptron 的 LOPO 诊断训练。对照长期计划 Phase 2 的要求，决定把 pointwise/pairwise 纳入 diagnostic lane，把 valid/test promotion 线性 ranker 标记为 blocked。
 
 **解决方式：**
-新增 `scripts/run_phase_2_shallow_learned_ranker.py`：输出 Phase 0 风格的 `method_registry`、`artifact_inspection`、`gpu_resource_strategy`、`ranking_experiment_registry` 和 `final_decision`；pointwise/pairwise LTR 即使指标提升，也强制写入 `lopo_training_diagnostic_only` 与 `phase_2_valid_test_promotion_split_missing`，不允许晋升；`linear_ranker_valid_test_promotion` 作为 blocked method 写入 registry。
+新增 `scripts/experiments/ranking/run_phase_2_shallow_learned_ranker.py`：输出 Phase 0 风格的 `method_registry`、`artifact_inspection`、`gpu_resource_strategy`、`ranking_experiment_registry` 和 `final_decision`；pointwise/pairwise LTR 即使指标提升，也强制写入 `lopo_training_diagnostic_only` 与 `phase_2_valid_test_promotion_split_missing`，不允许晋升；`linear_ranker_valid_test_promotion` 作为 blocked method 写入 registry。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m py_compile scripts/run_phase_2_shallow_learned_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_2_shallow_learned_runner or phase_1_rule_ranking_runner or phase_0"` 通过 6/6；`./.venv/Scripts/python.exe scripts/run_phase_2_shallow_learned_ranker.py --output-dir outputs/ranking/phase_2_shallow_learned_ranker_smoke --limit-users 20` 成功生成 comparison。smoke 产物显示 artifact inspection PASS，pool/top_k 为 200/5，baseline 为 champion，pointwise/pairwise 为 diagnostic，linear ranker promotion 为 blocked，两个训练 gate 均为 PASS，最终仍为 `BASELINE_FINAL_ROUTE`。
+`./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_2_shallow_learned_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_2_shallow_learned_runner or phase_1_rule_ranking_runner or phase_0"` 通过 6/6；`./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_2_shallow_learned_ranker.py --output-dir outputs/ranking/phase_2_shallow_learned_ranker_smoke --limit-users 20` 成功生成 comparison。smoke 产物显示 artifact inspection PASS，pool/top_k 为 200/5，baseline 为 champion，pointwise/pairwise 为 diagnostic，linear ranker promotion 为 blocked，两个训练 gate 均为 PASS，最终仍为 `BASELINE_FINAL_ROUTE`。
 
 **面试可讲点：**
 这轮可以讲成“把浅层学习排序接进治理体系，但不放松证据门槛”：我验证了 pointwise/pairwise 的训练、推理、feature contract 和 leakage gate 都能跑通，同时明确 LOPO 只是诊断，valid/test promotion 训练 split 缺失时必须 blocked，而不是为了覆盖方法矩阵强行宣布模型有效。
@@ -2224,13 +2224,13 @@ Phase 4 不能为了“深度排序”名词覆盖而直接宣称晋升。虽然
 Phase 1 不能只是复用旧 Phase 1.23/1.25 的零散 runner；长期计划要求每个方法族都进入同一套 method registry、artifact inspection 和 champion/challenger 状态机。否则规则排序即使无提升，也很难被清晰地标记为 retired/diagnostic，并与后续线性、树模型、深度排序公平比较。
 
 **定位方式：**
-检查 `scripts/run_phase_1_23_pool200_ranking_isolation.py`、`scripts/run_phase_1_25_pool200_normalized_additive.py` 与 `rs_core/recsys/ranking.py`，确认现有规则能力已经存在，但缺少一个 Phase 1 专用入口把这些方法放进 Phase 0 的统一底座里。硬边界继续保持 fixed recall base，不改召回语义、不改 pool200/top_k，不使用线上指标做当前离线 promotion evidence。
+检查 `scripts/experiments/ranking/run_phase_1_23_pool200_ranking_isolation.py`、`scripts/experiments/ranking/run_phase_1_25_pool200_normalized_additive.py` 与 `rs_core/recsys/ranking.py`，确认现有规则能力已经存在，但缺少一个 Phase 1 专用入口把这些方法放进 Phase 0 的统一底座里。硬边界继续保持 fixed recall base，不改召回语义、不改 pool200/top_k，不使用线上指标做当前离线 promotion evidence。
 
 **解决方式：**
-新增 `scripts/run_phase_1_rule_ranking_champion.py`：以 `configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml` 为固定输入，只叠加排序层 overrides；输出 `method_registry`、`artifact_inspection`、`gpu_resource_strategy`、`ranking_experiment_registry`、`stability_summary` 和 `final_decision`。规则方法当前都走 promotion lane，但必须过 frozen candidate equality、strict promotion gate 和 multi-run consistency 才能成为 challenger。
+新增 `scripts/experiments/ranking/run_phase_1_rule_ranking_champion.py`：以 `configs/ranking/phase_1_25/phase_1_25_pool200_same_run_baseline.yaml` 为固定输入，只叠加排序层 overrides；输出 `method_registry`、`artifact_inspection`、`gpu_resource_strategy`、`ranking_experiment_registry`、`stability_summary` 和 `final_decision`。规则方法当前都走 promotion lane，但必须过 frozen candidate equality、strict promotion gate 和 multi-run consistency 才能成为 challenger。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m py_compile scripts/run_phase_1_rule_ranking_champion.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_1_rule_ranking_runner or phase_0 or phase_1_29_terminal_runner"` 通过 6/6；`./.venv/Scripts/python.exe scripts/run_phase_1_rule_ranking_champion.py --output-dir outputs/ranking/phase_1_rule_ranking_champion_smoke --limit-users 20 --runs 1` 成功生成 comparison。smoke 产物显示 artifact inspection 为 PASS，`candidate_pool_size=200`、`top_k=5`，baseline 为 champion，四个规则候选均为 retired，最终仍选择 `same_run_baseline` / `BASELINE_FINAL_ROUTE`。
+`./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_1_rule_ranking_champion.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_1_rule_ranking_runner or phase_0 or phase_1_29_terminal_runner"` 通过 6/6；`./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_rule_ranking_champion.py --output-dir outputs/ranking/phase_1_rule_ranking_champion_smoke --limit-users 20 --runs 1` 成功生成 comparison。smoke 产物显示 artifact inspection 为 PASS，`candidate_pool_size=200`、`top_k=5`，baseline 为 champion，四个规则候选均为 retired，最终仍选择 `same_run_baseline` / `BASELINE_FINAL_ROUTE`。
 
 **面试可讲点：**
 这轮可以讲成“把可解释规则排序纳入长期实验治理，而不是靠手调权重碰运气”：规则方法虽然没有晋升，但它们被统一放进 registry、artifact gate 和 champion/challenger 体系，为后续线性、GBDT/LambdaMART、深度排序提供了可比较的强基线和 no-promote 证据。
@@ -2244,13 +2244,13 @@ Phase 1 不能只是复用旧 Phase 1.23/1.25 的零散 runner；长期计划要
 已有 Phase 1.29 runner 能输出 terminal route 对照，但底座能力还散落在 runner 内部；如果后续 GBDT、LambdaMART、RankNet、DIN/DIEN 或 GPU 方法各自实现一套检查逻辑，容易再次出现候选池漂移、diagnostic-only 被误晋升、CPU toy smoke 被包装成真实收益等问题。
 
 **定位方式：**
-沿 `scripts/run_phase_1_29_terminal_ranking_route.py` 的输出链路检查 comparison 结构，确认缺少跨阶段可复用的 `method_registry`、`gpu_resource_strategy` 和统一 artifact inspection；再对照 `dic/phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md` 的硬边界，确认 Phase 0 只做排序实验治理底座，不改召回语义、不改 frozen pool200、`candidate_pool_size=200`、`top_k=5`。
+沿 `scripts/experiments/ranking/run_phase_1_29_terminal_ranking_route.py` 的输出链路检查 comparison 结构，确认缺少跨阶段可复用的 `method_registry`、`gpu_resource_strategy` 和统一 artifact inspection；再对照 `dic/phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md` 的硬边界，确认 Phase 0 只做排序实验治理底座，不改召回语义、不改 frozen pool200、`candidate_pool_size=200`、`top_k=5`。
 
 **解决方式：**
 新增 `build_ranking_method_registry_entry()`、`build_ranking_gpu_resource_summary()`、`inspect_ranking_run_artifacts()`：统一记录方法状态（champion/challenger/diagnostic/retired/blocked 等）、GPU 是否必需及不可用时的 blocked/diagnostic 状态、artifact 路径完整性、pool200/top_k 边界、frozen candidate match 和 diagnostic promotion violation。Phase 1.29 runner 现在输出 `method_registry` 与 `gpu_resource_strategy`，并复用统一 artifact inspection。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m py_compile rs_core/recsys/evaluation.py scripts/run_phase_1_29_terminal_ranking_route.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_0 or phase_1_29_terminal_runner"` 通过 5/5。测试覆盖 method registry 状态、未知状态拒绝、GPU blocked / diagnostic-cpu-smoke 语义、artifact inspection 对路径/边界/frozen mismatch/diagnostic 晋升违规的拦截，以及 Phase 1.29 runner 输出 `method_registry` 和 `gpu_resource_strategy`。
+`./.venv/Scripts/python.exe -m py_compile rs_core/recsys/evaluation.py scripts/experiments/ranking/run_phase_1_29_terminal_ranking_route.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -k "phase_0 or phase_1_29_terminal_runner"` 通过 5/5。测试覆盖 method registry 状态、未知状态拒绝、GPU blocked / diagnostic-cpu-smoke 语义、artifact inspection 对路径/边界/frozen mismatch/diagnostic 晋升违规的拦截，以及 Phase 1.29 runner 输出 `method_registry` 和 `gpu_resource_strategy`。
 
 **面试可讲点：**
 这轮可以讲成“先做排序实验操作系统，再堆模型”：把主流排序方法都接入同一套 registry、artifact gate、GPU 资源策略和 promotion 边界，后续每个方法是 champion、challenger、diagnostic 还是 blocked 都能被证据化管理，而不是靠口头判断。
@@ -2270,7 +2270,7 @@ Phase 1.23 / 1.24 / 1.25 / 1.28 都没有形成稳定 lift；如果把 LOPO 训�
 最终离线路线定为 `same_run_baseline`；`normalized_additive`、`source-aware fusion`、`item_feature_rerank`、`pointwise_logistic_lopo_ltr` 和 `pairwise_perceptron_lopo_ltr` 保持 `diagnostic-only / no-promote`。ADR 中显式写出 excluded invalid evidence、underpowered segment 边界和 frozen pool200 约束。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_evaluation.py tests/test_ltr.py tests/test_two_tower_training.py` 通过 117/117；`./.venv/Scripts/python.exe -m compileall rs_core scripts tests` 通过；`./.venv/Scripts/python.exe scripts/run_phase_1_28_lightweight_learned_ranker.py --limit-users 5` 成功生成 `outputs/ranking/phase_1_28_lightweight_learned_ranker/comparison.json` 和 `comparison.md`，其中 `all_variants_valid=true`，baseline 与两个 LTR 变体的 frozen candidate comparison 均匹配，两个 LTR 变体均保持 `PARTIAL diagnostic-only`。
+`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_evaluation.py tests/test_ltr.py tests/test_two_tower_training.py` 通过 117/117；`./.venv/Scripts/python.exe -m compileall rs_core scripts tests` 通过；`./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_28_lightweight_learned_ranker.py --limit-users 5` 成功生成 `outputs/ranking/phase_1_28_lightweight_learned_ranker/comparison.json` 和 `comparison.md`，其中 `all_variants_valid=true`，baseline 与两个 LTR 变体的 frozen candidate comparison 均匹配，两个 LTR 变体均保持 `PARTIAL diagnostic-only`。
 
 **面试可讲点：**
 先把证据边界固定住，再做路线选择；没有 promote 就明确写 no-promote，而不是把诊断性结果包装成收益。
@@ -2304,13 +2304,13 @@ Phase 1.23 / 1.24 / 1.25 / 1.28 都没有形成稳定 lift；如果把 LOPO 训�
 前一轮排序工作容易把 gate、smoke、依赖 blocked 或 diagnostic-only 记录误讲成“主流排序方法真实实验”。这会导致两个风险：一是把缺 GPU / 缺 serving adapter 的 LambdaMART、GBDT 状态包装成效果结论；二是把 LOPO 训练或 LTR gate PASS 误当成 valid/test promotion evidence。
 
 **定位方式：**
-沿 `rs_core/recsys/ranking.py`、`rs_core/workflow/ltr_training.py`、`scripts/run_phase_1_26_real_ranking_experiments.py` 和 `outputs/ranking/phase_1_26_real_ranking_experiments_smoke/comparison.json` 复核证据链，重点检查 `candidate_pool_size=200`、`top_k=5`、frozen candidate match、训练配置、训练日志、模型 artifact、candidate rows、case diff、registry state 与 diagnostic-only reasons 是否齐全。
+沿 `rs_core/recsys/ranking.py`、`rs_core/workflow/ltr_training.py`、`scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py` 和 `outputs/ranking/phase_1_26_real_ranking_experiments_smoke/comparison.json` 复核证据链，重点检查 `candidate_pool_size=200`、`top_k=5`、frozen candidate match、训练配置、训练日志、模型 artifact、candidate rows、case diff、registry state 与 diagnostic-only reasons 是否齐全。
 
 **解决方式：**
 在 ranking 输出中补齐 coarse/fine/rerank 三段 `score_trace`、stage rank 与 rank movement，让当前单阶段排序也能按工业链路解释；新增 Phase 1.26 runner，真实训练 pointwise logistic LOPO LTR 与 pairwise perceptron LOPO LTR，并输出 `training_config.json`、`training_log.json`、`ltr_model.json`、`ltr_candidate_rows.jsonl` 与 case diff。对 `sklearn_gbdt_fine_ranker`、`xgboost_lambdamart_fine_ranker`、`lightgbm_lambdamart_fine_ranker`，在依赖、GPU 或候选级 serving adapter 不满足时明确标记 `blocked`，不生成虚假的 promotion 结论。
 
 **验证结果：**
-`./.venv/Scripts/python.exe -m py_compile scripts/run_phase_1_26_real_ranking_experiments.py rs_core/recsys/ranking.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -q -k "score_trace or phase_1_26_real_ranking_runner_contract"` 通过 3/3；`./.venv/Scripts/python.exe scripts/run_phase_1_26_real_ranking_experiments.py --output-dir outputs/ranking/phase_1_26_real_ranking_experiments_smoke --limit-users 20 --seed 20260513` 成功生成 smoke comparison。产物中 `artifact_inspection.status=PASS`，baseline 与两个 LTR 变体均保持 pool200/top_k=5/frozen candidate match；两个 LTR 变体为真实训练但仍是 `diagnostic`，tree/LambdaMART 方法为 `blocked`。
+`./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py rs_core/recsys/ranking.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py -q -k "score_trace or phase_1_26_real_ranking_runner_contract"` 通过 3/3；`./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py --output-dir outputs/ranking/phase_1_26_real_ranking_experiments_smoke --limit-users 20 --seed 20260513` 成功生成 smoke comparison。产物中 `artifact_inspection.status=PASS`，baseline 与两个 LTR 变体均保持 pool200/top_k=5/frozen candidate match；两个 LTR 变体为真实训练但仍是 `diagnostic`，tree/LambdaMART 方法为 `blocked`。
 
 **面试可讲点：**
 这轮可以讲成“把排序从手写权重实验升级为可审计的工业排序实验链路”：先明确粗排、精排、重排的目标架构，再在 frozen pool200 上真实训练轻量 learned ranker，并用 score trace、artifact inspection、case diff 和 registry 约束证据边界。没有收益或条件不足的方法被如实标记为 diagnostic/blocked，而不是为了项目叙事包装成成功。
@@ -2373,7 +2373,7 @@ miss-user audit 显示 metadata 机会覆盖很高，但这只是聚合诊断，
 
 **定位方式：**
 
-对照 `scripts/run_phase_4_stage_shadow_metrics.py`、`tests/test_phase_4_stage_shadow_metrics.py` 和 `outputs/ranking/phase_4_stage_shadow_metrics_smoke/comparison.json`，核对 `candidate_pool_size=200`、`top_k=5`、`artifact_inspection=PASS`、`frozen match/hash` 未变，以及 recall / merge 语义未变。
+对照 `scripts/experiments/ranking/run_phase_4_stage_shadow_metrics.py`、`tests/test_phase_4_stage_shadow_metrics.py` 和 `outputs/ranking/phase_4_stage_shadow_metrics_smoke/comparison.json`，核对 `candidate_pool_size=200`、`top_k=5`、`artifact_inspection=PASS`、`frozen match/hash` 未变，以及 recall / merge 语义未变。
 
 **解决方式：**
 

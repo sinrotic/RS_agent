@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_phase2_usercf_bounded_observation import run_phase2_usercf_bounded_observation
+from scripts.experiments.recall.run_phase2_usercf_bounded_observation import run_phase2_usercf_bounded_observation
 
 
 def write_json(path: Path, payload: dict) -> None:

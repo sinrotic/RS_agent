@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.run_phase6_final_method_matrix import run_phase6_final_method_matrix
+from scripts.experiments.recall.run_phase6_final_method_matrix import run_phase6_final_method_matrix
 
 pytestmark = pytest.mark.unit
 

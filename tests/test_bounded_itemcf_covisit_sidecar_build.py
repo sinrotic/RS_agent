@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_bounded_itemcf_covisit_sidecar_build import run_sidecar_build
+from scripts.experiments.recall.run_bounded_itemcf_covisit_sidecar_build import run_sidecar_build
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:

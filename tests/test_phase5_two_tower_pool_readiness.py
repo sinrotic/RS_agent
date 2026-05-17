@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_phase5_two_tower_pool_readiness import run_phase5_two_tower_pool_readiness
+from scripts.experiments.recall.run_phase5_two_tower_pool_readiness import run_phase5_two_tower_pool_readiness
 
 
 def write_json(path: Path, payload: dict) -> None:

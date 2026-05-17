@@ -17,7 +17,7 @@ from rs_core.workflow.ranking_experiments import (
 
 @pytest.fixture
 def runner():
-    return pytest.importorskip("scripts.run_phase_3_tree_ranking_experiments")
+    return pytest.importorskip("scripts.experiments.ranking.run_phase_3_tree_ranking_experiments")
 
 
 FROZEN_ROWS = [

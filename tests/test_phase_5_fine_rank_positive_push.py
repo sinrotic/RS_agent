@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 
 from rs_core.workflow.ranking_experiments import REQUIRED_CANDIDATE_POOL_SIZE, REQUIRED_TOP_K, build_ranking_run_row
-from scripts import run_phase_5_fine_rank_positive_push as runner
+from scripts.experiments.ranking import run_phase_5_fine_rank_positive_push as runner
 
 
 FROZEN_ROWS = [

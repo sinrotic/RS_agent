@@ -11,8 +11,8 @@ from rs_core.common.io import write_jsonl
 from rs_core.serving import app as serving_app
 from rs_core.serving.service import RecommendationService
 from rs_core.simulation import COMMUTER_PRACTICAL, RoleAction, RoleActionType, run_simulation_batch, run_simulation_scene
-from scripts.run_agent_evaluation import run_agent_evaluation, write_agent_evaluation_outputs
-from scripts.run_simulation_evaluation import write_simulation_evaluation_outputs
+from scripts.evaluation.run_agent_evaluation import run_agent_evaluation, write_agent_evaluation_outputs
+from scripts.evaluation.run_simulation_evaluation import write_simulation_evaluation_outputs
 
 BLOCKED_PUBLIC_KEYS = {
     "ranking",

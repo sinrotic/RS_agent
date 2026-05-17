@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_phase3_swing_sequence_session_observation import run_phase3_swing_sequence_session_observation
+from scripts.experiments.recall.run_phase3_swing_sequence_session_observation import run_phase3_swing_sequence_session_observation
 
 
 def write_json(path: Path, payload: dict) -> None:

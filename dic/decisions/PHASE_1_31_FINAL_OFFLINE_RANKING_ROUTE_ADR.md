@@ -46,7 +46,7 @@
 
 - `./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_evaluation.py tests/test_ltr.py tests/test_two_tower_training.py`
 - `./.venv/Scripts/python.exe -m compileall rs_core scripts tests`
-- `./.venv/Scripts/python.exe scripts/run_phase_1_28_lightweight_learned_ranker.py --limit-users 5`
+- `./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_28_lightweight_learned_ranker.py --limit-users 5`
 
 ### 产物
 

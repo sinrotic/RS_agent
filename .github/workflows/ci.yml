@@ -26,14 +26,14 @@ jobs:
 
       - name: Run ruff on v1 scope
         run: |
-          python -m ruff check rs_core scripts/validate_engineering_contracts.py scripts/select_tests_by_marker.py tests
+          python -m ruff check rs_core scripts/ci/validate_engineering_contracts.py scripts/ci/select_tests_by_marker.py tests
 
       - name: Validate engineering contracts
-        run: python scripts/validate_engineering_contracts.py
+        run: python scripts/ci/validate_engineering_contracts.py
 
       - name: Select minimum unit and smoke tests
         run: |
-          python scripts/select_tests_by_marker.py --marker unit --marker smoke > .pytest-selected-tests.txt
+          python scripts/ci/select_tests_by_marker.py --marker unit --marker smoke > .pytest-selected-tests.txt
           test -s .pytest-selected-tests.txt
 
       - name: Collect minimum unit and smoke tests
@@ -54,7 +54,7 @@ jobs:
 
       - name: Select serving tests
         run: |
-          python scripts/select_tests_by_marker.py --marker serving > .pytest-selected-serving-tests.txt
+          python scripts/ci/select_tests_by_marker.py --marker serving > .pytest-selected-serving-tests.txt
           test -s .pytest-selected-serving-tests.txt
 
       - name: Collect serving tests

@@ -69,7 +69,7 @@
 ### Phase 1.8 item-feature rerank 对照
 
 ```bash
-./.venv/Scripts/python.exe scripts/run_hybrid_demo.py \
+./.venv/Scripts/python.exe scripts/evaluation/run_hybrid_demo.py \
   --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title_item_feature.yaml
 ```
 

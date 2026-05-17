@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.run_phase4_graph_mf_contract_validation import run_phase4_graph_mf_contract_validation
+from scripts.experiments.recall.run_phase4_graph_mf_contract_validation import run_phase4_graph_mf_contract_validation
 
 
 def write_json(path: Path, payload: dict) -> None:

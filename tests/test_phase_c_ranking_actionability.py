@@ -9,7 +9,7 @@ from pathlib import Path
 
 from rs_core.recsys.evaluation import compare_frozen_candidate_signatures
 from rs_core.workflow.ranking_experiments import REQUIRED_CANDIDATE_POOL_SIZE, REQUIRED_TOP_K
-from scripts import run_phase_c_ranking_actionability_diagnostic as runner
+from scripts.experiments.ranking import run_phase_c_ranking_actionability_diagnostic as runner
 
 
 BASELINE_FROZEN_ROWS = [

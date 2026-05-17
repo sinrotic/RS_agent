@@ -13,7 +13,7 @@ from rs_core.workflow.ranking_experiments import (
     build_blocked_ranking_run_row,
     build_ranking_run_row,
 )
-from scripts import run_phase_1_31_ranking_algorithm_scaffold as runner
+from scripts.experiments.ranking import run_phase_1_31_ranking_algorithm_scaffold as runner
 
 
 FROZEN_ROWS = [
@@ -77,7 +77,7 @@ def test_ranking_run_rows_require_frozen_pool200_and_top5_for_executable_methods
             run_index=1,
             run_kind="diagnostic",
             method_spec=spec,
-            config={"candidate_pool_size": 100, "top_k": REQUIRED_TOP_K},
+            config={"candidate_pool_size": 500, "top_k": REQUIRED_TOP_K},
             frozen_rows=FROZEN_ROWS,
         )
     with pytest.raises(ValueError, match="top_k=5"):
@@ -89,7 +89,6 @@ def test_ranking_run_rows_require_frozen_pool200_and_top5_for_executable_methods
             config={"candidate_pool_size": REQUIRED_CANDIDATE_POOL_SIZE, "top_k": 10},
             frozen_rows=FROZEN_ROWS,
         )
-
 
 def test_spec_only_blocked_method_enters_registry_with_dependency_gpu_and_recovery_fields():
     spec = RankingMethodSpec(
