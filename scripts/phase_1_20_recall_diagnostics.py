@@ -43,7 +43,7 @@ from rs_core.recsys.candidate_merge import (
 )
 from rs_core.recsys.evaluation import evaluate, heldout_positives
 from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import MergedCandidate, RecallCandidate, RankingResult
+from rs_core.recsys.types import MergedCandidate, RecallCandidate
 from rs_core.workflow.hybrid_demo import (
     _ensure_inputs,
     _itemcf_seed_items,

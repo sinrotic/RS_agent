@@ -453,3 +453,341 @@ Source 级诊断：`als_mf_recall` 覆盖 `500` users / `1207` items，但没有
 ### 16.5 当前结论
 
 依赖解锁后的 ALS/BPR/LightFM 已经从“没跑/blocked”变成固定合同 `EXECUTED_PASS`，但结果不支持晋升；当前召回主路仍保持 `semantic_title_category_expansion` / source-aware score-sorted 口径。MF 方向后续如果继续推进，应优先换更强的离线训练样本、负采样/特征设计、兼容的 Linux/Python 编译环境或可复现 artifact 合同，而不是在当前轻量合同上继续调 ALS/BPR/LightFM 超参。
+
+## 17. Representative full-lightweight E2E 与方法预检（2026-05-16）
+
+### 17.1 固定合同运行
+
+| 项 | 结果 |
+| --- | --- |
+| 运行结果 | 代表性 full-lightweight E2E 成功 |
+| 输出目录 | `outputs/recall/full_main_route_other_methods/lightweight_representative_e2e` |
+| 用户数 | `500` |
+| candidate rows | `75,866` |
+| empty users | `0` |
+| enabled sources | `popular`、`category`、`semantic` |
+| disabled sources | `ItemCF`、`graph`、`two_tower`、`UserCF`、`Swing`、`MF`、`sequence`、`pool500`、`pool1000` |
+| heavy outputs | 未生成 `itemcf` / `graph` / `pool` 输出文件 |
+| 10k source path | 未进入本轮代表性路径 |
+
+本轮只把 Popular / Category / Semantic 的轻量候选生成跑通并完成清单审计；其余方法族在 manifest 中保持 disabled 或仅保留为后续检查项，没有被伪装成已执行结果。
+
+### 17.2 方法预检结论
+
+| 方法 / 家族 | 当前状态 | evidence_level | decision | 证据 / 说明 |
+| --- | --- | --- | --- | --- |
+| ItemCF / co-visit sidecar | `not_enabled_in_representative_e2e` | `document_only` | `defer` | 本轮代表性 E2E 未启用 ItemCF / co-visit sidecar，且输出目录中没有对应产物；仅保留为后续受控回跑项 |
+| UserCF | `default_off_fallback_observation` | `document_only` | `defer` | 已在清单中显式关闭，当前只作为 fallback 观察位，不进入本轮代表性 E2E 的 promoted 路径 |
+| Swing | `default_off_fallback_observation` | `document_only` | `defer` | 已在清单中显式关闭，和 UserCF 一样只保留为 fallback 观察位 |
+| graph_walk | `checklist_only_deferred` | `document_only` | `defer` | 已作为后续检查项保留，但本轮没有进入代表性轻量 E2E |
+| two_tower | `checklist_only_deferred` | `document_only` | `defer` | 清单中为 disabled，且没有对应输出文件 |
+| MF | `checklist_only_deferred` | `document_only` | `defer` | 清单中为 disabled，当前代表性路径不把 MF 当作已跑方法 |
+| sequence | `checklist_only_deferred` | `document_only` | `defer` | 清单中为 disabled，未进入本轮代表性 E2E |
+
+### 17.3 当前结论
+
+- 这轮代表性 E2E 只确认了 Popular / Category / Semantic 的轻量候选生成链路可用。
+- ItemCF/co-visit、UserCF、Swing、graph_walk、two_tower、MF、sequence 都保持 conservative 的 `defer` / `document_only` 口径，不写成 `promote`。
+- 后续如果要推进其他方法族，必须先补对应 sidecar、依赖、索引或验证合同，再重新进入固定合同评估。
+
+## 18. Bounded ItemCF / co-visit sidecar dry-run 预检（2026-05-16）
+
+### 18.1 预检合同
+
+| 项 | 结果 |
+| --- | --- |
+| 输出目录 | `outputs/recall/full_main_route_other_methods/bounded_itemcf_covisit_dry_run_estimate` |
+| 输入 | `data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl` |
+| train_only | `true` |
+| limit_users | `1000` |
+| sampled_users / users_scanned | `1000 / 1000` |
+| estimated_pair_rows | `10528` |
+| bounded_pair_updates | `5264` |
+| pairs_dropped_by_cap | `0` |
+| planned_shard_count | `32` |
+| disk_free_bytes | `225294610432` |
+| source rows | `18103384` |
+| source sha256 | `d47c9a3476f35f0c8bd88947b58f8a3f0ef83383f587d8d0e3102b6dbf1baf07` |
+
+### 18.2 安全边界
+
+本轮只执行 dry-run estimate，不构建邻居 sidecar，不写 shard 文件，不生成 pool500/pool1000，也不读取 valid/test/holdout。输出目录只包含 `manifest.json`，manifest 中 `disabled_outputs.neighbor_sidecar_build=true`、`disabled_outputs.shard_files=true`、`safety_flags.forbidden_10k_paths_rejected=true`、`safety_flags.disk_free_enforced=true`。
+
+### 18.3 当前结论
+
+- ItemCF / co-visit 仍保持 `defer`，本轮证据只证明 full clean 上的 bounded dry-run 预检可执行、可审计。
+- 如果后续要进入真实 sidecar build，需要单独审批 pair/shard 预算、hot item 处理策略和 representative merge/eval 合同，不能把本轮 dry-run 写成召回效果提升。
+
+## 19. Bounded ItemCF / co-visit representative sidecar 构建（2026-05-16）
+
+### 19.1 构建合同
+
+| 项 | 结果 |
+| --- | --- |
+| 输出目录 | `outputs/recall/full_main_route_other_methods/bounded_itemcf_covisit_sidecar_representative` |
+| 输入 | `data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl` |
+| train_only | `true` |
+| limit_users | `1000` |
+| users_scanned / processed_users | `1000 / 363` |
+| pair_updates | `5264` |
+| pairs_dropped_by_cap | `0` |
+| shard_count | `32` |
+| output file_count | `34` |
+| disk_free_bytes | `225296961536` |
+| source rows | `18103384` |
+| source sha256 | `d47c9a3476f35f0c8bd88947b58f8a3f0ef83383f587d8d0e3102b6dbf1baf07` |
+
+### 19.2 产物与安全边界
+
+本轮已从 dry-run 推进到 representative sidecar 真实产物，但仍限定在 `<=1000` users，不做全量 sidecar、不做 pool500/pool1000、不生成 recall views。输出目录只包含 `manifest.json`、`source_audit.json` 和 `32` 个 `neighbors_shard_*.jsonl`；source audit 的 `read_files` 只包含 full clean 的 `user_sequences.train.jsonl`，未读取 valid/test/holdout，也没有 10k source path。
+
+### 19.3 当前结论
+
+- ItemCF / co-visit sidecar 当前状态从 `dry_run_only` 推进到 `representative_sidecar_built`，但 evidence 仍是工程产物与安全边界验证，不是召回效果提升验证。
+- 后续如要接入 candidate merge/eval，需要单独做 representative merge、dedup 后贡献、overlap、empty users、candidate inflation 和 pool displacement risk 审计，再决定是否从 `defer` 进入 fallback 或 promoted 候选。
+
+## 20. Phase 0 召回方法合同预检与安全阻断（2026-05-16）
+
+### 20.1 预检合同
+
+| 项 | 结果 |
+| --- | --- |
+| 脚本 | `scripts/run_phase0_contract_precheck.py` |
+| 输出目录 | `outputs/recall/full_main_route_other_methods/phase0_contract_precheck/` |
+| 必要产物 | `manifest.json`、`source_audit.json`、`resolved_inputs.json` |
+| 真实状态 | `INVALID_SCOPE_DRIFT` |
+| 阻断原因 | graph、two_tower、ranking pool200 具体 config 内容仍引用 `amazon_2023_recall_clean_10000` / `amazon_2023_recall_views_10000` |
+| allowed train inputs | full clean `user_sequences.train.jsonl`、`canonical_interactions.train.jsonl`、`canonical_items.jsonl`、full lightweight views、bounded ItemCF sidecar manifest |
+| forbidden candidate inputs | valid/test/holdout 文件只允许出现在 forbidden/evaluation-only 合同字段，不得出现在 `read_files` |
+
+### 20.2 验证证据
+
+- `.venv/Scripts/python.exe -m pytest tests/test_phase0_contract_precheck.py`：`5 passed`。
+- `.venv/Scripts/python.exe -m ruff check scripts/run_phase0_contract_precheck.py tests/test_phase0_contract_precheck.py`：`All checks passed`。
+- 独立 verifier 结论：`APPROVE`，确认 Phase 0 三份产物、scope drift 阻断、no holdout candidate read、`.venv` 测试证据满足 US-001。
+
+### 20.3 当前结论
+
+Phase 0 的目标是合同预检，不是运行召回方法。当前正确结论是：full clean / full lightweight / bounded ItemCF sidecar 输入可解析，但 graph、two_tower 与 ranking pool200 相关配置仍带历史 10k 路径，因此后续 Phase 1+ 不应继续执行，必须先补 full-clean-safe config 或调整 resolver 输入，再重新通过 Phase 0。
+
+## 21. Full-safe 召回方法全家桶 Phase 0-6 收口（2026-05-16）
+
+### 21.1 执行合同
+
+| 阶段 | 输出目录 | 状态 | 决策 |
+| --- | --- | --- | --- |
+| Phase 0 contract precheck | `outputs/recall/full_main_route_other_methods/phase0_contract_precheck/` | `PASS` | 修复 full-safe config 后通过 gate |
+| Phase 1 ItemCF/co-visit merge/eval | `outputs/recall/full_main_route_other_methods/itemcf_covisit_representative_merge_eval/` | `EXECUTED_PASS_OBSERVATION_ONLY` | observation-only，不晋升 |
+| Phase 2 UserCF bounded observation | `outputs/recall/full_main_route_other_methods/usercf_bounded_observation/` | `rejected` | 无正向 observation lift，拒绝晋升 |
+| Phase 3 Swing + session transition | `outputs/recall/full_main_route_other_methods/swing_sequence_session_observation/` | `EXECUTED_PASS_OBSERVATION_ONLY` | observation-only，不晋升 |
+| Phase 4 graph + MF contract | `outputs/recall/full_main_route_other_methods/graph_mf_contract_validation/` | `EXECUTED_PASS_CONTRACT_ONLY` | 只做合同验证，训练延后 |
+| Phase 5 two_tower + pool readiness | `outputs/recall/full_main_route_other_methods/two_tower_pool_readiness/` | `EXECUTED_PASS_FEASIBILITY_ONLY` | 只做 feasibility/readiness，训练延后 |
+| Phase 6 final matrix | `outputs/recall/full_main_route_other_methods/final_method_matrix_pass/` | `PASS` | 汇总 Phase 0-5 artifact 与 source audit |
+
+本轮是在第 20 节的 `INVALID_SCOPE_DRIFT` 基础上继续推进：保留历史 10k 配置不动，新增 full-safe graph/two_tower/ranking pool200 配置副本，并把 Phase 0 resolver 指向 full clean / full lightweight views。后续 Phase 1-5 均遵守 train-only candidate generation，valid/test 只在 evaluation-only 或合同字段中出现，holdout 不参与候选生成。
+
+### 21.2 关键指标与边界
+
+| 方法族 | 关键结果 | 解释 |
+| --- | --- | --- |
+| ItemCF/co-visit | `candidate_hit_users_delta=0`、`recall_at_pool_delta=0.0`、`source_marginal_hit=0` | 有代表性 merge/eval 产物，但没有相对 lightweight baseline 的边际命中收益 |
+| UserCF | `failure_reason=no_positive_observation_lift`、`no_dense_user_user_matrix=true` | 有 bounded observation，但不构建 dense user-user matrix，结果为 rejected |
+| Swing/session | `source_marginal_hit=0`、`no_unbounded_global_pair_counter=true` | 只记录 bounded pair/transition sidecar 证据，最高状态限制为 observation-only |
+| graph/MF | `training_disabled=true`、`ranking_default_input_disabled=true` | full-safe config 与输入可追踪，但本轮不做全量 graph/MF 训练 |
+| two_tower/pool | `training_default_action=defer_until_explicit_gpu_training_approval`、`pool500/pool1000=READINESS_ONLY_NOT_RANKING_INPUT` | two_tower 不训练不晋升，pool500/pool1000 不替代 ranking frozen pool200 |
+| final matrix | `phase_count=6`、`failures=[]` | 所有正式阶段 required artifacts present，并带 hash / row count / source audit 汇总 |
+
+### 21.3 验证证据
+
+- Phase 3：`.venv/Scripts/python.exe -m pytest tests/test_phase3_swing_sequence_session_observation.py`，`3 passed`；ruff 通过。
+- Phase 4：`.venv/Scripts/python.exe -m pytest tests/test_phase4_graph_mf_contract_validation.py`，`3 passed`；ruff 通过。
+- Phase 5：`.venv/Scripts/python.exe -m pytest tests/test_phase5_two_tower_pool_readiness.py`，`3 passed`；ruff 通过。
+- Phase 6：`.venv/Scripts/python.exe -m pytest tests/test_phase6_final_method_matrix.py`，`2 passed`；ruff 通过。
+- Phase 6 汇总产物：`outputs/recall/full_main_route_other_methods/final_method_matrix_pass/final_method_matrix.json`，`status=PASS`、`phase_count=6`、`failures=[]`。
+
+### 21.4 当前结论
+
+- 本轮没有新的召回方法族获得晋升；ItemCF/co-visit、UserCF、Swing/session 都没有产生正向边际 lift。
+- graph/MF/two_tower 已从“路径/依赖/训练风险不清”推进到可审计的 full-safe contract / feasibility 产物，但默认不训练、不晋升。
+- ranking frozen pool200 与 recall promotion gate 继续分离；pool500/pool1000 只保留为 readiness，不进入当前 ranking 默认输入。
+- 后续如果要复启更重的方法，应另起 GPU/全量训练审批和新合同，而不是把本轮 observation/feasibility 证据误写成 promotion evidence。
+
+## 22. Representative pool500 recall-only 试验与 Promote/Stop Gate（2026-05-17）
+
+### 22.1 执行合同
+
+本轮承接第 21 节的结论：此前 pool500 只做到 readiness，状态为 `READINESS_ONLY_NOT_RANKING_INPUT`。本节新增独立的 representative pool500 recall-only 分支，只验证召回侧扩池价值，不替代 frozen pool200 ranking input，不进入 ranking，不生成 pool1000，不训练 graph/MF/two_tower。
+
+| 阶段 | 输出目录 | 状态 | 决策 |
+| --- | --- | --- | --- |
+| P0-P2 contract + same-scope pool200/pool500 | `outputs/recall/pool500_representative/contract_precheck_or_p0_p2/` | `PASS` | 固定 500 representative users，生成同 scope pool200 与 pool500 recall-only 候选 |
+| P3-P4 same-scope comparison + audits | `outputs/recall/pool500_representative/p3_p4_audit/` | `PASS` | 计算 pool500 vs pool200 增量，并完成 leakage/resource/ranking isolation 审计 |
+| P5 method observations | `outputs/recall/pool500_representative/p5_method_observations/` | `PASS` | 只基于已生成 pool500 候选做方法贡献观察，不新增候选生成/训练/ranking |
+| P6 Promote/Stop Gate | `outputs/recall/pool500_representative/p6_promote_stop_gate/` | `PASS` | representative pool500 允许进入后续 recall-only continuation，但不代表 ranking 替换 |
+
+### 22.2 关键指标
+
+| 指标 | pool200 | pool500 | 变化 |
+| --- | ---: | ---: | ---: |
+| representative users | 500 | 500 | same-scope |
+| candidate rows | 100,000 | 193,824 | +93,824 |
+| users_with_holdout | 82 | 82 | same denominator |
+| candidate_hit_users | 4 | 6 | +2 |
+| recall_at_pool | 0.042683 | 0.055459 | +0.012776 |
+| empty_candidate_rate | 0.0 | 0.0 | 不恶化 |
+| fallback_rate | 0.0 | 0.0 | 不恶化 |
+| duplicate_candidate_rows | 0 | 0 | 不恶化 |
+| exclusive_hit_users_201_500 | - | 2 | category=1、popular=1 |
+
+P5 方法观察显示，201-500 区间新增命中来自现有 lightweight source：`category=1`、`popular=1`；`semantic=0`。ItemCF/UserCF/Swing/session 不在本轮 P0-P2 pool500 候选 artifact 中贡献新增命中；graph/MF/two_tower 继续保持 contract/deferred，不训练。
+
+### 22.3 审计与 Gate 结果
+
+- `leakage_audit.json`：`PASS`，candidate generation 未读取 valid/test/holdout，valid/test 只作为 evaluation-only。
+- `resource_audit.json`：`PASS`，D 盘剩余空间高于 50GiB，未复制 full clean，未生成 pool1000。
+- `ranking_isolation_audit.json`：`PASS`，`pool500_as_ranking_input=false`，`frozen_pool200_ranking_baseline_replaced=false`。
+- `promote_stop_gate.json`：`status=PASS`、`decision=PASS`、`p7_allowed=true`，但 `p7_allowed_scope` 限定为 recall-only continuation，不是 ranking input replacement。
+- P6 执行边界：`no_candidate_generation_executed=true`、`no_full_pool500_executed=true`、`no_ranking_executed=true`、`no_model_training_executed=true`。
+
+### 22.4 验证证据
+
+- `.venv/Scripts/python.exe -m pytest tests/test_pool500_representative.py`：`5 passed`。
+- `.venv/Scripts/python.exe -m ruff check scripts/run_pool500_representative_p0_p2.py scripts/run_pool500_representative_p3_p4_audit.py scripts/run_pool500_representative_p5_method_observations.py scripts/run_pool500_representative_p6_promote_stop_gate.py tests/test_pool500_representative.py`：`All checks passed`。
+- 独立 verifier 只读复核：`APPROVED`，0 blockers；确认 P0-P6 artifacts、审计、P6 Gate 与测试证据一致。
+
+### 22.5 当前结论
+
+- representative pool500 已经从 readiness 推进到真实 recall-only 试验，并在同一 500 用户样本上相对 pool200 产生可解释增量：`exclusive_hit_users_201_500=2`、`recall_at_pool_delta=0.012776`。
+- 该增量来自 lightweight `category` 与 `popular` 扩池后的 201-500 区间，不是 ItemCF/UserCF/Swing/session 或重模型贡献。
+- 当前结论只批准后续 recall-only continuation / full pool500 规划入口；仍不允许自动替代 frozen pool200 ranking input。如需进入 ranking 或 full pool500 全量，应另起 P7/full 阶段并保留本节 Gate 条件。
+
+## 23. Representative pool500 全方法 custom-index 试验与 Final Gate（2026-05-17）
+
+### 23.1 执行合同
+
+本节承接第 22 节的 Gate 结果：representative pool500 已证明扩池有召回侧增量，但第 22 节实际候选主要覆盖 lightweight source。根据“重方法用定制数据集索引先试验”的边界，本轮新增 `pool500_all_methods_representative` 分支，在 500 representative users 与 custom item index 内补齐主路方法族观察；仍不做 full pool500、不进入 ranking、不生成 pool1000、不训练 graph/MF/two_tower。
+
+| 阶段 | 输出目录 | 状态 | 决策 |
+| --- | --- | --- | --- |
+| custom index | `outputs/recall/pool500_all_methods_representative/custom_index/` | `PASS` | 固定 500 users、10739 items、1289 train events，建立 custom user/item index |
+| lightweight + CF | `outputs/recall/pool500_all_methods_representative/lightweight_cf_methods/` | `PASS` | 复用 lightweight pool500，并补齐 bounded ItemCF/UserCF observation |
+| sequence/session | `outputs/recall/pool500_all_methods_representative/sequence_session_methods/` | `EXECUTED_PASS_OBSERVATION_ONLY` | 补齐 bounded Swing 与 session transition observation |
+| heavy indexed probes | `outputs/recall/pool500_all_methods_representative/heavy_indexed_probes/` | `PASS` | graph/MF/two_tower 仅做 custom-index feasibility/proxy probe，不训练 |
+| final Gate | `outputs/recall/pool500_all_methods_representative/final_gate/` | `PASS` | `decision=CONTINUATION_ONLY`，只允许后续 recall-only full pool500 continuation |
+
+### 23.2 方法族覆盖与关键指标
+
+| 方法族 | 方法 | 观察结果 |
+| --- | --- | --- |
+| lightweight | popular / category / semantic | lightweight pool500 `candidate_rows=193824`，`candidate_hit_users=6`，`recall_at_pool=0.055459` |
+| bounded CF | ItemCF/co-visit | 335 rows、41 users 覆盖、`candidate_hit_users=0`，无边际 lift |
+| bounded CF | UserCF | 14 rows、3 users 覆盖、`candidate_hit_users=0`，无边际 lift，`no_dense_user_user_matrix=true` |
+| sequence/session | Swing | 301 rows、40 users 覆盖，observation-only |
+| sequence/session | session transition | 68 rows、35 users 覆盖，observation-only |
+| heavy probe | graph | 1289 bipartite edges、5397 projected item cooccurrence edges、789 directed transitions，probe-only |
+| heavy probe | MF | custom sparse matrix `[500, 10739]`、nnz=1289、density=0.000240059596，probe-only |
+| heavy probe | two_tower | 500 nonempty users、444 positive users、422 strong-positive users，no GPU/no training |
+
+合并观察中，`merged_lightweight_cf` 相对 lightweight 的 `candidate_hit_users_delta_vs_lightweight=0`、`recall_at_pool_delta_vs_lightweight=0.0`；sequence/session 新增 320 条方法候选，306 条保留在 merged pool500 中，但本轮不读取 valid/test/holdout 做新增命中评分。
+
+### 23.3 审计与 Gate 结果
+
+- `source_audit.json`：Final Gate 只聚合 compact JSON artifacts；candidate generation read files 不包含 valid/test/holdout，lightweight 的 valid/test 读取仅作为 evaluation-only。
+- `resource_audit.json`：D 盘水位高于 50GiB；无 full clean copy；ItemCF/Swing/session 无 full global counter；UserCF 无 dense all-user matrix。
+- `promote_stop_gate.json`：`status=PASS`、`decision=CONTINUATION_ONLY`、`full_pool500_continuation_allowed=true`；但 `ranking_input_replacement_allowed=false`、`heavy_model_training_allowed_by_this_gate=false`、`pool1000_allowed=false`。
+- `final_method_matrix.json`：覆盖 popular/category/semantic、bounded ItemCF、bounded UserCF、Swing/session-transition、graph probe、MF probe、two_tower probe。
+
+### 23.4 验证证据
+
+- `.venv/Scripts/python.exe -m pytest tests/test_pool500_all_methods_representative.py`：`5 passed in 0.09s`。
+- `.venv/Scripts/python.exe -m ruff check scripts/build_pool500_all_methods_custom_index.py scripts/run_pool500_all_methods_lightweight_cf.py scripts/run_pool500_all_methods_heavy_indexed_probes.py scripts/run_pool500_all_methods_gate.py tests/test_pool500_all_methods_representative.py`：`All checks passed`。
+- 独立 verifier：`APPROVED`，0 blockers；确认 no 10k、no full clean copy、no pool1000、no ranking replacement、no heavy training、bounded resource invariants 均成立。
+
+### 23.5 当前结论
+
+- representative pool500 已从“只验证扩池价值”推进到“全主路方法族 custom-index 观察”，所有方法族都有可回指 artifact。
+- 当前最确定的召回增量仍来自 lightweight pool500；CF、sequence/session 在代表性 custom index 内补齐了 bounded observation，但没有形成可晋升的新增 recall lift 证据。
+- graph/MF/two_tower 只证明 custom-index feasibility/proxy 可行，不构成训练或晋升批准。
+- Final Gate 只批准后续 recall-only full pool500 continuation；不允许自动替代 frozen pool200 ranking input，不允许 pool1000，不允许重模型训练。若继续，应另起 full pool500 recall-only 阶段并继承本节审计条件。
+
+## 24. Pool200 promoted main route 权威口径固定（2026-05-17）
+
+### 24.1 固定结论
+
+本节用于固定后续 P7 / pool500 continuation 的 route authority：当前排序侧使用的 pool200 promoted main route 是 Phase 1.21 `source_balanced_fallback_preserving`，不是后续 representative pool500 或 all-method custom-index 结果重新选出的路线。pool500 只能在这条 pool200 主路上做 `candidate_pool_size 200→500` 的 recall-only continuation，不能静默删减主路方法。
+
+权威 artifact：
+
+| 项目 | 路径 |
+| --- | --- |
+| pool200 frozen candidates | `outputs/recall/phase_1_21_recall_coverage/current_main_route_pool200_source_balanced/frozen_candidates.jsonl` |
+| route manifest | `outputs/recall/phase_1_21_recall_coverage/current_main_route_pool200_source_balanced/manifest.json` |
+| route metrics | `outputs/recall/phase_1_21_recall_coverage/current_main_route_pool200_source_balanced/metrics.json` |
+| Phase 1.21 主路配置 | `configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml` |
+| 继承 baseline | `configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml` |
+| YouTubeDNN artifact | `outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json` |
+
+### 24.2 pool200 frozen candidate source 清单
+
+`frozen_candidates.jsonl` 共 `63,486` 条候选行，覆盖 `500` 个用户；其中 `16,885` 条为 multi-source 合并候选。实际 source 分布如下：
+
+| source | rows | users | items | 口径 |
+| --- | ---: | ---: | ---: | --- |
+| `popular` | `20,000` | `500` | `50` | 热门兜底，来自 Phase 1.15 baseline 的 popularity fallback |
+| `two_tower` | `14,611` | `499` | `7,432` | YouTubeDNN 双塔向量召回，继承自 Phase 1.15 frozen YouTubeDNN baseline |
+| `category` | `13,649` | `453` | `423` | 类目召回，继承自 baseline |
+| `semantic` | `13,560` | `454` | `6,629` | 文本语义召回，继承自 baseline |
+| `semantic_title_category_expansion` | `7,328` | `454` | `4,648` | Phase 1.21 新增标题 + 类目语义扩展 |
+| `usercf_recall` | `4,502` | `210` | `2,944` | Phase 1.21 新增 UserCF 行为召回 |
+| `itemcf_weak` | `4,234` | `210` | `2,537` | baseline ItemCF 弱行为召回 |
+| `itemcf_strong` | `3,994` | `202` | `2,254` | baseline ItemCF 强行为召回 |
+| `co_visit_fallback_repair` | `3,973` | `224` | `2,488` | Phase 1.21 新增 co-visit fallback repair |
+| `swing_recall` | `3,751` | `209` | `2,137` | Phase 1.21 新增 Swing 行为召回 |
+
+因此，pool200 promoted main route 的方法组成固定为：`popular`、`category`、`semantic`、`semantic_title_category_expansion`、`itemcf_weak`、`itemcf_strong`、`co_visit_fallback_repair`、`usercf_recall`、`swing_recall`、`two_tower` / YouTubeDNN。
+
+### 24.3 YouTubeDNN / two_tower 继承口径
+
+此前日志中“保留 existing two-tower artifact 旁路”容易造成误解；复核 frozen candidates 后，`two_tower` 不是单纯旁路统计或 observation 产物，而是实际进入 pool200 主路 frozen candidates 的有效 source。样例 candidate metadata 包含：`two_tower_source_name=two_tower_youtube_dnn`、`two_tower_variant=youtube_dnn`、`model_type=youtube_dnn_two_tower_v1`、`two_tower_score_mode=vector_dot`。
+
+继承链路如下：
+
+1. Phase 1.21 主路配置 `phase_1_21_recall_coverage_pool200_experimental.yaml` 指向 `phase_1_15_frozen_youtubednn_pool100.yaml`。
+2. Phase 1.15 baseline 中 `two_tower_enabled=true`、`two_tower_variant=youtube_dnn`、`two_tower_artifact_path=outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json`。
+3. Phase 1.21 runner 先加载 baseline config，再叠加 phase config；Phase 1.21 config 未关闭 `two_tower_enabled`，因此 YouTubeDNN/two_tower 保留进 pool200 主路。
+4. `current_main_route_pool200_source_balanced/frozen_candidates.jsonl` 中存在 `14,611` 条 `two_tower` source 候选，覆盖 `499` 个用户。
+
+### 24.4 source-balanced 截断策略
+
+主路截断策略固定为 `balanced_source_budget` / `source_balanced_fallback_preserving`：
+
+```yaml
+candidate_source_minimums:
+  semantic_title_category_expansion: 40
+  co_visit_fallback_repair: 20
+  usercf_recall: 10
+  swing_recall: 10
+candidate_source_maximums:
+  popular: 40
+candidate_fill_order:
+  - semantic_title_category_expansion
+  - co_visit_fallback_repair
+  - usercf_recall
+  - swing_recall
+  - itemcf
+  - category
+  - popular
+candidate_multi_source_boost: 0.1
+```
+
+该策略在不牺牲 `candidate_hit_users=19` 的前提下，把命中位置和候选规模优于默认 score-sorted 截断，因此是当前主路的固定截断方式。
+
+### 24.5 P7 / pool500 继承要求
+
+后续 P7 full pool500 recall-only continuation 必须继承本节固定的 pool200 主路：
+
+- 只允许把 `candidate_pool_size` 从 `200` 改为 `500`，以及更新 output/run/audit metadata。
+- 不允许用 representative pool500 lightweight 结果冒充 full P7。
+- 不允许用 all-method custom-index observation 重新选择主路。
+- 不允许静默移除 YouTubeDNN/two_tower、ItemCF、UserCF、Swing、co-visit repair 或 source-balanced 截断。
+- P7 route gate 必须把 YouTubeDNN/two_tower artifact、sidecar/schema/hash/freshness 纳入 route signature；若 artifact 校验失败，应阻塞为 `BLOCKED_TWO_TOWER_ARTIFACT`，而不是降级为 probe 或禁用双塔。

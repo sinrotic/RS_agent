@@ -94,7 +94,6 @@ def run_phase_c_ranking_actionability_diagnostic(output_dir: Path, limit_users: 
     diagnostic = runs_by_id[_DIAGNOSTIC_METHOD_ID]
     baseline_cases = _safe_read_jsonl(baseline.get("ranking_cases_path"))
     diagnostic_cases = _safe_read_jsonl(diagnostic.get("ranking_cases_path"))
-    baseline_frozen = _safe_read_jsonl(baseline.get("frozen_candidates_path"))
     diagnostic_frozen = _safe_read_jsonl(diagnostic.get("frozen_candidates_path"))
     baseline_trace = _safe_read_jsonl(baseline.get("ranking_stage_trace_path"))
     diagnostic_trace = _safe_read_jsonl(diagnostic.get("ranking_stage_trace_path"))

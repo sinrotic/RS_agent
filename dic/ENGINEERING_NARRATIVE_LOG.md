@@ -56,6 +56,66 @@
 
 ## 记录
 
+### 2026-05-16 - Phase 0 召回方法合同预检入口
+
+**任务：**
+为召回方法全家桶 Phase 0 增加只做合同预检的入口，落盘 `manifest.json`、`source_audit.json` 和 `resolved_inputs.json`，为后续 Phase 2-5 动态输入解析提供可审计基线。
+
+**遇到的问题：**
+后续 UserCF、Swing、Sequence、Graph、MF、Two-Tower 等阶段依赖不同输入和配置，若直接猜路径或混用 ranking pool，会造成 scope drift；同时 candidate generation 必须继续禁止读取 valid/test/holdout，并把召回晋升 gate 与 ranking frozen pool200 gate 分离。
+
+**定位方式：**
+先读取 `.omc/handoffs/phase0-contract-schema-notes.md` 明确三份 JSON schema，再核验 full clean、full lightweight views、代表性 baseline、bounded ItemCF sidecar、graph/two_tower config 和 ranking pool200 config 的真实路径与 sha256。
+
+**解决方式：**
+新增 `scripts/run_phase0_contract_precheck.py`，默认输出到 `outputs/recall/full_main_route_other_methods/phase0_contract_precheck/`；脚本强制项目 `.venv`、D 盘 50GiB 水位、10k 路径拒绝、holdout read contract，并在无法解析动态输入或具体 config 文件时写 `BLOCKED_MISSING_ARTIFACT` / `INVALID_SCOPE_DRIFT`，不执行任何下游阶段。
+
+**验证结果：**
+已用项目 `.venv` 执行 `python -m pytest tests/test_phase0_contract_precheck.py`，结果 `5 passed`；执行 `python -m ruff check scripts/run_phase0_contract_precheck.py tests/test_phase0_contract_precheck.py`，结果 `All checks passed`。运行 Phase 0 入口后三份产物已写入 `outputs/recall/full_main_route_other_methods/phase0_contract_precheck/`，因当前 graph、two_tower 和 ranking pool200 具体 config 仍引用历史 10k 路径，manifest 按合同返回 `INVALID_SCOPE_DRIFT` 并写入 `failure_reason`。独立 verifier 已批准 US-001，确认 source_audit 的 `read_files` 不包含 valid/test/holdout，后续 Phase 1+ 必须先修复 full-clean-safe config 后才能继续。
+
+**面试可讲点：**
+这段可以讲成“在推荐召回实验前加合同闸门”：面对多阶段召回方法扩展，不急于跑算法，而是先把输入、配置、数据泄漏边界、资源水位和 ranking/recall gate 明确为可审计 artifact，降低后续实验复现和 scope drift 风险。
+
+### 2026-05-16 - bounded ItemCF co-visit sidecar 代表性构建验收
+
+**任务：**
+在 full clean 真实训练序列上执行受边界约束的 ItemCF/co-visit sidecar 代表性构建，验证它只生成可审计的邻居分片产物，不复制 full clean、不生成 pool500/pool1000 或 recall views。
+
+**遇到的问题：**
+直接从 full clean 构建共现邻居存在资源和产物污染风险，需要把执行范围限制在 `limit_users<=1000`，同时继续保证 10k 路径、valid/test/holdout 读取和重型输出都被排除。
+
+**定位方式：**
+使用 `.venv` 运行 focused pytest 与 ruff，随后检查 `outputs/recall/full_main_route_other_methods/bounded_itemcf_covisit_sidecar_representative/manifest.json` 和 `source_audit.json` 中的 safety flags、输入路径、输出键与目录文件集合。
+
+**解决方式：**
+执行 `scripts/run_bounded_itemcf_covisit_sidecar_build.py`，显式传入 full clean 目录、代表性输出目录、`--limit-users 1000` 和 `--min-free-bytes 53687091200`；脚本只读取 `user_sequences.train.jsonl`，写入 manifest、source audit 和 32 个 `neighbors_shard_*.jsonl`。
+
+**验证结果：**
+`./.venv/Scripts/python.exe -m pytest tests/test_bounded_itemcf_covisit_sidecar_build.py` 结果 `7 passed`，`./.venv/Scripts/python.exe -m ruff check scripts/run_bounded_itemcf_covisit_sidecar_build.py tests/test_bounded_itemcf_covisit_sidecar_build.py` 通过。真实构建输出目录共 34 个文件，`users_scanned=1000`、`processed_users=363`、`pair_updates=5264`、`project_venv_enforced=true`、`train_only=true`、`min_free_bytes=53687091200`；核验确认无 10k source path、无 valid/test/holdout 读取、无 pool500/pool1000/recall view/full clean copy 输出。
+
+**面试可讲点：**
+这段可以讲成“把行为共现召回从 dry-run 风险评估推进到受控 sidecar 产物”：通过硬上限、磁盘水位、train-only source audit、分片输出和 focused 测试，把原本容易失控的共现邻居构建变成可审计、可复跑、可逐步扩大的离线召回资产。
+
+### 2026-05-16 - bounded ItemCF co-visit sidecar dry-run 预检
+
+**任务：**
+在不生成邻居 sidecar、不复制 full clean、不物化 pool500/pool1000 的前提下，为 full clean 上的 ItemCF/co-visit 行为召回补一条有边界的 dry-run 预检路径，先估算 pair 行数和分片字节风险。
+
+**遇到的问题：**
+已有 ItemCF/co-visit 逻辑适合小样本或受控候选池，但 full clean 的 `user_sequences.train.jsonl` 规模达到 18103384 行，直接建邻居可能带来磁盘、内存和产物污染风险；同时必须确保不误读 valid/test/holdout、不回退到 10k 路径、不生成 full clean copy 或 pool500/pool1000 输出。
+
+**定位方式：**
+只读审查 `scripts/build_recall_views.py` 中 `build_itemcf_edges(...)`、`build_item_graph_view(...)` 和 `build_lightweight_full_safe_views(...)`，确认可复用 pair/cap 估算思路，但 dry-run 不能调用真实写邻居函数；再检查 `scripts/run_full_lightweight_recall_e2e.py` 的 10k 路径拒绝、输出目录拒绝和 `.venv` 约束，作为 sidecar 预检脚本的安全门参考。
+
+**解决方式：**
+新增 `scripts/run_bounded_itemcf_covisit_dry_run.py`，只读取 `data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl`，强制 `limit_users<=1000`、默认 50GiB 磁盘水位、拒绝 10k 路径和已存在输出目录；脚本只维护 bounded pair counter 和 shard byte estimate，最终只写 `manifest.json`。
+
+**验证结果：**
+新增 `tests/test_bounded_itemcf_covisit_dry_run.py`，覆盖 manifest-only、train_only/holdout contract、10k 路径拒绝、输出目录拒绝、输出位于 clean_dir 内拒绝和 `limit_users>1000` 拒绝。验证命令 `./.venv/Scripts/python.exe -m pytest tests/test_bounded_itemcf_covisit_dry_run.py tests/test_full_lightweight_recall_e2e.py` 结果 `8 passed`，`./.venv/Scripts/python.exe -m ruff check scripts/run_bounded_itemcf_covisit_dry_run.py scripts/run_full_lightweight_recall_e2e.py tests/test_bounded_itemcf_covisit_dry_run.py tests/test_full_lightweight_recall_e2e.py` 通过。真实 dry-run 输出 `outputs/recall/full_main_route_other_methods/bounded_itemcf_covisit_dry_run_estimate/manifest.json`，目录仅包含 manifest；manifest 记录 `train_only=true`、`limit_users=1000`、`sampled_users=1000`、`estimated_pair_rows=10528`、`planned_shard_count=32`、D 盘剩余 `225294610432` bytes，且未生成 neighbor/shard/pool500/pool1000 产物。
+
+**面试可讲点：**
+这段可以讲成“给重型召回源加 sidecar 预检闸门”：面对千万级行为序列，不直接上线全量共现构建，而是先用只读 train、硬阈值、路径拒绝、manifest-only 和分片字节估算把风险前移，证明推荐系统离线工程不仅追求召回效果，也要控制资源边界和数据泄漏边界。
+
 ### 2026-05-15 - 全量召回轻量索引安全路径
 
 **任务：**
@@ -71,10 +131,30 @@
 新增 `--lightweight-full-safe` 模式：只写 `popular_recall.jsonl`、`category_recall_items.jsonl`、`category_top_items.jsonl`、`semantic_recall_inputs.jsonl` 和 `semantic_inverted_index.jsonl`；通过 `_tmp` 目录构建后原子提升到目标目录；manifest/stats 记录 source signature、输入行数、磁盘水位、产物大小和 skipped heavy outputs；默认旧路径保持兼容。
 
 **验证结果：**
-新增 `tests/test_build_recall_views.py` 覆盖 lightweight 模式不会生成 `itemcf_recall_weak.jsonl`、`itemcf_recall_strong.jsonl`、`item_graph_recall.jsonl`，并检查 semantic inverted index、source row count 和 `_tmp` promotion。已通过 `./.venv/Scripts/python.exe -m pytest tests/test_build_recall_views.py -q`，结果 `2 passed`；通过 `./.venv/Scripts/python.exe -m ruff check scripts/build_recall_views.py tests/test_build_recall_views.py`；CLI smoke 验证 lightweight 入口可生成 manifest/stats 且不产生重型召回文件。
+新增 `tests/test_build_recall_views.py` 覆盖 lightweight 模式不会生成 `itemcf_recall_weak.jsonl`、`itemcf_recall_strong.jsonl`、`item_graph_recall.jsonl`，并检查 semantic inverted index、source row count、canonical sha256、真实 `_tmp` 证据和最终产物 hard cap。已通过 `./.venv/Scripts/python.exe -m pytest tests/test_build_recall_views.py -q`，结果 `3 passed`；通过 `./.venv/Scripts/python.exe -m ruff check scripts/build_recall_views.py tests/test_build_recall_views.py`；CLI smoke 验证 lightweight 入口可生成 manifest/stats 且不产生重型召回文件；独立 architect 复核结论为 PASS。
 
 **面试可讲点：**
 这段可以讲成“把研究型全量召回改造成可控索引层”：面对千万级交互，不是直接把小样本脚本放大运行，而是先拆出轻量 catalog 索引、显式跳过高风险共现源，并用 manifest、source signature、磁盘阈值、产物上限和原子目录提升把全量实验变成可恢复、可解释、可扩展的工程流程。
+
+### 2026-05-16 - full clean 轻量召回索引全量落盘验收
+
+**任务：**
+在真实 `data/processed/amazon_2023_recall_clean_full` 上执行已审批的 `--lightweight-full-safe` 路径，把 Phase 1a 的 Popular、Category、Semantic catalog/inverted index 从方案推进到可消费的全量产物。
+
+**遇到的问题：**
+全量输入包含 2320263 个商品与 44843821 条 train 交互，直接运行必须同时控制磁盘、内存和范围偏离风险；尤其要防止误触发 ItemCF/item_graph、复制 full clean、覆盖 10k baseline 或遗留 `_tmp` 半成品。
+
+**定位方式：**
+执行前用 `.venv` 检查 full 输入、`canonical_interactions.train.jsonl`、`canonical_items.jsonl`、manifest/stats、10k baseline、目标输出目录和 sibling `_tmp` 目录；运行中记录 D 盘剩余空间、tmp/final 目录大小和 Python 进程 RSS，第二轮采样显示 tmp 约 6.53GiB、D 盘约 210.27GiB、主进程 RSS 约 15.7GiB，未触发 50GiB/80GiB/32GiB 停止阈值。
+
+**解决方式：**
+使用项目 `.venv` 执行 `scripts/build_recall_views.py --lightweight-full-safe`，显式设置 `--lightweight-min-free-bytes 53687091200`、`--lightweight-max-output-bytes 85899345920`、`--semantic-inverted-top-k 2000`；构建通过 `_tmp` 原子提升到 `data/processed/amazon_2023_recall_views_full_lightweight`，不生成重型召回文件。
+
+**验证结果：**
+后台构建退出码为 0，生成 `manifest.json`、`stats.json`、`popular_recall.jsonl`、`category_recall_items.jsonl`、`category_top_items.jsonl`、`semantic_recall_inputs.jsonl`、`semantic_inverted_index.jsonl`。验收脚本确认 JSON/JSONL 抽样可解析、manifest outputs 路径有效、`itemcf_recall_weak.jsonl`、`itemcf_recall_strong.jsonl`、`item_graph_recall.jsonl` 不存在、sibling `_tmp` 已清理、10k baseline 仍存在；最终输出 7 个文件、7483658110 bytes（约 6.97GiB），D 盘剩余约 209.83GiB，source signature 记录 `canonical_items.jsonl` 行数 2320263、`canonical_interactions.train.jsonl` 行数 44843821。
+
+**面试可讲点：**
+这段可以讲成“把推荐系统全量索引构建做成有安全门的批处理”：先用 consensus plan 固化资源阈值和验收标准，再用 `.venv`、原子目录提升、manifest 驱动验证、heavy output absence check 和资源监控，证明千万级数据产物不是一次性跑出来，而是可审计、可回滚、可接入后续排序链路的工程资产。
 
 ### 2026-05-15 - 工程规范 v1 与轻量 CI 门禁建设
 
@@ -2065,3 +2145,145 @@ source family observation baseline 已经能跑通，但 baseline_vNext 还缺 f
 
 **面试可讲点：**
 这轮可以讲成“测试矩阵治理”：不是简单给测试贴标签，而是把测试运行成本、依赖边界和 CI 入口显式建模。默认 PR 只跑快而稳定的门禁，服务 contract 可单独验证，慢实验和 GPU 训练不会无意进入普通 CI。
+
+
+## 2026-05-15 - 工程规范 v1.4：scripts 瘦身最小切片
+
+**任务：**
+在工程规范 v1.x 的基础上推进 scripts 瘦身：选择一个低风险、已有测试覆盖的脚本逻辑，把稳定可复用能力下沉到 `rs_core`，让 `scripts/` 更接近“参数解析 + 流程触发”的入口层。
+
+**遇到的问题：**
+项目里不少脚本已经承载了实验流程和可复用业务逻辑。如果一次性大规模迁移，容易影响历史实验口径；但完全不迁移，又会让通用推荐逻辑散落在脚本中，后续复用和测试都变困难。
+
+**定位方式：**
+先做只读审计，优先寻找纯函数、小范围、已有测试覆盖的候选逻辑。最终选择 `scripts/build_recall_views.py` 中的 `unique_recent_items()`：它是 ItemCF 边构造前的最近序列去重逻辑，属于稳定推荐基础能力，且 `rs_core/recsys/candidate_merge.py` 已经集中承载候选合并与召回相关逻辑。
+
+**解决方式：**
+将 `unique_recent_items()` 下沉到 `rs_core/recsys/candidate_merge.py`，保留原有 reverse traversal、去重和 `appendleft` 的顺序语义；`scripts/build_recall_views.py` 改为 import 并复用该函数；同时在 `tests/test_build_recall_views.py` 新增 ItemCF 边构造用例，覆盖包含重复最近行为序列时的 pair 生成，防止迁移后语义漂移。
+
+**验证结果：**
+执行员定向验证 `./.venv/Scripts/python.exe -m pytest tests/test_build_recall_views.py tests/test_recsys_core.py -q` 通过 `6 passed`，engineering contracts 通过，ruff changed scope 通过。独立 verifier 只读核验确认：`unique_recent_items()` 仅在 `rs_core/recsys/candidate_merge.py` 定义，脚本只 import/reuse；新增测试覆盖最近去重后的 ItemCF pair；额外执行 `tests/test_build_recall_views.py tests/test_engineering_contracts.py` 通过 `12 passed`，ruff 通过，无本轮临时文件残留。
+
+**面试可讲点：**
+这轮可以讲成“脚本入口层治理的渐进式重构”：不是一口气重写实验脚本，而是用测试保护的小切片，把稳定业务能力从脚本下沉到核心包，降低复用成本，同时用定向测试和独立验证证明实验行为没有改变。
+
+
+## 2026-05-15 - 工程规范 v1.5：scripts ruff 全量未使用项清理
+
+**任务：**
+在 v1.4 scripts 瘦身之后，继续把 `scripts/` 纳入更完整的 ruff 检查范围，清理历史脚本中暴露的 F401/F841 未使用导入和未使用变量。
+
+**遇到的问题：**
+提交前审计时，当前工程规范范围内的 ruff 已通过，但扩大到 `ruff check scripts` 后暴露出多个历史脚本的未使用 import / 变量。这些问题不会改变实验结果，但会阻碍后续把 scripts 纳入统一 lint 门禁。
+
+**定位方式：**
+用 `./.venv/Scripts/python.exe -m ruff check scripts` 复核失败清单，确认 19 个命中全部为 F401/F841，集中在少数脚本：`phase_1_20_recall_diagnostics.py`、`run_phase_1_26_real_learned_gbdt_ranker.py`、`run_phase_1_29_terminal_ranking_route.py`、`run_phase_c_ranking_actionability.py`、`run_phase_c_ranking_actionability_diagnostic.py`、`validate_recall_registry.py`、`verify_recall_outputs.py`。
+
+**解决方式：**
+只做最小安全清理：删除未使用 import，精简未使用 re-export import，移除未使用局部变量 `baseline_frozen`；不改业务流程、不改实验口径、不做脚本结构重构。
+
+**验证结果：**
+独立 verifier 确认 `./.venv/Scripts/python.exe -m ruff check scripts` 输出 `All checks passed!`；`./.venv/Scripts/python.exe scripts/validate_engineering_contracts.py` 输出 `Engineering contracts passed: 110 configs, 50 scripts, 32 tests`；diff 中 scripts 改动均为 unused import / unused variable 清理；未发现本轮临时文件残留。
+
+**面试可讲点：**
+这轮可以讲成“扩大工程门禁覆盖面前的历史债务清理”：先用 lint 暴露低风险、可机械修复的问题，再严格限制改动类型，只清理不会影响业务行为的未使用项，为后续把 `scripts/` 全量纳入 CI lint 打基础。
+
+### 2026-05-16 - 代表性轻量 E2E 预检收口
+
+**任务：**
+在 `outputs/recall/full_main_route_other_methods/lightweight_representative_e2e` 的代表性 full-lightweight E2E 通过后，整理方法预检结果并把结论同步到实验日志和工程叙事日志。
+
+**遇到的问题：**
+这轮只有 Popular / Category / Semantic 的轻量候选生成真正跑通，ItemCF/co-visit、UserCF、Swing、graph_walk、two_tower、MF、sequence 等方法都不能被写成已执行结果，否则会把清单里的 disabled / deferred 状态误写成 promotion。
+
+**定位方式：**
+依据代表性 E2E 的 manifest/source audit 结果核对输出目录：`500` users、`75,866` candidate rows、`0` empty users，enabled sources 仅 `popular` / `category` / `semantic`，disabled sources 明确包含 `ItemCF`、`graph`、`two_tower`、`UserCF`、`Swing`、`MF`、`sequence`、`pool500`、`pool1000`，并且没有 `itemcf` / `graph` / `pool` 输出文件，也没有 10k source path。
+
+**解决方式：**
+只把已验证的 Popular / Category / Semantic 链路写成当前代表性结果；其余方法族统一按 `defer` / `document_only` / `fallback` 收口，保留为后续受控回跑或 sidecar 补齐项，不在本轮提升状态。
+
+**验证结果：**
+工程日志与实验日志都只记录同一份可回指证据：`outputs/recall/full_main_route_other_methods/lightweight_representative_e2e`。结论边界明确为“只确认轻量三源可用”，未把 ItemCF/co-visit、UserCF、Swing、graph_walk、two_tower、MF、sequence 伪装成已跑或已晋升。
+
+**面试可讲点：**
+这段可以讲成“用 manifest/source audit 给推荐实验划边界”：不是看见 E2E 成功就默认所有方法都能晋升，而是只按已验证产物收口，确保工程日志和方法日志对同一批证据保持一致。
+
+### 2026-05-16 - Full-safe 召回方法全家桶 Phase 0-6 收口
+
+**任务：**
+按 Team+Ralph 的连续推进要求，把召回方法全家桶从 Phase 0 合同预检推进到 Phase 6 final method matrix，补齐 ItemCF/co-visit、UserCF、Swing/session、graph/MF、two_tower/pool readiness 的受控证据，并同步 PRD、进度与召回实验日志。
+
+**遇到的问题：**
+Phase 0 一开始发现 graph/two_tower/ranking pool200 配置仍引用 10k 路径；后续 Phase 6 首次汇总又因为 Phase 0 的 holdout contract 写在嵌套字段中，被 final matrix 误判为未证明 holdout exclusion。若直接跳过这些问题，会把 scope drift 或审计格式差异带入总验收。
+
+**定位方式：**
+通过 Phase 0 manifest/source audit 定位 10k config 引用；通过 Phase 4/5 的契约测试补充 config payload 内部 10k 引用检测；通过 Phase 6 失败输出定位到 `holdout_contract.candidate_generation_uses_holdout=false` 与后续阶段 top-level `candidate_generation_uses_holdout=false` 的字段格式差异。
+
+**解决方式：**
+为 graph、two_tower、ranking pool200 创建 full-safe 配置副本并让 Phase 0 默认解析这些副本；Phase 3 使用 bounded Swing/session observation，不做无界 pair counter；Phase 4/5 只做合同/feasibility gate，不训练、不晋升、不替代 frozen pool200；Phase 6 增加兼容 Phase 0 嵌套 holdout contract 的读取逻辑，并输出 `final_method_matrix_pass` 作为最终成功产物。
+
+**验证结果：**
+最终 canonical Phase 0 manifest 为 `PASS`；Phase 1 为 `EXECUTED_PASS_OBSERVATION_ONLY` 且 `recall_at_pool_delta=0.0`、`source_marginal_hit=0`；Phase 2 为 `rejected` 且 `failure_reason=no_positive_observation_lift`；Phase 3 为 `EXECUTED_PASS_OBSERVATION_ONLY`；Phase 4 为 `EXECUTED_PASS_CONTRACT_ONLY`；Phase 5 为 `EXECUTED_PASS_FEASIBILITY_ONLY`；Phase 6 `outputs/recall/full_main_route_other_methods/final_method_matrix_pass/manifest.json` 为 `PASS`，`final_method_matrix.json` 汇总 6 个 phase、`failures=[]`、`candidate_generation_uses_holdout=false`。
+
+**面试可讲点：**
+这段可以讲成“召回方法扩展不是盲目堆方法，而是先建立可审计合同”：用 source audit 防数据泄漏，用 bounded observation 控资源，用 final matrix 把每个方法族的晋升/拒绝/延期原因结构化，最后得出“本轮无新增方法晋升，但工程上获得可复跑、可解释、可继续扩展的召回方法矩阵”。
+
+### 2026-05-17 - Representative pool500 recall-only 试验与 Gate 收口
+
+**任务：**
+在前一轮 pool500 只做到 readiness 的基础上，按“先 representative pool500、再决定 full”的路线补齐真实 recall-only 试验、same-scope 对比、审计和 Promote/Stop Gate。
+
+**遇到的问题：**
+此前 `pool500/pool1000=READINESS_ONLY_NOT_RANKING_INPUT` 只证明没有替代 ranking pool200，并没有回答 pool500 是否真的比 pool200 多召回用户；如果直接 full 或直接接 ranking，会把扩池实验和排序主线混在一起。
+
+**定位方式：**
+固定 500 个 representative users，分别生成同 scope 的 pool200 与 pool500 recall-only 候选，并在同一 `users_with_holdout=82` 分母下比较：pool200 `candidate_hit_users=4`、`recall_at_pool=0.042683`；pool500 `candidate_hit_users=6`、`recall_at_pool=0.055459`。
+
+**解决方式：**
+新增独立 P0-P6 pool500 representative 分支：P0-P2 生成同 scope pool200/pool500 候选；P3-P4 产出 `pool500_vs_pool200_same_scope_comparison.json`、`leakage_audit.json`、`resource_audit.json`、`ranking_isolation_audit.json`；P5 只做方法贡献观察；P6 生成 `promote_stop_gate.json`。全过程不进入 ranking、不生成 pool1000、不训练 graph/MF/two_tower、不复制 full clean。
+
+**验证结果：**
+`promote_stop_gate.json` 为 `PASS`，`exclusive_hit_users_201_500=2`，新增来源为 `category=1`、`popular=1`，`recall_at_pool_delta=0.012776`；duplicate、empty、fallback 均未恶化；leakage/resource/ranking isolation audits 均为 `PASS`。`tests/test_pool500_representative.py` 为 `5 passed`，相关脚本与测试 ruff 为 `All checks passed`，独立 verifier 给出 `APPROVED` 且 0 blockers。
+
+**面试可讲点：**
+这段可以讲成“把扩池从拍脑袋变成可审计 Gate”：不是直接把 pool500 切成默认样本，而是用同用户、同分母、同召回合同对比 pool200 和 pool500，证明 201-500 区间确实带来 2 个 exclusive hit users，再用 leakage/resource/ranking isolation 三重审计保证没有数据泄漏、资源越界或排序主线污染。
+
+### 2026-05-17 - Representative pool500 全方法轻量与 CF 观察
+
+**任务：**
+在已 PASS 的 custom index 上补齐 pool500 all-methods representative 的轻量方法、bounded ItemCF/co-visit 与 bounded UserCF 观察，输出 recall-only 方法指标和审计证据。
+
+**遇到的问题：**
+轻量 pool500 候选已经存在，但 CF 不能复用全局无界共现或 dense all-user matrix；同时 candidate generation 不能读取 valid/test/holdout，也不能触碰 10k baseline、pool1000、ranking 或 graph/MF/two_tower 训练。
+
+**定位方式：**
+核验 `custom_index/manifest.json` 为 `PASS`，D 盘剩余约 204GiB，大于 50GiB 阈值；读取既有 pool500 candidates 与 indexed train sequences 的 schema，确认可以只基于 500 个 representative users 和 10739 个 custom items 构造局部 CF 证据。
+
+**解决方式：**
+新增 `scripts/run_pool500_all_methods_lightweight_cf.py`，复用已有 pool500 lightweight candidates 表示 popular/category/semantic；ItemCF/co-visit 只在 custom-index representative train sequences 上构建局部 item-item 共现邻居；UserCF 只构建 item->users 倒排并按 capped similar users 取候选，显式不生成 dense user-user matrix。
+
+**验证结果：**
+脚本运行产物 `outputs/recall/pool500_all_methods_representative/lightweight_cf_methods/manifest.json` 为 `PASS`；`method_metrics.json` 显示 lightweight `recall_at_pool=0.055459`、merged `recall_at_pool=0.055459`；`resource_audit.json` 记录 lightweight 193824 行、ItemCF 335 行、UserCF 14 行、merged 194149 行；`source_audit.json` 证明 candidate generation 只读 pool500 candidates、indexed train sequences、custom item index，valid/test 仅 evaluation-only。ruff 与 `py_compile` 均通过，独立约束核验输出 `candidate_reads_ok=true`、`artifacts_ok=true`。
+
+**面试可讲点：**
+这段可以讲成“在扩池 Gate 后继续做方法族消融，但不牺牲边界”：轻量方法提供 pool500 主体收益，CF 方法在代表性小样本上以 bounded observation 方式补充证据；即使本轮 CF 没带来 recall lift，也沉淀了可审计、可复跑、可扩展到 full pool500 前的资源与泄漏控制模板。
+
+### 2026-05-17 - Representative pool500 全方法 custom-index Gate 收口
+
+**任务：**
+在 representative pool500 已经 Gate PASS 的基础上，按用户要求补齐主路全方法族试验：轻量源、bounded CF、Swing/session，以及 graph/MF/two_tower 的 custom-index feasibility/proxy probe，并用统一 Final Gate 决定是否允许继续 full pool500 recall-only。
+
+**遇到的问题：**
+直接跑 full pool500 或重模型训练会带来资源与范围风险；但只写 deferred 又无法回答“所有召回方法是否都试过”。需要在不复制 full clean、不读 holdout 做候选生成、不污染 ranking pool200 的前提下，为重方法构造可验证的定制索引试验边界。
+
+**定位方式：**
+先构建 `outputs/recall/pool500_all_methods_representative/custom_index/`，固定 500 users、10739 items、1289 train events；再分别检查 `lightweight_cf_methods/`、`sequence_session_methods/`、`heavy_indexed_probes/` 与 `final_gate/` 的 manifest/source_audit/resource_audit，确认候选生成不读 valid/test/holdout、无 10k source、无 pool1000、无 ranking replacement。
+
+**解决方式：**
+采用“custom index + 方法族 observation/probe + Final Gate”的路线：lightweight 表示 popular/category/semantic；ItemCF/UserCF 限定在 custom-index train scope，禁止 full global counter 与 dense all-user matrix；Swing/session 只构建 bounded pair/transition observation；graph/MF/two_tower 只做 feasibility/proxy，不训练、不晋升。Final Gate 输出 `decision=CONTINUATION_ONLY`，把允许范围限制为后续 recall-only full pool500 continuation。
+
+**验证结果：**
+`final_gate/promote_stop_gate.json` 为 `PASS`，`full_pool500_continuation_allowed=true`，但 `ranking_input_replacement_allowed=false`、`heavy_model_training_allowed_by_this_gate=false`、`pool1000_allowed=false`。`final_method_matrix.json` 覆盖 popular/category/semantic、bounded ItemCF/UserCF、Swing/session-transition、graph/MF/two_tower probes。`tests/test_pool500_all_methods_representative.py` 为 `5 passed in 0.09s`；相关 all-method scripts/tests ruff 为 `All checks passed`；独立 verifier `APPROVED` 且 0 blockers。
+
+**面试可讲点：**
+这段可以讲成“把全方法召回试验拆成安全可审计的分层 Gate”：轻量方法验证真实召回增量，CF/序列方法补充 bounded observation，重模型先做 custom-index feasibility 而不是盲目训练；最终用 source/resource/ranking isolation 三重审计把继续 full pool500 的权限限制在 recall-only，体现实验治理和工程边界控制。
