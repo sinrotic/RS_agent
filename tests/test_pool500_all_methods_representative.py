@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-pytestmark = pytest.mark.unit
+pytestmark = pytest.mark.experiment
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE_DIR = ROOT / "outputs" / "recall" / "pool500_all_methods_representative"
