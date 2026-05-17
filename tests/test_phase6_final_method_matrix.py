@@ -3,9 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-pytestmark = __import__("pytest").mark.unit
+import pytest
 
 from scripts.run_phase6_final_method_matrix import run_phase6_final_method_matrix
+
+pytestmark = pytest.mark.unit
 
 
 def write_json(path: Path, payload: dict) -> None:
