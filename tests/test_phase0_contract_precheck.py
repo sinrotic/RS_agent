@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.experiments.recall.run_phase0_contract_precheck import run_phase0_contract_precheck
+from rs_lab.experiments.recall.run_phase0_contract_precheck import run_phase0_contract_precheck
 
 
 def write_json(path: Path, payload: dict) -> None:

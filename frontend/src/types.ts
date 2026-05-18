@@ -26,8 +26,10 @@ export interface DisplayItem {
   summary: string | null;
 }
 
+export type FeedbackActionType = 'like' | 'dislike' | 'show_different' | 'why';
+
 export interface FeedbackAction {
-  type: string;
+  type: FeedbackActionType;
   label: string;
 }
 
@@ -71,22 +73,27 @@ export interface ChatMessage {
   content: string;
 }
 
-export interface SessionExportEvent {
-  type: 'chat' | 'feedback';
+export interface SanitizedTimelineEvent {
+  public_event_id: string;
+  event_type: 'chat' | 'feedback' | 'turn';
   turn_index: number;
-  user_input: string;
+  user_message: string;
   assistant_message: string;
   display_response_index: number;
-  action_type?: string;
-  item_id?: string | null;
-  comment?: string | null;
+}
+
+export interface PublicTimeline {
+  schema_version: string;
+  session_id: string;
+  user_id: string;
+  events: SanitizedTimelineEvent[];
 }
 
 export interface SessionExportResponse {
   session_id: string;
   user_id: string;
   turn_count: number;
-  events: SessionExportEvent[];
+  public_timeline: PublicTimeline;
   display_responses: DisplayResponse[];
 }
 
@@ -121,10 +128,10 @@ export interface SimulationState {
 }
 
 export interface SimulationAction {
-  type: string;
+  type: 'chat' | 'feedback';
   turn_index: number;
   message?: string;
-  action_type?: string;
+  action_type?: FeedbackActionType;
   item_id?: string;
   comment?: string;
 }

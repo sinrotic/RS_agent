@@ -280,25 +280,29 @@ def test_session_export_returns_safe_turn_history(client: TestClient):
     assert payload["session_id"] == session_id
     assert payload["user_id"] == "u1"
     assert payload["turn_count"] == 2
-    assert payload["events"] == [
-        {
-            "type": "chat",
-            "turn_index": 1,
-            "user_input": "For commute, prefer bluetooth and Audio",
-            "assistant_message": chat["display"]["assistant_message"],
-            "display_response_index": 0,
-        },
-        {
-            "type": "feedback",
-            "action_type": "why",
-            "item_id": "speaker_1",
-            "comment": "Need a short explanation.",
-            "turn_index": 2,
-            "user_input": "why? item_id=speaker_1 Need a short explanation.",
-            "assistant_message": feedback["display"]["assistant_message"],
-            "display_response_index": 1,
-        },
-    ]
+    assert payload["public_timeline"] == {
+        "schema_version": "rs_agent_public_timeline_v1",
+        "session_id": session_id,
+        "user_id": "u1",
+        "events": [
+            {
+                "public_event_id": f"{session_id}:turn:1",
+                "event_type": "chat",
+                "turn_index": 1,
+                "user_message": "For commute, prefer bluetooth and Audio",
+                "assistant_message": chat["display"]["assistant_message"],
+                "display_response_index": 0,
+            },
+            {
+                "public_event_id": f"{session_id}:turn:2",
+                "event_type": "feedback",
+                "turn_index": 2,
+                "user_message": "why? item_id=speaker_1 Need a short explanation.",
+                "assistant_message": feedback["display"]["assistant_message"],
+                "display_response_index": 1,
+            },
+        ],
+    }
     assert payload["display_responses"] == [chat["display"], feedback["display"]]
     _assert_no_blocked_keys(payload)
     _assert_no_blocked_public_terms(payload)

@@ -39,7 +39,7 @@ class SessionExportResponse(BaseModel):
     session_id: str
     user_id: str
     turn_count: int
-    events: list[dict[str, Any]]
+    public_timeline: dict[str, Any]
     display_responses: list[dict[str, Any]]
 
 

@@ -50,6 +50,10 @@ def test_p7_route_signature_enforces_balanced_source_budget_and_itemcf_alias() -
 
 def test_p7_route_precheck_hard_blocks_stale_two_tower_artifact_contract() -> None:
     signature = build_route_signature(DEFAULT_MAIN_ROUTE_DIR, DEFAULT_PHASE_CONFIG, DEFAULT_BASELINE_CONFIG)
+    signature["two_tower_audit"] = {
+        **signature["two_tower_audit"],
+        "manifest_contract_missing_paths": ["train_config"],
+    }
     precheck = build_route_precheck(signature)
 
     assert precheck["schema_version"] == "P7_ROUTE_PRECHECK"

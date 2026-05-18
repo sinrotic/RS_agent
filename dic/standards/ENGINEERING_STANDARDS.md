@@ -4,8 +4,11 @@
 
 ## 1. 目录职责
 
-- `rs_core/`：核心源码，只放可复用业务逻辑和工程模块。
-- `scripts/`：稳定命令入口，只做参数解析与流程触发，不堆业务实现；统一使用 `main()` 和 `if __name__ == "__main__"` 入口保护。阶段性实验入口放在 `scripts/experiments/recall/` 或 `scripts/experiments/ranking/`，历史入口放在 `scripts/archive/`。
+- `rs_core/`：核心源码，只放稳定主路、可复用业务逻辑和工程模块。
+- `rs_core/dataproc/`：召回前稳定数据底座，承载清洗、视图、校验等可复用数据处理能力。
+- `rs_lab/`：实验资产层，承载尚未进入核心库但需要复用、测试和治理的召回/排序/phase/batch/sidecar 实验逻辑。
+- `scripts/`：稳定命令入口，只做参数解析与流程触发，不堆业务实现；统一使用 `main()` 和 `if __name__ == "__main__"` 入口保护。历史入口放在 `scripts/archive/`。
+- `scripts/data/`：数据处理 CLI 与编排入口，只负责参数解析、调用 `rs_core/dataproc` 或 `rs_lab` 能力、打印/写出摘要，不沉淀核心数据处理逻辑。
 - `configs/`：配置集中管理，避免把实验参数散落在代码里。
 - `outputs/`：运行产物、日志、评估结果和临时报告，不放源码。
 - `tests/`：测试代码，按 unit、smoke、slow、gpu、experiment、serving、frontend 等层级标记。
@@ -48,15 +51,16 @@
 - 异常信息要说明失败对象和关键上下文，不吞异常。
 - 对外部输入、文件路径、模型输出和 API 请求做边界校验；内部可信调用不堆防御式样板。
 
-## 6. `scripts/` 使用规范
+## 6. `scripts/`、`scripts/data/` 与 `rs_lab/` 使用规范
 
-- `scripts/` 只放命令入口，不放可复用业务逻辑；可复用逻辑必须进入 `rs_core/`。
-- 脚本中允许保留 `argparse`、默认路径、环境检查调用、调用 `rs_core.workflow`、最终打印/写出摘要、`main()` 和入口保护。
-- 算法、数据转换、候选生成、评估指标、实验 gate、artifact audit、registry/report 数据结构构建、被多个脚本或测试 import 的 helper 必须迁入 `rs_core/`。
-- 新测试默认 import `rs_core`；只有验证 CLI wrapper 入口形态时才 import `scripts`。
+- `scripts/` 只放命令入口，不放可复用业务逻辑；阶段性实验逻辑先进入 `rs_lab/`，稳定主路能力再晋升到 `rs_core/`。
+- 召回前稳定数据底座归属 `rs_core/dataproc/`；`scripts/data/` 只保留 CLI、编排、默认路径、摘要输出和入口保护。
+- 脚本中允许保留 `argparse`、默认路径、环境检查调用、调用 `rs_core.workflow` 或 `rs_lab.experiments`、最终打印/写出摘要、`main()` 和入口保护。
+- 算法、数据转换、候选生成、评估指标、实验 gate、artifact audit、registry/report 数据结构构建、被多个脚本或测试 import 的实验 helper 必须迁入 `rs_lab/` 或 `rs_core/`，不得继续堆在 `scripts/`。
+- 新测试默认 import `rs_core` 或 `rs_lab`；只有验证 CLI wrapper 入口形态时才 import `scripts`。
 - 稳定入口使用动词开头，例如 `build_*`、`train_*`、`run_*`、`validate_*`；阶段性实验保留 `run_phase_*` 或 `run_pool*_`，但新增阶段脚本要说明所属实验线和输出目录。
 - 无测试、无文档、无其他脚本引用且已被主路替代的历史入口移入 `scripts/archive/`；归档不等于删除，后续确认无用后再清理。
-- 脚本默认写 `outputs/` 任务子目录；一次性 debug、smoke、tuning 产物验证后清理，不把临时产物当主路证据。
+- 实验默认写 `outputs/` 任务子目录；一次性 debug、smoke、tuning 产物验证后清理，不把临时产物当主路证据。
 - 本项目本地命令默认使用 `.venv/Scripts/python.exe`；GPU、slow、experiment 脚本必须通过 marker 或文档说明隔离出默认门禁。
 - 脚本打印关键输入、输出路径、样本规模和核心结论；模块内部返回结构化结果，避免裸 `print`。
 

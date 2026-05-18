@@ -132,7 +132,9 @@ def _scene_metrics(scene: dict[str, Any]) -> dict[str, Any]:
     state = scene.get("state", {})
     session = scene.get("session", {})
     action_counts = Counter(action.get("type") for action in actions if action.get("type"))
-    feedback_count = sum(1 for event in session.get("events", []) if event.get("type") == "feedback")
+    feedback_count = sum(
+        1 for event in session.get("public_timeline", {}).get("events", []) if event.get("event_type") == "feedback"
+    )
     seen_item_ids = state.get("seen_item_ids", [])
     return {
         "turn_count": session.get("turn_count", 0),

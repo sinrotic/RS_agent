@@ -1,0 +1,50 @@
+schema_version: current_route_registry_v1
+routes:
+  current_recall_route:
+    role: recall
+    status: current
+    authority_refs: ["dic/ENGINEERING_NARRATIVE_LOG.md", "dic/experiments/recall/RECALL_METHODS_EXPERIMENT_LOG.md"]
+    config_paths: ["configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"]
+    workflow_paths: ["rs_core/workflow/ranking_experiments.py"]
+    script_paths: ["rs_lab/experiments/recall/phase_1_21_recall_coverage_experiments.py"]
+    required_output_paths: ["outputs/recall/phase_1_21_recall_coverage/current_main_route_pool200_source_balanced/manifest.json"]
+    promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#recall-route-promotion
+    notes: Current pool200 source-balanced recall route; pool500 extends this route rather than selecting methods again.
+  current_ranking_route:
+    role: ranking
+    status: current
+    authority_refs: ["dic/decisions/PHASE_1_31_FINAL_OFFLINE_RANKING_ROUTE_ADR.md"]
+    config_paths: ["configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml"]
+    workflow_paths: ["rs_core/workflow/ranking_experiments.py"]
+    script_paths: ["rs_lab/experiments/ranking/run_phase_1_29_terminal_ranking_route.py", "rs_lab/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py", "rs_lab/experiments/ranking/run_phase_1_31_ranking_algorithm_scaffold.py"]
+    required_output_paths: []
+    promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#ranking-route-promotion
+    notes: Current offline ranking route remains frozen-pool ranking; pool500 recall continuation must not replace this input without ranking promotion.
+  current_agent_demo_route:
+    role: agent_demo
+    status: provisional_current
+    authority_refs: ["dic/README.md", "dic/PROJECT_STRUCTURE.md"]
+    config_paths: ["configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml"]
+    workflow_paths: ["rs_core/serving/service.py", "rs_core/rsagent/runtime.py"]
+    script_paths: ["scripts/serving/run_service.py", "scripts/evaluation/run_simulation_evaluation.py"]
+    required_output_paths: []
+    promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion
+    notes: Provisional local Agent demo route; runtime should not embed governance details directly.
+  pool500_recall_continuation_route:
+    role: recall
+    status: continuation_only
+    authority_refs: ["dic/ENGINEERING_NARRATIVE_LOG.md", "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"]
+    config_paths: ["configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"]
+    workflow_paths: ["rs_core/workflow/pool500_route_gate.py", "rs_core/workflow/full_data_pool500_route_gate.py#full_data_pool500_artifact_gate"]
+    script_paths: ["rs_lab/experiments/recall/run_p7_full_pool500_route_gate.py", "rs_lab/experiments/recall/run_full_data_pool500_batch01_dry_run.py"]
+    required_output_paths: ["outputs/recall/p7_full_pool500_main_route_continuation/route_precheck_gate/manifest.json"]
+    promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#recall-route-promotion
+    artifact_gate_schema_version: full_data_pool500_artifact_gate_v5
+    artifact_gate_workflow: "rs_core/workflow/full_data_pool500_route_gate.py#full_data_pool500_artifact_gate"
+    allowed_decisions: ["FULL_POOL500_READY", "DIAGNOSTIC_ONLY_PARTIAL", "STOP"]
+    candidate_generation_allowed: false
+    ranking_input_replacement_allowed: false
+    shadow_mode: read_only_shadow_evidence
+    full_pool500_ready_semantics: recall_artifact_readiness_only
+    public_display_forbidden_fields: ["agent_runtime_trace", "diagnostics_path", "ranking_evidence_path", "raw_export_trace_path", "trace_ref"]
+    notes: Recall-only continuation candidate. FULL_POOL500_READY only means recall artifact ready; it does not authorize ranking input replacement.

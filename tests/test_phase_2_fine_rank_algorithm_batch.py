@@ -15,7 +15,7 @@ from rs_core.workflow.ranking_experiments import (
 )
 @pytest.fixture
 def runner():
-    return pytest.importorskip("scripts.experiments.ranking.run_phase_2_fine_rank_algorithm_batch")
+    return pytest.importorskip("rs_lab.experiments.ranking.run_phase_2_fine_rank_algorithm_batch")
 
 
 FROZEN_ROWS = [

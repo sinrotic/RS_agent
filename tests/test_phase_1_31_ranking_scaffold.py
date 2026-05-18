@@ -13,7 +13,7 @@ from rs_core.workflow.ranking_experiments import (
     build_blocked_ranking_run_row,
     build_ranking_run_row,
 )
-from scripts.experiments.ranking import run_phase_1_31_ranking_algorithm_scaffold as runner
+from rs_lab.experiments.ranking import run_phase_1_31_ranking_algorithm_scaffold as runner
 
 
 FROZEN_ROWS = [
@@ -70,6 +70,16 @@ def _executable_row(output_dir: Path, spec: RankingMethodSpec, run_kind: str, ru
 
 def test_ranking_run_rows_require_frozen_pool200_and_top5_for_executable_methods():
     spec = runner.build_method_specs()[1]
+
+    with pytest.raises(ValueError, match="candidate_pool_size=200"):
+        build_ranking_run_row(
+            run_id="test",
+            run_index=1,
+            run_kind="diagnostic",
+            method_spec=spec,
+            config={"candidate_pool_size": 500, "top_k": 5},
+            frozen_rows=FROZEN_ROWS,
+        )
 
     with pytest.raises(ValueError, match="candidate_pool_size=200"):
         build_ranking_run_row(

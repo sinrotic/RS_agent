@@ -15,6 +15,8 @@ from rs_core.recsys.vector_index import VectorIndex, average_vectors, load_vecto
 
 _SEMANTIC_SEED_CONTEXT_CACHE_LIMIT = 4
 _SEMANTIC_SEED_CONTEXT_CACHE: dict[tuple[int, tuple[str, ...], float, int], dict[str, Any]] = {}
+_SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE_LIMIT = 4
+_SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE: dict[tuple[int, tuple[str, ...], int], dict[str, Any]] = {}
 _METADATA_NEIGHBOR_INDEX_CACHE_LIMIT = 4
 _METADATA_NEIGHBOR_INDEX_CACHE: dict[tuple[int, tuple[str, ...]], dict[str, Any]] = {}
 
@@ -66,6 +68,64 @@ def load_item_graph_recall(
     allowed_src_items: set[str] | None = None,
 ) -> dict[str, list[RecallCandidate]]:
     return _load_item_pair_recall(path, "item_graph", allowed_src_items)
+
+
+def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[RecallCandidate]]:
+    manifest_path = Path(manifest_path)
+    manifest = read_json(manifest_path)
+    if manifest.get("source") != "usercf_recall":
+        raise ValueError(f"invalid usercf_recall manifest source: {manifest.get('source')!r}")
+    if manifest.get("index_scope") != "FULL_DERIVED_INDEX":
+        raise ValueError(f"invalid usercf_recall index_scope: {manifest.get('index_scope')!r}")
+    if manifest.get("train_only") is not True:
+        raise ValueError("usercf_recall manifest must be train_only")
+    outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
+    shard_paths = outputs.get("candidate_shards") if isinstance(outputs.get("candidate_shards"), list) else []
+    by_user: dict[str, list[RecallCandidate]] = defaultdict(list)
+    for shard_path in shard_paths:
+        for line_number, row in enumerate(iter_jsonl(_resolve_manifest_path(manifest_path, shard_path)), start=1):
+            user_id = str(row.get("user_id") or "")
+            if not user_id:
+                raise ValueError(f"missing user_id in usercf_recall shard row {line_number}: {shard_path}")
+            candidates = row.get("candidates")
+            if not isinstance(candidates, list):
+                raise ValueError(f"missing candidates in usercf_recall shard row {line_number}: {shard_path}")
+            for candidate in candidates:
+                if not isinstance(candidate, dict):
+                    raise ValueError(f"invalid usercf_recall candidate in shard row {line_number}: {shard_path}")
+                item_id = str(candidate.get("item_id") or "")
+                if not item_id:
+                    raise ValueError(f"missing item_id in usercf_recall shard row {line_number}: {shard_path}")
+                source = str(candidate.get("source") or "usercf_recall")
+                if source != "usercf_recall":
+                    raise ValueError(f"invalid usercf_recall candidate source in shard row {line_number}: {source!r}")
+                by_user[user_id].append(
+                    RecallCandidate(
+                        item_id=item_id,
+                        source="usercf_recall",
+                        score=float(candidate.get("score", 0.0) or 0.0),
+                        metadata={"usercf_rank": int(candidate.get("rank", len(by_user[user_id]) + 1)), "usercf_manifest_path": str(manifest_path)},
+                    )
+                )
+    for rows in by_user.values():
+        rows.sort(key=lambda item: (-item.score, item.item_id))
+    return by_user
+
+
+def load_swing_recall_sidecar(manifest_path: str | Path) -> dict[str, list[RecallCandidate]]:
+    manifest_path = Path(manifest_path)
+    manifest = read_json(manifest_path)
+    if manifest.get("source") != "swing_recall":
+        raise ValueError(f"invalid swing_recall manifest source: {manifest.get('source')!r}")
+    if manifest.get("index_scope") != "FULL_DERIVED_INDEX":
+        raise ValueError(f"invalid swing_recall index_scope: {manifest.get('index_scope')!r}")
+    if manifest.get("train_only") is not True:
+        raise ValueError("swing_recall manifest must be train_only")
+    artifacts = manifest.get("required_artifacts") if isinstance(manifest.get("required_artifacts"), dict) else {}
+    edges_path = artifacts.get("swing_recall_edges") or manifest.get("edges_path")
+    if not edges_path:
+        raise ValueError("swing_recall manifest missing required_artifacts.swing_recall_edges")
+    return _load_item_pair_recall(_resolve_manifest_path(manifest_path, edges_path), "swing_recall")
 
 
 def load_graph_walk_seed_recall(
@@ -165,6 +225,13 @@ def _validate_graph_walk_seed_manifest(manifest_path: str | Path, sidecar_path: 
     if actual_hash != expected_hash:
         raise ValueError("invalid graph_walk_seed manifest sidecar_hash: mismatch")
 
+
+
+def _resolve_manifest_path(manifest_path: Path, value: Any) -> Path:
+    path = Path(str(value))
+    if path.is_absolute() or path.exists():
+        return path
+    return manifest_path.parent / path
 
 
 def _load_item_pair_recall(
@@ -315,12 +382,10 @@ def semantic_title_category_expansion_candidates_for_user(
     token_fields = [str(field) for field in source_config.get("text_fields", ["title_clean", "main_category", "categories_flat"])]
 
     seed_items = _recent_unique_seeds(user_sequence.get("recent_positive_item_sequence", []), seed_window)
-    item_tokens = {item_id: _semantic_tokens(record, token_fields) for item_id, record in semantic_index.items()}
-    item_categories = {item_id: _semantic_categories(record) for item_id, record in semantic_index.items()}
-    inverted_index: dict[str, set[str]] = defaultdict(set)
-    for item_id, tokens in item_tokens.items():
-        for token in tokens:
-            inverted_index[token].add(item_id)
+    context = _semantic_title_category_context(semantic_index, token_fields)
+    item_tokens = context["item_tokens"]
+    item_categories = context["item_categories"]
+    inverted_index = context["inverted_index"]
 
     by_item: dict[str, RecallCandidate] = {}
     for seed_rank, seed_item in enumerate(seed_items):
@@ -490,6 +555,8 @@ def merge_for_user(
     item_graph: dict[str, list[RecallCandidate]] | None = None,
     two_tower_seed: dict[str, list[RecallCandidate]] | None = None,
     graph_walk_seed: dict[str, list[RecallCandidate]] | None = None,
+    usercf_recall: dict[str, list[RecallCandidate]] | None = None,
+    swing_recall: dict[str, list[RecallCandidate]] | None = None,
 ) -> tuple[list[MergedCandidate], bool]:
     seen_items = set(user_sequence.get("recent_item_sequence", []))
     raw: list[RecallCandidate] = []
@@ -518,12 +585,15 @@ def merge_for_user(
 
     raw.extend(_category_candidates_for_user(user_sequence, category_top, item_category, config))
     raw.extend(category_long_tail_candidates_for_user(user_sequence, item_category, popular, config))
+    raw.extend(semantic_title_category_expansion_candidates_for_user(user_sequence, semantic_index or {}, config))
     raw.extend(semantic_candidates_for_user(user_sequence, semantic_index or {}, config))
     raw.extend(metadata_neighbor_candidates_for_user(user_sequence, semantic_index or {}, config))
     raw.extend(two_tower_candidates_for_user(user_sequence, two_tower_index or {}, config))
     raw.extend(item_graph_candidates_for_user(user_sequence, item_graph or {}, config))
     raw.extend(two_tower_seed_candidates_for_user(user_sequence, two_tower_seed or {}, config))
     raw.extend(graph_walk_seed_candidates_for_user(user_sequence, graph_walk_seed or {}, config))
+    raw.extend(swing_candidates_for_user(user_sequence, swing_recall or {}, config))
+    raw.extend(usercf_candidates_for_user(user_sequence, usercf_recall or {}, config))
 
     fallback_used = not raw
     popular_fallback = _popular_candidates_for_pool(popular, raw, config)
@@ -765,6 +835,62 @@ def two_tower_seed_candidates_for_user(
                 item_id=candidate.item_id,
                 source="two_tower_seed",
                 score=round(score, 6),
+                category=candidate.category,
+                metadata=metadata,
+            )
+            current = by_item.get(row.item_id)
+            if current is None or row.score > current.score:
+                by_item[row.item_id] = row
+    rows = list(by_item.values())
+    rows.sort(key=lambda item: (-item.score, item.item_id))
+    return rows[:limit]
+
+
+def usercf_candidates_for_user(
+    user_sequence: dict[str, Any],
+    usercf_recall: dict[str, list[RecallCandidate]],
+    config: dict,
+) -> list[RecallCandidate]:
+    if not config.get("usercf_enabled") or not usercf_recall:
+        return []
+    user_id = str(user_sequence.get("user_id") or "")
+    seen_items = set(user_sequence.get("recent_item_sequence", []))
+    limit = int(config.get("usercf_per_user", len(usercf_recall.get(user_id, []))))
+    rows = [candidate for candidate in usercf_recall.get(user_id, []) if candidate.item_id not in seen_items]
+    rows.sort(key=lambda item: (-item.score, item.item_id))
+    return rows[:limit]
+
+
+def swing_candidates_for_user(
+    user_sequence: dict[str, Any],
+    swing_recall: dict[str, list[RecallCandidate]],
+    config: dict,
+) -> list[RecallCandidate]:
+    if not config.get("swing_enabled") or not swing_recall:
+        return []
+    positive_seeds = _recent_unique_seeds(
+        user_sequence.get("recent_positive_item_sequence", []),
+        int(config.get("swing_recent_positive_window", config.get("swing_seed_window", 10))),
+    )
+    strong_seeds = _recent_unique_seeds(
+        user_sequence.get("recent_strong_positive_item_sequence", []),
+        int(config.get("swing_recent_strong_window", config.get("swing_seed_window", 10))),
+    )
+    seeds = list(dict.fromkeys([*strong_seeds, *positive_seeds]))
+    seen_items = set(user_sequence.get("recent_item_sequence", []))
+    per_seed = int(config.get("swing_per_seed", 20))
+    limit = int(config.get("swing_per_user", per_seed * max(1, len(seeds))))
+    by_item: dict[str, RecallCandidate] = {}
+    for seed_rank, seed in enumerate(seeds):
+        for candidate in swing_recall.get(seed, [])[:per_seed]:
+            if candidate.item_id in seen_items:
+                continue
+            metadata = dict(candidate.metadata)
+            metadata.update({"swing_seed_item": seed, "swing_seed_rank": seed_rank, "swing_score": candidate.score})
+            row = RecallCandidate(
+                item_id=candidate.item_id,
+                source="swing_recall",
+                score=candidate.score,
                 category=candidate.category,
                 metadata=metadata,
             )
@@ -1121,6 +1247,29 @@ def _semantic_token_df(
     for record in semantic_index.values():
         token_df.update(_record_semantic_tokens(record, token_fields))
     return token_df
+
+
+def _semantic_title_category_context(semantic_index: dict[str, dict[str, Any]], token_fields: list[str]) -> dict[str, Any]:
+    normalized_fields = tuple(token_fields)
+    cache_key = (id(semantic_index), normalized_fields, len(semantic_index))
+    context = _SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE.get(cache_key)
+    if context:
+        return context
+    item_tokens = {item_id: _semantic_tokens(record, token_fields) for item_id, record in semantic_index.items()}
+    item_categories = {item_id: _semantic_categories(record) for item_id, record in semantic_index.items()}
+    inverted_index: dict[str, set[str]] = defaultdict(set)
+    for item_id, tokens in item_tokens.items():
+        for token in tokens:
+            inverted_index[token].add(item_id)
+    context = {
+        "item_tokens": item_tokens,
+        "item_categories": item_categories,
+        "inverted_index": inverted_index,
+    }
+    if len(_SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE) >= _SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE_LIMIT:
+        _SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE.pop(next(iter(_SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE)))
+    _SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE[cache_key] = context
+    return context
 
 
 def _semantic_seed_aware_context(

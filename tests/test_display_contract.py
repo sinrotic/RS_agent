@@ -1,6 +1,11 @@
 import pytest
 
-from rs_core.display import build_display_record
+from rs_core.display import (
+    build_display_record,
+    build_public_timeline,
+    validate_public_display_payload,
+    validate_public_timeline_payload,
+)
 
 pytestmark = pytest.mark.unit
 from rs_core.recsys.types import AgentDecision
@@ -76,6 +81,87 @@ def test_display_response_exposes_only_frontend_safe_fields():
     assert not BLOCKED_DISPLAY_KEYS & set(item)
     assert not BLOCKED_DISPLAY_KEYS & set(display)
     _assert_no_blocked_display_terms(display)
+
+
+def test_public_timeline_uses_public_event_id_and_sanitizes_events():
+    session, _turn = _session_with_turn()
+
+    timeline = build_public_timeline(
+        session,
+        [{"type": "chat", "trace_ref": "internal-trace", "diagnostics_path": "outputs/internal.json"}],
+    )
+
+    assert timeline == {
+        "schema_version": "rs_agent_public_timeline_v1",
+        "session_id": "s1",
+        "user_id": "u1",
+        "events": [
+            {
+                "public_event_id": "s1:turn:2",
+                "event_type": "chat",
+                "turn_index": 2,
+                "user_message": "show me commute audio",
+                "assistant_message": "Here are safer display cards.",
+                "display_response_index": 0,
+            }
+        ],
+    }
+    assert "trace_ref" not in timeline["events"][0]
+    _assert_no_blocked_display_terms(timeline)
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("trace_ref", "abc"),
+        ("agent_runtime_trace", []),
+        ("diagnostics_path", "outputs/diagnostics.json"),
+        ("raw_export_trace_path", "outputs/export_trace.json"),
+        ("ranking_evidence_path", "outputs/ranking_evidence.json"),
+        ("diagnostics", {}),
+        ("reward_evidence", {}),
+        ("training_samples", []),
+    ],
+)
+def test_public_display_validator_rejects_internal_fields(field: str, value):
+    session, turn = _session_with_turn()
+    display = build_display_record(turn, session)
+    display[field] = value
+
+    with pytest.raises(ValueError):
+        validate_public_display_payload(display)
+
+
+@pytest.mark.parametrize("term", ["raw export trace", "ranking evidence", "diagnostics", "reward", "training", "source"])
+def test_public_display_validator_rejects_internal_terms(term: str):
+    session, turn = _session_with_turn()
+    display = build_display_record(turn, session)
+    display["assistant_message"] = f"Internal {term} is available."
+
+    with pytest.raises(ValueError):
+        validate_public_display_payload(display)
+
+
+def test_public_timeline_validator_rejects_trace_ref_and_requires_allowlist():
+    with pytest.raises(ValueError):
+        validate_public_timeline_payload(
+            {
+                "schema_version": "rs_agent_public_timeline_v1",
+                "session_id": "s1",
+                "user_id": "u1",
+                "events": [
+                    {
+                        "trace_ref": "internal",
+                        "event_type": "chat",
+                        "turn_index": 1,
+                        "user_message": "hello",
+                        "assistant_message": "hi",
+                        "display_response_index": 0,
+                    }
+                ],
+            }
+        )
+
 
 
 def test_display_response_tolerates_missing_metadata_and_skips_items_without_parent_asin():

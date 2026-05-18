@@ -21,7 +21,7 @@ def _parse_simple_yaml(text: str) -> dict[str, Any]:
     root: dict[str, Any] = {}
     stack: list[tuple[int, dict[str, Any]]] = [(-1, root)]
     for raw_line in text.splitlines():
-        line = raw_line.split("#", 1)[0].rstrip()
+        line = _strip_yaml_comment(raw_line).rstrip()
         if not line.strip():
             continue
         stripped = line.strip()
@@ -41,6 +41,19 @@ def _parse_simple_yaml(text: str) -> dict[str, Any]:
         else:
             parent[key] = _parse_scalar(value.strip())
     return root
+
+
+def _strip_yaml_comment(line: str) -> str:
+    in_single_quote = False
+    in_double_quote = False
+    for index, char in enumerate(line):
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+        elif char == "#" and not in_single_quote and not in_double_quote:
+            return line[:index]
+    return line
 
 
 def _parse_scalar(value: str) -> Any:

@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.data.build_recall_views import build_item_graph_view, build_itemcf_edges, build_lightweight_full_safe_views
+from rs_core.dataproc.recall_views import build_item_graph_view, build_itemcf_edges, build_lightweight_full_safe_views
 
 
 def write_jsonl(path, rows):

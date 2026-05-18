@@ -1,0 +1,533 @@
+{
+  "schema_version": "pool500_method_registry_v1",
+  "updated_at": "2026-05-18",
+  "scope": "pool500_recall_methods",
+  "latest_diagnostic_batch": {
+    "limit_users": 500,
+    "manifest_path": "outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/manifest.json",
+    "ready_source_stoploss_audit_path": "outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/ready_source_stoploss_audit.json",
+    "diagnostic_source_contribution_path": "outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/diagnostic_source_contribution.json",
+    "decision": "STOP",
+    "processed_users": 500,
+    "candidate_rows": 111983,
+    "underfilled_user_count": 500,
+    "underfilled_user_ratio": 1.0,
+    "ranking_input_replacement_allowed": false,
+    "pool1000_allowed": false
+  },
+  "sources": {
+    "category": {
+      "status": "READY",
+      "method_doc": "dic/recall_methods/category/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/category/manifest.json",
+      "latest_row_count": 30193,
+      "eligible_user_policy": "medium_behavior_or_fallback",
+      "role": "stable_category_coverage",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "default_dataset_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/default_train_only_stats_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "unified_train_only_stats",
+          "unified_item_metadata"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Use pool500 train-only unified stats and metadata for category coverage; no method-specific custom dataset is required.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical category source identity, and artifact gate evidence.",
+        "eligible_user_policy": "medium_behavior_or_fallback",
+        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/category/manifest.json"
+        ],
+        "status": "READY",
+        "notes": "Default coverage method; readiness means available for governed pool500 recall diagnostics, not promotion authority."
+      }
+    },
+    "popular": {
+      "status": "READY",
+      "method_doc": "dic/recall_methods/popular/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/popular/manifest.json",
+      "latest_row_count": 81289,
+      "eligible_user_policy": "fallback_only",
+      "role": "coverage_backfill",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "default_dataset_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/default_train_only_stats_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "unified_train_only_stats",
+          "unified_item_metadata"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Use pool500 train-only unified popularity stats and metadata for fallback coverage; no method-specific custom dataset is required.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical popular source identity, and artifact gate evidence.",
+        "eligible_user_policy": "fallback_only",
+        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/popular/manifest.json"
+        ],
+        "status": "READY",
+        "notes": "Default fallback method; readiness means available for governed pool500 recall diagnostics, not promotion authority."
+      }
+    },
+    "swing_recall": {
+      "status": "READY",
+      "method_doc": "dic/recall_methods/swing_recall/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/swing_recall_v2/source_index_manifest.json",
+      "latest_row_count": 3668,
+      "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
+      "role": "behavioral_item_expansion",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "guarded_ready_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/swing_recall_ready_sidecar_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "ready_sidecar",
+          "behavior_graph",
+          "guarded_budgeted_generation"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Use READY swing sidecar or train-only behavior graph under stoploss and budget guards; method-specific custom dataset is optional, not mandatory.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical swing_recall source identity, artifact gate evidence, and guard compliance.",
+        "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
+        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and guard checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "outputs/recall/pool500_sidecar_fix/swing_recall_v2/source_index_manifest.json"
+        ],
+        "status": "READY",
+        "notes": "READY sidecar is allowed only through guarded/budgeted pool500 recall diagnostics; replacement remains forbidden."
+      }
+    },
+    "usercf_recall": {
+      "status": "DIAGNOSTIC_ONLY",
+      "method_doc": "dic/recall_methods/usercf_recall/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/source_index_manifest.json",
+      "latest_readiness_contract": "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/readiness_contract.json",
+      "latest_row_count": 21251,
+      "latest_candidate_total_count": 24056,
+      "latest_peak_rss_mb": 2394,
+      "eligible_user_policy": "heavy_cf_eligible",
+      "role": "heavy_user_neighbor_recall",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "custom_dataset_policy",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/usercf_recall_custom_dataset_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "method_specific_eligible_users",
+          "heavy_cf_eligible",
+          "guarded_batched_generation",
+          "memory_managed_generation"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible users with guarded batching and memory management.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical usercf_recall source identity, artifact gate evidence, and resource guard evidence.",
+        "eligible_user_policy": "heavy_cf_eligible",
+        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/source_index_manifest.json",
+          "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/readiness_contract.json"
+        ],
+        "status": "DIAGNOSTIC_ONLY",
+        "notes": "Heavy CF method remains diagnostic-only; custom dataset and resource guard evidence do not permit ranking replacement."
+      }
+    },
+    "itemcf_weak": {
+      "status": "DIAGNOSTIC_ONLY",
+      "method_doc": "dic/recall_methods/itemcf_weak/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_guarded/source_index_manifest.json",
+      "latest_row_count": 345,
+      "latest_peak_rss_mb": 38,
+      "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
+      "role": "broad_item_neighbor_recall",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "custom_dataset_policy",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/itemcf_weak_custom_dataset_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "method_specific_eligible_users",
+          "heavy_cf_eligible_or_medium_behavior",
+          "guarded_batched_generation",
+          "memory_managed_generation"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible_or_medium_behavior users with guarded batching and memory management.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_weak source identity, artifact gate evidence, and resource guard evidence.",
+        "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
+        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_guarded/source_index_manifest.json"
+        ],
+        "status": "DIAGNOSTIC_ONLY",
+        "notes": "Heavy resource item-CF method remains diagnostic-only; custom dataset and guard evidence do not permit ranking replacement."
+      }
+    },
+    "itemcf_strong": {
+      "status": "DIAGNOSTIC_ONLY",
+      "method_doc": "dic/recall_methods/itemcf_strong/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/source_index_manifest.json",
+      "latest_row_count": 330,
+      "latest_peak_rss_mb": 37,
+      "eligible_user_policy": "heavy_cf_eligible",
+      "role": "high_confidence_item_neighbor_recall",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "custom_dataset_policy",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/itemcf_strong_custom_dataset_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "method_specific_eligible_users",
+          "heavy_cf_eligible",
+          "guarded_batched_generation",
+          "memory_managed_generation"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible users with guarded batching and memory management.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_strong source identity, artifact gate evidence, and resource guard evidence.",
+        "eligible_user_policy": "heavy_cf_eligible",
+        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/source_index_manifest.json"
+        ],
+        "status": "DIAGNOSTIC_ONLY",
+        "notes": "Heavy resource item-CF method remains diagnostic-only; custom dataset and guard evidence do not permit ranking replacement."
+      }
+    },
+    "semantic": {
+      "status": "DEFERRED",
+      "method_doc": "dic/recall_methods/semantic/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/semantic/manifest.json",
+      "latest_row_count": 0,
+      "eligible_user_policy": "metadata_rich_or_behavior_sparse",
+      "role": "semantic_metadata_recall",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "deferred_evidence_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/semantic_required_artifacts_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "train_only_item_metadata",
+          "future_guarded_semantic_artifacts"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Deferred until train-only semantic artifacts exist; no READY generation dataset is claimed.",
+        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical semantic source identity, and artifact gate evidence.",
+        "eligible_user_policy": "metadata_rich_or_behavior_sparse",
+        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "missing: train-only semantic embedding/index artifact",
+          "missing: pool500 source readiness contract",
+          "required: artifact gate evidence before any READY claim"
+        ],
+        "status": "DEFERRED",
+        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness."
+      }
+    },
+    "semantic_title_category_expansion": {
+      "status": "DEFERRED",
+      "method_doc": "dic/recall_methods/semantic_title_category_expansion/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/semantic_title_category_expansion/manifest.json",
+      "latest_row_count": 0,
+      "eligible_user_policy": "metadata_rich_or_behavior_sparse",
+      "role": "semantic_category_expansion",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "deferred_evidence_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/semantic_title_category_expansion_required_artifacts_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "train_only_title_category_metadata",
+          "future_guarded_semantic_artifacts"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Deferred until train-only title/category semantic expansion artifacts exist; no READY generation dataset is claimed.",
+        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical semantic_title_category_expansion source identity, and artifact gate evidence.",
+        "eligible_user_policy": "metadata_rich_or_behavior_sparse",
+        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "missing: train-only title/category semantic expansion artifact",
+          "missing: pool500 source readiness contract",
+          "required: artifact gate evidence before any READY claim"
+        ],
+        "status": "DEFERRED",
+        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness."
+      }
+    },
+    "co_visit_fallback_repair": {
+      "status": "DEFERRED",
+      "method_doc": "dic/recall_methods/co_visit_fallback_repair/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/co_visit_fallback_repair/manifest.json",
+      "latest_row_count": 0,
+      "eligible_user_policy": "cf_weak_connection_repair",
+      "role": "fallback_repair",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "deferred_evidence_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/co_visit_fallback_repair_required_artifacts_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "train_only_co_visit_graph",
+          "future_guarded_repair_artifacts"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Deferred until train-only co-visit repair artifacts exist; no READY generation dataset is claimed.",
+        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical co_visit_fallback_repair source identity, and artifact gate evidence.",
+        "eligible_user_policy": "cf_weak_connection_repair",
+        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "missing: train-only co-visit repair artifact",
+          "missing: pool500 source readiness contract",
+          "required: artifact gate evidence before any READY claim"
+        ],
+        "status": "DEFERRED",
+        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness."
+      }
+    },
+    "two_tower": {
+      "status": "DEFERRED",
+      "method_doc": "dic/recall_methods/two_tower/METHOD.md",
+      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/two_tower/manifest.json",
+      "latest_row_count": 0,
+      "eligible_user_policy": "future_embedding_recall",
+      "role": "embedding_ann_recall",
+      "dataset_contract": {
+        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
+        "policy_type": "deferred_evidence_policy",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": "configs/recall/full_data_pool500/two_tower_required_artifacts_manifest.json",
+        "allowed_input_scopes": [
+          "pool500_eligible_users",
+          "train_only_interactions",
+          "canonical_pool500_source",
+          "future_train_only_two_tower_embeddings",
+          "future_guarded_ann_index"
+        ],
+        "forbidden_input_scopes": [
+          "holdout",
+          "valid",
+          "test",
+          "clean_10000",
+          "LOPO",
+          "youtube_dnn"
+        ],
+        "generation_dataset_scope": "Deferred until train-only two-tower embedding and ANN artifacts exist; no READY generation dataset is claimed.",
+        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical two_tower source identity, and artifact gate evidence.",
+        "eligible_user_policy": "future_embedding_recall",
+        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "promotion_policy": {
+          "auto_promotion_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false
+        },
+        "readiness_artifacts": [
+          "missing: train-only two-tower model/embedding artifact",
+          "missing: train-only ANN index artifact",
+          "missing: pool500 source readiness contract",
+          "required: artifact gate evidence before any READY claim"
+        ],
+        "status": "DEFERRED",
+        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness."
+      }
+    }
+  },
+  "user_quality": {
+    "status": "DIAGNOSTIC_POLICY_READY",
+    "method_doc": "dic/recall_methods/user_quality/METHOD.md",
+    "script_path": "rs_lab/experiments/recall/build_pool500_user_quality_profile.py",
+    "planned_output_dir": "outputs/recall/pool500_user_quality/",
+    "planned_manifest_name": "eligible_user_quality_manifest.json",
+    "artifact_names": [
+      "eligible_user_quality_manifest.json",
+      "quality_bucket_summary.json",
+      "resource_audit.json"
+    ],
+    "quality_buckets": [
+      "heavy_cf_eligible",
+      "medium_behavior",
+      "fallback_only"
+    ],
+    "dataset_contract": {
+      "contract_role": "Eligibility policy contract only; user_quality is not a recall source and does not authorize promotion, ranking input replacement, pool1000 expansion, or final pool500 readiness.",
+      "policy_type": "batch_scoped_train_only_policy",
+      "custom_dataset_required": false,
+      "allowed_input_scopes": [
+        "pool500_eligible_users",
+        "train_only_user_sequences",
+        "unified_item_metadata"
+      ],
+      "forbidden_input_scopes": [
+        "holdout",
+        "valid",
+        "test",
+        "clean_10000",
+        "LOPO",
+        "youtube_dnn",
+        "pool1000"
+      ],
+      "generation_dataset_scope": "Use clean manifest train_user_sequences_path and canonical_items_path only for batch-scoped user quality profiling.",
+      "readiness_evaluation_scope": "No final recall readiness evaluation is claimed; artifact verifies schema, bucket policy, and no-holdout boundary only.",
+      "promotion_policy": {
+        "auto_promotion_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "final_pool500_ready_claimed": false
+      },
+      "eligible_user_policy_mapping": {
+        "usercf_recall": "heavy_cf_eligible",
+        "itemcf_strong": "heavy_cf_eligible",
+        "itemcf_weak": "heavy_cf_eligible_or_medium_behavior",
+        "swing_recall": "heavy_cf_eligible_or_medium_behavior",
+        "category": "medium_behavior_or_fallback",
+        "popular": "fallback_only"
+      }
+    }
+  },
+  "safety_policy": {
+    "diagnostic_sources_must_not_replace_ranking_input": true,
+    "pool1000_requires_full_pool500_ready": true,
+    "heavy_jobs_require_guarded_process": true,
+    "default_guard": {
+      "min_free_mb": 8192,
+      "max_rss_mb": 4096
+    }
+  }
+}

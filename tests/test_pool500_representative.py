@@ -8,10 +8,10 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from scripts.experiments.recall import run_pool500_representative_p0_p2 as p0_p2
-from scripts.experiments.recall.run_pool500_representative_p3_p4_audit import run_pool500_representative_p3_p4_audit
-from scripts.experiments.recall.run_pool500_representative_p5_method_observations import run_pool500_representative_p5_method_observations
-from scripts.experiments.recall.run_pool500_representative_p6_promote_stop_gate import run_pool500_representative_p6_promote_stop_gate
+from rs_lab.experiments.recall import run_pool500_representative_p0_p2 as p0_p2
+from rs_lab.experiments.recall.run_pool500_representative_p3_p4_audit import run_pool500_representative_p3_p4_audit
+from rs_lab.experiments.recall.run_pool500_representative_p5_method_observations import run_pool500_representative_p5_method_observations
+from rs_lab.experiments.recall.run_pool500_representative_p6_promote_stop_gate import run_pool500_representative_p6_promote_stop_gate
 
 
 def write_json(path: Path, payload: dict[str, Any]) -> None:

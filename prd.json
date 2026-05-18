@@ -1,39 +1,30 @@
 {
-  "task": "按照当前计划持续推进 RS Agent：先固化 rollout 到训练样本 contract，再验证 Qwen bounded rerank 对照入口，最后更新中文工程叙事。",
+  "task": "pool500 read-only shadow evidence contract-first closure: 先固化 PRD 与工程治理合同，再允许 producer、display、Agent/front-end 消费公开 schema。",
   "stories": [
     {
-      "id": "US-001",
-      "title": "导出显式 SFT/Reward 训练样本 contract",
+      "id": "US-POOL500-001",
+      "title": "固化 pool500 read-only shadow evidence 治理边界",
       "priority": 1,
       "passes": true,
       "acceptanceCriteria": [
-        "从 AgentSession/AgentTurn rollout 生成的每条记录包含 training_samples 字段，且字段内同时包含 sft_sample 与 reward_sample",
-        "sft_sample 包含 user_input、assistant_response、feedback_constraints、candidate_summary、target_action、target_explanation，且不允许模型生成候选集外 item",
-        "reward_sample 包含 reward、reward_evidence、feedback_effect_observed、risk_flags、policy_type，可直接用于后续 GRPO/reward 对照分析",
-        "tests/test_agent_rollout_schema.py 覆盖新增 training_samples contract 并通过"
+        "pool500 route is read-only shadow evidence and is not a new candidate generation path",
+        "pool500 contract requires no candidate generation and no current_ranking_route replacement",
+        "FULL_POOL500_READY is recall artifact readiness only and does not authorize ranking promotion or ranking input replacement",
+        "current_ranking_route remains the existing pool200/top_k=5 ranking gate and must not be weakened by pool500 evidence",
+        "internal evidence may keep trace_ref, agent_runtime_trace, diagnostics_path, raw_export_trace_path, ranking_evidence_path for debugging",
+        "public display is allowlist-first and must reject trace_ref, agent_runtime_trace, diagnostics_path, raw_export_trace_path, ranking_evidence_path",
+        "PRD JSON checks are covered by tests/test_engineering_contracts.py and scripts/ci/validate_engineering_contracts.py"
       ]
     },
     {
-      "id": "US-002",
-      "title": "固化 Qwen evaluation harness 小样本对照验证",
+      "id": "US-POOL500-002",
+      "title": "分离内部证据与公开展示 schema",
       "priority": 2,
-      "passes": true,
+      "passes": false,
       "acceptanceCriteria": [
-        "scripts/evaluation/run_qwen_evaluation_harness.py 能在 inference fallback 环境下生成 deterministic_baseline、rule_feedback_rerank、qwen_feedback_rerank 三种模式的 comparison JSON/report",
-        "comparison JSON 包含 rank_delta、mode_order、各模式 paths 与 inference_policy diagnostics",
-        "对应测试覆盖 fallback/诊断摘要路径，且不要求本机已安装 torch/transformers",
-        "相关 pytest 目标通过"
-      ]
-    },
-    {
-      "id": "US-003",
-      "title": "更新中文阶段叙事和下一步边界",
-      "priority": 3,
-      "passes": true,
-      "acceptanceCriteria": [
-        "dic/ENGINEERING_NARRATIVE_LOG.md 追加一条中文记录，说明 rollout contract 与 Qwen harness 的问题、定位、解决、验证和面试可讲点",
-        "记录明确说明 Qwen/QLoRA/GRPO 仍未完整训练落地，当前工作是训练前 contract 与对照验证",
-        "compileall 或相关测试通过后再标记完成"
+        "producer may emit internal evidence for pool500 shadow diagnostics without exposing it to public display",
+        "display adapter exports only allowlisted timeline fields for Agent/frontend consumption",
+        "tests reject public display payloads containing trace_ref, agent_runtime_trace, diagnostics_path, raw_export_trace_path, ranking_evidence_path"
       ]
     }
   ]

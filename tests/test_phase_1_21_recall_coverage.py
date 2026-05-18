@@ -11,7 +11,7 @@ import pytest
 pytestmark = pytest.mark.experiment
 
 from rs_core.common.io import write_jsonl
-from scripts.experiments.recall import phase_1_21_recall_coverage_experiments as phase_1_21
+from rs_lab.experiments.recall import phase_1_21_recall_coverage_experiments as phase_1_21
 
 
 def test_phase_1_21_baseline_and_audit_write_required_artifacts(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

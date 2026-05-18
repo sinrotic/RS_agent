@@ -18,7 +18,7 @@ export const mockData: DisplayResponse = {
       "description": null,
       "image_url": null,
       "badges": [
-        "multi_source",
+        "diverse_match",
         "matches_feedback",
         "missing_image"
       ],
@@ -35,7 +35,7 @@ export const mockData: DisplayResponse = {
       "description": null,
       "image_url": null,
       "badges": [
-        "multi_source",
+        "diverse_match",
         "matches_feedback",
         "missing_image"
       ],
@@ -52,7 +52,7 @@ export const mockData: DisplayResponse = {
       "description": null,
       "image_url": null,
       "badges": [
-        "multi_source",
+        "diverse_match",
         "matches_feedback",
         "missing_image"
       ],
@@ -69,7 +69,7 @@ export const mockData: DisplayResponse = {
       "description": null,
       "image_url": null,
       "badges": [
-        "multi_source",
+        "diverse_match",
         "matches_feedback",
         "missing_image"
       ],
@@ -86,7 +86,7 @@ export const mockData: DisplayResponse = {
       "description": null,
       "image_url": null,
       "badges": [
-        "multi_source",
+        "diverse_match",
         "matches_feedback",
         "missing_image"
       ],

@@ -1,0 +1,37 @@
+{
+  "schema_version": "two_tower_full_clean_safe_config_v1",
+  "source_name": "two_tower_youtube_dnn",
+  "canonical_source": "two_tower",
+  "clean_dir": "data/processed/amazon_2023_recall_clean_full",
+  "views_dir": "data/processed/amazon_2023_recall_views_full_lightweight",
+  "evaluation_mode": "train_only",
+  "candidate_pool_size": 500,
+  "index_scope": "FULL_DERIVED_INDEX",
+  "required_artifact_manifest_fields": [
+    "clean_manifest_sha256",
+    "train_sequence_sha256",
+    "item_universe_sha256",
+    "model_config_sha256",
+    "source_name",
+    "canonical_source",
+    "item_embedding_row_count",
+    "user_embedding_row_count",
+    "recall_index_row_count",
+    "index_scope"
+  ],
+  "allowed_clean_manifest_path": "data/processed/amazon_2023_recall_clean_full/manifest.json",
+  "allowed_train_sequence_path": "data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl",
+  "forbidden_artifact_scopes": [
+    "clean_smoke_e2e",
+    "amazon_2023_recall_clean_10000",
+    "valid_test",
+    "leave_one_positive_out",
+    "holdout"
+  ],
+  "forbidden_ready_artifact_paths": [
+    "outputs/training/two_tower/two_tower_training/youtube_dnn/artifact_manifest.json"
+  ],
+  "candidate_generation_allowed": false,
+  "ranking_input_replacement_allowed": false,
+  "pool1000_allowed": false
+}

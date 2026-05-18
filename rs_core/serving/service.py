@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from rs_core.display import build_display_record
+from rs_core.display import build_display_record, build_public_timeline
 from rs_core.rsagent.schema import AgentSession
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 
@@ -84,16 +84,7 @@ class RecommendationService:
             "session_id": session.session_id,
             "user_id": session.user_id,
             "turn_count": len(session.turns),
-            "events": [
-                {
-                    **self.session_events[session_id][index],
-                    "turn_index": turn.turn_index,
-                    "user_input": turn.user_input,
-                    "assistant_message": turn.assistant_response or turn.recommendation.agent_explanation,
-                    "display_response_index": index,
-                }
-                for index, turn in enumerate(session.turns)
-            ],
+            "public_timeline": build_public_timeline(session, self.session_events[session_id]),
             "display_responses": display_responses,
         }
 

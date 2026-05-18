@@ -78,7 +78,7 @@ def test_simulation_scene_endpoint_returns_scene_for_frontend(tmp_path: Path, mo
     assert response.status_code == 200
     payload = response.json()
     assert payload["role"]["role_id"] == "commuter_practical"
-    assert payload["session"]["events"][0]["type"] == "chat"
+    assert payload["session"]["public_timeline"]["events"][0]["event_type"] == "chat"
     assert payload["session"]["display_responses"][0]["schema_version"] == "rs_agent_display_v1"
     _assert_public_payload(payload)
 
@@ -91,8 +91,7 @@ def test_simulation_why_action_uses_public_explanation_path(tmp_path: Path):
 
     assert scene["actions"][1]["type"] == RoleActionType.WHY.value
     assert scene["actions"][1]["action_type"] == "why"
-    assert scene["session"]["events"][1]["type"] == "feedback"
-    assert scene["session"]["events"][1]["action_type"] == "why"
+    assert scene["session"]["public_timeline"]["events"][1]["event_type"] == "feedback"
     explained_item_id = scene["actions"][1]["item_id"]
     assert explained_item_id in scene["session"]["display_responses"][1]["assistant_message"]
     _assert_public_payload(scene)

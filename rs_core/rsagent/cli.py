@@ -6,7 +6,7 @@ from pathlib import Path
 
 from rs_core.common.config import load_config
 from rs_core.common.io import write_json, write_jsonl
-from rs_core.display import session_to_display_records
+from rs_core.display import session_to_display_records, validate_public_display_payload
 from rs_core.recsys.evaluation import heldout_positives
 from rs_core.rsagent.inference_policy import resolve_inference_policy_config
 from rs_core.rsagent.policy import normalize_feedback_input
@@ -88,7 +88,7 @@ def run_cli_session(
     display_responses_path = target / "display_responses.jsonl"
     display_demo_path = target / "display_demo.json"
     report_path = target / "rs_agent_cli_baseline_comparison.md"
-    display_records = session_to_display_records(session)
+    display_records = [validate_public_display_payload(record) for record in session_to_display_records(session)]
     write_json(session_path, session.to_dict())
     write_jsonl(turns_path, [turn.to_dict() for turn in session.turns])
     write_jsonl(rollout_path, session_to_rollout_records(session, user_sequence))
