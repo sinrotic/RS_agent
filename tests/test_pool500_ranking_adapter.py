@@ -110,3 +110,16 @@ def test_pool500_adapter_blocks_per_user_candidate_count_over_limit() -> None:
 
     assert result["status"] == STOP
     assert "POOL500_USER_CANDIDATE_LIMIT_EXCEEDED" in _blocker_codes(result)
+
+
+def test_pool500_adapter_allows_extra_diagnostic_sources_only_when_explicit() -> None:
+    row = _row(source="cold_start_category_sibling")
+
+    blocked = adapt_pool500_rows_to_candidates([row])
+    allowed = adapt_pool500_rows_to_candidates([row], extra_allowed_sources={"cold_start_category_sibling"})
+
+    assert blocked["status"] == STOP
+    assert "POOL500_NON_CANONICAL_SOURCE_LABEL" in _blocker_codes(blocked)
+    assert allowed["status"] == PASS
+    candidate = allowed["candidates_by_user"]["u1"][0]  # type: ignore[index]
+    assert candidate.sources == ["cold_start_category_sibling"]

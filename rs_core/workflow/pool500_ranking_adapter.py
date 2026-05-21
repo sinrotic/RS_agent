@@ -21,11 +21,13 @@ def adapt_pool500_rows_to_candidates(
     rows: Iterable[dict[str, Any]],
     *,
     candidate_pool_limit: int = DEFAULT_POOL_LIMIT,
+    extra_allowed_sources: set[str] | None = None,
 ) -> dict[str, Any]:
     blockers: list[dict[str, Any]] = []
     diagnostics: list[dict[str, Any]] = []
     candidates_by_user: dict[str, dict[str, MergedCandidate]] = defaultdict(dict)
     seen_user_item_source: set[tuple[str, str, str]] = set()
+    allowed_sources = CANONICAL_SOURCES | (extra_allowed_sources or set())
 
     for row_index, row in enumerate(rows, start=1):
         row_blockers = _validate_required_fields(row, row_index)
@@ -40,7 +42,7 @@ def adapt_pool500_rows_to_candidates(
         if str(raw_source).strip().lower().replace("-", "_") in FORBIDDEN_SOURCE_LABELS or source in FORBIDDEN_SOURCE_LABELS:
             blockers.append(_blocker("POOL500_FORBIDDEN_SOURCE_LABEL", {"row_index": row_index, "source": raw_source, "canonical_source": source}))
             continue
-        if source not in CANONICAL_SOURCES:
+        if source not in allowed_sources:
             blockers.append(_blocker("POOL500_NON_CANONICAL_SOURCE_LABEL", {"row_index": row_index, "source": raw_source, "canonical_source": source}))
             continue
 
@@ -111,8 +113,13 @@ def adapt_pool500_rows_to_candidates(
     }
 
 
-def adapt_pool500_jsonl_to_candidates(path: str | Path, *, candidate_pool_limit: int = DEFAULT_POOL_LIMIT) -> dict[str, Any]:
-    return adapt_pool500_rows_to_candidates(iter_jsonl(path), candidate_pool_limit=candidate_pool_limit)
+def adapt_pool500_jsonl_to_candidates(
+    path: str | Path,
+    *,
+    candidate_pool_limit: int = DEFAULT_POOL_LIMIT,
+    extra_allowed_sources: set[str] | None = None,
+) -> dict[str, Any]:
+    return adapt_pool500_rows_to_candidates(iter_jsonl(path), candidate_pool_limit=candidate_pool_limit, extra_allowed_sources=extra_allowed_sources)
 
 
 def _validate_required_fields(row: dict[str, Any], row_index: int) -> list[dict[str, Any]]:

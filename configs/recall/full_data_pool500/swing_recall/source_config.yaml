@@ -1,0 +1,27 @@
+schema_version: pool500_method_source_config_v1
+source: swing_recall
+output_root: outputs/recall/pool500_method_sources/swing_recall
+run_id: null
+source_status: TARGET_SLICE_DIAGNOSTIC
+resource_guard:
+  batch_size: null
+  checkpoint_enabled: true
+  heavy_job: false
+  max_graph_users: 120000
+  max_items_per_user: 80
+  max_item_user_freq: 600
+swing_enhancement:
+  min_user_items: 2
+  min_pair_support: 1
+  per_seed_top_k: 120
+  seed_window: 40
+  per_user: 120
+  swing_alpha: 1.0
+manifest_contract:
+  source_index_manifest: source_index_manifest.json
+  method_dataset_manifest: method_dataset_manifest.json
+  candidates: candidates.jsonl
+  coverage_audit: coverage_audit.json
+  undercoverage_audit: undercoverage_audit.json
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json

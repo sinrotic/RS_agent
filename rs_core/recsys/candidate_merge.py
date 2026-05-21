@@ -79,37 +79,72 @@ def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[Reca
         raise ValueError(f"invalid usercf_recall index_scope: {manifest.get('index_scope')!r}")
     if manifest.get("train_only") is not True:
         raise ValueError("usercf_recall manifest must be train_only")
+    if manifest.get("source_status") not in (None, "DIAGNOSTIC_ONLY"):
+        raise ValueError("usercf_recall manifest must remain DIAGNOSTIC_ONLY")
+    if manifest.get("diagnostic_only") is False:
+        raise ValueError("usercf_recall manifest must remain DIAGNOSTIC_ONLY")
+    if manifest.get("candidate_generation_allowed") is not False:
+        raise ValueError("usercf_recall manifest must not authorize candidate generation")
+    if manifest.get("ranking_input_replacement_allowed") is not False:
+        raise ValueError("usercf_recall manifest must not authorize ranking input replacement")
+    if manifest.get("pool1000_allowed") is not False:
+        raise ValueError("usercf_recall manifest must not authorize pool1000")
     outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
     shard_paths = outputs.get("candidate_shards") if isinstance(outputs.get("candidate_shards"), list) else []
+    candidate_path = outputs.get("candidates")
+    input_paths = shard_paths or ([candidate_path] if candidate_path else [])
     by_user: dict[str, list[RecallCandidate]] = defaultdict(list)
-    for shard_path in shard_paths:
-        for line_number, row in enumerate(iter_jsonl(_resolve_manifest_path(manifest_path, shard_path)), start=1):
+    for input_path in input_paths:
+        resolved_path = _resolve_manifest_path(manifest_path, input_path)
+        row_count = 0
+        for line_number, row in enumerate(iter_jsonl(resolved_path), start=1):
+            row_count += 1
             user_id = str(row.get("user_id") or "")
             if not user_id:
-                raise ValueError(f"missing user_id in usercf_recall shard row {line_number}: {shard_path}")
+                raise ValueError(f"missing user_id in usercf_recall row {line_number}: {input_path}")
             candidates = row.get("candidates")
-            if not isinstance(candidates, list):
-                raise ValueError(f"missing candidates in usercf_recall shard row {line_number}: {shard_path}")
-            for candidate in candidates:
-                if not isinstance(candidate, dict):
-                    raise ValueError(f"invalid usercf_recall candidate in shard row {line_number}: {shard_path}")
-                item_id = str(candidate.get("item_id") or "")
-                if not item_id:
-                    raise ValueError(f"missing item_id in usercf_recall shard row {line_number}: {shard_path}")
-                source = str(candidate.get("source") or "usercf_recall")
-                if source != "usercf_recall":
-                    raise ValueError(f"invalid usercf_recall candidate source in shard row {line_number}: {source!r}")
-                by_user[user_id].append(
-                    RecallCandidate(
-                        item_id=item_id,
-                        source="usercf_recall",
-                        score=float(candidate.get("score", 0.0) or 0.0),
-                        metadata={"usercf_rank": int(candidate.get("rank", len(by_user[user_id]) + 1)), "usercf_manifest_path": str(manifest_path)},
-                    )
-                )
+            if isinstance(candidates, list):
+                for candidate in candidates:
+                    _append_usercf_candidate(by_user, user_id, candidate, manifest_path, input_path, line_number)
+                continue
+            if row.get("item_id") or row.get("parent_asin"):
+                _append_usercf_candidate(by_user, user_id, row, manifest_path, input_path, line_number)
+                continue
+            raise ValueError(f"missing candidates or item_id in usercf_recall row {line_number}: {input_path}")
+        if row_count == 0:
+            raise ValueError(f"empty usercf_recall candidate file: {input_path}")
     for rows in by_user.values():
         rows.sort(key=lambda item: (-item.score, item.item_id))
     return by_user
+
+
+def _append_usercf_candidate(
+    by_user: dict[str, list[RecallCandidate]],
+    user_id: str,
+    candidate: Any,
+    manifest_path: Path,
+    source_path: Any,
+    line_number: int,
+) -> None:
+    if not isinstance(candidate, dict):
+        raise ValueError(f"invalid usercf_recall candidate in row {line_number}: {source_path}")
+    item_id = str(candidate.get("item_id") or candidate.get("parent_asin") or "")
+    if not item_id:
+        raise ValueError(f"missing item_id in usercf_recall row {line_number}: {source_path}")
+    source = str(candidate.get("canonical_source") or candidate.get("source") or "usercf_recall")
+    if source != "usercf_recall":
+        raise ValueError(f"invalid usercf_recall candidate source in row {line_number}: {source!r}")
+    by_user[user_id].append(
+        RecallCandidate(
+            item_id=item_id,
+            source="usercf_recall",
+            score=float(candidate.get("score", 0.0) or 0.0),
+            metadata={
+                "usercf_rank": int(candidate.get("rank", len(by_user[user_id]) + 1)),
+                "usercf_manifest_path": str(manifest_path),
+            },
+        )
+    )
 
 
 def load_swing_recall_sidecar(manifest_path: str | Path) -> dict[str, list[RecallCandidate]]:
@@ -380,6 +415,7 @@ def semantic_title_category_expansion_candidates_for_user(
     weak_category_boost = float(source_config.get("weak_category_boost", 0.5))
     weak_categories = {str(item).lower() for item in source_config.get("weak_categories", [])}
     token_fields = [str(field) for field in source_config.get("text_fields", ["title_clean", "main_category", "categories_flat"])]
+    max_bucket_candidates = int(source_config.get("max_bucket_candidates", config.get("semantic_max_bucket_candidates", 5000)))
 
     seed_items = _recent_unique_seeds(user_sequence.get("recent_positive_item_sequence", []), seed_window)
     context = _semantic_title_category_context(semantic_index, token_fields)
@@ -396,6 +432,8 @@ def semantic_title_category_expansion_candidates_for_user(
         overlap_counts: Counter[str] = Counter()
         for token in seed_tokens:
             overlap_counts.update(inverted_index.get(token, set()))
+        if max_bucket_candidates > 0 and len(overlap_counts) > max_bucket_candidates:
+            overlap_counts = Counter(dict(overlap_counts.most_common(max_bucket_candidates)))
         scored: list[tuple[float, str, int, int, str]] = []
         for item_id, overlap in overlap_counts.items():
             if item_id in seen_items or item_id == seed_item or overlap < min_title_overlap:
@@ -557,8 +595,11 @@ def merge_for_user(
     graph_walk_seed: dict[str, list[RecallCandidate]] | None = None,
     usercf_recall: dict[str, list[RecallCandidate]] | None = None,
     swing_recall: dict[str, list[RecallCandidate]] | None = None,
+    two_tower_recall: dict[str, list[RecallCandidate]] | None = None,
+    pregenerated_recall: dict[str, list[RecallCandidate]] | None = None,
 ) -> tuple[list[MergedCandidate], bool]:
     seen_items = set(user_sequence.get("recent_item_sequence", []))
+    user_id = str(user_sequence.get("user_id", ""))
     raw: list[RecallCandidate] = []
     raw.extend(
         _itemcf_candidates_for_user(
@@ -588,7 +629,10 @@ def merge_for_user(
     raw.extend(semantic_title_category_expansion_candidates_for_user(user_sequence, semantic_index or {}, config))
     raw.extend(semantic_candidates_for_user(user_sequence, semantic_index or {}, config))
     raw.extend(metadata_neighbor_candidates_for_user(user_sequence, semantic_index or {}, config))
-    raw.extend(two_tower_candidates_for_user(user_sequence, two_tower_index or {}, config))
+    raw.extend((pregenerated_recall or {}).get(user_id, []))
+    raw.extend((two_tower_recall or {}).get(user_id, []))
+    if not two_tower_recall:
+        raw.extend(two_tower_candidates_for_user(user_sequence, two_tower_index or {}, config))
     raw.extend(item_graph_candidates_for_user(user_sequence, item_graph or {}, config))
     raw.extend(two_tower_seed_candidates_for_user(user_sequence, two_tower_seed or {}, config))
     raw.extend(graph_walk_seed_candidates_for_user(user_sequence, graph_walk_seed or {}, config))
@@ -1110,7 +1154,10 @@ def metadata_neighbor_candidates_for_user(
         if not seed_tokens and not seed_categories:
             continue
         seed_rows = []
-        candidate_ids = sorted(_metadata_neighbor_bucket_candidates(bucket_index, seed_tokens, seed_categories))[: int(config.get("metadata_neighbor_max_bucket_candidates", 5000))]
+        candidate_ids = _metadata_neighbor_bucket_candidates(bucket_index, seed_tokens, seed_categories)
+        max_bucket_candidates = int(config.get("metadata_neighbor_max_bucket_candidates", 5000))
+        if max_bucket_candidates > 0:
+            candidate_ids = set(heapq.nsmallest(max_bucket_candidates, candidate_ids))
         for item_id in candidate_ids:
             if item_id in seen_items or item_id == seed_item:
                 continue

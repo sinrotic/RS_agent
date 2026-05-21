@@ -73,7 +73,7 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
     return DialoguePlan(
         intent="unsupported",
         action="ask_clarifying_question",
-        assistant_response="I could not safely turn that into recommendation constraints yet. Could you name a category, source, keyword, or item to avoid?",
+        assistant_response="I could not safely turn that into recommendation constraints yet. Could you name a category, keyword, or item to avoid?",
         constraints_update=parsed,
         diagnostics={"unsupported_user_input": text},
     )

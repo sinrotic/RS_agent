@@ -1,0 +1,37 @@
+schema_version: pool500_method_source_config_v1
+source: two_tower
+canonical_source: two_tower
+source_name: two_tower_youtube_dnn
+evaluation_mode: train_only
+output_root: outputs/recall/pool500_method_sources/two_tower
+run_id: null
+method_config:
+  artifact_manifest_path: outputs/recall/pool500_full_sources/two_tower/training/runs/full_clean_heavy28_20260519_0001/artifact_manifest.json
+  clean_manifest_path: data/processed/amazon_2023_recall_clean_full/manifest.json
+  eligible_user_manifest_path: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
+  target_user_limit: 500
+  batch_size: 50
+  per_user_candidate_limit: 500
+  seed_window: 30
+  recency_decay: 0.85
+resource_guard:
+  batch_size: 50
+  checkpoint_enabled: true
+  resume_enabled: true
+  heavy_job: false
+manifest_contract:
+  source_index_manifest: source_index_manifest.json
+  method_dataset_manifest: method_dataset_manifest.json
+  candidates: candidates.jsonl
+  coverage_audit: coverage_audit.json
+  undercoverage_audit: undercoverage_audit.json
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json
+promotion_boundary:
+  source_status: TARGET_SLICE_DIAGNOSTIC
+  diagnostic_only: true
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false

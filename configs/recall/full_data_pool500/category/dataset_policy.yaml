@@ -1,0 +1,25 @@
+schema_version: pool500_method_dataset_policy_v1
+source: category
+source_status: READY
+role: category coverage and diversity source
+dataset_policy: lightweight_category_bucket_policy
+train_only: true
+forbidden_data_sources:
+  - holdout
+  - valid
+  - test
+  - LOPO
+  - clean_10000
+outputs_required:
+  - method_dataset_manifest.json
+  - source_index_manifest.json
+  - candidates.jsonl
+  - coverage_audit.json
+  - undercoverage_audit.json
+  - resource_audit.json
+  - no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false

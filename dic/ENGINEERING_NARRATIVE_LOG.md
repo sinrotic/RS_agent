@@ -14,6 +14,226 @@
 
 ## 条目模板
 
+### 2026-05-21 - pool500 v5 R1/R2/R3 真实诊断指标产出
+
+**任务：**
+在真实 `pool500_main_route_direct_recall_cold_start_fallback_v5` frozen candidates 上运行 B0/D1/D2/A1/A2/R1/R2/R3 固定排序对照，产出可汇报的 pool500 Top20 排序诊断指标。
+
+**遇到的问题：**
+初版 `metrics_summary.json` 没有忠实抽取大报告中的 `fallback_exposure_topk_ratio`、`topk_source_mix` 和 `repaired_user_topk_stats`，导致 summary 与 `comparison_report.json` 不一致。另一个核心限制是 label 不可用且所有配置均为 `mechanism_only`，因此不能宣称 lift 或 promotion。
+
+**定位方式：**
+独立 verifier 对比 `outputs/ranking/pool500_v5_diagnostic_fixed_comparison_r123/comparison_report.json` 与 `metrics_summary.json`，发现 8 个 config 的关键字段存在 24 处 summary/report mismatch；修复后再次比对 error count 为 0，并运行 targeted pytest。
+
+**解决方式：**
+不重跑 682M 的完整 comparison report，只从既有 `comparison_report.json` 重新生成 `metrics_summary.json`，确保 B0/D1/D2/A1/A2/R1/R2/R3 的 fallback exposure、source mix、repaired-user top-k、metadata/category 质量和 interpretation 字段全部与大报告一致。
+
+**验证结果：**
+`comparison_report.json` 与 `metrics_summary.json` 均为 `PASS`，`blocker_count=0`，固定配置为 B0/D1/D2/A1/A2/R1/R2/R3。目标测试命令 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_pool500_shadow_ranking.py tests/test_pool500_ranking_adapter.py -q` 结果 `83 passed in 0.21s`。关键指标：B0/D1/D2/A1/A2/R3 fallback Top20 exposure 为 `0.0026`，R1 降到 `0.0017`，R2 升到 `0.0403`；所有配置 `metadata_missing_rate=0.0`、`category_missing_rate=0.673544`、`top_category_ratio=0.065992`、`label_metrics_available=false`、`interpretation_label=mechanism_only`。
+
+**面试可讲点：**
+这段可以讲成“诊断指标也需要二次治理”：不仅跑出排序对照，还用 verifier 发现 summary/report 不一致并避免重跑大文件，通过从权威大报告再生摘要来保证指标可信；同时明确 label 缺失和 mechanism_only 下不能包装成效果提升，体现推荐实验从跑数到可解释汇报的工程严谨性。
+
+### 2026-05-21 - pool500 diagnostic-only 排序优化 R1/R2/R3
+
+**任务：**
+在每用户 pool500 召回已补齐后，优化排序诊断层而不是直接替换正式 ranking input：扩展固定对照配置为 B0/D1/D2/A1/A2/R1/R2/R3，并补齐 fallback、repair、source mix、metadata/category 质量相关的 evidence contract。
+
+**遇到的问题：**
+pool500 候选数已达标，但 fallback/repair 候选占比和 metadata/category 质量会影响 TopK 排序解释。如果直接宣称排序 lift，容易把候选池补齐机制误读成正式排序收益，也可能让 pool500 诊断产物越界成为 ranking input replacement。
+
+**定位方式：**
+对照 `rs_core/workflow/pool500_shadow_ranking.py` 的 diagnostic-only flags、fixed comparison report 和 frozen-pool validator，以及 `tests/test_pool500_shadow_ranking.py` / `tests/test_pool500_ranking_adapter.py` 的旧契约。实现后由独立 verifier 检查 no-promotion、no-pool200-pollution、label absence 和 missing lineage 行为。
+
+**解决方式：**
+在 `pool500_shadow_ranking.py` 中新增 R1 fallback-heavy top-k cap、R2 source diversity constrained rerank、R3 normalized additive + conservative quality guard，均限定为 shadow-local diagnostic config；新增 `fallback_exposure_topk_ratio`、`metadata_missing_rate`、`category_missing_rate`、`top_category_ratio`、`topk_source_mix`、`repaired_user_topk_stats`、`label_metrics_available`、`label_adjacent_metrics`、`interpretation_label`、`config_delta_vs_B0` 等 evidence 字段。label 缺失不阻塞但不能 claim lift；missing lineage 保守降级为 `mechanism_only`。
+
+**验证结果：**
+使用项目默认 `.venv` 运行：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_pool500_shadow_ranking.py tests/test_pool500_ranking_adapter.py -q`，结果 `83 passed in 0.23s`。补充运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m ruff check rs_core/workflow/pool500_shadow_ranking.py tests/test_pool500_shadow_ranking.py tests/test_pool500_ranking_adapter.py`，结果 `All checks passed`。独立 verifier 确认没有引入 `build_ranking_run_row` / `ranking_experiments` 污染，也没有 promotion、ranking replacement 或 pool1000 语义。
+
+**面试可讲点：**
+这段可以讲成“推荐排序优化先做可治理诊断，而不是盲目调参”：在 pool500 候选数达标后，把 fallback 暴露、source 多样性、元数据质量和标签可用性纳入排序 evidence contract，并用 conservative guard 防止机制实验被误包装成效果提升，为后续受控 promotion proposal 留出证据边界。
+
+### 2026-05-20 - pool500 ranking diagnostic gate 与固定对照报告
+
+**任务：**
+围绕排序链路作为推荐 Agent 底座的前两个调优方向，落实 pool500 冻结候选池质量诊断和固定排序融合对照报告。范围限定为 diagnostic/reporting：不 promotion、不替换 ranking input、不引入 `current_ranking_route` / `champion` 等正式路由语义。
+
+**遇到的问题：**
+候选池质量和排序融合解释容易混在一起：如果 pool500 候选池 underfilled、source 覆盖不全或 metadata/category 缺失，直接比较排序策略会把候选池缺陷误读成排序优劣。同时 `itemcf` 既可能作为 ranking config group key，又是禁止出现在候选/report source 中的 raw label，需要显式隔离。
+
+**定位方式：**
+依据 `.omc/plans/ralplan-pool500-agent-ranking-tuning.md`，检查 `rs_core/workflow/pool500_shadow_ranking.py` 的 frozen diagnostic lane、normal shadow preflight、ranking payload explainability 字段，以及 `rs_core/recsys/recall/canonical.py` / ranking source minimums 的 source 语义。验证时使用默认 `.venv` 跑 focused 和验收测试，并由独立 verifier 复核 diagnostic 边界。
+
+**解决方式：**
+在 `pool500_shadow_ranking.py` 中补齐 Phase A 聚合字段和 interpretation gate：`source_coverage`、`category_coverage`、`multi_source_item_ratio`、`metadata_missing_rate`、`category_missing_rate`、`top_category_ratio`、`underfilled_user_count`、`interpretation_label`。其中 underfilled 使用每用户 unique `candidate_count < 500`，而不是 TopK underfilled。新增 Phase B 固定对照报告：只允许 B0/D1/D2/A1/A2，`top_k=20`，Top10 作为 Top20 截断视图，并输出 `score_trace`、`rank_movement`、`score_components`、`stage_trace_coverage`、`topk_source_contribution` 和基于 `parent_asin` 的 case diff。
+
+**验证结果：**
+新增/更新 `tests/test_pool500_shadow_ranking.py` 覆盖 missing aggregation -> `blocked`、forbidden source -> `blocked`、underfilled > 2% -> `mechanism_only`、canonical source set incomplete -> `mechanism_only`、normal fixture -> `comparable`，以及固定 config 输出和 case diff 必需字段。验证命令：`.venv/Scripts/python.exe -m pytest tests/test_pool500_shadow_ranking.py -q` 结果 `60 passed`；`.venv/Scripts/python.exe -m pytest tests/test_pool500_ranking_adapter.py tests/test_pool500_shadow_ranking.py tests/test_full_data_pool500_route_gate.py tests/test_pool500_method_registry_drift.py -q` 结果 `128 passed`；`.venv/Scripts/python.exe -m ruff check rs_core/workflow/pool500_shadow_ranking.py tests/test_pool500_shadow_ranking.py` 结果 `All checks passed`。独立 verifier 结论为 PASS。
+
+**面试可讲点：**
+这段可以讲成“推荐排序调优先建立可解释诊断边界”：先用候选池质量 gate 决定结论只能是 blocked、mechanism_only 还是 comparable，再在固定 config 矩阵上解释排序变化，避免把数据供给问题误判为排序算法收益，同时为后续 Agent 多轮反馈重排保留可追踪的 score trace 和 case diff。
+
+### 2026-05-20 - pool500 diagnostic shadow ranking hard gate
+
+**任务：**
+执行 ralplan 共识后的 Phase 1/2：冻结 pool500 fallback completion 的 shadow-only 基线，并在 `pool500_shadow_ranking` 中补齐 `diagnostic shadow ranking report` 的硬门禁 schema，确保后续即使进入排序诊断，也不会被误用为正式 ranking input replacement。
+
+**遇到的问题：**
+pool500 已具备 fallback completion 补齐能力，但当前治理仍明确禁止 ranking replacement、promotion 和 pool1000。如果缺少排序诊断报告级别的 hard gate，后续 `shadow ranking evaluation` 容易在语义上滑向“准正式排序输入”，尤其是 Agent/前端消费结论时可能误读为 route 已晋升。
+
+**定位方式：**
+读取 `rs_core/workflow/pool500_shadow_ranking.py`、`rs_core/workflow/pool500_ranking_adapter.py`、`rs_core/common/engineering_contracts.py` 以及 `tests/test_pool500_shadow_ranking.py` / `tests/test_engineering_contracts.py`，确认现有代码已禁止 pool500 进入 `current_ranking_route`，但 shadow ranking evidence 还缺少 lineage、baseline、resource budget、failure recovery、cleanup 等 Phase 2 hard gate 字段。
+
+**解决方式：**
+在 `rs_core/workflow/pool500_shadow_ranking.py` 中增加 `diagnostic shadow ranking report` 语义和边界字段：`not_ranking_input=true`、`current_ranking_route_unchanged=true`、`promotion_requires_future_plan=true`。同时新增 hard gate 校验：必须提供 `lineage_hash`、`baseline_artifact_hash`、`resource_budget`、`failure_recovery_strategy`、`cleanup_strategy`；`resource_budget` 至少包含一个正数 `max_` 上限字段。没有修改 registry、`current_ranking_route` 或任何 promotion 配置。
+
+**验证结果：**
+新增/更新 `tests/test_pool500_shadow_ranking.py` 显式覆盖报告语义、边界字段、hard gate 缺失/非法值、resource budget 上限校验和 forbidden promotion semantics。独立 verifier 使用默认 `.venv` 运行：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_shadow_ranking.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_ranking_adapter.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_engineering_contracts.py -q`，结果 `86 passed in 0.31s`。verifier 确认本任务只触及 `pool500_shadow_ranking.py` 和对应测试，没有执行 Phase 3、没有 route replacement、没有 registry 修改。
+
+**面试可讲点：**
+这段可以讲成“把推荐实验从能跑升级为可治理”：不仅实现 shadow ranking 的报告字段，还把 lineage、baseline、资源预算、失败恢复和 cleanup 做成硬门禁，用测试防止召回补齐能力被误晋升为正式排序输入，体现离线推荐链路从实验证据到生产晋升之间的工程治理意识。
+
+### 2026-05-20 - pool500 universal fallback completion 主路沉淀
+
+**任务：**
+把 `pool500 cold-start fallback repair v5` 的一次性补齐经验，沉淀为主路可调用的结构化 `fallback_completion` 包，并在 `run_full_data_pool500_recall_only.py` 中薄接入；要求任意 underfilled 用户可按 fallback ladder 尽量补到 500，但仍保持 shadow/diagnostic 边界，不声明 ranking replacement、promotion、pool1000 或 FULL_POOL500_READY。
+
+**遇到的问题：**
+已有 v5 能把诊断批次补齐到每用户 500，但它是 batch repair 产物，source 使用 `cold_start_*`，不能直接作为正式主路能力。若直接复制脚本到 runner，会造成分层、context 构建、source 生成、补齐和审计逻辑混杂，也容易把 fallback 兜底误晋升为高质量个性化召回。
+
+**定位方式：**
+对照 `C:\Users\luo\.claude\plans\jolly-sniffing-sphinx.md` 和现有 `fallback_completion_contract.py`，确认应复用治理 contract，而不是重复定义分层与风险规则。实现过程中发现 `context.py` 对 forbidden marker 的初版检查用路径子串匹配，会误伤 pytest 临时目录中的 `test_*` 路径；测试阶段将其定位为 false positive，并改为按规范化 path component 匹配 `LOPO`、`holdout`、`valid`、`test`、`leave_one_positive_out`、`clean_10000` 等数据范围标记。
+
+**解决方式：**
+新增/完善 `rs_lab/experiments/recall/pool500/fallback_completion/`：`context.py` 只从 train-safe/lightweight view 输入构建 bounded context 和 resource audit，`completion.py` 保留已有候选、排除历史和重复 item，再按 seed category、metadata neighbor、semantic token、category/context/global popular ladder 补齐到最多 500。runner 只负责构建 context、逐用户调用 completion、写出 `fallback_completion_audit.json`、`fallback_completion_validation.json`、`fallback_completion_resource_audit.json`，并把 fallback 子类型写入 metadata/audit，最终 candidate `source/sources` 仍保持 canonical labels。
+
+**验证结果：**
+新增 `tests/test_pool500_fallback_completion_route.py`，并更新 `tests/test_full_data_pool500_recall_only.py` 覆盖 runner artifact、manifest summary、governance flags、canonical source 和 `POOL500_FALLBACK_COMPLETION_SHADOW_ONLY` 诊断。使用默认 `.venv` 运行 focused tests：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_fallback_completion_contract.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_fallback_completion_route.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_route_gate.py -q`，独立 verifier 复验结果 `81 passed in 4.19s`。verifier 同时确认 completion 保留原候选、去重、排除历史、最多 500，fallback subtype 只出现在 metadata/audit，所有 ranking/promotion/pool1000/full-ready flag 保持 false。
+
+**面试可讲点：**
+这段可以讲成“把一次性召回 repair 升级为可治理的主路能力”：不是简单堆 popular 兜底，而是把低历史补齐拆成 context、source、completion、audit 四层，并用 canonical source gate、fallback ratio、quality risk、resource audit 和 shadow-only diagnostic 保证候选数量补齐不会被误解为线上可晋升质量结论。
+
+### 2026-05-20 - pool500 direct recall 最新 method source 接入修复
+
+**任务：**
+修复 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的 method source manifest 默认接入，重新生成 `outputs/recall/pool500_main_route_direct_recall_method_sources_v2/`，要求只消费已有最新 source artifact，不盲目重建方法产物，并继续禁止 candidate generation、ranking input replacement、pool1000 和 promotion。
+
+**遇到的问题：**
+旧 direct recall 汇总没有吃到最新 method source：`swing_recall` 在汇总中为 0，`usercf_recall` 仍指向旧 sidecar fix，`semantic_title_category_expansion` 与 `co_visit_fallback_repair` 仍停留在旧低 row_count。进一步定位发现 runner 默认 manifest 常量仍指向旧路径，且对 semantic/co-visit 这类已有 `candidates.jsonl` 的 method source 仍主要走运行时重生成逻辑，导致最新预生成候选没有直接进入 merge。
+
+**定位方式：**
+读取 `run_full_data_pool500_recall_only.py` 的 `DEFAULT_SOURCE_MANIFESTS`、`_source_manifest_paths()`、`_load_source_artifacts()`、`_write_source_manifests()`，并核对 7 个目标 source manifest：`swing_recall/target_slice_diagnostic_v1`、`usercf_recall/usercf_recall_pool500_heavy_probe_train_only_20260520`、`itemcf_weak/target500_train_weak_edges_v1`、`itemcf_strong/itemcf_strong_20260519T0945Z`、`semantic_title_category_expansion/target500_semantic_title_category_v1`、`co_visit_fallback_repair/target_slice_20260519_0001`、`two_tower_target500_slice_expanded`。同时检查 `rs_core/recsys/candidate_merge.py`，确认需要给 merge 增加预生成候选入口。
+
+**解决方式：**
+将 runner 默认 source manifest 更新到最新产物路径；新增 `_load_pregenerated_recall_sources()`，从 method source manifest 的 `candidates_path` / `outputs.candidates` 读取 `semantic_title_category_expansion` 与 `co_visit_fallback_repair` 的预生成候选，并通过 `merge_for_user(..., pregenerated_recall=...)` 合入候选池。对缺少旧 `semantic_recall_inputs_path` 字段的新 semantic manifest，保留回退到 lightweight views 的语义索引输入，避免破坏现有 semantic diagnostic 辅助逻辑。
+
+**验证结果：**
+`tests/test_full_data_pool500_recall_only.py -q` 通过 `8 passed`，修改文件 `py_compile` 通过。使用 `.venv` 重跑 direct recall v2，输出 `outputs/recall/pool500_main_route_direct_recall_method_sources_v2/manifest.json`：`processed_users=500`、`candidate_rows=213891`、`users_with_500_candidates=273`、`underfilled_user_count=227`，每用户候选数 `min/p50/p90/max=40/500/500/500`。`source_coverage` 为 `category=37585`、`co_visit_fallback_repair=23541`、`itemcf_strong=34305`、`itemcf_weak=35803`、`popular=9054`、`semantic_title_category_expansion=30489`、`swing_recall=26791`、`two_tower=54139`、`usercf_recall=3911`。程序化校验确认 7 个 source 的 `source_index_manifest_path` 均指向指定最新产物，且 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`promotion_allowed=false`。最终 `readiness_result.status=STOP`，blocker 为 `ARTIFACT_GATE_STOP`；`ready_source_stoploss_audit.status=STOPLOSS_TRIGGERED`，原因是 `target_batch_underfilled` 与 `ready_source_capacity_below_pool500_budget`。
+
+**面试可讲点：**
+这段可以讲成“修复召回主路的 artifact 接入一致性”：不是继续堆方法产物，而是定位 runner 消费层的路径漂移和预生成候选未接入问题，用 manifest 合同、source coverage、stoploss audit 和程序化断言证明 7 路 source 都进入统一候选池，同时保留 STOP 结论暴露 ready source 容量不足。
+
+### 2026-05-20 - pool500 direct recall method_sources_v3 收口
+
+**任务：**
+收口 `outputs/recall/pool500_main_route_direct_recall_method_sources_v3/`，重点修复最新强 UserCF method source 没有真正进入 final merge 的问题，同时保留 v2 已接入的 `swing_recall`、`semantic_title_category_expansion`、`co_visit_fallback_repair` 以及强 ItemCF / two_tower source；全程保持 `diagnostic_limited` / `DIAGNOSTIC_ONLY` / `TARGET_SLICE_DIAGNOSTIC` 边界，不声明 READY、不授权 candidate generation、ranking replacement、pool1000 或 promotion。
+
+**遇到的问题：**
+v2 中 UserCF 最新 manifest 显示 `candidate_row_count=185862`、`user_coverage_count=372`，但 `source_contribution_audit` 只有 `3911 rows / 39 users`。第一次修复 loader 后，source loader 已能读入 `185862 rows / 372 users`，但 final v3 仍只有约 `4028 rows / 39 users`，说明问题不只在文件读取，还包括 direct recall batch target users 与 UserCF artifact target users 未对齐。
+
+**定位方式：**
+核对 `outputs/recall/pool500_method_sources/usercf_recall/usercf_recall_pool500_heavy_probe_train_only_20260520/source_index_manifest.json`、candidate shards 和 `method_dataset_manifest.json`，确认最新 UserCF 使用 24 个 flat candidate shard，单行 schema 为 `user_id + item_id/parent_asin + score + rank + source/canonical_source`，而旧 loader 主要假设每行包含 `candidates[]`。随后对比 runner 的 batch 用户加载逻辑，发现 `_load_batch_sequences()` 默认取 train sequence 前 500 用户，没有优先纳入 UserCF 的 372 个 `target_user_ids`。
+
+**解决方式：**
+在 `rs_core/recsys/candidate_merge.py` 中扩展 `load_usercf_recall_sidecar()`，优先读取 `outputs.candidate_shards`，无 shards 时回退到 `outputs.candidates`，并同时兼容 nested `candidates[]` 与 flat candidate row schema，严格校验 `source/canonical_source=usercf_recall`、train-only 与 forbidden flags。随后在 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 中增加 source-aligned target user 选择：优先从 UserCF manifest / `method_dataset_manifest` / eligible manifest 提取目标用户，再用 train sequence filler 补足到 500。
+
+**验证结果：**
+新增/更新 `tests/test_full_data_pool500_recall_only.py` 覆盖 flat UserCF shards 读取和 priority target user 加载，targeted pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py -q`，结果 `10 passed`。最终 v3 manifest：`processed_users=500`、`candidate_rows=240238`、`users_with_500_candidates=434`、`underfilled_user_count=66`；`source_coverage` 中 `usercf_recall=51030`，`source_contribution_audit` 中 UserCF 覆盖 `372 users`。相比 `method_sources_v2` 的 `273 full / 227 underfilled` 和 `high_cost_slice_v1` 的 `297 full / 203 underfilled`，v3 明显更优；`readiness_result.status=STOP`，`ready_source_stoploss_audit.status=STOPLOSS_TRIGGERED`，没有越权晋升。
+
+**面试可讲点：**
+这段可以讲成“用 artifact contract + schema compatibility + target-slice alignment 修复召回源接入失真”：不是重新造 UserCF 产物，而是定位消费侧 schema 漂移和用户切片不一致，让 185862 行强 UserCF source 被正确读入并在治理边界内贡献到最终 pool500，同时用 underfill、source coverage 和 STOP gate 证明效果提升但不伪造线上可用结论。
+
+### 2026-05-20 - pool500 underfilled-only repair v4
+
+**任务：**
+基于 `outputs/recall/pool500_main_route_direct_recall_method_sources_v3/`，只针对剩余 66 个 underfilled users 生成 `outputs/recall/pool500_main_route_direct_recall_underfilled66_repair_v4/`，禁止全局重跑、禁止重建 UserCF/ItemCF、禁止覆盖 v3，并继续保持 candidate generation、ranking replacement、pool1000 和 promotion 全部关闭。
+
+**遇到的问题：**
+v3 已达到 `434/500` 用户满 500 候选，但仍有 66 个用户不足，最少只有 40 条。直接把 popular/category 灌满会制造虚假的 READY 结论，因此 v4 必须只作为 underfilled-only shadow evidence，并在无法补满时如实 STOP。
+
+**定位方式：**
+读取 v3 的 `manifest.json`、`underfill_audit.json`、`per_source_output_manifests.json`、`canonical_source_registry.json` 与 source 子表，确认 66 个目标用户和每路 source 的候选路径。进一步核对 method source manifest，优先复用已有 `candidates.jsonl`，而不是重新训练或重建 sidecar。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/underfilled_repair/build_underfilled66_repair_v4.py`，以 v3 `pool500_candidates.jsonl` 为基底，只对 `remaining_underfilled_users` 按 `two_tower → semantic_title_category_expansion → co_visit_fallback_repair → swing_recall → category → 既有 ItemCF/UserCF → popular` 顺序补非重复候选，每用户最多 500 条。新增候选保留原 source，并添加 `repair_stage=underfilled66_v4`、shadow evidence 和 promotion/ranking/pool1000 false 标记；popular 设置每用户上限，不能无限兜底。
+
+**验证结果：**
+使用默认 `.venv` 运行：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe rs_lab/experiments/recall/pool500/methods/underfilled_repair/build_underfilled66_repair_v4.py --base-run-dir outputs/recall/pool500_main_route_direct_recall_method_sources_v3 --output-dir outputs/recall/pool500_main_route_direct_recall_underfilled66_repair_v4 --overwrite`。v4 结果：`candidate_rows=240889`、`users_with_500_candidates=438`、`underfilled_user_count=62`、`candidate_count_min/p50/p90/max=40/500/500/500`、`decision=STOP`。`repair_contribution_audit.json` 显示新增 `651` 条候选，均来自 `swing_recall`，覆盖 29 个 underfilled users；其他优先 source 对剩余目标用户没有新增非重复候选。独立校验确认 `duplicate_item_per_user_count=0`、`per_user_over_500_count=0`、`pool500_shadow_evidence_validation.status=PASS`、`no_forbidden_data=PASS`、promotion/ranking/pool1000 flags 全 false。
+
+**面试可讲点：**
+这段可以讲成“召回池 repair 的治理边界控制”：不是为了指标强行补满，而是在现有 artifact 合同内做 underfilled-only 增量修复，用去重、source overlap、forbidden data scan、shadow evidence validation 证明增量安全，同时在剩余用户无足够非重复候选时保持 STOP，体现推荐系统离线产物从诊断证据到可晋升输入之间的门禁意识。
+
+### 2026-05-20 - pool500 cold-start fallback repair v5
+
+**任务：**
+基于 `outputs/recall/pool500_main_route_direct_recall_underfilled66_repair_v4/`，只针对 v4 剩余 62 个 underfilled low-history users 生成 `outputs/recall/pool500_main_route_direct_recall_cold_start_fallback_v5/`。目标是补齐每用户 500 候选，但只能作为 cold-start shadow evidence，不能晋升为 ranking replacement、pool1000 或 promotion 输入。
+
+**遇到的问题：**
+在 v4 中，常规 underfilled-only repair 只能补入 `651` 条 `swing_recall`，最终仍有 `62` 个用户不足 500。既有诊断显示这些用户不是用户丢失，而是 `sequence_len<=2` 的极低历史用户，因此继续复用普通召回 repair 会耗尽非重复候选，必须转成 cold-start / low-history 专用补齐路线，并单独披露质量风险。
+
+**定位方式：**
+读取 v4 的 `manifest.json`、`underfill_audit.json`、`pool500_candidates.jsonl`、`source_contribution_audit.json`、`repair_contribution_audit.json`，确认基底为 `438/500` 满候选、`62` underfilled、`candidate_rows=240889`，且治理 gate 全部为 false。随后只读取 train/canonical/lightweight views：`user_sequences.train.jsonl`、`canonical_interactions.train.jsonl`、`canonical_items.jsonl`、`category_recall_items.jsonl`、`category_top_items.jsonl`、`popular_recall.jsonl`、`semantic_recall_inputs.jsonl`、`semantic_inverted_index.jsonl`，避免使用 holdout/valid/test/LOPO/clean_10000。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/batch_runs/build_cold_start_fallback_v5.py`，以 v4 `pool500_candidates.jsonl` 为基底，仅处理 `remaining_underfilled_users` 中的 62 人。脚本按 seed item category sibling、metadata neighbor、semantic token sibling、item-neighbor reuse、category popular、global diversity popular 的顺序补非重复候选；新增候选统一标记 `repair_stage=cold_start_fallback_v5`，source 使用 `cold_start_*` 命名，不伪装成 UserCF/TwoTower/Swing 等原始个性化召回源，并输出用户分层、source 贡献、overlap、质量风险、资源和 readiness/shadow validation 审计。
+
+**验证结果：**
+使用默认 `.venv` 运行用户指定命令，输出目录生成成功。v5 `manifest.json` 显示 `candidate_rows=250000`、`users_with_500_candidates=500`、`underfilled_user_count=0`、`candidate_count_min/p50/p90/max=500/500/500/500`、`decision=DIAGNOSTIC_PASS`，但 `artifact_gate_decision=STOP`。62 个用户分层为 `zero_positive_cold_start=13`、`single_seed_cold_start=48`、`two_seed_low_history=1`；新增 `9111` 条 cold-start 候选，其中 `cold_start_category_sibling=7032`、`cold_start_metadata_neighbor=1837`、`cold_start_semantic_token=242`，popular 两路为 0。质量风险审计显示 `average_fallback_ratio=0.293903`、`average_popular_ratio=0.0`、`users_high_risk_count=13`。独立程序化校验确认 `row_count=250000`、`user_count=500`、每用户 `min=max=500`、`duplicate_item_per_user=0`、v5 新行 source 均为 `cold_start_*`、必需 artifact 无缺失、所有治理 flag 未置 true，`pool500_shadow_evidence_validation.json` 中 `marker_isolation/no_forbidden_data/per_user_le_500/promotion_flags_all_false/cold_start_audit_present` 均为 PASS。
+
+**面试可讲点：**
+这段可以讲成“对低历史用户单独建模的召回治理”：不是把 popular 当作万能补丁，也不是把补满后的候选池伪装成正常个性化召回，而是在 train-only 数据边界内用 seed metadata/category/token 做 cold-start shadow repair，并通过 fallback ratio、popular ratio、source marker isolation 和 STOP gate 把质量风险显式交给后续排序特征与治理流程。
+
+### 2026-05-20 - pool500 fallback completion contract 治理沉淀
+
+**任务：**
+把 v5 cold-start fallback repair 中证明可补齐 500 的经验沉淀为更通用的 pool500 fallback completion contract，优先放在实验治理层，明确任意用户、低历史用户和零历史用户的补齐边界，但不替换现有主路 runner。
+
+**遇到的问题：**
+v5 已经把 500 个诊断用户全部补齐到 500，但它仍是 shadow evidence。如果没有正式 contract，后续容易把 popular 或 cold-start 兜底误当成高质量个性化召回，甚至绕过 ranking replacement、promotion 或 pool1000 的治理门禁。
+
+**定位方式：**
+对照 v3/v4/v5 的 underfill 结果和治理要求，确认 contract 必须覆盖用户分层、fallback source ladder、cap、去重、截断、per-user/global audit、质量风险和 forbidden flags。独立 verifier 首轮发现风险阈值与 audit 内嵌 config 校验不够严格，随后补充测试锁定阈值和 flag 校验。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/governance/fallback_completion_contract.py`，定义 `ZERO_HISTORY`、`ZERO_POSITIVE_HISTORY`、`LOW_HISTORY_SINGLE_SEED`、`LOW_HISTORY_MULTI_SEED`、`NORMAL_HISTORY` 五类用户，以及 personalized → seed category → seed metadata → seed semantic → category/context/global popular 的补齐 ladder。`build_fallback_completion_audit()` 输出 per-user/global audit，`validate_fallback_completion_contract()` 强制拒绝超过 500、重复 item、over-target 和任何 ranking/promotion/pool1000/READY flag。
+
+**验证结果：**
+新增 `tests/test_pool500_fallback_completion_contract.py`，使用默认 `.venv` 运行：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_fallback_completion_contract.py -q`，复验结果 `16 passed in 0.04s`。独立 verifier 确认风险阈值、source ladder、audit config flag 校验和 README 边界均通过。
+
+**面试可讲点：**
+这段可以讲成“把召回不足补齐从一次性脚本升级为治理契约”：既允许零历史用户用全局多样性热门补满 500，又用 `fallback_ratio`、`popular_ratio`、`quality_risk_level=HIGH` 和 false governance flags 防止兜底候选伪装成个性化召回或被越权晋升。
+
+### 2026-05-18 - pool500 回召诊断包输出补齐
+
+**任务：**
+在 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 中补齐 final diagnostic bundle 输出，并同步补充 `tests/test_full_data_pool500_recall_only.py` 的覆盖，保证池化召回链路能稳定产出可审计诊断材料。
+
+**遇到的问题：**
+此前链路虽然能跑通小批诊断，但 final diagnostic bundle 的输出边界不够明确，容易让后续复用时把诊断产物误当成 readiness 结论。
+
+**定位方式：**
+对照回召 runner 与相关测试，确认需要把最终诊断包的产物名、输出路径和测试断言固定下来，并保留 `DIAGNOSTIC_ONLY` 边界。
+
+**解决方式：**
+显式增加 final diagnostic bundle 相关输出，并用测试锁定产物存在性与路径一致性，只补诊断证据，不改 readiness 判定。
+
+**验证结果：**
+focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_method_registry_drift.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_recall_source_registry.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_route_gate.py -q`，结果 `66 passed in 0.24s`；`ruff check` 覆盖本轮触及的 runner 与测试文件，结果 `All checks passed!`。
+
+**面试可讲点：**
+可以讲成“把召回诊断产物工程化并固定边界”：一边补齐最终诊断包输出，一边用测试锁住产物契约，避免诊断结果被误用为最终 ready 结论。
+
 ### 2026-05-14 - 固定 Phase 1 混合召回主路
 
 **任务：**
@@ -33,6 +253,26 @@
 
 **面试可讲点：**
 这段可以讲成“用指标治理选择混合召回主路”：不是因为某个算法名字高级就晋升，而是在同一 holdout、同一 pool200 合同下比较多路召回、前段命中、候选池体积和 source 平衡，最终把语义主增量 + 行为 fallback + 兜底源 + source-balanced 截断固定为可解释、可维护的召回主线。
+
+### 2026-05-20 - recall core canonical / merge 工具迁移验证
+
+**任务：**
+独立验证 Phase 0+1 迁移：只把可复用的 recall source canonical 与 fallback merge 工具抽到 `rs_core.recsys.recall`，并确认 `full_data_pool500_route_gate.py` 与 pool500 fallback completion 只复用 core 工具，不改变既有 pool500 路线语义。
+
+**遇到的问题：**
+迁移边界容易越界：`rs_core` 不能反向依赖 `rs_lab`，新 core 模块也不能写入 pool500 artifact 路径、实验 runner 或 fallback completion 专有语义，否则会把实验层治理逻辑污染到核心层。
+
+**定位方式：**
+读取 `.omc/handoffs/team-plan.md`、`.omc/handoffs/team-exec.md` 和迁移涉及文件，重点检查 `rs_core/recsys/recall/{canonical.py,merge.py,__init__.py}`、`rs_core/workflow/full_data_pool500_route_gate.py`、`rs_lab/experiments/recall/pool500/fallback_completion/completion.py`、`tests/test_recall_core_utils.py`。使用 Grep 搜索 `rs_core` 内的 `from rs_lab` / `import rs_lab`，以及新 core recall 模块内的 `pool500|artifact|runner|rs_lab|experiments/recall|fallback_completion`，均无命中。
+
+**解决方式：**
+本轮作为 verifier 未再改迁移代码，只确认分层：core 层只保留通用 canonical source 集合、别名归一、禁用 source 检查、候选去重/截断/历史排除/source cap merge；pool500 fallback completion 仍在实验层负责 segment、source ladder、metadata/audit；route gate 只从 core 复用 canonical source 常量与归一函数。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_recall_core_utils.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_fallback_completion_route.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_route_gate.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_shadow_ranking.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_ranking_adapter.py`，结果 `114 passed in 0.29s`。未运行 full-data、GPU 或 heavy job。
+
+**面试可讲点：**
+这段可以讲成“把实验召回链路中的稳定能力抽成 core，但用验证防止实验语义倒灌”：用静态依赖扫描和 focused regression 同时证明核心层无 `rs_lab` 反向依赖、无 pool500 artifact 语义，调用方行为仍由原治理测试锁住。
 
 ### YYYY-MM-DD - 任务标题
 
@@ -56,6 +296,328 @@
 
 ## 记录
 
+### 2026-05-20 - pool500 frozen diagnostic 排序通道与首轮指标
+
+**任务：**
+在召回路线迁入 core 并验证工程可用后，基于冻结 `pool500_main_route_direct_recall_cold_start_fallback_v5` 候选池执行排序优化第一步：新增 diagnostic frozen-pool shadow ranking lane，跑出首轮排序结构指标，但不声明 ranking input replacement、promotion、pool1000 或线上 READY。
+
+**遇到的问题：**
+现有 `run_pool500_shadow_ranking()` 要求 `FULL_POOL500_READY`，而当前 v5 召回 artifact 虽然已补齐 `500 users × 500 candidates`，但 manifest 中 `artifact_gate_decision=STOP`，不能为了排序测试伪造 READY。执行 smoke 时还发现 v5 中 651 条 `swing_recall` repair 行缺少顶层 `score`，但保留了 `source_scores.swing_recall`。
+
+**定位方式：**
+通过 `tests/test_pool500_shadow_ranking.py` 确认正式 shadow lane 在非 `FULL_POOL500_READY` 下必须 STOP；读取 v5 manifest 确认 `candidate_rows=250000`、`users_with_500_candidates=500`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`。用脚本统计候选源分布，发现包含 `cold_start_*` 诊断源；进一步扫描缺失 score 行，定位为 651 条 `swing_recall` underfilled repair 行，均可从 `source_scores` 恢复排序分数。
+
+**解决方式：**
+在 `rs_core/workflow/pool500_shadow_ranking.py` 中新增 `run_pool500_diagnostic_frozen_pool_ranking()`，公共入口强制要求固定 `pool500_candidates_path`、`candidate_manifest_path`、`expected_candidate_hash`、`expected_manifest_hash`，排序前计算 computed hash 并校验相等；保留正式 `FULL_POOL500_READY` gate 不变。抽出共享 ranking core 复用 adapter 与 `rank_candidates()`；diagnostic lane 使用独立 schema `pool500_diagnostic_frozen_pool_ranking_evidence_v1`，只在该 lane 显式允许 `cold_start_*` 诊断源，并对冻结池行做只读规范化，用 `source_scores[source]` 补齐缺失顶层 score，不修改原 artifact/hash。
+
+**验证结果：**
+冻结输入为 `outputs/recall/pool500_main_route_direct_recall_cold_start_fallback_v5/`，candidate hash `dc9185c00139778b830e86257d6e870d1966daa793b169e1c3ad643263e9f7d7`，manifest hash `5730b97e1cd5c548f8665e3b7dd7a95b10717f586948dd407b465aef328c9fd3`。新增/更新治理测试覆盖 rows-only 禁止、latest/glob/path 拒绝、hash mismatch、promotion flag、独立 schema、正式 lane gate 不变、adapter STOP 阻断 ranking 和 diagnostic extra source；targeted tests `64 passed`，pool500 governance regression `121 passed in 0.25s`，`ruff check` 为 `All checks passed!`。
+
+首轮 diagnostic 排序输出位于 `outputs/ranking/pool500_diagnostic_frozen_pool_v5_shadow/`。三个 variant 均为 `PASS`，均保持 `diagnostic_only=true`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`pool1000_allowed=false`、`not_ranking_input=true`。`top_k=20`、`user_count=500`、`ranked_item_count=10000`、输入池分布 `min/p50/avg/max=500/500/500/500`、三阶段 trace 覆盖 `coarse=fine=rerank=1.0`。`no_rerank_baseline` topK source：`category=5227`、`usercf_recall=3121`、`popular=973`、`swing_recall=557`、`semantic_title_category_expansion=55`、`two_tower=50`、`cold_start_metadata_neighbor=17`；`popular_only_topk_ratio=0.0973`、`cold_start_topk_ratio=0.0017`。`source_aware_fusion_conservative` 与 baseline 指标一致，说明当前 topK 几乎都是单源候选，source-aware multi-source boost 没有发挥。`normalized_additive_small` 将 topK 结构调整为 `usercf_recall=3651`、`category=4614`、`swing_recall=700`、`popular=908`、`two_tower=55`，`popular_only_topk_ratio` 降至 `0.0908`，但仍只是 structural diagnostic，不代表线上效果提升。
+
+**面试可讲点：**
+这段可以讲成“在不越权晋升的前提下启动排序优化”：不是把补齐后的 pool500 候选池直接接入正式排序，而是先做冻结 artifact + hash 的 diagnostic ranking lane，用独立 schema、负向治理测试、source trace 和结构指标证明排序链路可审计、可复现、可解释，同时把效果结论限制在 shadow/offline 范围内。
+
+### 2026-05-20 - pool500 UserCF 方法级 train-only source 治理
+
+**任务：**
+为 pool500 主路中的 `usercf_recall` 补齐方法级 train-only eligible manifest、UserCF sidecar、候选分片和七件套治理产物，并产出可被 `load_usercf_recall_sidecar()` 加载的 `source_index_manifest.json`。
+
+**遇到的问题：**
+旧 promoted 产物中 `usercf_recall` 只有 `8364 rows / 290 users`，不足以支撑 pool500 候选池；实现时还遇到资源治理问题：直接在 wrapper 中全量预诊断和逐用户排序会导致构建在正式分片前长时间停滞，甚至触发 RSS guard。
+
+**定位方式：**
+通过后台构建状态和输出目录检查发现任务长时间未创建 `outputs/recall/pool500_method_sources/usercf_recall/<run_id>/`，说明瓶颈在 wrapper 预筛而不是 core UserCF 分片；架构审查进一步指出不应在诊断结果中物化完整 `item_user_freq`。随后复用现有 train-only `outputs/recall/pool500_user_quality/heavy_probe_limit5000_train_only/eligible_user_quality_manifest.json`，并用 smoke 验证外部 eligible manifest 路径可绕过全量预筛。
+
+**解决方式：**
+新增/完善 `rs_lab/experiments/recall/pool500/methods/usercf_recall/builder.py`、CLI 和配置：wrapper 始终 materialize 内部标准 UserCF eligible manifest，再传给 `build_full_train_usercf_sidecar()`；兼容 `diagnostic_limited_train_users` train-only 质量画像，把 heavy/medium shared-neighbor 用户转换为 `target500_high_cost_slice` 内部口径；保留 `outputs.candidate_shards` 供 runtime loader 使用，`candidates.jsonl` 仅作 flat audit view；所有 candidate generation、ranking replacement、pool1000、promotion、final ready gate 均保持 false。
+
+**验证结果：**
+正式产物位于 `outputs/recall/pool500_method_sources/usercf_recall/usercf_recall_pool500_heavy_probe_train_only_20260520/`，七件套齐全，`readiness_contract.index_manifest_sha256` 与最终 `source_index_manifest.json` 匹配，`load_usercf_recall_sidecar()` 可加载 372 个用户。最终指标：`target_user_count=372`、`candidate_row_count=185862`、`user_coverage_count=372`、每用户候选数 `min/p50/p90/max=362/500/500/500`，相比旧 promoted `8364 rows / 290 users` 提升 `+177498 rows / +82 users`。资源审计显示 full train 扫描 `18103384` 行、`peak_rss_mb=4008`，在 `max_rss_mb=12288` guard 内完成；仍 undercovered 1 个用户，原因为 `unknown_after_train_only_diagnostics`。验证命令包括 `ruff check` 通过、UserCF 相关回归 `32 passed`、最终 artifact/loader/readiness 校验 `missing=[]`、`loaded_users=372`、`readiness_sha_matches=True`。
+
+**面试可讲点：**
+这段可以讲成“在资源受控和治理边界内扩容 UserCF 召回源”：不是机械跑前 500 用户或伪造 READY，而是复用 train-only 用户质量画像、显式 eligible manifest、分片 sidecar 和七件套审计，把 UserCF 从低覆盖诊断源提升到 372 个目标用户几乎满额候选，同时通过内存 guard、loader 校验和 forbidden flag 证明产物可复用但不越权晋升。
+
+### 2026-05-19 - pool500 category / popular 轻量 fallback source 治理
+
+**任务：**
+为 pool500 主路中的 `category` 与 `popular` 补齐轻量治理产物和审计，不通过无限放大热门/类目源假装填满 pool500，并保持二者作为 fallback / coverage source。
+
+**遇到的问题：**
+旧 promoted 产物中 `category=35880 rows / 438 users`、`popular=19112 rows / 480 users`，二者合计占旧总候选 `73.34%`，存在热门/类目源过度主导候选池的风险；同时缺少单独的 category bucket、long-tail、diversity cap、popular cap、时间窗口和类目约束审计。
+
+**定位方式：**
+对照 `outputs/recall/pool500_main_route_direct_recall_full_promoted/source_contribution_audit.json`、`source_overlap_audit.json` 与旧 source candidates，确认需要基于现有 train-only 诊断候选做治理派生，而不是扩大 source 容量或改 readiness 结论。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/common/lightweight_source_builder.py`，并在 `scripts/experiments/recall/pool500/run_pool500_method_source.py` 接入 `category` / `popular` 分支；`category` 增加每用户类目 bucket cap、long-tail pool 和 diversity audit，`popular` 增加每用户 cap、时间窗口 audit 与类目主导约束 audit。两个 source 的配置均固定 `LIGHTWEIGHT_FALLBACK_COVERAGE_SOURCE`，并保持 candidate generation、promotion、ranking replacement、pool1000、final ready 全部为 false。
+
+**验证结果：**
+新产物位于 `outputs/recall/pool500_method_sources/category/light_governance_20260519/` 与 `outputs/recall/pool500_method_sources/popular/light_governance_20260519/`，七件套齐全。`category` 经 diversity cap 后为 `candidate_row_count=29209`、`user_coverage_count=438/500`、每用户候选数 `min/p50/p90/max=0/71/100/119`，long-tail pool `17198 rows`；`popular` 为 `candidate_row_count=19112`、`user_coverage_count=480/500`、每用户候选数 `0/40/40/40`，cap 后最大每用户 40。combined audit 位于 `outputs/recall/pool500_method_sources/lightweight_governance_combined/light_governance_20260519/combined_light_source_audit.json`，治理后 combined share 为 `64.45%`，较旧 combined share `73.34%` 下降 `6671 rows`，但仍标记 `over_dominance_warning=true`。验证命令：新增治理测试和 direct runner 回归 `3 passed`，`ruff check` 为 `All checks passed!`，`compileall` 通过，必需产物存在性检查通过；独立 verifier 批准为轻量 fallback/coverage 治理，但不批准 FULL_POOL500_READY 或排序输入替换。
+
+**面试可讲点：**
+这段可以讲成“对兜底召回源做容量治理，而不是堆热门候选”：通过 per-user cap、类目 bucket、多样性和 combined share 审计，把高覆盖但易主导的 fallback source 变成可解释、可监控、不可越权晋升的工程产物，并明确 direct recall runner 若要消费新 manifest 仍需单独接入。
+
+### 2026-05-20 - pool500 two_tower / YouTubeDNN 方法级诊断 source 对齐
+
+**任务：**
+为 pool500 主路中的 `two_tower` / YouTubeDNN 补齐方法级 train-only diagnostic source builder、CLI、配置与测试契约，输出七件套产物，但不声明 READY、不授权候选生成替换排序输入。
+
+**遇到的问题：**
+基线 two_tower 的 item embedding / recall index 已有全量产物，但 user embedding 覆盖只有 28 行，旧 promoted 中 two_tower 仅 `180 rows / 6 users`。实现过程中还暴露出三个治理细节：实际读取路径应在加载 artifact 和写候选前阻断；fresh run 也应声明 checkpoint/resume 能力；clean manifest 中未使用的 valid/test metadata 只能进入 ignored audit，不能误判为实际读取。
+
+**定位方式：**
+对照 `outputs/recall/pool500_full_sources/two_tower/source_index_manifest.json` 确认可加载 artifact manifest 路径、`user_embedding_row_count=28` 与 `recall_index_row_count=2320263`；运行新增测试和独立 code-reviewer，定位配置默认路径不存在、CLI 显式参数被配置覆盖、no-holdout ignored path 显示重复前缀、以及 `__init__` eager import 导致 `python -m` 运行警告等问题。
+
+**解决方式：**
+在 `rs_lab/experiments/recall/pool500/methods/two_tower/builder.py` 中实现 artifact user embedding 优先、缺失时用 train-only `recent_positive_item_sequence` 的 item vectors 做 `average_vectors` fallback；生成 diagnostic-only `candidates.jsonl` 和 `method_dataset_manifest/source_index_manifest/coverage/undercoverage/resource/no_holdout` 七件套；`source_index_manifest.recall_index_path` 固定指向 artifact manifest，`candidate_path` 才指向诊断候选；所有 gate 保持 false。补齐 checkpoint/resume/overwrite、config hash、CLI 显式参数优先、相对 eval metadata 解析和 lazy export。
+
+**验证结果：**
+最终 targeted pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_pool500_two_tower_method_source.py tests/test_pool500_two_tower_source_manifest.py tests/test_full_data_pool500_recall_only.py -q`，结果 `19 passed in 0.87s`；`ruff check` 覆盖 builder、CLI、测试和 `__init__.py`，结果 `All checks passed!`。小样本构建 `two_tower_method_smoke_20` 成功产出七件套：`candidate_row_count=950`、`user_coverage_count=19/20`、每用户候选数 `min/p50/p90/max=0/50/50/50`、`no_holdout_audit.status=PASS`，唯一 undercovered 原因为 `no_recent_positive_seed_items`。
+
+**面试可讲点：**
+这段可以讲成“把低覆盖向量召回从训练 artifact 问题拆成 query 覆盖治理问题”：不重训也不伪造 READY，而是在 train-only 边界内用 artifact user vector + seed item average fallback 提升方法级诊断覆盖，并用七件套审计、checkpoint 和 gate false 把效果证据与主路晋升权限分开。
+
+### 2026-05-19 - pool500 co_visit_fallback_repair 方法级 source 治理
+
+**任务：**
+为 pool500 主路中的 `co_visit_fallback_repair` 补齐方法级 co-visit seed / metadata neighbor repair 数据集、候选扩展和七件套治理产物，保持 `TARGET_SLICE_DIAGNOSTIC`，不伪造 READY。
+
+**遇到的问题：**
+旧 promoted 产物中该源已有 `row_count=9898`、`coverage=430/500`，但来源仍是 batch-scoped evidence；缺少单独的 source builder、co_visit seed coverage、metadata neighbor coverage、resource checkpoint 与 no-holdout 审计，后续直接复用时容易把诊断贡献误当成可晋升 source。
+
+**定位方式：**
+对照 `rs_core/recsys/candidate_merge.py` 中的 `metadata_neighbor_candidates_for_user`、`run_full_data_pool500_recall_only.py` 的 source alias / deferred source 逻辑，以及旧 `outputs/recall/pool500_main_route_direct_recall_full_promoted/source_contribution_audit.json`，确认应复用 train-only `user_sequences.train.jsonl` 和 lightweight `semantic_recall_inputs.jsonl`，围绕 target500 正反馈 seed 构建 metadata neighbor repair 候选。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/co_visit_fallback_repair/builder.py`，并在 `scripts/experiments/recall/pool500/run_pool500_method_source.py` 中接入 `co_visit_fallback_repair` 分支；同步更新 `configs/recall/full_data_pool500/co_visit_fallback_repair/source_config.yaml`，设置 metadata row 上限、每用户/每 seed 候选上限和 50 用户 checkpoint。manifest 中固定 `source=canonical_source=co_visit_fallback_repair`、`source_status=TARGET_SLICE_DIAGNOSTIC`，并保持 candidate generation、promotion、ranking replacement、pool1000 全部为 false。
+
+**验证结果：**
+实际产物位于 `outputs/recall/pool500_method_sources/co_visit_fallback_repair/target_slice_20260519_0001/`，七件套齐全；`source_index_manifest.json` 记录 `candidate_row_count=24842`、`user_coverage_count=444/500`、每用户候选数 `min/p50/p90/max=0/40/93/120`，相比旧 promoted `9898 rows / 430 users` 提升为 `+14944 rows / +14 users`。`coverage_audit.json` 显示 `co_visit_seed_coverage=444/500`、`metadata_neighbor_coverage=444/500`；`undercoverage_audit.json` 显示仍有 56 个用户缺 seed metadata / metadata neighbor candidate，420 个用户低于方法级 120 候选目标。验证命令：`ruff check` 覆盖 builder、runner、测试文件为 `All checks passed!`；`pytest tests/test_pool500_co_visit_fallback_repair_source.py` 为 `1 passed`；实际构建命令使用项目 `.venv` 并成功重建同一 run_id。
+
+**面试可讲点：**
+这段可以讲成“把 co-visit fallback 从主路内联诊断贡献工程化成可治理方法源”：按召回机制围绕 target 用户 seed 构建 metadata neighbor repair，而不是机械扩大 smoke；同时用七件套 artifact、checkpoint、no-holdout 审计和禁用 flag 保留诊断边界，并明确 direct recall runner 若要消费新 `candidates.jsonl` 还需要单独接入 source manifest。
+
+### 2026-05-19 - pool500 semantic_title_category_expansion 方法级 source 治理
+
+**任务：**
+为 pool500 主路中的 `semantic_title_category_expansion` 补齐方法级 metadata/title/category 输入数据集、候选扩展和七件套治理产物，保持诊断态，不伪造 READY。
+
+**遇到的问题：**
+旧 promoted 产物中该源已有 `row_count=6267`、`coverage=444/500`，但只是 batch-scoped evidence；缺少方法级 `semantic_title_category_input_dataset`、title/category/token 覆盖审计和可复用构建入口，容易被误用为正式 source readiness。
+
+**定位方式：**
+对照 `data/processed/amazon_2023_recall_views_full_lightweight/semantic_recall_inputs.jsonl`、`semantic_inverted_index.jsonl`、旧 `outputs/recall/pool500_main_route_direct_recall_full_promoted/sources/semantic_title_category_expansion/manifest.json` 与 `rs_core/recsys/candidate_merge.py` 中的 `semantic_title_category_expansion_candidates_for_user`，确认应复用 train-only semantic metadata/index，只围绕 target500 seed token 扩展候选。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/semantic_title_category_expansion/builder.py` 和 CLI `scripts/experiments/recall/pool500/build_semantic_title_category_expansion_source.py`，按 target500 用户正反馈 seed 加载相关 title/category metadata，经 inverted index 收集候选 item，再用现有 title/category overlap 逻辑打分输出 `candidates.jsonl`。同步更新 `configs/recall/full_data_pool500/semantic_title_category_expansion/`，manifest 中固定 `source=canonical_source=semantic_title_category_expansion`、`source_status=TARGET_SLICE_DIAGNOSTIC`，并保持 candidate generation、ranking replacement、pool1000、promotion、full ready 全部为 false。
+
+**验证结果：**
+新产物位于 `outputs/recall/pool500_method_sources/semantic_title_category_expansion/target500_semantic_title_category_v1/`，七件套齐全；`source_index_manifest.json` 记录 `candidate_row_count=25047`、`user_coverage_count=444/500`、每用户候选数 `min/p50/p90/max=0/40/80/80`，相比旧 promoted `6267 rows` 明显提升但覆盖人数持平。`coverage_audit.json` 显示 `title_coverage=0.999975`、`category_coverage=1.0`、`clean_title_token_coverage=0.999963`、`seed_item_metadata_coverage=1.0`；仍 undercovered 的主因是 `no_positive_seed_items=56` 和 `below_method_target_per_user=269`。验证命令：新增/既有 semantic tests `9 passed`，`py_compile` 通过，`ruff check` 为 `All checks passed!`，产物契约脚本确认 `missing=[]`、`no_holdout_status=PASS`、forbidden flags 无 true。
+
+**面试可讲点：**
+这段可以讲成“把语义扩展召回从诊断片段工程化成可治理 source”：不是简单扩大样本，而是按方法机制构造 title/category/token 输入数据集，保留 train-only/no-holdout 和诊断态边界，同时用覆盖审计解释为什么仍无法覆盖 56 个无正反馈 seed 用户。
+
+### 2026-05-19 - pool500 itemcf_strong 方法级 source 治理
+
+**任务：**
+为 pool500 主路中的 `itemcf_strong` 单独补齐方法级 train-only 数据集、strong item-item sidecar、候选扩展与七件套审计产物，保持 `DIAGNOSTIC_ONLY`，不与 `itemcf_weak` 混用。
+
+**遇到的问题：**
+旧 promoted 产物中 `itemcf_strong` 只有 `row_count=1992`、`coverage=161/500`，且 strong/weak 口径容易被混成一个 ItemCF source；如果直接扩大 smoke 或复用弱共现边，会破坏“强共现/高置信 seed item 扩展”的方法定位。
+
+**定位方式：**
+对照 `rs_lab/experiments/recall/build_full_train_itemcf_sidecars.py`、`rs_lab/experiments/recall/build_pool500_high_cost_slice_sources.py` 与旧 `outputs/recall/pool500_main_route_direct_recall_full_promoted/` 贡献审计，确认 strong 应只读取 full clean `user_sequences.train.jsonl` 的 `recent_strong_positive_item_sequence`，并输出独立 `source_index_manifest.json`、`coverage_audit.json`、`undercoverage_audit.json` 与 `no_holdout_audit.json`。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/itemcf_strong/builder.py` 和 CLI `scripts/experiments/recall/pool500/build_itemcf_strong_method_source.py`，按 target500 strong seed item 扫描 full train 构建 target-seed 相关 item-item 强边，再过滤用户已看 item 生成 `candidates.jsonl`。构建过程按 batch 写 checkpoint，manifest 中固定 `source=canonical_source=itemcf_strong`、`source_status=DIAGNOSTIC_ONLY`，并保持 candidate generation、ranking replacement、pool1000、promotion、final ready 全部为 false。
+
+**验证结果：**
+实际产物位于 `outputs/recall/pool500_method_sources/itemcf_strong/itemcf_strong_20260519T0945Z/`，七件套齐全；`source_index_manifest.json` 记录 `candidate_row_count=66808`、`user_coverage_count=391/500`、每用户候选数 `min/p50/p90/max=0/100/376/500`，相比旧 promoted `1992 rows / 161 users` 明显提升。审计中 `seed_hit_count=915`、`strong_edge_hit_count=84246`、`strong_edge_quality.p50=0.004739`、`p90=0.018818`；仍 undercovered 的 109 个用户主要来自 `no_strong_seed=78` 与 `seed_without_strong_edge=31`。验证命令包括新增单测与 registry 测试 `10 passed`、`py_compile`、产物契约脚本 `PASS`、`ruff check` 为 `All checks passed!`，`no_holdout_audit` 确认只读取 clean manifest 和 `user_sequences.train.jsonl`。
+
+**面试可讲点：**
+这段可以讲成“按召回机制定制 source artifact”：不是把 ItemCF weak/strong 混成一条泛化协同过滤，而是围绕 strong seed 和高置信 item-item 边单独建索引、候选与审计，把覆盖从 161/500 提到 391/500，同时用 train-only、checkpoint、七件套 manifest 和禁用 flag 保住治理边界。
+
+### 2026-05-19 - pool500 itemcf_weak 方法级 source 治理
+
+**任务：**
+为 pool500 主路中的 `itemcf_weak` 补齐方法级 train-only 数据集、weak item-item sidecar、用户级候选扩展与七件套审计产物，保持 `DIAGNOSTIC_ONLY`，不伪造 READY。
+
+**遇到的问题：**
+旧 promoted 产物中 `itemcf_weak` 只有 `row_count=2070`、`coverage=168/500`，弱共现召回没有按 target500 seed item 定制局部图，导致很多用户即使有正反馈 seed，也无法从弱 item-item 边扩展出足够候选。
+
+**定位方式：**
+对照 `rs_lab/experiments/recall/build_full_train_itemcf_sidecars.py`、`rs_lab/experiments/recall/build_pool500_high_cost_slice_sources.py` 与旧 `outputs/recall/pool500_main_route_direct_recall_full_promoted/diagnostic_source_contribution.json`，确认 weak 应读取 full clean `user_sequences.train.jsonl` 的 `recent_positive_item_sequence`，围绕 target500 seed item 构建弱共现边，再生成用户级 `candidates.jsonl`。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/itemcf_weak/builder.py` 和 CLI `scripts/experiments/recall/pool500/build_itemcf_weak_method_source.py`，按 target500 用户正反馈 seed 扫描 full train 构建 weak item-item sidecar，并过滤用户已看 item 输出候选。配置更新到 `configs/recall/full_data_pool500/itemcf_weak/source_config.yaml`，manifest 中固定 `source=canonical_source=itemcf_weak`、`source_status=DIAGNOSTIC_ONLY`，并保持 candidate generation、ranking replacement、pool1000、promotion、final ready 全部为 false。
+
+**验证结果：**
+实际产物位于 `outputs/recall/pool500_method_sources/itemcf_weak/target500_train_weak_edges_v1/`，七件套齐全；`source_index_manifest.json` 记录 `candidate_row_count=70474`、`user_coverage_count=410/500`、每用户候选数 `min/p50/p90/max=0/100/399.1/500`，相比旧 promoted `2070 rows / 168 users` 明显提升。`coverage_audit.json` 显示 `seed_hit_count=410`、`weak_edge_hit_count=987`、`edge_coverage=0.896458`；仍 undercovered 的原因主要是 `weak_edge_fanout_below_500=378`、`no_recent_positive_seed_items=56`、`seed_items_missing_from_weak_itemcf_edges=34`。验证命令包括新增 itemcf_weak tests 与 source manifest 覆盖测试 `3 passed`，`ruff check` 为 `All checks passed!`，独立 verifier 复核候选行数 `70474` 与 manifest 一致，`no_holdout_audit` 确认只读取 clean manifest 和 `user_sequences.train.jsonl`。
+
+**面试可讲点：**
+这段可以讲成“把弱 ItemCF 从低覆盖诊断源工程化成可审计方法源”：围绕目标用户 seed item 定制局部弱共现图，把覆盖从 168/500 提升到 410/500，同时用 batch checkpoint、七件套 manifest、no-holdout 审计和禁用 flag 保持诊断边界。
+
+### 2026-05-19 - pool500 高成本个性化源 target500 切片扩展
+
+**任务：**
+在不重新选择召回方法、不做长期 READY 晋升的前提下，对 pool500 主路中的 `two_tower`、`usercf_recall`、`itemcf_weak`、`itemcf_strong` 做 target500 train-only 切片扩展，并使用新的 source manifest 跑 direct recall 对比。
+
+**遇到的问题：**
+原 full-promoted direct recall 虽然 9 个 source 都有产出，但高成本个性化源覆盖和 per-user 容量不足：`two_tower=180`、`usercf_recall=8364`、`itemcf_weak=2070`、`itemcf_strong=1992`，最终 `candidate_rows=74978`、`users_with_500_candidates=0`、`underfilled_user_count=500`。扩展过程中还发现 `two_tower` 只有 28 行 user embedding，且全量 2320263 item 向量检索若处理不当会在 0 分并列候选上出现 Python 循环膨胀。
+
+**定位方式：**
+对照 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的 source manifest override 和 `rs_core/recsys/vector_index.py` 的 `search_many()`，确认当前任务应复用既有方法与 full clean train-only 索引，只扩大 target500 切片 source artifact。基线证据来自 `outputs/recall/pool500_main_route_direct_recall_full_promoted/manifest.json`，新对比来自 `outputs/recall/pool500_main_route_direct_recall_high_cost_slice_v1/manifest.json`。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/build_pool500_high_cost_slice_sources.py`，统一生成 target500 high-cost source artifacts：`two_tower` 写轻量 lineage / batch checkpoint / resource / no-holdout manifest，实际候选延迟到 direct recall 运行时生成；UserCF 使用显式 target500 user manifest 分批构建 sidecar；ItemCF weak/strong 只基于 target500 recent seed items 扩建 item-item edges。同步修复 `two_tower` 缺 user embedding 时的 per-user seed item 平均向量 fallback，并将 `VectorIndex.search_many()` 的 block top-k 改为固定候选合并，避免 0 分并列导致全块候选进入 Python 循环。
+
+**验证结果：**
+高成本源切片生成耗时 `463.887371s`，聚合 manifest 位于 `outputs/recall/pool500_sidecar_fix/high_cost_target500_slice_expanded_manifest.json`。四个可直接用于 direct recall 的 source manifest 分别为：`outputs/recall/pool500_full_sources/two_tower_target500_slice_expanded/source_index_manifest.json`、`outputs/recall/pool500_sidecar_fix/usercf_recall_target500_slice_expanded/source_index_manifest.json`、`outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_slice_expanded/source_index_manifest.json`、`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_slice_expanded/source_index_manifest.json`；其中 UserCF 显式使用 `target500_train_only_high_cost_slice`，避免把 target500 诊断切片误写成真实 `heavy_cf_eligible` 用户质量证据。新 direct recall 输出 `outputs/recall/pool500_main_route_direct_recall_high_cost_slice_v1/manifest.json`，`runtime_seconds=621.401654`、`processed_users=500`、`candidate_rows=207950`、`users_with_500_candidates=297`、`underfilled_user_count=203`，每用户候选数 `min/p50/p90/max=40/500/500/500`。高成本源对比：`two_tower 180/6 → 62840/444`，`usercf_recall 8364/290 → 54666/410`，`itemcf_weak 2070/168 → 42811/410`，`itemcf_strong 1992/161 → 40493/391`。最终仍 `decision=STOP`，触发 `swing_recall:no_ready_source_candidates`、`target_batch_underfilled`、`ready_source_capacity_below_pool500_budget`，说明下一步仍需低成本/ready source fallback 容量扩展或 Swing 切片补齐。focused pytest `tests/test_full_data_pool500_recall_only.py -q` 与 UserCF focused tests 通过，ruff touched files 为 `All checks passed!`；新增/复用 artifact 中 `ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`promotion_allowed=false`、`final_pool500_ready_claimed=false`。
+
+**面试可讲点：**
+这段可以讲成“在严格治理边界下扩容个性化召回源”：不是换方法或伪造 ready，而是用 target500 train-only 切片、显式 source manifest override、资源分批、no-holdout audit 和向量检索性能修复，把高成本个性化源从低覆盖诊断提升到对 297/500 用户填满 500 候选，同时保留 STOP 结论暴露后续 fallback 缺口。
+
+### 2026-05-19 - pool500 Swing target slice 增强诊断
+
+**任务：**
+在不覆盖已有 `swing_recall` READY source、不声明 `FULL_POOL500_READY` 的前提下，为 pool500 主路新增 `TARGET_SLICE_DIAGNOSTIC` Swing 增强 slice，输出统一七件套 artifact，并审计 pair coverage、item graph coverage、user coverage 与 per-user 候选分布。
+
+**遇到的问题：**
+旧 promoted `swing_recall` 虽为 READY，但只有 `row_count=3073`、`coverage=229/500`，对 500 个目标用户的候选容量不足；同时 Swing 属于行为图召回，不能简单扩大前 500 用户 smoke，而需要围绕目标用户 seed item 构建更适合的 train-only 高行为 item graph。
+
+**定位方式：**
+对照 `run_full_data_pool500_recall_only.py` 中 `load_swing_recall_sidecar()` 的 manifest 入口、旧产物 `outputs/recall/pool500_main_route_direct_recall_full_promoted/sources/swing_recall/manifest.json` 与 `build_full_train_swing_sidecar.py` 的 train-only 边界，确认增强 slice 应输出独立 `source_index_manifest.json`，并保持 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`promotion_allowed=false`。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/swing_recall/enhanced_source.py` 与 CLI `scripts/experiments/recall/pool500/build_swing_recall_enhanced_source.py`，读取 full clean `user_sequences.train.jsonl` 和旧 target500 eligible user manifest，按目标 seed item 选择最多 30000 个 train graph users，构建 bounded Swing item graph，并输出 `method_dataset_manifest.json`、`source_index_manifest.json`、`candidates.jsonl`、`coverage_audit.json`、`undercoverage_audit.json`、`resource_audit.json`、`no_holdout_audit.json`。同步更新 `configs/recall/full_data_pool500/swing_recall/` 中的 source status 和默认增强参数。
+
+**验证结果：**
+实际产物位于 `outputs/recall/pool500_method_sources/swing_recall/target_slice_diagnostic_v1/`，`source_index_manifest.json` 可被 `load_swing_recall_sidecar()` 加载，`edge_count=1877434`、`seed_count=80246`。增强后 `candidate_row_count=35117`、`user_coverage_count=435/500`、每用户候选数 `min/p50/p90/max=0/85/120/120`；相比旧 promoted source 的 `row_count=3073`、`coverage=229/500` 明显提升。仍 undercovered 的 65 个用户中，主要原因是 `no_seed_item_in_swing_graph=63`，另有 2 个用户候选被已看/已有 item 过滤。验证命令包括新增测试 `tests/test_pool500_swing_recall_enhanced_source.py`、既有 Swing sidecar 测试、direct runner swing loader 校验和 forbidden flag 扫描，均通过；所有关键 manifest 中 promotion/ranking/pool1000/candidate-generation flag 均为 false。
+
+**面试可讲点：**
+这段可以讲成“针对召回机制定制数据集与索引，而不是机械 smoke”：围绕目标用户 seed 构建 train-only Swing 图，既把覆盖从 229/500 提到 435/500，又用七件套审计、checkpoint、资源上限和禁用 flag 保住治理边界，最终只提交 diagnostic source，是否接入 direct runner 留给主窗口决策。
+
+### 2026-05-19 - pool500 two_tower / YouTubeDNN 主路 artifact 补齐
+
+**任务：**
+补齐 pool500 主路中缺失的 `two_tower` / YouTubeDNN 召回源，使 `run_full_data_pool500_recall_only.py` 可以通过 `--source-manifest two_tower=outputs/recall/pool500_full_sources/two_tower/source_index_manifest.json` 加载 full-clean train-only source manifest 并实际生成候选。
+
+**遇到的问题：**
+旧 YouTubeDNN artifact 属于历史路径，不能直接复用到 pool500 full-clean-safe 主路；直接跑 5000 个 user_quality 用户时出现重复长训练任务，不符合“受控、不打满机器”的资源约束；builder 初版还会把 clean manifest 中未使用的 valid/test split 元数据误判为 forbidden input。
+
+**定位方式：**
+对照 `run_full_data_pool500_recall_only.py` 的 `two_tower` manifest 默认路径、`load_two_tower_index()` 的 `VectorIndex` 加载逻辑和 full-clean config，确认 official source 必须指向新的 training artifact manifest；用 smoke 指标确认 1000 用户训练耗时约 `928s` 且 item universe 为 `2320263`；通过 builder 报错 `forbidden input references found: ['test', 'valid']` 定位到扫描范围过宽。
+
+**解决方式：**
+新增 `build_pool500_two_tower_source_manifest.py`，用 official artifact、full-clean config、clean manifest、views manifest 和 user_quality policy 生成独立 source manifest，并写死 promotion/ranking/pool1000 gate 为 false；扩展 two_tower 训练入口支持 `--user-quality-manifest` / `--user-quality-bucket`，最终选择 `heavy_cf_eligible` 28 用户作为受控 official artifact；修复 builder forbidden scan，只扫描实际使用的 train sequence、views 输出和 artifact contract。
+
+**验证结果：**
+训练产物位于 `outputs/recall/pool500_full_sources/two_tower/training/runs/full_clean_heavy28_20260519_0001/`，`training_seconds=418.684`、`peak_cuda_memory_mb=2031.855`、`item_embedding_row_count=2320263`、`user_embedding_row_count=28`。final manifest 位于 `outputs/recall/pool500_full_sources/two_tower/source_index_manifest.json`，VectorIndex 加载校验为 `items=2320263`、`users=28`、`source_name=two_tower_youtube_dnn`。runner smoke 输出 `outputs/recall/pool500_full_sources/two_tower/runner_smoke_20260519_0001/manifest.json`，`processed_users=5`、`candidate_rows=955`、`source_coverage.two_tower=150`。测试：builder `6 passed`，two_tower focused `16 passed`，recall-only runner `4 passed`，ruff touched files `All checks passed!`。
+
+**面试可讲点：**
+这段可以讲成“把一个历史双塔召回方法迁移成可治理的 pool500 主路 source artifact”：不是直接复用旧模型，而是补独立 source manifest、hash/count lineage、资源受控训练、forbidden lineage gate、runner smoke 和文档边界，证明它能被主路加载并产生候选，同时不越权宣称 READY 或替换排序输入。
+
+### 2026-05-19 - pool500 semantic / co-visit fallback 证据治理修复
+
+**任务：**
+完善 pool500 主路中的 `semantic_title_category_expansion` 与 `co_visit_fallback_repair`，目标不是 READY 晋升，而是让 direct recall 生成时两路都有 train-visible、可审计的候选贡献。
+
+**遇到的问题：**
+`co_visit_fallback_repair` 当前由 `metadata_neighbor_recall` alias 得到，若只看 row_count 容易被误写成 READY；同时旧 semantic smoke 使用 `semantic-max-rows=5000`，`item_universe_count=5038` 暴露出明显截断，不足以作为本轮证据。
+
+**定位方式：**
+对照 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py`、`rs_core/workflow/full_data_pool500_route_gate.py` 与 source manifest builder，确认需要把 semantic/title-category 与 co_visit 都纳入 batch-scoped deferred contract，并让 route gate 接受 `BATCH_SCOPED_DIAGNOSTIC` 但不把它视为 READY。
+
+**解决方式：**
+将 `semantic`、`semantic_title_category_expansion`、`co_visit_fallback_repair` 统一作为 batch-scoped deferred sources；有 rows 时 per-source manifest 写 `BATCH_SCOPED_DIAGNOSTIC`、`final_sources=[]`、`batch_scoped_evidence_only=true`，ready hash 保持 false。同步 route gate 合法非 READY 状态，并在测试中覆盖 semantic/co_visit 两路不进入 ready_sources。
+
+**验证结果：**
+focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_semantic_title_category_manifest.py -q`，结果 `11 passed`。source manifest 生成命令通过，`outputs/recall/full_semantic_title_category_expansion/source_index_manifest.json` 中 `source=semantic_title_category_expansion`、`index_scope=FULL_DERIVED_INDEX`，no-holdout/resource audit 均为 `PASS`。受控 probe `outputs/recall/full_data_pool500_recall_only_semantic_covisit_probe_50x200k/` 使用 `--semantic-max-rows 200000 --limit-users 50`，`pool500_candidates.jsonl` 中 `semantic_title_category_expansion=640`、`co_visit_fallback_repair=1063`，两路 source-level audit 与 final resource audit row_count 均大于 0，且 promotion/ranking/pool1000 flags 均为 false。
+
+**面试可讲点：**
+这段可以讲成“在不越权晋升的前提下补齐召回源证据链”：先识别 READY 漂移风险，再用 manifest、route gate、source-level audit 和 focused tests 锁住治理边界，同时通过受控资源 probe 证明两路 source 对 pool500 direct recall 有稳定候选贡献。
+
+### 2026-05-19 - pool500 ItemCF weak/strong consumer coverage 审计补齐
+
+**任务：**
+完善 pool500 主路中的 `itemcf_weak` 和 `itemcf_strong` guarded sidecar artifact，补齐 source manifest、consumer user manifest、coverage audit 与 registry custom dataset manifest，并同步方法文档。
+
+**遇到的问题：**
+ItemCF weak/strong 已有 target500 guarded sidecar，但旧 artifact 只说明 builder 侧 source-positive 用户建边，容易把高质量用户索引、profiled 用户和 pool500 consumer 用户混成同一口径；同时 registry 需要的 custom dataset manifest 缺失，可能导致后续主路加载缺少治理证据。
+
+**定位方式：**
+对照 `rs_lab/experiments/recall/build_full_train_itemcf_sidecars.py`、`tests/test_full_train_itemcf_sidecars.py`、`configs/recall/pool500_method_registry.json` 与现有 `source_index_manifest.json`，确认 `target_user_limit` 实际表示 source-positive builder sequence limit，而不是 consumer universe；再用 `coverage_audit.json` 独立核对 target500 train-only consumer seed-hit 与 full clean item universe 覆盖。
+
+**解决方式：**
+在 ItemCF sidecar builder 中固化 `consumer_user_manifest.json`、`coverage_audit.json` 和 `configs/recall/full_data_pool500/itemcf_*_custom_dataset_manifest.json` 输出，并在 source manifest 中补充 `edge_count`、builder/source-positive 计数、pair-contributing 计数和 consumer audit 路径；weak/strong 均保持 `DIAGNOSTIC_ONLY`，禁止 promotion、pool1000 和 ranking input replacement。
+
+**验证结果：**
+focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_train_itemcf_sidecars.py`，结果 `6 passed`。实际产物中 weak `rows_written=74662`、target500 consumer seed-hit 用户 `250/500`、`edge_item_out_of_universe_count=0`；strong `rows_written=68432`、target500 consumer seed-hit 用户 `239/500`、`edge_item_out_of_universe_count=0`。
+
+**面试可讲点：**
+这段可以讲成“给重资源行为召回补治理口径”：把 builder 用户、profile 用户和 consumer 用户拆开审计，既能复用 full clean train-only ItemCF 边，又避免把诊断 artifact 误升为 READY 或排序替换输入。
+
+### 2026-05-19 - pool500 UserCF heavy28 侧车合同固化
+
+**任务：**
+把 heavy28 artifact 固定为 pool500 UserCF 的 high-quality sidecar 合同，明确默认 manifest 路径、治理边界和后续扩展顺序，并避免把历史 weak-parameter 诊断误写成当前交付物。
+
+**遇到的问题：**
+此前文档虽然已经有 heavy28 诊断证据，但默认 sidecar manifest、high-quality user index 输入、以及 `DIAGNOSTIC_ONLY` 的禁用边界没有被集中写死，容易让后续读者误把 `usercf_recall_target100_guarded`、pool1000 口径或 ranking replacement 当成当前结论。
+
+**定位方式：**
+对照 `dic/recall_methods/usercf_recall/METHOD.md` 和已审计的 heavy28 sidecar 产物，核对 source index manifest、eligible_user_quality_manifest 以及资源/效果指标，确认当前证据只覆盖 heavy28 guarded diagnostic，不覆盖 READY 晋升。
+
+**解决方式：**
+在 UserCF 方法文档中固化默认 manifest 路径、high-quality user index 定义、审计指标和治理契约，明确 `source=usercf_recall` 仅限 `DIAGNOSTIC_ONLY`，且禁止 candidate generation、ranking input replacement、pool1000 和 final ready 声明；同时把 `usercf_recall_target100_guarded` 标注为历史 v1 弱参数诊断。
+
+**验证结果：**
+文档已更新为统一的 heavy28 sidecar 合同口径，保留 `target_user_count=28`、`indexed_user_count=1386693`、`candidate_user_count=28`、`candidate_total_count=5600`、`peak_rss_mb=1937`、`underfilled_user_coverage=1.0`、`marginal_candidate_share=0.4` 等审计数据，并明确扩容前必须先扩 eligible profile / high-quality index，再做 64/100 用户的受控诊断。
+
+**面试可讲点：**
+这段可以讲成“把重资源 UserCF 从一次性诊断变成可复述的治理合同”：不是只记录结果，而是把默认 artifact 路径、适用人群、禁用边界和扩展顺序一起固化，避免历史实验口径污染当前 pool500 决策。
+
+### 2026-05-18 - pool500 semantic / title-category batch evidence 补齐
+
+**任务：**
+补齐 pool500 召回链路中 `semantic` / `semantic_title_category_expansion` 的 batch-scoped deferred evidence，输出 semantic input manifest、diagnostic candidate manifest、no-holdout audit 和 resource audit；目标仅是小批诊断，不允许 READY 晋升、ranking input replacement、promotion 或 pool1000。
+
+**遇到的问题：**
+两个语义类方法此前在方法文档中明确为 `DEFERRED`，缺少 title/category/clean title token/item universe coverage 的可审计证据，也缺少小批候选生成、去重、underfill 改善和边际贡献指标。如果直接复用旧 artifact、holdout/valid/test、clean_10000、LOPO 或 youtube_dnn 证据，会破坏 pool500 readiness 治理边界。
+
+**定位方式：**
+读取 `dic/recall_methods/semantic/METHOD.md`、`dic/recall_methods/semantic_title_category_expansion/METHOD.md`、`rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 和 `tests/test_full_data_pool500_recall_only.py`，确认现有 runner 已有 batch semantic index 与 stoploss/contribution audit，但没有单独的 batch-scoped semantic manifest/audit，也会把有行数的 source output 默认写成 READY，需要隔离 semantic deferred source 状态。
+
+**解决方式：**
+在 recall-only runner 中新增 `semantic_input_manifest.json`、`diagnostic_candidate_manifest.json`、`semantic_no_holdout_audit.json`、`semantic_resource_audit.json` 四类产物；用 baseline-without-semantic 与 semantic-enabled 的小批对比计算 candidate generation count、duplicate removal、underfill improved user count 和 marginal contribution，同时将 `semantic` / `semantic_title_category_expansion` 的有行输出标记为 `BATCH_SCOPED_DIAGNOSTIC`，保持 `readiness_status=DEFERRED`、`promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+
+**验证结果：**
+focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_semantic_title_category_manifest.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_method_registry_drift.py -q`，结果 `19 passed`。实际小批诊断输出位于 `outputs/recall/pool500_semantic_batch_diagnostic_10/`：`semantic_input_manifest.json` 中 title/category coverage 均为 `2038/2038=1.0`，clean title token coverage 为 `2037/2038=0.999509`，batch seed item universe coverage 为 `38/38=1.0`；`diagnostic_candidate_manifest.json` 记录 `candidate_generation_count=798`、`unique_generated_candidate_count=560`、`duplicate_removal_count=238`、`underfill_improved_user_count=10`、`marginal_contribution_count=550`；no-holdout audit 为 `PASS`，resource audit 为 `small_batch_diagnostic` 且 `heavy_job=false`。
+
+**面试可讲点：**
+这段可以讲成“给 deferred 召回方法补可审计证据而不越权晋升”：先把 metadata coverage 和小批候选贡献量化，再用 manifest/audit 明确数据边界与资源边界，证明语义类召回对 underfill 有增量，同时通过状态隔离避免诊断证据被误用为 final pool500 readiness 或排序输入替换依据。
+
+### 2026-05-18 - pool500 UserCF heavy 真实诊断证据补齐
+
+**任务：**
+补齐 UserCF 在 pool500 主路上的真实 `heavy_cf_eligible` guarded diagnostic evidence，要求扩大 user_quality 样本、只对 heavy 用户运行可分批/可恢复/UserCF sidecar，并保持 `DIAGNOSTIC_ONLY`、不替换 ranking input、不打开 pool1000、不声明 final ready。
+
+**遇到的问题：**
+原 target500 user_quality 产物中 `heavy_cf_eligible=0`，只能得到 heavy-empty 与 medium20 降级观测；这能证明空 eligible 不会回退全量矩阵，但不能证明 UserCF 在主适用用户上的真实边际价值。
+
+**定位方式：**
+读取 `outputs/recall/pool500_user_quality/target500_train_only/eligible_user_quality_manifest.json`、`dic/recall_methods/usercf_recall/METHOD.md` 与 UserCF sidecar 构建契约，确认需要扩大 train-only user_quality 样本，并继续禁止 holdout/valid/test、ranking replacement、pool1000 与 READY 晋升。
+
+**解决方式：**
+使用项目 `.venv` 将 user_quality 样本扩到 5000 个 train users，生成 `outputs/recall/pool500_user_quality/heavy_probe_limit5000_train_only/eligible_user_quality_manifest.json`，得到 `heavy_cf_eligible=28`。随后仅对这 28 个 heavy 用户运行 `build_full_train_usercf_sidecar`，设置 `target_batch_size=7`、`max_rss_mb=4096`、8 个输出 shard，不包含 medium 用户，也不对低行为用户做全用户矩阵暴力召回。
+
+**验证结果：**
+新 sidecar 位于 `outputs/recall/pool500_sidecar_fix/usercf_recall_heavy28_guarded_diagnostic/`：`source_index_manifest.json` 记录 `target_user_count=28`、`indexed_user_count=1386693`、`candidate_user_count=28`、`candidate_total_count=5600`、`row_count=28`、`peak_rss_mb=1937`、`underfilled_user_coverage=1.0`、`marginal_candidate_share=0.4`；`resource_audit.status=PASS`，4 个 batch 均完成；`no_holdout_audit.status=PASS` 且 `uses_valid=false`、`uses_test=false`、`uses_holdout=false`。`readiness_contract.json` 保持 `status=DIAGNOSTIC_ONLY`、`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`promotion_allowed=false`、`final_pool500_ready_claimed=false`。
+
+**面试可讲点：**
+这段可以讲成“给重资源 UserCF 建立可治理的真实适用人群证据”：不是盲目扩大到全量用户，也不是用 medium 用户替代结论，而是先用 user_quality 找到真实 heavy 人群，再用分批、内存 guard、no-holdout audit 和 readiness contract 证明算法对 underfilled heavy 用户有边际贡献，同时严格阻止诊断证据被误晋升为生产主路。
+
 ### 2026-05-18 - pool500 ItemCF weak / strong 诊断扩大
 
 **任务：**
@@ -75,6 +637,26 @@
 
 **面试可讲点：**
 这段可以讲成“用诊断契约治理重资源召回扩展”：不是直接扩大 ItemCF 全量矩阵或凭算法直觉晋升，而是先按用户质量分层做受控数据集，明确 weak 提供中等行为用户覆盖、strong 当前缺少 heavy 证据，并用 manifest/resource/readiness 三类 artifact 证明没有数据泄漏、没有替换排序输入、没有越权宣称 pool500 final ready。
+
+### 2026-05-18 - ItemCF weak full-derived pair 覆盖扩大
+
+**任务：**
+扩大 `itemcf_weak` 的 full-derived train-only item pair 覆盖，重新生成 target500 guarded diagnostic sidecar，并验证它只补充诊断证据，不晋升 READY、不替换 ranking input、不进入 pool1000。
+
+**遇到的问题：**
+旧 target500 batch 中 `itemcf_weak` 只有 `row_count=345`，原因是 sidecar 建边范围过窄，batch 用户近期正反馈 seed 能命中的 item-item 边不足；同时必须避免把覆盖扩大误解释成 final pool500 ready。
+
+**定位方式：**
+读取 `rs_lab/experiments/recall/build_full_train_itemcf_sidecars.py`、`dic/recall_methods/itemcf_weak/METHOD.md`、旧 `outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_guarded/manifest.json` 和 recall-only runner 贡献审计逻辑，确认 runner 是按 batch 用户 `recent_positive_item_sequence` seed 命中 `itemcf_weak_edges.jsonl`，因此需要扩大 train-only source-positive 建边池。
+
+**解决方式：**
+使用 `.venv` 运行 guarded sidecar 构建，将 `--target-user-limit` 从 500 扩到 5000，保持 `max_items_per_user=20`、`max_item_user_freq=500`、`top_k_per_seed=80`，仅读取 `data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl`。随后运行 target500 recall-only 诊断，跳过已漂移的 usercf manifest，只审计本次 ItemCF weak/strong 贡献。
+
+**验证结果：**
+`outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_guarded/` 已重新生成：`edge_count=52840`、`users_with_source_items=5000`、`users_used=2149`、`unique_pair_count=26544`、`peak_rss_mb=34.836`、`no_holdout_audit.status=PASS`、`readiness_contract.status=DIAGNOSTIC_ONLY`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。target500 诊断中 `itemcf_weak` 达到 `row_count=1880`、`user_coverage_count=163`、`underfilled_user_coverage_count=163`、`marginal_candidate_share=0.02101`、`unique_item_count=1211`，相比旧 `row_count=345` 明显提升；整体 runner 仍 `status=STOP`。focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_train_itemcf_sidecars.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py -q`，结果 `9 passed`。
+
+**面试可讲点：**
+这段可以讲成“受控扩大协同过滤证据覆盖”：先用审计定位低贡献来自 seed-edge 命中不足，再只扩大 train-only 建边池并保留 resource/no-holdout/readiness contract，证明召回覆盖提升和工程边界治理可以同时成立。
 
 ### 2026-05-18 - pool500 用户质量分层策略落地
 
@@ -1026,6 +1608,26 @@ pool500 已进入全量候选池治理阶段，但轻量方法、重资源方法
 
 **面试可讲点：**
 这次工作把模拟客户从固定规则升级为可插拔模型策略：外部模型只负责用户侧行为生成，系统用 JSON action schema、展示商品白名单和 deterministic fallback 保证可控性。这样既能提升多角色模拟的自然度，也不会让大模型越权影响推荐排序或泄露内部诊断字段。
+
+### 2026-05-19 - pool200 主路方法迁移到 pool500 direct recall
+
+**任务：**
+把 pool200 已确认主路方法迁移到 pool500 direct recall，整合 `semantic_title_category_expansion`、`two_tower`、`co_visit_fallback_repair`、`usercf_recall`、`swing_recall`、`itemcf_weak`、`itemcf_strong`、`category`、`popular` 九路 source，生成当前 pool500 主路 direct recall 候选池。
+
+**遇到的问题：**
+部分方法 artifact 来自新 full clean / train-only 数据基础补齐，其中 `two_tower` / YouTubeDNN 是主要缺口；初始全量运行中 two_tower 向量检索和 metadata neighbor 扫描成为耗时瓶颈，同时 `usercf_recall` 的历史 manifest 缺少显式 `source_status` 字段，容易被过严 loader 拒绝。
+
+**定位方式：**
+先逐一核对各 `source_index_manifest.json` 的 `source/canonical_source/index_scope/train_only` 与禁用边界，再用 focused pytest、ruff 和运行输出审计定位缺口。最终 direct recall 输出位于 `outputs/recall/pool500_main_route_direct_recall_full_promoted/`，`manifest.json` 记录 `processed_users=500`、`candidate_rows=74978`、`underfilled_user_count=500`，`source_contribution_audit.json` 与 `pool500_candidates.jsonl` 均确认 `co_visit_fallback_repair` 已实际产生候选。
+
+**解决方式：**
+为 `VectorIndex` 增加 NumPy 向量化 top-k 与批量 `search_many`，runner 中预计算 two_tower recall；兼容安全的 legacy UserCF manifest，但继续要求 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`；对 metadata neighbor 增加 batch 侧候选桶限流，保持 co-visit 仍作为 batch-scoped diagnostic source 输出。
+
+**验证结果：**
+运行命令使用项目 `.venv` 执行 `run_full_data_pool500_recall_only.py --limit-users 500 --enable-semantic --semantic-max-rows 200000` 并显式传入 six 个 source manifest，退出码为 0。输出 manifest 决策仍为 `STOP` / `diagnostic_limited`，不允许 promotion、ranking input replacement 或 pool1000；但 `source_coverage` 已包含九路主路 source：`category=35880`、`co_visit_fallback_repair=9898`、`itemcf_strong=1992`、`itemcf_weak=2070`、`popular=19112`、`semantic_title_category_expansion=6267`、`swing_recall=3073`、`two_tower=180`、`usercf_recall=8364`。`final_resource_audit.status=PASS`，`users_with_500_candidates_ratio=0.0`，underfill 审计保持 `DIAGNOSTIC_ONLY_PARTIAL`。focused pytest 结果 `21 passed`，ruff touched files `All checks passed!`。
+
+**面试可讲点：**
+这段可以讲成“在时间紧张下用 artifact contract 和 source coverage 收口多召回方法主路迁移”：不是等待每个方法长期 READY，也不是伪造 final ready，而是把各方法的 full-clean train-only artifact 接入同一个 direct recall runner，用 source coverage、per-source readiness、resource audit 和禁用 flags 证明候选池可进入排序输入冻结讨论，同时清楚保留 STOP/diagnostic 边界。
 
 ### 2026-04-29 - 核心文档阶段状态收口
 
@@ -2691,10 +3293,70 @@ UserCF / ItemCF 仍是 `DIAGNOSTIC_ONLY`，semantic / co_visit / two_tower 仍�
 读取 `dic/recall_methods/usercf_recall/METHOD.md`、`outputs/recall/pool500_user_quality/target500_train_only/eligible_user_quality_manifest.json`、`rs_lab/experiments/recall/build_full_train_usercf_sidecar.py` 和 `tests/test_full_train_usercf_sidecar.py`。用 `.venv` 统计 manifest：`profiles=500`、`heavy=0`、`medium=49`，确认主诊断应先输出 heavy-only 空结果，再用 medium20 做降级观测。
 
 **解决方式：**
-将 UserCF sidecar 升级为 `full_train_usercf_sidecar_v2` guarded diagnostic：新增 eligible manifest 过滤、`--include-medium-behavior` 显式开关、target batch checkpoint、resume 支持、RSS/free-memory samples、resource audit、readiness contract、source index manifest 和 `per_source_candidate_manifest.json`。同时修复 eligible 为空时误回退全量用户的风险，空 heavy 直接产出 `target_user_count=0` 的诊断 artifact。
+将 UserCF sidecar 升级为 `full_train_usercf_sidecar_v2` guarded diagnostic：新增 eligible manifest 过滤、`--include-medium-behavior` 显式开关、target batch checkpoint、resume 支持、RSS/free-memory samples、resource audit、readiness contract、source index manifest 和 `per_source_candidate_manifest.json`。同时修复 eligible 为空时误回退全量用户的风险，空 heavy 直接产出 `target_user_count=0` 的诊断 artifact；并在 `load_usercf_recall_sidecar()` 增加 runtime 硬校验，拒绝 `source_status != DIAGNOSTIC_ONLY`、candidate generation、ranking input replacement 或 pool1000 越权 manifest。
 
 **验证结果：**
-使用项目 `.venv` 运行 `tests/test_full_train_usercf_sidecar.py`，结果 12 项通过；运行 `tests/test_full_data_pool500_recall_only.py`，结果 3 项通过。真实 artifact：heavy-only 输出 `target_user_count=0`、`indexed_user_count=0`、`candidate_total_count=0`、`peak_rss_mb=31`；medium20 降级诊断输出 `target_user_count=20`、`indexed_user_count=311896`、`candidate_user_count=20`、`candidate_total_count=2000`、`row_count=20`、`peak_rss_mb=552`、`underfilled_user_coverage=1.0`、`marginal_candidate_share=0.2`，readiness 仍为 `DIAGNOSTIC_ONLY` 且 `promotion_allowed=false`。
+使用项目 `.venv` 运行 `tests/test_full_train_usercf_sidecar.py`、`tests/test_full_data_pool500_recall_only.py`、`tests/test_phase2_usercf_bounded_observation.py`，结果 22 项通过；对 `build_full_train_usercf_sidecar.py`、`candidate_merge.py` 和相关测试运行 ruff，结果通过。真实 artifact：heavy-only 输出 `target_user_count=0`、`indexed_user_count=0`、`candidate_total_count=0`、`peak_rss_mb=31`；medium20 降级诊断输出 `target_user_count=20`、`indexed_user_count=311896`、`candidate_user_count=20`、`candidate_total_count=2000`、`row_count=20`、`peak_rss_mb=552`、`underfilled_user_coverage=1.0`、`marginal_candidate_share=0.2`，readiness 仍为 `DIAGNOSTIC_ONLY` 且 `promotion_allowed=false`。
 
 **面试可讲点：**
 这段可以讲成“重资源召回的安全放量策略”：先用 user_quality 把 UserCF 从全量矩阵风险中隔离出来，再用 batch checkpoint、memory guard、resource audit 和 readiness contract 约束实验产物；即使 medium20 有候选覆盖，也因为 heavy 用户缺失和诊断边界，不把它包装成 pool500 final ready。
+
+### 2026-05-18 - pool500 readiness gate 总控收口
+
+**任务：**
+汇总 pool500 召回各专项窗口产物，复用并重跑带 sidecar 的 target500 recall-only diagnostic，补齐 readiness gate / drift 测试和工程叙事，给出是否可宣称 final ready 的结论。
+
+**遇到的问题：**
+旧 `outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/` manifest 已显示 `decision=STOP`、`underfilled_user_count=500`，但目录缺少 `ready_source_stoploss_audit.json`；同时 UserCF / ItemCF 已有 guarded diagnostic 产物，必须量化边际贡献但不能误晋升为 READY 或 ranking input replacement。
+
+**定位方式：**
+对齐 `configs/recall/pool500_method_registry.json`、`dic/recall_methods/*/METHOD.md`、`rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 和现有 target500 artifact。使用 `.venv` 读取新诊断输出：`candidate_row_count=111983`、`underfilled_user_count=500`、`underfilled_user_ratio=1.0`，READY 三源 `category/popular/swing_recall` 的 ready-only capacity ratio 仅 `0.4606`，stoploss 触发 `target_batch_underfilled`、`max_user_candidate_count_below_pool500`、`ready_source_capacity_below_pool500_budget`。
+
+**解决方式：**
+在 recall-only runner 中新增 `diagnostic_source_contribution.json`，记录 `usercf_recall`、`itemcf_weak`、`itemcf_strong` 的 row_count、user coverage、underfilled coverage、marginal_candidate_share 和 `promotion_allowed=false`；manifest 和 registry 的 `latest_diagnostic_batch` 指向新的 `outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/`，同时保留 `ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。没有修改 `current_route_registry.yaml`，也没有改变任何 source readiness。
+
+**验证结果：**
+使用项目 `.venv` 运行 `run_full_data_pool500_recall_only.py --limit-users 500` 并显式传入 UserCF / ItemCF weak / ItemCF strong / Swing guarded sidecar manifests，输出 `decision=STOP`。`diagnostic_source_contribution` 显示 DIAGNOSTIC_ONLY 三源合计 `row_total=21926`、`marginal_candidate_share=0.195798`，其中 `usercf_recall=21251`、`itemcf_weak=345`、`itemcf_strong=330`，三者仍 `promotion_allowed=false`。定向测试 `test_full_data_pool500_recall_only.py`、`test_pool500_method_registry_drift.py`、`test_recall_source_registry.py` 结果 `16 passed`，独立 verifier 复查通过。
+
+**面试可讲点：**
+这段可以讲成“推荐系统召回 readiness gate 的总控治理”：把各算法窗口产物统一收口为可审计 bundle，不因某个 DIAGNOSTIC_ONLY source 有边际贡献就直接晋升，而是用 underfill、source coverage、stoploss、贡献审计和禁升测试共同证明当前仍应 STOP，为下一轮专项优化提供清晰边界。
+
+### 2026-05-18 - ItemCF strong-positive 覆盖扩大诊断
+
+**任务：**
+扩大 `itemcf_strong` 的 train-only strong-positive item pair 建索引范围，重新生成 guarded target500 diagnostic sidecar，并量化 underfilled 用户补量；保持 `DIAGNOSTIC_ONLY`，不修改 route registry、不打开 ranking input replacement 或 pool1000。
+
+**遇到的问题：**
+旧 strong target500 产物的 sidecar 边文件只有 `5636` 条边，recall-only target500 per-source `row_count=330`，无法证明对 underfilled 用户有足够补量；需要区分“强标签更干净”与“构建范围过窄导致覆盖不足”。
+
+**定位方式：**
+读取 `rs_lab/experiments/recall/build_full_train_itemcf_sidecars.py`、`dic/recall_methods/itemcf_strong/METHOD.md` 和旧 `outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/*`。旧日志显示构建命令只取 `--target-user-limit 500`，实际 `users_used=212`、`unique_pair_count=2818`、`rows_written=5636`；`row_count=330` 来自 `run_full_data_pool500_recall_only.py` 的 target500 per-source 输出。
+
+**解决方式：**
+复用既有 guarded builder，不改 readiness 边界，把 strong-positive train shard 扩大到 `--target-user-limit 5000`，保持 `max-items-per-user=20`、`max-item-user-freq=500`、`top-k-per-seed=80`，用 `.omc/tools/run_guarded_process.py` 约束 free memory 与 RSS。随后用新的 `itemcf_strong_target500_guarded/source_index_manifest.json` 重跑 `recall_only_target500_with_sidecars`，只显式覆盖 ItemCF strong/weak manifests，避免越界触碰 UserCF。
+
+**验证结果：**
+`.venv` guarded sidecar 构建通过，`itemcf_strong_edges.jsonl` 从 `5636` 增至 `49816`，`users_with_source_items=5000`、`users_used=2133`、`unique_pair_count=25030`、index `unique_item_count=9690`、`peak_rss_mb=27.055`，`no_holdout_audit.status=PASS`，`readiness_contract.status=DIAGNOSTIC_ONLY`。target500 recall-only 重跑输出 `decision=STOP`、`underfilled_user_count=500`；`itemcf_strong` per-source `row_count=1845`、`user_coverage_count=157`、`underfilled_user_coverage_count=157`、`marginal_candidate_share=0.020619`、`unique_item_count=1176`。对比同批 weak：`row_count=1880`、`user_coverage_count=163`、`marginal_candidate_share=0.02101`，说明 weak 更适合补量，strong 更适合作为高置信补充源。定向测试 `tests/test_full_train_itemcf_sidecars.py` 结果 `6 passed`。
+
+**面试可讲点：**
+这段可以讲成“高置信召回源的诊断放量”：不是为了把 strong ItemCF 包装成 READY，而是在 train-only、guarded、no-holdout 的约束下扩大强正反馈共现边，证明它能给 underfilled 用户带来实际增量，同时用 readiness contract 和 STOP 结果守住线上晋升边界。
+
+### 2026-05-20 - Agent RAG 增强计划纳入当前文档
+
+**任务：**
+把 Agent 后续需要考虑 RAG 的方向纳入当前权威文档，而不是继续停留在 `old_dic` 历史草稿中。
+
+**遇到的问题：**
+历史 `old_dic` 中已有 RAG、物品知识库、向量检索和推荐幻觉控制的设想，但当前项目规范明确 `old_dic` 只作历史参考，不能直接作为 Agent 规划依据；同时当前 Agent 文档主要强调多轮对话、反馈、展示和仿真，还缺少 RAG 在候选证据、解释 grounding 和幻觉控制中的正式位置。
+
+**定位方式：**
+检索并读取 `old_dic/historical_plans/early_agent_generative_recsys_analysis.md` 中 RAG 相关段落，再对照当前 `dic/README.md`、`dic/architecture/IMPLEMENTATION_PLAN.md` 和 `dic/architecture/ARCHITECTURE.md`，确认最合适的落点是“Agent RAG 增强”规划层，而不是召回主路或已完成能力。
+
+**解决方式：**
+在实施计划中新增 `Phase 4：Agent RAG 增强，规划中`，明确知识库构建、轻量 text / metadata retrieval、RAG retrieval tool、Prompt / Context 注入和评估门禁；在架构说明中新增 Agent RAG 增强层和模块边界；在 README 中把 RAG 写入项目主叙事，但明确它尚未落地，不替代召回或排序。
+
+**验证结果：**
+通过关键词检查和 `git diff -- dic/README.md dic/architecture/IMPLEMENTATION_PLAN.md dic/architecture/ARCHITECTURE.md` 确认新增表述只影响当前权威文档，且统一保留边界：RAG 服务商品知识检索、解释 grounding、why 问答、澄清追问和幻觉控制；推荐结果仍来自受治理的候选池与排序链路，不绕过候选池生成新商品，不写成已完成能力。
+
+**面试可讲点：**
+这段可以讲成“把生成式推荐的幻觉控制纳入 Agent 架构，而不是让 LLM 自由编商品”：底层推荐 backbone 仍负责候选和排序，RAG 只给 Agent 提供商品知识证据和可追溯上下文，让推荐解释、why 问答和多轮澄清能 grounded 到真实商品字段。

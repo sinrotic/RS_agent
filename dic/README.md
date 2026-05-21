@@ -10,8 +10,9 @@
 - 排序：再做优先级判断
 - 规则与约束：去重、过滤、频控、黑白名单等
 - Agent：在候选结果之上做最终选择、解释和反馈响应
+- RAG：为 Agent 提供商品知识检索、解释 grounding 和幻觉控制，但不替代召回或排序
 
-训练层采用 `Qwen3.5-4B + 8-bit QLoRA SFT + GRPO` 作为规划路线和能力补强方向，但**不把它写成已完整落地的系统能力**。当前已经补齐商品展示卡、轻量 HTTP 服务、React Web Demo、Session Replay、多角色模拟客户和模型驱动模拟用户第一版；这些属于展示与仿真评估能力，不改变当前推荐 backbone + Agent 的主线。
+训练层采用 `Qwen3.5-4B + 8-bit QLoRA SFT + GRPO` 作为规划路线和能力补强方向，但**不把它写成已完整落地的系统能力**。当前已经补齐商品展示卡、轻量 HTTP 服务、React Web Demo、Session Replay、多角色模拟客户和模型驱动模拟用户第一版；Agent RAG 增强已纳入下一阶段计划，但尚不是已完成能力。这些属于展示、仿真评估和 Agent 增强能力，不改变当前推荐 backbone + Agent 的主线。
 
 ---
 
@@ -29,6 +30,7 @@
 - **Phase 2 展示与服务闭环**：已完成 `DisplayResponse` 商品卡 contract、single-process HTTP 服务、结构化 `/feedback`、`GET /session/{session_id}` 安全导出和 React Web Demo 第一版
 - **Session Replay 与一键 E2E Demo**：已完成前端 Session Replay 时间线和 `/demo/e2e` 闭环入口，可证明反馈后第二轮推荐发生变化
 - **Phase 3 多角色仿真第一版**：已完成角色内在模型、Simulation Scene、批量 Simulation Evaluation 和模型驱动模拟用户策略，产物包括 `simulation_batch.json`、`metrics.json` 和中文评估报告
+- **Phase 4 Agent RAG 增强**：已纳入规划，目标是基于商品知识库和轻量检索工具增强推荐解释、why 问答、澄清追问和幻觉控制；当前只作为下一阶段路线，不写成已落地能力
 
 ### 进行中
 
@@ -110,4 +112,4 @@
 
 ## 一句话总结
 
-这个项目要证明的是：**Agent 负责编排和决策，传统推荐 backbone 负责召回和排序，训练层负责补强表达与对齐**。
+这个项目要证明的是：**Agent 负责编排和决策，传统推荐 backbone 负责召回和排序，RAG 负责商品知识 grounding 与幻觉控制，训练层负责补强表达与对齐**。

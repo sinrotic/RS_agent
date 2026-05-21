@@ -7,6 +7,15 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.io import read_json
+from rs_core.recsys.recall import (
+    CANONICAL_SOURCES,
+    FINAL_SOURCE_WHITELIST,
+    FORBIDDEN_SOURCE_LABELS,
+    GROUP_SOURCE_EXPANSIONS,
+    SOURCE_ALIASES,
+    canonicalize_source_label,
+    canonicalize_source_set,
+)
 
 SCHEMA_VERSION = "full_data_pool500_route_gate_v1"
 ARTIFACT_GATE_SCHEMA_VERSION = "full_data_pool500_artifact_gate_v5"
@@ -29,49 +38,17 @@ BLOCKED = "BLOCKED"
 FAILED = "FAILED"
 DEFERRED = "DEFERRED"
 DIAGNOSTIC_ONLY_STATUS = "DIAGNOSTIC_ONLY"
+BATCH_SCOPED_DIAGNOSTIC = "BATCH_SCOPED_DIAGNOSTIC"
 INDEX_READY = "INDEX_READY"
 INDEX_MISSING = "INDEX_MISSING"
 FULL_OUTPUT_READY = "FULL_OUTPUT_READY"
 DIAGNOSTIC_OUTPUT_READY = "DIAGNOSTIC_OUTPUT_READY"
 OUTPUT_MISSING = "OUTPUT_MISSING"
-READINESS_STATUSES = {READY, BLOCKED, FAILED, DEFERRED, DIAGNOSTIC_ONLY_STATUS}
+READINESS_STATUSES = {READY, BLOCKED, FAILED, DEFERRED, DIAGNOSTIC_ONLY_STATUS, BATCH_SCOPED_DIAGNOSTIC}
 INDEX_STATUSES = {INDEX_READY, INDEX_MISSING, BLOCKED, FAILED, DEFERRED, DIAGNOSTIC_ONLY_STATUS}
 OUTPUT_STATUSES = {FULL_OUTPUT_READY, DIAGNOSTIC_OUTPUT_READY, OUTPUT_MISSING, BLOCKED, FAILED, DEFERRED, DIAGNOSTIC_ONLY_STATUS}
-NON_READY_STATUSES = {BLOCKED, FAILED, DEFERRED, DIAGNOSTIC_ONLY_STATUS}
+NON_READY_STATUSES = {BLOCKED, FAILED, DEFERRED, DIAGNOSTIC_ONLY_STATUS, BATCH_SCOPED_DIAGNOSTIC}
 
-CANONICAL_SOURCES = {
-    "popular",
-    "category",
-    "semantic",
-    "semantic_title_category_expansion",
-    "itemcf_weak",
-    "itemcf_strong",
-    "co_visit_fallback_repair",
-    "usercf_recall",
-    "swing_recall",
-    "two_tower",
-}
-SOURCE_ALIASES = {
-    "popular_recall": "popular",
-    "category_top_items": "category",
-    "category_recall_items": "category",
-    "category_long_tail_recall": "category",
-    "semantic_recall": "semantic",
-    "metadata_neighbor_recall": "co_visit_fallback_repair",
-    "co_visit": "co_visit_fallback_repair",
-    "co_visit_repair": "co_visit_fallback_repair",
-    "co_visit_fallback": "co_visit_fallback_repair",
-    "usercf": "usercf_recall",
-    "swing": "swing_recall",
-    "youtube_dnn": "two_tower",
-    "two_tower_youtube_dnn": "two_tower",
-    "two_tower_recall": "two_tower",
-}
-GROUP_SOURCE_EXPANSIONS = {
-    "itemcf": {"itemcf_weak", "itemcf_strong"},
-}
-FORBIDDEN_SOURCE_LABELS = {"itemcf", "two_tower_seed", "final_two_tower_seed"}
-FINAL_SOURCE_WHITELIST = CANONICAL_SOURCES
 FORBIDDEN_FINAL_ARTIFACT_TOKENS = {"legacy", "probe", "custom", "contract"}
 FORBIDDEN_INPUT_FILENAMES = {
     "canonical_interactions.valid.jsonl",
@@ -918,21 +895,6 @@ def validate_marker_isolation(*payloads: dict[str, Any]) -> dict[str, Any]:
         "blockers": blockers,
         "diagnostics": diagnostics,
     }
-
-
-def canonicalize_source_label(source: Any) -> str:
-    label = str(source).strip().lower().replace("-", "_")
-    return SOURCE_ALIASES.get(label, label)
-
-
-def canonicalize_source_set(sources: Any) -> set[str]:
-    canonical_sources: set[str] = set()
-    for source in _as_list(sources):
-        if not str(source).strip():
-            continue
-        label = canonicalize_source_label(source)
-        canonical_sources.update(GROUP_SOURCE_EXPANSIONS.get(label, {label}))
-    return canonical_sources
 
 
 def canonical_manifest_sha256(payload: Any) -> str:

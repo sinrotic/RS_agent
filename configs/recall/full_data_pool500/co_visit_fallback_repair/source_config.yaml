@@ -1,0 +1,21 @@
+schema_version: pool500_method_source_config_v1
+source: co_visit_fallback_repair
+output_root: outputs/recall/pool500_method_sources/co_visit_fallback_repair
+run_id: null
+resource_guard:
+  batch_size: 50
+  checkpoint_enabled: true
+  heavy_job: false
+method_config:
+  max_metadata_rows: 250000
+  seed_window: 30
+  candidate_per_seed: 40
+  candidate_per_user: 120
+  min_token_overlap: 1
+  max_bucket_candidates: 1000
+  category_weight: 2.0
+  checkpoint_every_users: 50
+manifest_contract:
+  source_index_manifest: source_index_manifest.json
+  method_dataset_manifest: method_dataset_manifest.json
+  candidates: candidates.jsonl

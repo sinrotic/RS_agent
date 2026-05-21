@@ -1,0 +1,39 @@
+schema_version: pool500_method_source_config_v1
+source: itemcf_strong
+canonical_source: itemcf_strong
+source_status: DIAGNOSTIC_ONLY
+source_name: itemcf_strong
+output_root: outputs/recall/pool500_method_sources/itemcf_strong
+run_id: null
+index_scope: FULL_DERIVED_INDEX
+evaluation_mode: train_only
+clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
+eligible_user_quality_manifest: outputs/recall/pool500_user_quality/target500_train_only/eligible_user_quality_manifest.json
+seed_sequence_field: recent_strong_positive_item_sequence
+candidate_top_k_per_user: 100
+max_seed_items_per_user: 50
+max_item_user_freq: 5000
+strong_edge_min_score: 0.0
+strong_edge_min_cooc_cnt: 1
+target_batch_size: 100
+min_free_bytes: 53687091200
+min_free_memory_bytes: 0
+max_rss_mb: 4096
+resource_guard:
+  batch_size: 100
+  checkpoint_enabled: true
+  heavy_job: true
+manifest_contract:
+  method_dataset_manifest: method_dataset_manifest.json
+  source_index_manifest: source_index_manifest.json
+  candidates: candidates.jsonl
+  coverage_audit: coverage_audit.json
+  undercoverage_audit: undercoverage_audit.json
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false

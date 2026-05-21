@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.config import load_config
-from rs_core.common.io import read_jsonl, write_json, write_jsonl
+from rs_core.common.io import iter_jsonl, read_json, read_jsonl, write_json, write_jsonl
 from rs_core.recsys.two_tower import save_two_tower_artifacts, train_two_tower_model
 from rs_core.recsys.vector_index import dot_score, normalize_vector
-from rs_core.workflow.hybrid_demo import _ensure_inputs, _leave_one_positive_out_sequences, _merge_nested, _required_paths, _resolve_path
+from rs_core.workflow.hybrid_demo import _ensure_inputs, _leave_one_positive_out_sequences, _merge_nested, _resolve_path
 
 
 def train_two_tower_recall(
@@ -18,6 +18,8 @@ def train_two_tower_recall(
     limit_users: int | None = None,
     variant: str | None = None,
     config_overrides: dict[str, Any] | None = None,
+    user_quality_manifest: str | Path | None = None,
+    user_quality_bucket: str | None = None,
 ) -> dict[str, Any]:
     config = load_config(config_path)
     if config_overrides:
@@ -33,13 +35,21 @@ def train_two_tower_recall(
     views_dir = _resolve_path(config.get("views_dir", "data/processed/amazon_2023_recall_views_smoke_e2e"))
     output_path = _resolve_path(output_dir or training_config.get("output_dir", f"outputs/training/two_tower/two_tower_training/{training_config['variant']}"))
 
-    paths = _required_paths(clean_dir, views_dir)
+    paths = _two_tower_required_paths(clean_dir, views_dir)
     _ensure_inputs(paths)
 
-    sequences = read_jsonl(paths["sequences"])
-    if limit_users is not None:
-        sequences = sequences[:limit_users]
-    split_stats: dict[str, int] = {"training_input_users": len(sequences)}
+    selected_user_ids = _user_quality_user_ids(user_quality_manifest, user_quality_bucket) if user_quality_manifest else None
+    sequences = _load_training_sequences(paths["sequences"], limit_users, selected_user_ids)
+    split_stats: dict[str, Any] = {"training_input_users": len(sequences)}
+    if user_quality_manifest:
+        split_stats.update(
+            {
+                "user_quality_manifest_path": str(_resolve_path(user_quality_manifest)),
+                "user_quality_bucket": user_quality_bucket or "all",
+                "user_quality_selected_user_count": len(selected_user_ids or set()),
+                "user_quality_matched_user_count": len(sequences),
+            }
+        )
     if str(config.get("evaluation_mode", "valid_test")) == "leave_one_positive_out":
         sequences, _, lopo_stats = _leave_one_positive_out_sequences(sequences)
         split_stats.update(lopo_stats)
@@ -67,13 +77,22 @@ def train_two_tower_variants(
     output_dir: str | Path | None = None,
     limit_users: int | None = None,
     variants: list[str] | None = None,
+    user_quality_manifest: str | Path | None = None,
+    user_quality_bucket: str | None = None,
 ) -> dict[str, Any]:
     selected = variants or ["dssm", "youtube_dnn"]
     base_output = _resolve_path(output_dir) if output_dir else None
     runs = {}
     for variant in selected:
         run_output = (base_output / variant) if base_output else None
-        runs[variant] = train_two_tower_recall(config_path, output_dir=run_output, limit_users=limit_users, variant=variant)
+        runs[variant] = train_two_tower_recall(
+            config_path,
+            output_dir=run_output,
+            limit_users=limit_users,
+            variant=variant,
+            user_quality_manifest=user_quality_manifest,
+            user_quality_bucket=user_quality_bucket,
+        )
     return {"variants": selected, "runs": runs}
 
 
@@ -134,6 +153,58 @@ def build_two_tower_seed_sidecar_from_config(config_path: str | Path) -> dict[st
         neighbor_k=int(sidecar_config.get("neighbor_k", 50)),
         config_path=resolved_config_path,
     )
+
+
+def _two_tower_required_paths(clean_dir: Path, views_dir: Path) -> dict[str, Path]:
+    return {
+        "sequences": clean_dir / "user_sequences.train.jsonl",
+        "popular": views_dir / "popular_recall.jsonl",
+        "category_items": views_dir / "category_recall_items.jsonl",
+    }
+
+
+def _load_training_sequences(sequence_path: Path, limit_users: int | None, selected_user_ids: set[str] | None) -> list[dict[str, Any]]:
+    if selected_user_ids is None:
+        sequences = read_jsonl(sequence_path)
+        return sequences[:limit_users] if limit_users is not None else sequences
+
+    sequences = []
+    matched_user_ids: set[str] = set()
+    for row in iter_jsonl(sequence_path):
+        user_id = str(row.get("user_id") or "")
+        if user_id not in selected_user_ids:
+            continue
+        sequences.append(row)
+        matched_user_ids.add(user_id)
+        if limit_users is not None and len(sequences) >= limit_users:
+            break
+        if len(matched_user_ids) == len(selected_user_ids):
+            break
+    return sequences
+
+
+def _user_quality_user_ids(user_quality_manifest: str | Path, bucket: str | None) -> set[str]:
+    manifest_path = _resolve_path(user_quality_manifest)
+    manifest = read_json(manifest_path)
+    if manifest.get("policy_role") != "eligibility_policy_not_recall_source":
+        raise ValueError("user_quality manifest must be an eligibility policy, not a recall source")
+    if manifest.get("candidate_generation_allowed") is not False:
+        raise ValueError("user_quality candidate_generation_allowed must be false")
+    if manifest.get("ranking_input_replacement_allowed") is not False:
+        raise ValueError("user_quality ranking_input_replacement_allowed must be false")
+    if manifest.get("pool1000_allowed") is not False:
+        raise ValueError("user_quality pool1000_allowed must be false")
+
+    selected = set()
+    for profile in manifest.get("profiles", []):
+        if bucket and profile.get("quality_bucket") != bucket:
+            continue
+        user_id = str(profile.get("user_id") or "")
+        if user_id:
+            selected.add(user_id)
+    if not selected:
+        raise ValueError("user_quality selection did not yield any users")
+    return selected
 
 
 def _load_item_records(category_items_path: Path, popular_path: Path) -> list[dict[str, Any]]:

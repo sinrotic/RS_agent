@@ -6,6 +6,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - exercised in environments without numpy
+    np = None
+
 from rs_core.common.io import iter_jsonl, read_json
 
 
@@ -22,6 +27,8 @@ class VectorIndex:
     user_embeddings: dict[str, list[float]] = field(default_factory=dict)
     source_name: str = "two_tower"
     model_metadata: dict[str, Any] = field(default_factory=dict)
+    _item_ids: list[str] | None = field(default=None, init=False, repr=False)
+    _item_matrix: Any = field(default=None, init=False, repr=False)
 
     def __bool__(self) -> bool:
         return bool(self.items)
@@ -35,17 +42,106 @@ class VectorIndex:
     def search(self, query_vector: list[float], limit: int, excluded_items: set[str] | None = None) -> list[VectorSearchResult]:
         excluded_items = excluded_items or set()
         normalized_query = normalize_vector(query_vector)
-        if not normalized_query:
+        if not normalized_query or limit <= 0:
             return []
+        if np is not None:
+            return self._search_numpy(normalized_query, limit, excluded_items)
+        return self._search_heap(normalized_query, limit, excluded_items)
+
+    def search_many(
+        self,
+        query_vectors: dict[str, list[float]],
+        limit: int,
+        excluded_items: dict[str, set[str]] | None = None,
+        item_block_size: int = 50000,
+    ) -> dict[str, list[VectorSearchResult]]:
+        normalized = {key: normalize_vector(vector) for key, vector in query_vectors.items()}
+        normalized = {key: vector for key, vector in normalized.items() if vector}
+        if not normalized or limit <= 0:
+            return {key: [] for key in query_vectors}
+        if np is None:
+            results = {key: [] for key in query_vectors}
+            for key, vector in normalized.items():
+                results[key] = self.search(vector, limit, (excluded_items or {}).get(key, set()))
+            return results
+        item_ids, matrix = self._numpy_items()
+        query_keys = list(normalized)
+        query_matrix = np.asarray([normalized[key] for key in query_keys], dtype=np.float32)
+        per_query: dict[str, list[tuple[float, str]]] = {key: [] for key in query_keys}
+        keep_count = max(limit * 4, limit + max((len(items) for items in (excluded_items or {}).values()), default=0))
+        for start in range(0, len(item_ids), item_block_size):
+            block = matrix[start : start + item_block_size]
+            scores = query_matrix @ block.T
+            block_keep = min(scores.shape[1], keep_count)
+            for row_index, key in enumerate(query_keys):
+                row_scores = scores[row_index]
+                if block_keep < row_scores.shape[0]:
+                    local_indices = np.argpartition(row_scores, -block_keep)[-block_keep:]
+                else:
+                    local_indices = np.arange(row_scores.shape[0])
+                excluded = (excluded_items or {}).get(key, set())
+                block_entries = []
+                for local_index in local_indices:
+                    score = float(row_scores[int(local_index)])
+                    if score <= 0.0:
+                        continue
+                    item_id = item_ids[start + int(local_index)]
+                    if item_id not in excluded:
+                        block_entries.append((-round(score, 6), item_id))
+                if block_entries:
+                    per_query[key] = heapq.nsmallest(keep_count, per_query[key] + block_entries)
+        results = {key: [] for key in query_vectors}
+        for key, entries in per_query.items():
+            results[key] = [self._result(item_id, -score) for score, item_id in entries[:limit]]
+        return results
+
+    def _search_numpy(self, normalized_query: list[float], limit: int, excluded_items: set[str]) -> list[VectorSearchResult]:
+        item_ids, matrix = self._numpy_items()
+        if matrix.size == 0:
+            return []
+        scores = matrix @ np.asarray(normalized_query, dtype=np.float32)
+        keep_count = min(len(item_ids), max(limit + len(excluded_items), limit * 4))
+        if keep_count < len(item_ids):
+            candidate_indices = np.argpartition(scores, -keep_count)[-keep_count:]
+        else:
+            candidate_indices = np.arange(len(item_ids))
         rows = []
+        for index in candidate_indices:
+            score = float(scores[int(index)])
+            if score <= 0.0:
+                continue
+            item_id = item_ids[int(index)]
+            if item_id in excluded_items:
+                continue
+            rows.append(self._result(item_id, score))
+        return heapq.nsmallest(limit, rows, key=lambda item: (-item.score, item.item_id))
+
+    def _search_heap(self, normalized_query: list[float], limit: int, excluded_items: set[str]) -> list[VectorSearchResult]:
+        heap: list[tuple[float, str, VectorSearchResult]] = []
         for item_id, record in self.items.items():
             if item_id in excluded_items:
                 continue
             score = dot_score(normalized_query, record.get("embedding", []))
             if score <= 0.0:
                 continue
-            rows.append(VectorSearchResult(item_id=item_id, score=round(score, 6), metadata={k: v for k, v in record.items() if k != "embedding"}))
-        return heapq.nsmallest(limit, rows, key=lambda item: (-item.score, item.item_id))
+            result = self._result(item_id, score)
+            entry = (-result.score, item_id, result)
+            if len(heap) < limit:
+                heapq.heappush(heap, entry)
+            else:
+                combined = heap + [entry]
+                heap = heapq.nsmallest(limit, combined)
+        return [item for _score, _item_id, item in sorted(heap, key=lambda entry: (entry[0], entry[1]))]
+
+    def _numpy_items(self) -> tuple[list[str], Any]:
+        if self._item_ids is None or self._item_matrix is None:
+            self._item_ids = list(self.items)
+            self._item_matrix = np.asarray([self.items[item_id].get("embedding", []) for item_id in self._item_ids], dtype=np.float32)
+        return self._item_ids, self._item_matrix
+
+    def _result(self, item_id: str, score: float) -> VectorSearchResult:
+        record = self.items[item_id]
+        return VectorSearchResult(item_id=item_id, score=round(score, 6), metadata={k: v for k, v in record.items() if k != "embedding"})
 
 
 def load_vector_index_artifact(path: str | Path) -> VectorIndex:

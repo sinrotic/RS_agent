@@ -59,6 +59,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-item-user-freq", type=int, default=DEFAULT_MAX_ITEM_USER_FREQ)
     parser.add_argument("--top-k-per-seed", type=int, default=DEFAULT_TOP_K_PER_SEED)
     parser.add_argument("--target-user-limit", type=int, default=0, help="Build a memory-bounded diagnostic sidecar from the first N source-positive train users; 0 builds all users.")
+    parser.add_argument("--consumer-user-limit", type=int, default=500, help="Freeze the first N train users using the recall-only runner batch selection semantics.")
+    parser.add_argument("--augment-existing-manifest", default="", help="Update an existing source_index_manifest.json with consumer coverage artifacts without rebuilding edges.")
     parser.add_argument("--user-quality-manifest", default="")
     parser.add_argument("--min-free-bytes", type=int, default=DEFAULT_MIN_FREE_BYTES)
     parser.add_argument("--overwrite", action="store_true")
@@ -76,6 +78,7 @@ def build_full_train_itemcf_sidecar(
     top_k_per_seed: int = DEFAULT_TOP_K_PER_SEED,
     target_user_limit: int = 0,
     user_quality_manifest_path: Path | None = None,
+    consumer_user_limit: int = 500,
     min_free_bytes: int = DEFAULT_MIN_FREE_BYTES,
     overwrite: bool = False,
     enforce_venv: bool = True,
@@ -84,6 +87,8 @@ def build_full_train_itemcf_sidecar(
     if enforce_venv:
         _enforce_project_venv()
     _validate_args(source, max_items_per_user, max_item_user_freq, top_k_per_seed, target_user_limit, min_free_bytes)
+    if consumer_user_limit < 0:
+        raise ValueError("consumer_user_limit must be non-negative")
 
     clean_dir = clean_dir.resolve()
     output_dir = _resolve_output_dir(output_dir, source)
@@ -198,6 +203,21 @@ def build_full_train_itemcf_sidecar(
         "forbidden_pool1000_paths_rejected": True,
     }
 
+    coverage_artifacts = _build_coverage_artifacts(
+        clean_dir=clean_dir,
+        train_sequences_path=train_sequences_path,
+        output_dir=output_dir,
+        source=source,
+        label_variant=label_variant,
+        edges_path=edges_path,
+        source_index_manifest=source_index_manifest,
+        build_stats=build_stats,
+        quality_policy=quality_policy,
+        user_quality_manifest_path=user_quality_manifest_path,
+        consumer_user_limit=consumer_user_limit,
+        max_items_per_user=max_items_per_user,
+    )
+    source_index_manifest.update(coverage_artifacts["source_index_fields"])
     candidate_manifest = _candidate_manifest(source, output_dir, edges_path, build_stats, quality_policy, diagnostic_only, peak_rss_mb)
     comparison = _weak_strong_comparison(source, build_stats, quality_policy, diagnostic_only, peak_rss_mb)
     write_json(output_dir / "source_index_manifest.json", source_index_manifest)
@@ -239,6 +259,9 @@ def build_full_train_itemcf_sidecar(
         "required_artifacts": {
             "edges": str(edges_path),
             "source_index_manifest": str(output_dir / "source_index_manifest.json"),
+            "consumer_user_manifest": coverage_artifacts["consumer_user_manifest_path"],
+            "coverage_audit": coverage_artifacts["coverage_audit_path"],
+            "custom_dataset_manifest": coverage_artifacts["custom_dataset_manifest_path"],
             "custom_index_selection_manifest": str(output_dir / "custom_index_selection_manifest.json"),
             "resource_audit": str(output_dir / "resource_audit.json"),
             "no_holdout_audit": str(output_dir / "no_holdout_audit.json"),
@@ -250,6 +273,9 @@ def build_full_train_itemcf_sidecar(
         "artifact_signatures": {
             "edges": _file_signature(edges_path),
             "source_index_manifest": _file_signature(output_dir / "source_index_manifest.json"),
+            "consumer_user_manifest": _file_signature(Path(coverage_artifacts["consumer_user_manifest_path"])),
+            "coverage_audit": _file_signature(Path(coverage_artifacts["coverage_audit_path"])),
+            "custom_dataset_manifest": _file_signature(Path(coverage_artifacts["custom_dataset_manifest_path"])),
             "custom_index_selection_manifest": _file_signature(output_dir / "custom_index_selection_manifest.json"),
             "resource_audit": _file_signature(output_dir / "resource_audit.json"),
             "no_holdout_audit": _file_signature(output_dir / "no_holdout_audit.json"),
@@ -261,6 +287,275 @@ def build_full_train_itemcf_sidecar(
     }
     write_json(output_dir / "manifest.json", manifest)
     return manifest
+
+
+def _build_coverage_artifacts(
+    *,
+    clean_dir: Path,
+    train_sequences_path: Path,
+    output_dir: Path,
+    source: str,
+    label_variant: str,
+    edges_path: Path,
+    source_index_manifest: dict[str, Any],
+    build_stats: dict[str, Any],
+    quality_policy: dict[str, Any],
+    user_quality_manifest_path: Path | None,
+    consumer_user_limit: int,
+    max_items_per_user: int,
+) -> dict[str, Any]:
+    canonical_items_path = clean_dir / "canonical_items.jsonl"
+    consumer_sequences = _load_consumer_sequences(train_sequences_path, consumer_user_limit)
+    consumer_user_ids = [str(row["user_id"]) for row in consumer_sequences]
+    consumer_user_ids_sha256 = hashlib.sha256("\n".join(consumer_user_ids).encode("utf-8")).hexdigest()
+    consumer_manifest_path = output_dir / "consumer_user_manifest.json"
+    coverage_audit_path = output_dir / "coverage_audit.json"
+    custom_dataset_manifest_path = _custom_dataset_manifest_path(output_dir, source)
+    profiled_bucket_counts = Counter(quality_policy["quality_bucket_by_user"].values())
+    builder_user_ids = quality_policy["eligible_user_ids"]
+    builder_consumer_user_ids = set(consumer_user_ids) if builder_user_ids is None else set(consumer_user_ids) & builder_user_ids
+    edge_src_items, edge_items = _load_edge_items(edges_path)
+    canonical_items = _load_canonical_item_universe(canonical_items_path)
+    consumer_users_with_seed_items = 0
+    consumer_users_with_edge_seed_hit = 0
+    consumer_users_without_source_items = 0
+    consumer_users_without_edge_seed_hit = 0
+    non_builder_consumer_seed_hit_count = 0
+
+    for sequence in consumer_sequences:
+        user_id = str(sequence["user_id"])
+        seed_items = unique_recent_items(sequence.get(label_variant, []), max_items_per_user)
+        if not seed_items:
+            consumer_users_without_source_items += 1
+            continue
+        consumer_users_with_seed_items += 1
+        has_seed_hit = any(item in edge_src_items for item in seed_items)
+        if has_seed_hit:
+            consumer_users_with_edge_seed_hit += 1
+            if user_id not in builder_consumer_user_ids:
+                non_builder_consumer_seed_hit_count += 1
+        else:
+            consumer_users_without_edge_seed_hit += 1
+
+    edge_items_out_of_universe = sorted(edge_items - canonical_items)
+    consumer_count_matches = consumer_user_limit == 0 or len(consumer_user_ids) <= consumer_user_limit
+    forbidden_inputs = [str(clean_dir / name) for name in FORBIDDEN_INPUT_NAMES]
+    audit_status = "PASS" if consumer_count_matches and not edge_items_out_of_universe else "FAIL"
+    consumer_seed_hit_status = "PASS" if consumer_users_with_edge_seed_hit > 0 else "WARN"
+    coverage_scope = "full_run_train_only_consumer_users" if consumer_user_limit == 0 else f"target{consumer_user_limit}_train_only_consumer_users"
+    consumer_manifest = {
+        "schema_version": f"{SCHEMA_VERSION}.consumer_user_manifest",
+        "status": "PASS" if consumer_count_matches else "FAIL",
+        "scope": coverage_scope,
+        "selection_source_path": str(train_sequences_path),
+        "selection_source_sha256": _file_signature(train_sequences_path)["sha256"],
+        "selection_algorithm": "first_n_user_sequences_with_user_id_from_train_jsonl",
+        "limit_users": consumer_user_limit,
+        "full_run": consumer_user_limit == 0,
+        "consumer_user_count": len(consumer_user_ids),
+        "consumer_user_ids": consumer_user_ids,
+        "consumer_user_ids_sha256": consumer_user_ids_sha256,
+        "train_only": True,
+        "not_quality_profile": True,
+        "forbidden_inputs_checked": True,
+        "forbidden_inputs": forbidden_inputs,
+        "created_by_command": f"python -m rs_lab.experiments.recall.build_full_train_itemcf_sidecars --source {source} --consumer-user-limit {consumer_user_limit}",
+    }
+    coverage_audit = {
+        "schema_version": f"{SCHEMA_VERSION}.coverage_audit",
+        "status": audit_status,
+        "audit_status": audit_status,
+        "audit_status_note": "PASS means the audit completed and invariants held; it does not claim READY promotion.",
+        "consumer_seed_hit_status": consumer_seed_hit_status,
+        "consumer_seed_hit_status_reason": "consumer_users_with_edge_seed_hit > 0" if consumer_users_with_edge_seed_hit else "no consumer seed item appeared as an edge src_item",
+        "source": source,
+        "coverage_scope": coverage_scope,
+        "consumer_user_manifest_path": str(consumer_manifest_path),
+        "consumer_user_count": len(consumer_user_ids),
+        "consumer_user_scope": coverage_scope,
+        "consumer_users_with_seed_items": consumer_users_with_seed_items,
+        "consumer_users_with_edge_seed_hit": consumer_users_with_edge_seed_hit,
+        "consumer_users_without_source_items": consumer_users_without_source_items,
+        "consumer_users_without_edge_seed_hit": consumer_users_without_edge_seed_hit,
+        "consumer_user_hit_ratio": consumer_users_with_edge_seed_hit / len(consumer_user_ids) if consumer_user_ids else 0.0,
+        "profiled_user_count": quality_policy["profiled_user_count"],
+        "profiled_quality_bucket_counts": dict(sorted(profiled_bucket_counts.items())),
+        "builder_user_collection": "all_train_source_positive_users" if builder_user_ids is None else "quality_profile_eligible_users",
+        "builder_source_positive_user_count": build_stats["users_with_source_items"],
+        "builder_pair_contributing_user_count": build_stats["users_used"],
+        "non_builder_consumer_user_count": len(set(consumer_user_ids) - builder_consumer_user_ids),
+        "non_builder_consumer_seed_hit_count": non_builder_consumer_seed_hit_count,
+        "edge_unique_item_count": len(edge_items),
+        "edge_item_in_universe_count": len(edge_items & canonical_items),
+        "edge_item_out_of_universe_count": len(edge_items_out_of_universe),
+        "edge_items_out_of_universe_sample": edge_items_out_of_universe[:20],
+        "canonical_item_count": len(canonical_items),
+        "canonical_items_path": str(canonical_items_path),
+        "edges_path": str(edges_path),
+        "train_only": True,
+        "forbidden_inputs_checked": True,
+        "forbidden_inputs": forbidden_inputs,
+        "diagnostic_contribution_expected": consumer_users_with_edge_seed_hit > 0,
+        "ranking_input_replacement_allowed": False,
+        "pool1000_allowed": False,
+        "promotion_allowed": False,
+        "final_pool500_ready_claimed": False,
+    }
+    source_artifact_user_quality_policy = source_index_manifest["user_quality_policy"]
+    custom_dataset_manifest = {
+        "schema_version": f"{SCHEMA_VERSION}.custom_dataset_manifest",
+        "status": "DIAGNOSTIC_ONLY",
+        "source": source,
+        "manifest_role": "legacy_unfiltered_sidecar_coverage_audit" if source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar" else "quality_builder_sidecar_coverage_audit",
+        "custom_dataset_policy_satisfied": source_artifact_user_quality_policy != "unfiltered_legacy_itemcf_sidecar",
+        "source_artifact_user_quality_policy": source_artifact_user_quality_policy,
+        "quality_builder_sidecar_required_for_policy_satisfaction": source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar",
+        "quality_builder_sidecar_path": None if source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar" else str(output_dir),
+        "selection_scope": "legacy_unfiltered_index_builder" if source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar" else "index_builder_only",
+        "does_not_define_consumer_universe": True,
+        "consumer_user_manifest_path": str(consumer_manifest_path),
+        "consumer_coverage_audit_path": str(coverage_audit_path),
+        "source_index_manifest_path": str(output_dir / "source_index_manifest.json"),
+        "edges_path": str(edges_path),
+        "edge_count": build_stats["rows_written"],
+        "target_user_limit_semantics": "source_positive_builder_sequences_limit",
+        "train_only": True,
+        "ranking_input_replacement_allowed": False,
+        "pool1000_allowed": False,
+        "promotion_allowed": False,
+        "final_pool500_ready_claimed": False,
+    }
+    write_json(consumer_manifest_path, consumer_manifest)
+    write_json(coverage_audit_path, coverage_audit)
+    write_json(custom_dataset_manifest_path, custom_dataset_manifest)
+    return {
+        "consumer_user_manifest_path": str(consumer_manifest_path),
+        "coverage_audit_path": str(coverage_audit_path),
+        "custom_dataset_manifest_path": str(custom_dataset_manifest_path),
+        "source_index_fields": {
+            "edge_count": build_stats["rows_written"],
+            "builder_source_positive_user_count": build_stats["users_with_source_items"],
+            "builder_pair_contributing_user_count": build_stats["users_used"],
+            "target_user_limit_semantics": "source_positive_builder_sequences_limit",
+            "consumer_user_manifest_path": str(consumer_manifest_path),
+            "coverage_audit_path": str(coverage_audit_path),
+            "custom_dataset_manifest_path": str(custom_dataset_manifest_path),
+            "index_builder_policy": source_artifact_user_quality_policy,
+            "profiled_quality_bucket_counts": dict(sorted(profiled_bucket_counts.items())),
+            "builder_quality_bucket_counts": build_stats["used_quality_bucket_counts"],
+            "promotion_allowed": False,
+        },
+    }
+
+
+def _load_consumer_sequences(train_sequences_path: Path, limit_users: int) -> list[dict[str, Any]]:
+    sequences: list[dict[str, Any]] = []
+    for sequence in iter_jsonl(train_sequences_path):
+        if not sequence.get("user_id"):
+            continue
+        sequences.append(sequence)
+        if limit_users > 0 and len(sequences) >= limit_users:
+            break
+    return sequences
+
+
+def _load_edge_items(edges_path: Path) -> tuple[set[str], set[str]]:
+    src_items: set[str] = set()
+    edge_items: set[str] = set()
+    for row in iter_jsonl(edges_path):
+        src_item = str(row.get("src_item") or "")
+        dst_item = str(row.get("dst_item") or "")
+        if src_item:
+            src_items.add(src_item)
+            edge_items.add(src_item)
+        if dst_item:
+            edge_items.add(dst_item)
+    return src_items, edge_items
+
+
+def _load_canonical_item_universe(canonical_items_path: Path) -> set[str]:
+    if not canonical_items_path.is_file():
+        raise FileNotFoundError(canonical_items_path)
+    items: set[str] = set()
+    for row in iter_jsonl(canonical_items_path):
+        item_id = row.get("parent_asin") or row.get("item_id") or row.get("asin")
+        if item_id:
+            items.add(str(item_id))
+    return items
+
+
+def _custom_dataset_manifest_path(output_dir: Path, source: str) -> Path:
+    try:
+        output_dir.resolve().relative_to(ROOT.resolve())
+    except ValueError:
+        return output_dir / f"{source}_custom_dataset_manifest.json"
+    return ROOT / "configs" / "recall" / "full_data_pool500" / f"{source}_custom_dataset_manifest.json"
+
+
+def augment_existing_itemcf_manifest(
+    *,
+    source_index_manifest_path: Path,
+    clean_dir: Path = DEFAULT_CLEAN_DIR,
+    consumer_user_limit: int = 500,
+    user_quality_manifest_path: Path | None = None,
+    max_items_per_user: int = DEFAULT_MAX_ITEMS_PER_USER,
+    enforce_venv: bool = True,
+) -> dict[str, Any]:
+    if enforce_venv:
+        _enforce_project_venv()
+    if consumer_user_limit < 0:
+        raise ValueError("consumer_user_limit must be non-negative")
+    source_index_manifest_path = source_index_manifest_path.resolve()
+    source_index_manifest = read_json(source_index_manifest_path)
+    source = str(source_index_manifest["source"])
+    if source not in SOURCES:
+        raise ValueError(f"Unsupported source: {source}")
+    clean_dir = clean_dir.resolve()
+    output_dir = source_index_manifest_path.parent
+    train_sequences_path = clean_dir / "user_sequences.train.jsonl"
+    user_quality_manifest_path = user_quality_manifest_path.resolve() if user_quality_manifest_path else None
+    _precheck_for_augmentation(clean_dir, output_dir, train_sequences_path, user_quality_manifest_path)
+    quality_policy = _load_user_quality_policy(user_quality_manifest_path, source)
+    edges_path = Path(str(source_index_manifest["edges_path"])).resolve()
+    build_stats = _stats_from_existing_manifest(source_index_manifest)
+    coverage_artifacts = _build_coverage_artifacts(
+        clean_dir=clean_dir,
+        train_sequences_path=train_sequences_path,
+        output_dir=output_dir,
+        source=source,
+        label_variant=str(source_index_manifest.get("label_variant") or SOURCES[source]),
+        edges_path=edges_path,
+        source_index_manifest=source_index_manifest,
+        build_stats=build_stats,
+        quality_policy=quality_policy,
+        user_quality_manifest_path=user_quality_manifest_path,
+        consumer_user_limit=consumer_user_limit,
+        max_items_per_user=max_items_per_user,
+    )
+    source_index_manifest.update(coverage_artifacts["source_index_fields"])
+    write_json(source_index_manifest_path, source_index_manifest)
+    return {"status": "PASS", "source_index_manifest_path": str(source_index_manifest_path), **coverage_artifacts}
+
+
+def _precheck_for_augmentation(clean_dir: Path, output_dir: Path, train_sequences_path: Path, user_quality_manifest_path: Path | None) -> None:
+    for path in (clean_dir, output_dir, *( [user_quality_manifest_path] if user_quality_manifest_path else [])):
+        lowered = str(path).replace("\\", "/").lower()
+        if "10000" in lowered or "10k" in lowered or any(part in lowered for part in FORBIDDEN_PATH_PARTS):
+            raise ValueError(f"Forbidden 10k/pool1000 path is not allowed: {path}")
+    if not train_sequences_path.is_file():
+        raise FileNotFoundError(train_sequences_path)
+    if user_quality_manifest_path is not None and not user_quality_manifest_path.is_file():
+        raise FileNotFoundError(user_quality_manifest_path)
+
+
+def _stats_from_existing_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
+    rows_written = int(manifest.get("edge_count") or manifest.get("rows_written") or manifest.get("edge_signature", {}).get("row_count") or 0)
+    return {
+        "users_with_source_items": int(manifest.get("builder_source_positive_user_count") or manifest.get("users_with_source_items") or 0),
+        "users_used": int(manifest.get("builder_pair_contributing_user_count") or manifest.get("users_used") or 0),
+        "used_quality_bucket_counts": manifest.get("used_quality_bucket_counts") or {},
+        "rows_written": rows_written,
+    }
 
 
 def _build_itemcf_edges(
@@ -586,6 +881,17 @@ def _peak_rss_mb() -> float:
 
 def main() -> None:
     args = parse_args()
+    if args.augment_existing_manifest:
+        manifest = augment_existing_itemcf_manifest(
+            source_index_manifest_path=Path(args.augment_existing_manifest),
+            clean_dir=Path(args.clean_dir),
+            consumer_user_limit=args.consumer_user_limit,
+            user_quality_manifest_path=Path(args.user_quality_manifest) if args.user_quality_manifest else None,
+            max_items_per_user=args.max_items_per_user,
+            enforce_venv=not args.skip_venv_check,
+        )
+        print(json.dumps({"status": manifest["status"], "manifest_path": manifest["source_index_manifest_path"]}, ensure_ascii=False, indent=2))
+        return
     manifest = build_full_train_itemcf_sidecar(
         clean_dir=Path(args.clean_dir),
         output_dir=Path(args.output_dir),
@@ -595,6 +901,7 @@ def main() -> None:
         top_k_per_seed=args.top_k_per_seed,
         target_user_limit=args.target_user_limit,
         user_quality_manifest_path=Path(args.user_quality_manifest) if args.user_quality_manifest else None,
+        consumer_user_limit=args.consumer_user_limit,
         min_free_bytes=args.min_free_bytes,
         overwrite=args.overwrite,
         enforce_venv=not args.skip_venv_check,

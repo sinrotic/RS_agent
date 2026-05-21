@@ -1,0 +1,33 @@
+schema_version: pool500_method_source_config_v1
+source: itemcf_weak
+canonical_source: itemcf_weak
+source_status: DIAGNOSTIC_ONLY
+output_root: outputs/recall/pool500_method_sources
+run_id: null
+clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
+builder_entrypoint: scripts/experiments/recall/pool500/build_itemcf_weak_method_source.py
+resource_guard:
+  batch_size: 50
+  checkpoint_enabled: true
+  heavy_job: false
+  min_free_bytes: 0
+itemcf_weak:
+  target_user_limit: 500
+  max_items_per_user: 50
+  max_item_user_freq: 5000
+  top_k_per_seed: 100
+  per_user_candidate_limit: 500
+manifest_contract:
+  method_dataset_manifest: method_dataset_manifest.json
+  source_index_manifest: source_index_manifest.json
+  candidates: candidates.jsonl
+  coverage_audit: coverage_audit.json
+  undercoverage_audit: undercoverage_audit.json
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false

@@ -280,13 +280,16 @@ def build_full_train_usercf_sidecar(
             "diagnostic_judgement": "UserCF has marginal diagnostic contribution only when candidate_user_count covers underfilled heavy_cf_eligible users and marginal_candidate_share is positive; this artifact does not authorize promotion.",
         },
     }
+    eligible_user_policy = "heavy_cf_eligible_or_medium_behavior" if include_medium_behavior else "heavy_cf_eligible"
+    if eligible_manifest_payload and eligible_manifest_payload.get("scope") == "target500_train_only_high_cost_slice_users":
+        eligible_user_policy = "target500_train_only_high_cost_slice"
     source_index_manifest = {
         "schema_version": SCHEMA_VERSION,
         "status": "PASS",
         "source_status": "DIAGNOSTIC_ONLY",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         **hard_contract,
-        "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior" if include_medium_behavior else "heavy_cf_eligible",
+        "eligible_user_policy": eligible_user_policy,
         "resolved_paths": resolved_paths,
         "config_caps": config_caps,
         "target_user_count": target_user_count,
@@ -440,19 +443,26 @@ def _resolve_eligible_target_users(
     profiles = payload.get("profiles")
     if not isinstance(profiles, list):
         raise ValueError("eligible_user_quality_manifest.profiles must be a list")
-    allowed_buckets = {"heavy_cf_eligible"}
-    if include_medium_behavior:
-        allowed_buckets.add("medium_behavior")
     target_user_ids = []
-    for profile in profiles:
-        if not isinstance(profile, dict):
-            continue
-        user_id = str(profile.get("user_id", ""))
-        bucket = str(profile.get("quality_bucket", ""))
-        eligible_for_usercf = profile.get("eligible_for_usercf") is True
-        medium_allowed = include_medium_behavior and bucket == "medium_behavior"
-        if user_id and (eligible_for_usercf or bucket == "heavy_cf_eligible" or medium_allowed) and bucket in allowed_buckets:
-            target_user_ids.append(user_id)
+    if payload.get("scope") == "target500_train_only_high_cost_slice_users":
+        for profile in profiles:
+            if isinstance(profile, dict) and profile.get("eligible_for_usercf_slice") is True and profile.get("quality_bucket") == "target500_high_cost_slice":
+                user_id = str(profile.get("user_id", ""))
+                if user_id:
+                    target_user_ids.append(user_id)
+    else:
+        allowed_buckets = {"heavy_cf_eligible"}
+        if include_medium_behavior:
+            allowed_buckets.add("medium_behavior")
+        for profile in profiles:
+            if not isinstance(profile, dict):
+                continue
+            user_id = str(profile.get("user_id", ""))
+            bucket = str(profile.get("quality_bucket", ""))
+            eligible_for_usercf = profile.get("eligible_for_usercf") is True
+            medium_allowed = include_medium_behavior and bucket == "medium_behavior"
+            if user_id and (eligible_for_usercf or bucket == "heavy_cf_eligible" or medium_allowed) and bucket in allowed_buckets:
+                target_user_ids.append(user_id)
     if target_user_limit:
         target_user_ids = target_user_ids[:target_user_limit]
     return payload, target_user_ids

@@ -1,0 +1,25 @@
+schema_version: pool500_method_dataset_policy_v1
+source: co_visit_fallback_repair
+source_status: BATCH_SCOPED_DIAGNOSTIC
+role: co-visit and metadata-neighbor repair source
+dataset_policy: method_specific_covisit_repair_dataset
+train_only: true
+forbidden_data_sources:
+  - holdout
+  - valid
+  - test
+  - LOPO
+  - clean_10000
+outputs_required:
+  - method_dataset_manifest.json
+  - source_index_manifest.json
+  - candidates.jsonl
+  - coverage_audit.json
+  - undercoverage_audit.json
+  - resource_audit.json
+  - no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false

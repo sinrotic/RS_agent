@@ -1,0 +1,44 @@
+schema_version: pool500_method_dataset_policy_v1
+source: semantic_title_category_expansion
+canonical_source: semantic_title_category_expansion
+source_status: TARGET_SLICE_DIAGNOSTIC
+role: title/category metadata expansion source
+dataset_policy: method_specific_metadata_coverage_dataset
+semantic_title_category_input_dataset: true
+train_only: true
+allowed_inputs:
+  - data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl
+  - data/processed/amazon_2023_recall_clean_full/canonical_items.jsonl
+  - data/processed/amazon_2023_recall_views_full_lightweight/semantic_recall_inputs.jsonl
+  - data/processed/amazon_2023_recall_views_full_lightweight/semantic_inverted_index.jsonl
+forbidden_data_sources:
+  - holdout
+  - valid
+  - test
+  - LOPO
+  - clean_10000
+outputs_required:
+  - method_dataset_manifest.json
+  - source_index_manifest.json
+  - candidates.jsonl
+  - coverage_audit.json
+  - undercoverage_audit.json
+  - resource_audit.json
+  - no_holdout_audit.json
+required_coverage_audits:
+  - title_coverage
+  - category_coverage
+  - clean_title_token_coverage
+  - seed_item_metadata_coverage
+  - user_coverage_count
+  - candidate_row_count
+  - candidate_count_min
+  - candidate_count_p50
+  - candidate_count_p90
+  - candidate_count_max
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  full_pool500_ready_declared: false

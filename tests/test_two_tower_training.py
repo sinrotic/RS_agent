@@ -7,12 +7,55 @@ import pytest
 
 pytestmark = [pytest.mark.experiment, pytest.mark.gpu]
 
-from rs_core.common.io import read_jsonl
+from rs_core.common.io import read_json, read_jsonl, write_json, write_jsonl
 from rs_core.recsys.candidate_merge import load_two_tower_index, two_tower_candidates_for_user
 from rs_core.recsys.vector_index import VectorIndex
 from rs_core.recsys import two_tower
 from rs_core.recsys.two_tower import save_two_tower_artifacts, train_two_tower_model
-from rs_core.workflow.two_tower_training import build_two_tower_seed_sidecar, build_two_tower_seed_sidecar_from_config
+from rs_core.workflow.two_tower_training import build_two_tower_seed_sidecar, build_two_tower_seed_sidecar_from_config, train_two_tower_recall
+
+
+def _write_training_workflow_fixture(tmp_path: Path) -> dict[str, Path]:
+    clean_dir = tmp_path / "clean"
+    views_dir = tmp_path / "views"
+    clean_dir.mkdir()
+    views_dir.mkdir()
+
+    write_jsonl(
+        clean_dir / "user_sequences.train.jsonl",
+        [
+            {"user_id": "u1", "recent_positive_item_sequence": ["audio_seed", "audio_next"], "recent_item_sequence": ["audio_seed", "audio_next"]},
+            {"user_id": "u2", "recent_positive_item_sequence": ["camera_seed", "camera_next"], "recent_item_sequence": ["camera_seed", "camera_next"]},
+        ],
+    )
+    write_jsonl(views_dir / "category_recall_items.jsonl", _items())
+    write_jsonl(views_dir / "popular_recall.jsonl", [])
+
+    config_path = tmp_path / "config.json"
+    write_json(
+        config_path,
+        {
+            "clean_dir": str(clean_dir),
+            "views_dir": str(views_dir),
+            "evaluation_mode": "train_only",
+            "two_tower_training": {"variant": "youtube_dnn", "source_name": "two_tower_youtube_dnn"},
+        },
+    )
+    user_quality_path = tmp_path / "eligible_user_quality_manifest.json"
+    write_json(
+        user_quality_path,
+        {
+            "policy_role": "eligibility_policy_not_recall_source",
+            "candidate_generation_allowed": False,
+            "ranking_input_replacement_allowed": False,
+            "pool1000_allowed": False,
+            "profiles": [
+                {"user_id": "u1", "quality_bucket": "heavy"},
+                {"user_id": "u2", "quality_bucket": "medium"},
+            ],
+        },
+    )
+    return {"config": config_path, "user_quality": user_quality_path}
 
 
 def _sequences() -> list[dict]:
@@ -171,6 +214,44 @@ def test_saved_two_tower_manifest_loads_as_vector_index_with_model_metadata(tmp_
     assert "audio_seed" not in {candidate.item_id for candidate in candidates}
     assert {candidate.metadata["two_tower_source_name"] for candidate in candidates} == {"two_tower_youtube_dnn"}
     assert {candidate.metadata["two_tower_model_type"] for candidate in candidates} == {"youtube_dnn_two_tower_v1"}
+
+
+def test_train_two_tower_recall_filters_user_quality_policy(tmp_path: Path):
+    paths = _write_training_workflow_fixture(tmp_path)
+    output_dir = tmp_path / "artifacts"
+
+    result = train_two_tower_recall(
+        paths["config"],
+        output_dir=output_dir,
+        variant="youtube_dnn",
+        config_overrides={"two_tower_training": {"embedding_dim": 8, "epochs": 1, "negative_samples": 1}},
+        user_quality_manifest=paths["user_quality"],
+        user_quality_bucket="heavy",
+    )
+
+    metrics = read_json(result["train_metrics_path"])
+    user_embeddings = read_jsonl(result["user_embeddings_path"])
+    assert metrics["training_input_users"] == 1
+    assert metrics["user_quality_selected_user_count"] == 1
+    assert metrics["user_quality_matched_user_count"] == 1
+    assert metrics["user_quality_bucket"] == "heavy"
+    assert {row["user_id"] for row in user_embeddings} == {"u1"}
+
+
+def test_train_two_tower_recall_rejects_user_quality_as_source(tmp_path: Path):
+    paths = _write_training_workflow_fixture(tmp_path)
+    policy = read_json(paths["user_quality"])
+    policy["policy_role"] = "recall_source"
+    write_json(paths["user_quality"], policy)
+
+    with pytest.raises(ValueError, match="eligibility policy"):
+        train_two_tower_recall(
+            paths["config"],
+            output_dir=tmp_path / "artifacts",
+            variant="youtube_dnn",
+            config_overrides={"two_tower_training": {"embedding_dim": 8, "epochs": 1, "negative_samples": 1}},
+            user_quality_manifest=paths["user_quality"],
+        )
 
 
 def test_two_tower_seed_sidecar_schema_manifest_and_deterministic_sort(tmp_path: Path):

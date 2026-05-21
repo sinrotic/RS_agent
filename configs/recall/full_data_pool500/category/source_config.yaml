@@ -1,0 +1,31 @@
+schema_version: pool500_method_source_config_v1
+source: category
+canonical_source: category
+source_status: READY_WITH_LIGHT_GOVERNANCE_AUDIT
+role: category coverage and diversity fallback source
+output_root: outputs/recall/pool500_method_sources/category
+run_id: null
+promoted_dir: outputs/recall/pool500_main_route_direct_recall_full_promoted
+index_scope: LIGHTWEIGHT_FALLBACK_COVERAGE_SOURCE
+evaluation_mode: train_only
+category_bucket_cap_per_user: 80
+long_tail_rank_threshold: 50
+max_source_share_recommended: 0.35
+resource_guard:
+  batch_size: null
+  checkpoint_enabled: true
+  heavy_job: false
+manifest_contract:
+  source_index_manifest: source_index_manifest.json
+  method_dataset_manifest: method_dataset_manifest.json
+  candidates: candidates.jsonl
+  coverage_audit: coverage_audit.json
+  undercoverage_audit: undercoverage_audit.json
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false

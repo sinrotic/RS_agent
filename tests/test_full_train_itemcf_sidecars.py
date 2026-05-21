@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_lab.experiments.recall.build_full_train_itemcf_sidecars import build_full_train_itemcf_sidecar
+from rs_lab.experiments.recall.build_full_train_itemcf_sidecars import augment_existing_itemcf_manifest, build_full_train_itemcf_sidecar
 
 pytestmark = pytest.mark.unit
 
@@ -50,6 +50,7 @@ def make_clean_dir(tmp_path: Path) -> Path:
             },
         ],
     )
+    write_jsonl(clean_dir / "canonical_items.jsonl", [{"parent_asin": item} for item in ["old", "a", "b", "c", "d", "e", "f", "hot"]])
     write_jsonl(clean_dir / "canonical_interactions.valid.jsonl", [{"must_not_be_read": True}])
     write_jsonl(clean_dir / "canonical_interactions.test.jsonl", [{"must_not_be_read": True}])
     write_jsonl(clean_dir / "holdout.jsonl", [{"must_not_be_read": True}])
@@ -167,6 +168,9 @@ def test_manifests_forbid_holdout_10k_pool1000_and_ranking_replacement(tmp_path:
         "readiness_contract.json",
         "per_source_candidate_manifest.json",
         "weak_strong_comparison.json",
+        "consumer_user_manifest.json",
+        "coverage_audit.json",
+        "itemcf_weak_custom_dataset_manifest.json",
         "manifest.json",
         "itemcf_weak_edges.jsonl",
     }
@@ -193,6 +197,24 @@ def test_manifests_forbid_holdout_10k_pool1000_and_ranking_replacement(tmp_path:
     assert any("canonical_interactions.test.jsonl" in path for path in no_holdout_audit["forbidden_inputs"])
     assert any("holdout.jsonl" in path for path in no_holdout_audit["forbidden_inputs"])
     assert manifest["required_artifacts"]["edges"] == str(output_dir.resolve() / "itemcf_weak_edges.jsonl")
+    source_manifest = read_json(output_dir / "source_index_manifest.json")
+    consumer_manifest = read_json(output_dir / "consumer_user_manifest.json")
+    coverage_audit = read_json(output_dir / "coverage_audit.json")
+    custom_dataset_manifest = read_json(output_dir / "itemcf_weak_custom_dataset_manifest.json")
+    assert source_manifest["edge_count"] == source_manifest["rows_written"]
+    assert source_manifest["builder_source_positive_user_count"] == source_manifest["users_with_source_items"]
+    assert source_manifest["builder_pair_contributing_user_count"] == source_manifest["users_used"]
+    assert source_manifest["target_user_limit_semantics"] == "source_positive_builder_sequences_limit"
+    assert consumer_manifest["selection_algorithm"] == "first_n_user_sequences_with_user_id_from_train_jsonl"
+    assert consumer_manifest["not_quality_profile"] is True
+    assert consumer_manifest["consumer_user_count"] == 4
+    assert coverage_audit["status"] == "PASS"
+    assert coverage_audit["consumer_users_with_edge_seed_hit"] > 0
+    assert coverage_audit["edge_item_out_of_universe_count"] == 0
+    assert custom_dataset_manifest["manifest_role"] == "legacy_unfiltered_sidecar_coverage_audit"
+    assert custom_dataset_manifest["custom_dataset_policy_satisfied"] is False
+    assert custom_dataset_manifest["ranking_input_replacement_allowed"] is False
+    assert custom_dataset_manifest["promotion_allowed"] is False
     candidate_manifest = read_json(output_dir / "per_source_candidate_manifest.json")
     comparison = read_json(output_dir / "weak_strong_comparison.json")
     assert candidate_manifest["candidate_generation_allowed"] is False
@@ -201,6 +223,33 @@ def test_manifests_forbid_holdout_10k_pool1000_and_ranking_replacement(tmp_path:
     assert candidate_manifest["final_pool500_ready_claimed"] is False
     assert comparison["expected_policy_by_source"]["itemcf_weak"] == "heavy_cf_eligible_or_medium_behavior"
     assert comparison["expected_policy_by_source"]["itemcf_strong"] == "heavy_cf_eligible"
+
+
+def test_augments_existing_manifest_without_rebuilding_edges(tmp_path: Path) -> None:
+    clean_dir = make_clean_dir(tmp_path)
+    output_dir = tmp_path / "weak_existing"
+    build_for_test(clean_dir, output_dir, "itemcf_weak")
+    edges_path = output_dir / "itemcf_weak_edges.jsonl"
+    before_edges = edges_path.read_text(encoding="utf-8")
+
+    result = augment_existing_itemcf_manifest(
+        source_index_manifest_path=output_dir / "source_index_manifest.json",
+        clean_dir=clean_dir,
+        consumer_user_limit=2,
+        enforce_venv=False,
+        max_items_per_user=3,
+    )
+
+    assert result["status"] == "PASS"
+    assert edges_path.read_text(encoding="utf-8") == before_edges
+    source_manifest = read_json(output_dir / "source_index_manifest.json")
+    consumer_manifest = read_json(output_dir / "consumer_user_manifest.json")
+    coverage_audit = read_json(output_dir / "coverage_audit.json")
+    assert source_manifest["consumer_user_manifest_path"] == str(output_dir.resolve() / "consumer_user_manifest.json")
+    assert source_manifest["coverage_audit_path"] == str(output_dir.resolve() / "coverage_audit.json")
+    assert consumer_manifest["limit_users"] == 2
+    assert consumer_manifest["consumer_user_ids"] == ["u1", "u2"]
+    assert coverage_audit["coverage_scope"] == "target2_train_only_consumer_users"
 
 
 def test_rejects_10k_and_pool1000_paths(tmp_path: Path) -> None:

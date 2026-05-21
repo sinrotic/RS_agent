@@ -47,14 +47,14 @@ def make_clean_manifest(tmp_path: Path, rows: list[dict], manifest_patch: dict |
     return manifest_path
 
 
-def make_user_quality_manifest(tmp_path: Path, profiles: list[dict]) -> Path:
+def make_user_quality_manifest(tmp_path: Path, profiles: list[dict], scope: str = "diagnostic_limited_train_users") -> Path:
     path = tmp_path / "eligible_user_quality_manifest.json"
     write_json(
         path,
         {
             "schema_version": "pool500_user_quality_profile_v1",
             "status": "PASS",
-            "scope": "diagnostic_limited_train_users",
+            "scope": scope,
             "policy_role": "eligibility_policy_not_recall_source",
             "train_only": True,
             "candidate_generation_allowed": False,
@@ -168,6 +168,31 @@ def test_usercf_sidecar_can_include_medium_behavior_only_when_requested(tmp_path
     assert heavy_only["candidate_user_count"] == 1
     assert with_medium["target_user_count"] == 2
     assert with_medium["eligible_user_policy"] == "heavy_cf_eligible_or_medium_behavior"
+
+
+def test_usercf_sidecar_accepts_target500_slice_policy_without_heavy_label(tmp_path: Path) -> None:
+    manifest_path = make_clean_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "recent_positive_item_sequence": ["a", "b"]},
+            {"user_id": "u2", "recent_positive_item_sequence": ["a", "c"]},
+        ],
+    )
+    eligible = make_user_quality_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "quality_bucket": "target500_high_cost_slice", "eligible_for_usercf_slice": True, "eligible_for_usercf": False},
+            {"user_id": "u2", "quality_bucket": "target500_high_cost_slice", "eligible_for_usercf_slice": True, "eligible_for_usercf": False},
+        ],
+        scope="target500_train_only_high_cost_slice_users",
+    )
+
+    manifest = build_for_test(manifest_path, tmp_path / "slice", eligible_user_quality_manifest=eligible)
+
+    assert manifest["eligible_user_policy"] == "target500_train_only_high_cost_slice"
+    assert manifest["target_user_count"] == 2
+    assert manifest["candidate_user_count"] == 2
+
 
 
 def test_usercf_sidecar_empty_heavy_manifest_does_not_fall_back_to_full_matrix(tmp_path: Path) -> None:
@@ -322,6 +347,55 @@ def test_usercf_sidecar_loader_feeds_merge_without_replacing_ranking_input(tmp_p
     assert fallback_used is False
     assert candidates[0].item_id == "c"
     assert candidates[0].sources == ["usercf_recall"]
+
+
+@pytest.mark.parametrize(
+    ("field", "bad_value", "match"),
+    [
+        ("source_status", "READY", "DIAGNOSTIC_ONLY"),
+        ("candidate_generation_allowed", True, "candidate generation"),
+        ("ranking_input_replacement_allowed", True, "ranking input replacement"),
+        ("pool1000_allowed", True, "pool1000"),
+    ],
+)
+def test_usercf_sidecar_loader_rejects_manifest_that_violates_runtime_guardrails(tmp_path: Path, field: str, bad_value: object, match: str) -> None:
+    manifest_path = make_clean_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "recent_positive_item_sequence": ["a", "b"]},
+            {"user_id": "u2", "recent_positive_item_sequence": ["a", "c"]},
+        ],
+    )
+    eligible = make_user_quality_manifest(tmp_path, [profile("u1"), profile("u2")])
+    build_for_test(manifest_path, tmp_path / "out", eligible_user_quality_manifest=eligible)
+    source_manifest_path = tmp_path / "out" / "source_index_manifest.json"
+    source_manifest = read_json(source_manifest_path)
+    source_manifest[field] = bad_value
+    write_json(source_manifest_path, source_manifest)
+
+    with pytest.raises(ValueError, match=match):
+        load_usercf_recall_sidecar(source_manifest_path)
+
+
+def test_usercf_sidecar_loader_accepts_legacy_manifest_without_diagnostic_status_field(tmp_path: Path) -> None:
+    manifest_path = make_clean_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "recent_positive_item_sequence": ["a", "b"]},
+            {"user_id": "u2", "recent_positive_item_sequence": ["a", "c"]},
+        ],
+    )
+    eligible = make_user_quality_manifest(tmp_path, [profile("u1"), profile("u2")])
+    build_for_test(manifest_path, tmp_path / "out", eligible_user_quality_manifest=eligible)
+    source_manifest_path = tmp_path / "out" / "source_index_manifest.json"
+    source_manifest = read_json(source_manifest_path)
+    source_manifest.pop("source_status")
+    source_manifest.pop("diagnostic_only", None)
+    write_json(source_manifest_path, source_manifest)
+
+    usercf = load_usercf_recall_sidecar(source_manifest_path)
+
+    assert set(usercf) == {"u1", "u2"}
 
 
 def test_usercf_sidecar_writes_contract_manifests_without_holdout_10k_pool1000_or_ranking_replacement(tmp_path: Path) -> None:

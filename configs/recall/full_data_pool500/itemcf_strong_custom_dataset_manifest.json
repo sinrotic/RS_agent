@@ -1,0 +1,23 @@
+{
+  "schema_version": "full_train_itemcf_sidecar_v1.custom_dataset_manifest",
+  "status": "DIAGNOSTIC_ONLY",
+  "source": "itemcf_strong",
+  "manifest_role": "legacy_unfiltered_sidecar_coverage_audit",
+  "custom_dataset_policy_satisfied": false,
+  "source_artifact_user_quality_policy": "unfiltered_legacy_itemcf_sidecar",
+  "quality_builder_sidecar_required_for_policy_satisfaction": true,
+  "quality_builder_sidecar_path": null,
+  "selection_scope": "legacy_unfiltered_index_builder",
+  "does_not_define_consumer_universe": true,
+  "consumer_user_manifest_path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\outputs\\recall\\pool500_sidecar_fix\\itemcf_strong_target500_guarded\\consumer_user_manifest.json",
+  "consumer_coverage_audit_path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\outputs\\recall\\pool500_sidecar_fix\\itemcf_strong_target500_guarded\\coverage_audit.json",
+  "source_index_manifest_path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\outputs\\recall\\pool500_sidecar_fix\\itemcf_strong_target500_guarded\\source_index_manifest.json",
+  "edges_path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\outputs\\recall\\pool500_sidecar_fix\\itemcf_strong_target500_guarded\\itemcf_strong_edges.jsonl",
+  "edge_count": 68432,
+  "target_user_limit_semantics": "source_positive_builder_sequences_limit",
+  "train_only": true,
+  "ranking_input_replacement_allowed": false,
+  "pool1000_allowed": false,
+  "promotion_allowed": false,
+  "final_pool500_ready_claimed": false
+}
