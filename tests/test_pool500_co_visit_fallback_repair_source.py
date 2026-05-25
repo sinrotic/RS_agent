@@ -31,8 +31,16 @@ def test_build_co_visit_fallback_repair_source_writes_governed_artifacts(tmp_pat
             {"user_id": "u2", "recent_item_sequence": ["missing"], "recent_positive_item_sequence": ["missing"]},
         ],
     )
+    train_interactions = clean_dir / "canonical_interactions.train.jsonl"
+    _write_jsonl(
+        train_interactions,
+        [
+            {"user_id": "u3", "parent_asin": "seed", "rating": 5.0, "label_binary": 1},
+            {"user_id": "u3", "parent_asin": "transition_candidate", "rating": 5.0, "label_binary": 1},
+        ],
+    )
     clean_manifest = clean_dir / "manifest.json"
-    _write_json(clean_manifest, {"train_user_sequences_path": str(train_sequences)})
+    _write_json(clean_manifest, {"train_user_sequences_path": str(train_sequences), "split_paths": {"train": str(train_interactions)}})
 
     views_dir = tmp_path / "views"
     semantic = views_dir / "semantic_recall_inputs.jsonl"
@@ -41,6 +49,7 @@ def test_build_co_visit_fallback_repair_source_writes_governed_artifacts(tmp_pat
         [
             {"parent_asin": "seed", "title_clean": "wireless mouse", "main_category": "Electronics"},
             {"parent_asin": "candidate", "title_clean": "wireless keyboard", "main_category": "Electronics"},
+            {"parent_asin": "transition_candidate", "title_clean": "wireless receiver", "main_category": "Electronics"},
         ],
     )
     views_manifest = views_dir / "manifest.json"
@@ -78,7 +87,8 @@ def test_build_co_visit_fallback_repair_source_writes_governed_artifacts(tmp_pat
     coverage = json.loads((output_dir / "coverage_audit.json").read_text(encoding="utf-8"))
     assert coverage["co_visit_seed_coverage"]["count"] == 1
     assert coverage["metadata_neighbor_coverage"]["count"] == 1
-    assert coverage["repair_candidate_count"] == 1
+    assert coverage["sequence_transition_coverage"]["count"] == 1
+    assert coverage["repair_candidate_count"] == 2
 
     rows = [json.loads(line) for line in (output_dir / "candidates.jsonl").read_text(encoding="utf-8").splitlines()]
     assert rows[0]["source"] == "co_visit_fallback_repair"

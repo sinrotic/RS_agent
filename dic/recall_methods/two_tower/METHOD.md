@@ -76,3 +76,23 @@ official heavy28 训练指标：
 
 ## 下一步
 若要从 `MAIN_ROUTE_ARTIFACT_ONLY` 继续推进到长期 READY，需要单独做更大规模 user_quality 覆盖、ANN/索引性能评估、valid/test/LOPO 外部验证和 promotion gate 审核；本次不声明 READY、ranking replacement 或 pool1000。
+
+## P2 method_dataset 数据清洗与筛选方案
+
+- 数据来源：只读取 `governance_train_only`、train-only 用户序列、P1 `item_quality_profile` 与 `item_frequency_train`。
+- 筛选单位：`user_sequence`。以用户完整正反馈序列为单位构造样本，保留时间顺序，不随机拆 user/item。
+- 适用桶：用户桶 `medium_behavior`、`sequence_sufficient`、`collaborative_rich`；item 侧目标与负采样 universe 使用 `embedding_ready`。
+- 清洗规则：过滤 train-only 序列过短、target item 不在可用 universe、负样本落入用户已知正反馈的样本；当前样本 schema 可保持过渡格式，但 P2 合同目标是 `history_items -> target_item`。
+- 规模参数：`limit_users`、`limit_interactions`、`max_samples`、`negative_ratio`、`max_items_per_user`、`min_free_bytes`。
+ 运行调用的 `limits` 保留真实入参；下面档位只记录推荐合同规模。
+
+### 规模档位
+
+| 档位 | limit_users | max_samples | negative_ratio | max_items_per_user |
+| --- | ---: | ---: | ---: | ---: |
+| smoke | 500 | 20000 | 3 | 30 |
+| diagnostic | 50000 | 800000 | 5 | 50 |
+| local_formal | 150000 | 2000000 | 5 | 80 |
+
+- 泄漏边界：不读取 valid/test/holdout/LOPO/eval_label/oracle，不声明 READY、promotion、ranking input replacement 或 pool1000。
+- 维护检查：修改 builder/config/test 时同步检查 `resource_scale_policy.selection_strategy.policy_name=two_tower_sequence_v1`、`p2_contract_scope=method_dataset_only`、负样本来源与 P1 hash 绑定。

@@ -5,6 +5,7 @@ import hashlib
 import json
 import shutil
 import sys
+import threading
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -39,15 +40,13 @@ FORBIDDEN_INPUT_NAMES = (
 )
 BUCKET_THRESHOLDS = {
     "heavy_cf_eligible": {
-        "positive_count_min": 20,
-        "unique_item_count_min": 10,
-        "category_count_min": 2,
-        "shared_item_neighbor_count_min": 3,
+        "positive_count_min": 10,
+        "unique_item_count_min": 5,
+        "shared_item_neighbor_count_min": 1,
     },
     "medium_behavior": {
-        "positive_count_min": 5,
-        "unique_item_count_min": 3,
-        "category_count_min": 1,
+        "positive_count_min": 4,
+        "unique_item_count_min": 2,
     },
 }
 
@@ -77,6 +76,7 @@ def build_pool500_user_quality_profile(
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
     started = perf_counter()
+    memory_sampler = _MemorySampler().start()
     if enforce_venv:
         enforce_project_venv(ROOT)
     _validate_caps(limit_users, max_items_per_user, max_item_metadata_rows, min_free_bytes)
@@ -109,6 +109,8 @@ def build_pool500_user_quality_profile(
     output_dir.mkdir(parents=True, exist_ok=False)
 
     summary = _quality_bucket_summary(profiles)
+    memory_fields = memory_sampler.stop()
+    profile_boundary = _profile_boundary(load_audit)
     resource_audit = {
         "schema_version": SCHEMA_VERSION,
         "status": "PASS",
@@ -129,6 +131,7 @@ def build_pool500_user_quality_profile(
         "disk_free_bytes_start": disk_free_start,
         "disk_free_bytes_end": shutil.disk_usage(_existing_ancestor(output_dir.parent)).free,
         "runtime_seconds": round(perf_counter() - started, 6),
+        **memory_fields,
         **load_audit,
         **metadata_audit,
     }
@@ -150,6 +153,7 @@ def build_pool500_user_quality_profile(
         "train_user_sequences_sha256": _file_sha256(train_sequences_path),
         "item_metadata_sha256": _file_sha256(item_metadata_path),
         "limit_users": limit_users,
+        **profile_boundary,
         "quality_buckets": ["heavy_cf_eligible", "medium_behavior", "fallback_only"],
         "bucket_thresholds": BUCKET_THRESHOLDS,
         "required_profile_fields": [
@@ -263,9 +267,15 @@ def _load_batch_sequences(path: Path, limit_users: int, max_items_per_user: int)
         )
         if len(profiles) >= limit_users:
             break
+    profiled_user_ids = [profile["user_id"] for profile in profiles]
     return profiles, {
         "rows_scanned": rows_scanned,
+        "profile_source_rows_scanned": rows_scanned,
         "profiled_user_count": len(profiles),
+        "first_profiled_user_id": profiled_user_ids[0] if profiled_user_ids else None,
+        "last_profiled_user_id": profiled_user_ids[-1] if profiled_user_ids else None,
+        "profiled_user_ids_sha256": _user_ids_sha256(profiled_user_ids),
+        "profile_universe_scope": "first_n_train_users",
         "raw_positive_event_count": raw_positive_event_count,
     }
 
@@ -319,14 +329,10 @@ def _shared_item_neighbor_counts(sequences: list[dict[str, Any]]) -> dict[str, i
     for user_id, items in user_items.items():
         for item_id in items:
             item_users[item_id].add(user_id)
-    neighbor_counts: dict[str, int] = {}
-    for user_id, items in user_items.items():
-        neighbors = set()
-        for item_id in items:
-            neighbors.update(item_users[item_id])
-        neighbors.discard(user_id)
-        neighbor_counts[user_id] = len(neighbors)
-    return neighbor_counts
+    return {
+        user_id: int(any(len(item_users[item_id]) > 1 for item_id in items))
+        for user_id, items in user_items.items()
+    }
 
 
 def _profile_user(sequence: dict[str, Any], item_categories: dict[str, set[str]], shared_item_neighbor_count: int) -> dict[str, Any]:
@@ -360,7 +366,6 @@ def _quality_bucket(profile: dict[str, int]) -> str:
     if (
         profile["positive_count"] >= heavy["positive_count_min"]
         and profile["unique_item_count"] >= heavy["unique_item_count_min"]
-        and profile["category_count"] >= heavy["category_count_min"]
         and profile["shared_item_neighbor_count"] >= heavy["shared_item_neighbor_count_min"]
     ):
         return "heavy_cf_eligible"
@@ -368,10 +373,20 @@ def _quality_bucket(profile: dict[str, int]) -> str:
     if (
         profile["positive_count"] >= medium["positive_count_min"]
         and profile["unique_item_count"] >= medium["unique_item_count_min"]
-        and profile["category_count"] >= medium["category_count_min"]
     ):
         return "medium_behavior"
     return "fallback_only"
+
+
+def _profile_boundary(load_audit: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "profiled_user_count": load_audit["profiled_user_count"],
+        "profile_source_rows_scanned": load_audit["profile_source_rows_scanned"],
+        "first_profiled_user_id": load_audit["first_profiled_user_id"],
+        "last_profiled_user_id": load_audit["last_profiled_user_id"],
+        "profiled_user_ids_sha256": load_audit["profiled_user_ids_sha256"],
+        "profile_universe_scope": load_audit["profile_universe_scope"],
+    }
 
 
 def _quality_bucket_summary(profiles: list[dict[str, Any]]) -> dict[str, Any]:
@@ -414,6 +429,64 @@ def _file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _user_ids_sha256(user_ids: list[str]) -> str:
+    return hashlib.sha256("\n".join(user_ids).encode("utf-8")).hexdigest()
+
+
+class _MemorySampler:
+    def __init__(self) -> None:
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._start_mb = 0.0
+        self._end_mb = 0.0
+        self._peak_mb = 0.0
+
+    def start(self) -> "_MemorySampler":
+        self._start_mb = _rss_mb()
+        self._peak_mb = self._start_mb
+        if self._start_mb:
+            self._thread = threading.Thread(target=self._sample, daemon=True)
+            self._thread.start()
+        return self
+
+    def stop(self) -> dict[str, Any]:
+        self._end_mb = _rss_mb()
+        if self._end_mb > self._peak_mb:
+            self._peak_mb = self._end_mb
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=1)
+        if not self._peak_mb:
+            status = "UNMEASURED"
+            measurement = "fallback_not_authoritative_for_os_rss"
+        else:
+            status = "PASS" if self._peak_mb <= 400 else "FAIL"
+            measurement = "sampled_process_rss_peak"
+        return {
+            "memory_rss_start_mb": self._start_mb,
+            "memory_rss_end_mb": self._end_mb,
+            "memory_peak_rss_mb": self._peak_mb,
+            "memory_target_mb": 400,
+            "memory_target_status": status,
+            "memory_peak_measurement": measurement,
+        }
+
+    def _sample(self) -> None:
+        while not self._stop.wait(0.05):
+            current = _rss_mb()
+            if current > self._peak_mb:
+                self._peak_mb = current
+
+
+def _rss_mb() -> float:
+    try:
+        import psutil  # type: ignore
+
+        return round(psutil.Process().memory_info().rss / 1024 / 1024, 3)
+    except Exception:
+        return 0.0
 
 
 def main() -> None:

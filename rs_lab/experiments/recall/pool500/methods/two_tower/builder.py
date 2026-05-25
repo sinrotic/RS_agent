@@ -19,6 +19,7 @@ from rs_core.common.config import load_config
 from rs_core.common.io import iter_jsonl, read_json, write_json
 from rs_core.common.runtime import enforce_project_venv
 from rs_core.recsys.candidate_merge import load_two_tower_index, unique_recent_items
+from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
 from rs_core.recsys.vector_index import VectorIndex, average_vectors
 from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir
 
@@ -26,7 +27,7 @@ SCHEMA_VERSION = "pool500_two_tower_method_source_v1"
 SOURCE = "two_tower"
 SOURCE_STATUS = "TARGET_SLICE_DIAGNOSTIC"
 DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_clean_full" / "manifest.json"
-DEFAULT_ARTIFACT_MANIFEST = ROOT / "outputs" / "recall" / "pool500_full_sources" / "two_tower" / "training" / "runs" / "full_clean_heavy28_20260519_0001" / "artifact_manifest.json"
+DEFAULT_SOURCE_INDEX_MANIFEST = ROOT / "outputs" / "recall" / "pool500_full_sources" / "two_tower" / "index" / "source_index_manifest.json"
 DEFAULT_ELIGIBLE_USER_MANIFEST = ROOT / "outputs" / "recall" / "pool500_main_route_direct_recall_full_promoted" / "eligible_user_manifest.json"
 DEFAULT_CONFIG = ROOT / "configs" / "recall" / "full_data_pool500" / "two_tower" / "source_config.yaml"
 DEFAULT_OUTPUT_ROOT = ROOT / "outputs" / "recall" / "pool500_method_sources"
@@ -44,7 +45,8 @@ GATE_FIELDS = (
 
 def build_two_tower_method_source(
     *,
-    artifact_manifest_path: Path = DEFAULT_ARTIFACT_MANIFEST,
+    source_index_manifest_path: Path = DEFAULT_SOURCE_INDEX_MANIFEST,
+    artifact_manifest_path: Path | None = None,
     clean_manifest_path: Path = DEFAULT_CLEAN_MANIFEST,
     eligible_user_manifest_path: Path | None = None,
     config_path: Path | None = None,
@@ -65,7 +67,9 @@ def build_two_tower_method_source(
         enforce_project_venv(ROOT)
     config = load_config(config_path) if config_path and Path(config_path).is_file() else {}
     method_config = config.get("method_config") if isinstance(config.get("method_config"), dict) else {}
-    artifact_manifest_path = _config_path(method_config, "artifact_manifest_path", artifact_manifest_path).resolve()
+    if artifact_manifest_path is not None:
+        source_index_manifest_path = artifact_manifest_path
+    source_index_manifest_path = _config_path(method_config, "source_index_manifest_path", Path(str(method_config.get("artifact_manifest_path"))) if method_config.get("artifact_manifest_path") else source_index_manifest_path).resolve()
     clean_manifest_path = _config_path(method_config, "clean_manifest_path", clean_manifest_path).resolve()
     eligible_user_manifest_path = _optional_config_path(method_config, "eligible_user_manifest_path", eligible_user_manifest_path)
     output_root = Path(output_root).resolve() if output_root is not None else _config_path(config, "output_root", DEFAULT_OUTPUT_ROOT).resolve()
@@ -78,17 +82,18 @@ def build_two_tower_method_source(
     seed_window = int(seed_window if seed_window is not None else method_config.get("seed_window", 30))
     recency_decay = float(recency_decay if recency_decay is not None else method_config.get("recency_decay", 0.85))
     _validate_positive(batch_size=batch_size, target_user_limit=target_user_limit, per_user_candidate_limit=per_user_candidate_limit, seed_window=seed_window)
-    intended_read_paths = [artifact_manifest_path, clean_manifest_path]
+    intended_read_paths = [source_index_manifest_path, clean_manifest_path]
     if eligible_user_manifest_path:
         intended_read_paths.append(eligible_user_manifest_path)
     _validate_actual_read_paths(intended_read_paths)
+    validate_two_tower_source_index_manifest(source_index_manifest_path)
 
     output_dir = (output_root / run_id if output_root.name == SOURCE else method_output_dir(output_root, SOURCE, run_id)).resolve()
     final_marker = output_dir / "_FINALIZED.json"
     state_path = output_dir / "run_state.json"
     shard_dir = output_dir / "tmp" / "candidate_shards"
     config_hash_payload = {
-        "artifact_manifest_path": str(artifact_manifest_path),
+        "source_index_manifest_path": str(source_index_manifest_path),
         "clean_manifest_path": str(clean_manifest_path),
         "eligible_user_manifest_path": str(eligible_user_manifest_path) if eligible_user_manifest_path else None,
         "target_user_limit": target_user_limit,
@@ -119,14 +124,14 @@ def build_two_tower_method_source(
     train_sequences_path = _resolve_train_sequence_path(clean_manifest_path, clean_manifest)
     target_sequences = _load_target_sequences(train_sequences_path, eligible_user_manifest_path, target_user_limit)
     target_user_ids = [str(row["user_id"]) for row in target_sequences]
-    artifact_index = load_two_tower_index(artifact_manifest_path)
+    artifact_index = load_two_tower_index(source_index_manifest_path)
     if not isinstance(artifact_index, VectorIndex):
-        raise ValueError("two_tower artifact_manifest_path must load as VectorIndex")
+        raise ValueError("two_tower source_index_manifest_path must load as VectorIndex")
 
     candidate_stats = _write_candidate_shards(
         target_sequences=target_sequences,
         vector_index=artifact_index,
-        artifact_manifest_path=artifact_manifest_path,
+        source_index_manifest_path=source_index_manifest_path,
         config_hash=config_hash,
         shard_dir=shard_dir,
         batch_size=batch_size,
@@ -140,8 +145,8 @@ def build_two_tower_method_source(
     candidate_signature = _file_signature(candidates_path)
     clean_signature = _file_signature(clean_manifest_path)
     train_signature = _file_signature(train_sequences_path)
-    artifact_signature = _file_signature(artifact_manifest_path)
-    read_paths = [artifact_manifest_path, clean_manifest_path, train_sequences_path]
+    artifact_signature = _file_signature(source_index_manifest_path)
+    read_paths = [source_index_manifest_path, clean_manifest_path, train_sequences_path]
     if eligible_user_manifest_path:
         read_paths.append(eligible_user_manifest_path)
     no_holdout_audit = _no_holdout_audit(read_paths, clean_manifest, clean_manifest_path.parent)
@@ -164,7 +169,7 @@ def build_two_tower_method_source(
         "train_only": True,
         "source_clean_manifest": str(clean_manifest_path),
         "train_user_sequences_path": str(train_sequences_path),
-        "artifact_manifest_path": str(artifact_manifest_path),
+        "source_index_manifest_path": str(source_index_manifest_path),
         "clean_manifest_sha256": clean_signature["sha256"],
         "train_sequence_sha256": train_signature["sha256"],
         "artifact_manifest_sha256": artifact_signature["sha256"],
@@ -267,8 +272,8 @@ def build_two_tower_method_source(
         "train_only": True,
         "run_id": run_id,
         "output_dir": str(output_dir),
-        "recall_index_path": str(artifact_manifest_path),
-        "artifact_manifest_path": str(artifact_manifest_path),
+        "recall_index_path": str(source_index_manifest_path),
+        "source_index_manifest_path": str(source_index_manifest_path),
         "candidate_path": str(candidates_path),
         "candidates_path": str(candidates_path),
         "candidate_row_count": candidate_row_count,
@@ -308,7 +313,7 @@ def _write_candidate_shards(
     *,
     target_sequences: list[dict[str, Any]],
     vector_index: VectorIndex,
-    artifact_manifest_path: Path,
+    source_index_manifest_path: Path,
     config_hash: str,
     shard_dir: Path,
     batch_size: int,
@@ -380,7 +385,7 @@ def _write_candidate_shards(
             seed_counts=seed_counts,
             seed_vector_counts=seed_vector_counts,
             per_user_candidate_limit=per_user_candidate_limit,
-            artifact_manifest_path=artifact_manifest_path,
+            source_index_manifest_path=source_index_manifest_path,
             config_hash=config_hash,
             batch_index=batch_index,
         )
@@ -418,7 +423,7 @@ def _write_candidate_batch(
     seed_counts: dict[str, int],
     seed_vector_counts: dict[str, int],
     per_user_candidate_limit: int,
-    artifact_manifest_path: Path,
+    source_index_manifest_path: Path,
     config_hash: str,
     batch_index: int,
 ) -> dict[str, Any]:
@@ -466,7 +471,7 @@ def _write_candidate_batch(
                     "query_source": query_source,
                     "query_vector_source": query_vector_source,
                     "seed_item_count": seed_counts.get(user_id, 0),
-                    "artifact_manifest_path": str(artifact_manifest_path),
+                    "source_index_manifest_path": str(source_index_manifest_path),
                     "config_hash": config_hash,
                 })
                 handle.write(json.dumps({
@@ -680,7 +685,7 @@ def _default_run_id() -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build pool500 two_tower method source diagnostic artifacts.")
-    parser.add_argument("--artifact-manifest", "--artifact-manifest-path", dest="artifact_manifest", default=str(DEFAULT_ARTIFACT_MANIFEST))
+    parser.add_argument("--source-index-manifest", "--source-index-manifest-path", "--artifact-manifest", "--artifact-manifest-path", dest="source_index_manifest", default=str(DEFAULT_SOURCE_INDEX_MANIFEST))
     parser.add_argument("--clean-manifest", "--clean-manifest-path", dest="clean_manifest", default=str(DEFAULT_CLEAN_MANIFEST))
     parser.add_argument("--eligible-user-manifest", "--eligible-user-manifest-path", dest="eligible_user_manifest", default="")
     parser.add_argument("--config", default="")
@@ -700,7 +705,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     manifest = build_two_tower_method_source(
-        artifact_manifest_path=Path(args.artifact_manifest),
+        source_index_manifest_path=Path(args.source_index_manifest),
         clean_manifest_path=Path(args.clean_manifest),
         eligible_user_manifest_path=Path(args.eligible_user_manifest) if args.eligible_user_manifest else None,
         config_path=Path(args.config) if args.config else None,

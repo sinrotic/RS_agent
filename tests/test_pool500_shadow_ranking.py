@@ -888,3 +888,590 @@ def test_fixed_ranking_comparison_report_emits_explainable_case_diff(tmp_path: P
             "interpretation_label",
         } <= set(row)
         assert not ({"itemcf", "two_tower_seed", "final_two_tower_seed"} & set(row["sources"]))
+
+
+def test_fixed_ranking_comparison_report_redacts_raw_candidate_metadata(tmp_path: Path) -> None:
+    rows = [
+        {"user_id": "u1", "item_id": "i1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat", "holdout_hit": True, "label_binary": 1, "future_clicks": 3}},
+    ]
+    candidate_path, manifest_path, candidate_hash, manifest_hash = _write_frozen_pool_fixture(tmp_path, rows=rows)
+
+    report = run_pool500_fixed_ranking_comparison_report(
+        diagnostic_method_id="pool500_diagnostic_fixed_comparison_v1",
+        comparison_group="frozen_v5_baseline",
+        pool500_candidates_path=candidate_path,
+        candidate_manifest_path=manifest_path,
+        expected_candidate_hash=candidate_hash,
+        expected_manifest_hash=manifest_hash,
+    )
+
+    serialized = json.dumps(report["comparison_results"])
+    assert "holdout_hit" not in serialized
+    assert "label_binary" not in serialized
+    assert "future_clicks" not in serialized
+    assert "metadata" not in report["comparison_results"]["B0"]["ranking_results"]["u1"][0]
+
+
+
+def test_fixed_ranking_report_explicit_label_artifact_reaches_comparable_state(tmp_path: Path) -> None:
+    rows = [
+        {"user_id": "u1", "item_id": "i1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}},
+    ]
+    candidate_path, manifest_path, candidate_hash, manifest_hash = _write_frozen_pool_fixture(tmp_path, rows=rows)
+    label_path = tmp_path / "labels.jsonl"
+    label_path.write_text(json.dumps({"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}) + "\n", encoding="utf-8")
+
+    report = run_pool500_fixed_ranking_comparison_report(
+        diagnostic_method_id="pool500_diagnostic_fixed_comparison_v1",
+        comparison_group="frozen_v5_baseline",
+        pool500_candidates_path=candidate_path,
+        candidate_manifest_path=manifest_path,
+        expected_candidate_hash=candidate_hash,
+        expected_manifest_hash=manifest_hash,
+        label_artifact_path=label_path,
+        label_evaluator_enabled=True,
+    )
+
+    assert report["recommended_diagnostic_config_id"] == "R1"
+    assert report["recommendation_scope"] == "diagnostic_followup_only"
+    assert report["promotion_readiness"] == "not_allowed_in_this_report"
+    assert report["comparison_results"]["B0"]["label_state"] == "label_comparable"
+    assert report["comparison_results"]["B0"]["label_artifact_metadata"]["candidate_coverage"] == 1.0
+    assert report["comparison_results"]["B0"]["label_artifact_metadata"]["coverage_thresholds"] == {
+        "topk_union_candidate_coverage": 1.0,
+        "user_label_coverage": 1.0,
+        "positive_user_coverage": 1.0,
+    }
+    assert report["comparison_results"]["B0"]["label_artifact_metadata"]["failed_thresholds"] == []
+    assert report["label_metric_definition_version"] == "pool500_label_metrics_per_user_mean_v1"
+    assert report["label_metric_eligibility"] is True
+    assert report["all_configs_label_comparable"] is True
+    assert report["baseline_label_comparable"] is True
+    assert report["metrics_summary"]["per_config"]["B0"]["label_state"] == "label_comparable"
+
+
+def test_fixed_ranking_summary_projection_rejects_report_absent_authority_field(tmp_path: Path) -> None:
+    candidate_path, manifest_path, candidate_hash, manifest_hash = _write_frozen_pool_fixture(tmp_path)
+    report = run_pool500_fixed_ranking_comparison_report(
+        diagnostic_method_id="pool500_diagnostic_fixed_comparison_v1",
+        comparison_group="frozen_v5_baseline",
+        pool500_candidates_path=candidate_path,
+        candidate_manifest_path=manifest_path,
+        expected_candidate_hash=candidate_hash,
+        expected_manifest_hash=manifest_hash,
+    )
+    summary = dict(report["metrics_summary"])
+    summary["promotion_allowed"] = True
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+
+def _write_label_artifact_fixture(tmp_path: Path, rows: list[dict[str, object]], name: str = "labels.jsonl") -> Path:
+    label_path = tmp_path / name
+    label_path.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    return label_path
+
+
+def _pool500_comparison_report_for_label_fixture(
+    tmp_path: Path,
+    *,
+    rows: list[dict[str, object]] | None = None,
+    manifest_overrides: dict[str, object] | None = None,
+    label_path: Path | None = None,
+    label_evaluator_enabled: bool = True,
+) -> dict[str, object]:
+    candidate_path, manifest_path, candidate_hash, manifest_hash = _write_frozen_pool_fixture(
+        tmp_path,
+        rows=rows or [{"user_id": "u1", "item_id": "i1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}}],
+        manifest_overrides=manifest_overrides,
+    )
+    return run_pool500_fixed_ranking_comparison_report(
+        diagnostic_method_id="pool500_diagnostic_fixed_comparison_v1",
+        comparison_group="frozen_v5_baseline",
+        pool500_candidates_path=candidate_path,
+        candidate_manifest_path=manifest_path,
+        expected_candidate_hash=candidate_hash,
+        expected_manifest_hash=manifest_hash,
+        label_artifact_path=label_path,
+        label_evaluator_enabled=label_evaluator_enabled,
+    )
+
+
+def _summary_for_config(report: dict[str, object], config_id: str = "B0") -> dict[str, object]:
+    return report["comparison_results"][config_id]  # type: ignore[index]
+
+
+def test_label_aware_no_label_artifact_fixture_pending_without_lift(tmp_path: Path) -> None:
+    report = _pool500_comparison_report_for_label_fixture(tmp_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "pending_label"
+    assert summary["label_metrics_available"] is False
+    assert summary["label_adjacent_metrics"] == {}
+    assert summary["label_artifact_metadata"] is None
+    assert report["promotion_readiness"] == "not_allowed_in_this_report"
+    assert "ready" not in str(report["promotion_readiness"]).lower()
+    assert not any("lift" in key.lower() for key in summary)
+    assert not any("lift" in key.lower() for key in summary["shadow_metrics"])
+
+
+def test_label_aware_invalid_schema_fixture_blocks_label_metrics(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "bad_schema", "user": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_invalid"
+    assert summary["label_metrics_available"] is False
+    assert summary["label_adjacent_metrics"] == {}
+    assert report["status"] == PASS
+    assert report["label_metric_eligibility"] is False
+    assert report["label_evaluation_state_by_config"]["B0"] == "label_invalid"
+
+
+def test_label_aware_string_zero_label_is_not_positive(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": "0"}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_insufficient"
+    assert summary["label_artifact_metadata"]["positive_count"] == 0
+    assert report["status"] == PASS
+    assert report["label_metric_eligibility"] is False
+
+
+def test_label_aware_unsupported_string_label_becomes_invalid_blocker(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": "maybe"}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_invalid"
+    assert report["status"] == PASS
+    assert report["label_metric_eligibility"] is False
+
+
+def test_label_aware_low_coverage_fixture_marks_label_insufficient(tmp_path: Path) -> None:
+    rows = [
+        {"user_id": "u1", "item_id": "i1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}},
+        {"user_id": "u1", "item_id": "i2", "source": "semantic", "score": 0.9, "rank": 2, "metadata": {"category": "cat"}},
+    ]
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u2", "parent_asin": "i9", "label_binary": 1}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, rows=rows, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_insufficient"
+    assert summary["label_metrics_available"] is False
+    assert summary["label_adjacent_metrics"] == {}
+    assert summary["label_artifact_metadata"]["candidate_coverage"] == 0.0
+    assert summary["label_artifact_metadata"]["user_coverage"] == 0.0
+    assert summary["label_artifact_metadata"]["failed_thresholds"] == [
+        "topk_union_candidate_coverage",
+        "user_label_coverage",
+        "positive_user_coverage",
+    ]
+    assert report["status"] == PASS
+    assert report["label_metric_eligibility"] is False
+
+
+def test_label_aware_eligible_fixture_computes_label_evaluator_metrics(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = _summary_for_config(report)
+    metrics = summary["label_adjacent_metrics"]
+
+    assert summary["label_state"] == "label_comparable"
+    assert summary["label_metrics_available"] is True
+    assert metrics["label_metric_definition_version"] == "pool500_label_metrics_per_user_mean_v1"
+    assert metrics["hit_at_20"] == 1.0
+    assert metrics["ndcg_at_20"] == 1.0
+    assert metrics["mrr_at_20"] == 1.0
+    assert metrics["recall_at_20"] == 1.0
+    assert metrics["eligible_user_count"] == 1
+    assert summary["label_artifact_metadata"]["candidate_coverage"] == 1.0
+
+
+def test_label_aware_partial_union_coverage_marks_label_insufficient_without_stopping_report(tmp_path: Path) -> None:
+    rows = [
+        {"user_id": "u1", "item_id": "i1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}},
+        {"user_id": "u1", "item_id": "i2", "source": "semantic", "score": 0.9, "rank": 2, "metadata": {"category": "cat"}},
+    ]
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, rows=rows, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert report["status"] == PASS
+    assert report["label_metric_eligibility"] is False
+    assert summary["label_state"] == "label_insufficient"
+    assert summary["label_artifact_metadata"]["topk_union_candidate_coverage"] == 0.5
+    assert summary["label_artifact_metadata"]["user_label_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["positive_user_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["failed_thresholds"] == ["topk_union_candidate_coverage"]
+
+
+def test_full_pool_candidate_coverage_is_diagnostic_not_label_gate_denominator(tmp_path: Path) -> None:
+    rows = [
+        {
+            "user_id": "u1",
+            "item_id": f"i{index:02d}",
+            "source": "popular",
+            "score": float(100 - index),
+            "rank": index,
+            "metadata": {"category": "cat"},
+        }
+        for index in range(1, 22)
+    ]
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [
+            {
+                "schema_version": "pool500_label_artifact_v1",
+                "user_id": "u1",
+                "parent_asin": f"i{index:02d}",
+                "label_binary": 1,
+            }
+            for index in range(1, 21)
+        ],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, rows=rows, label_path=label_path)
+    metadata = _summary_for_config(report)["label_artifact_metadata"]
+
+    assert report["label_metric_eligibility"] is True
+    assert _summary_for_config(report)["label_state"] == "label_comparable"
+    assert metadata["topk_union_candidate_coverage"] == 1.0
+    assert metadata["full_pool_candidate_coverage_diagnostic"] == 0.952381
+    assert metadata["failed_thresholds"] == []
+
+
+
+def test_label_aware_metrics_use_per_user_mean_definition(tmp_path: Path) -> None:
+    rows = [
+        {"user_id": "u1", "item_id": "i1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}},
+        {"user_id": "u1", "item_id": "i2", "source": "semantic", "score": 0.9, "rank": 2, "metadata": {"category": "cat"}},
+        {"user_id": "u2", "item_id": "j1", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}},
+        {"user_id": "u2", "item_id": "j2", "source": "semantic", "score": 0.9, "rank": 2, "metadata": {"category": "cat"}},
+    ]
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [
+            {"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 0},
+            {"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i2", "label_binary": 1},
+            {"schema_version": "pool500_label_artifact_v1", "user_id": "u2", "parent_asin": "j1", "label_binary": 1},
+            {"schema_version": "pool500_label_artifact_v1", "user_id": "u2", "parent_asin": "j2", "label_binary": 1},
+        ],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, rows=rows, label_path=label_path)
+    metrics = _summary_for_config(report)["label_adjacent_metrics"]
+
+    assert report["label_metric_definition_version"] == "pool500_label_metrics_per_user_mean_v1"
+    assert report["label_metric_eligibility"] is True
+    assert metrics["eligible_user_count"] == 2
+    assert metrics["hit_at_20"] == 1.0
+    assert metrics["ndcg_at_20"] == 0.815465
+    assert metrics["mrr_at_20"] == 0.75
+    assert metrics["recall_at_20"] == 1.0
+
+
+def test_summary_projection_helper_faithfully_copies_label_authority_fields(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = report["metrics_summary"]
+
+    pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+    assert summary["recommended_diagnostic_config_id"] == report["recommended_diagnostic_config_id"]
+    assert summary["recommendation_scope"] == report["recommendation_scope"]
+    assert summary["promotion_readiness"] == report["promotion_readiness"]
+    assert summary["per_config"]["B0"]["label_state"] == report["comparison_results"]["B0"]["label_state"]
+    assert summary["per_config"]["B0"]["label_artifact_metadata"] == report["comparison_results"]["B0"]["label_artifact_metadata"]
+    assert summary["per_config"]["B0"]["label_adjacent_metrics"] == report["comparison_results"]["B0"]["label_adjacent_metrics"]
+    assert summary["per_config"]["B0"]["blocker_count"] == len(report["comparison_results"]["B0"]["blockers"])
+
+
+def test_summary_projection_rejects_authority_mismatch_and_report_absent_label_fields(tmp_path: Path) -> None:
+    report = _pool500_comparison_report_for_label_fixture(tmp_path)
+    summary = json.loads(json.dumps(report["metrics_summary"]))
+    summary["promotion_readiness"] = "promotion-ready"
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+    summary = json.loads(json.dumps(report["metrics_summary"]))
+    summary["label_metric_eligibility"] = not report["label_metric_eligibility"]
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+    summary = json.loads(json.dumps(report["metrics_summary"]))
+    summary["per_config"]["B0"]["promotion_ready"] = True
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+
+def test_summary_projection_sanitizes_label_metadata_from_report(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    report = json.loads(json.dumps(report))
+    report["comparison_results"]["B0"]["label_artifact_metadata"]["positive_pairs"] = [["u1", "i1"]]
+    report["comparison_results"]["B0"]["label_artifact_metadata"]["ranked_positive_positions"] = {"u1\ti1": 1}
+
+    summary = pool500_shadow_ranking.build_pool500_fixed_ranking_metrics_summary(report)
+
+    assert "positive_pairs" not in summary["per_config"]["B0"]["label_artifact_metadata"]
+    assert "ranked_positive_positions" not in summary["per_config"]["B0"]["label_artifact_metadata"]
+    pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+
+def test_summary_projection_rejects_label_metadata_internal_leak(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = json.loads(json.dumps(report["metrics_summary"]))
+    summary["per_config"]["B0"]["label_artifact_metadata"]["positive_pairs"] = [["u1", "i1"]]
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+
+@pytest.mark.parametrize("forbidden_value", [FULL_POOL500_READY, "promotion-ready", "production-ready"])
+def test_summary_projection_rejects_forbidden_ready_semantics_even_when_matched(tmp_path: Path, forbidden_value: str) -> None:
+    report = _pool500_comparison_report_for_label_fixture(tmp_path)
+    report = json.loads(json.dumps(report))
+    report["label_ineligible_reason"] = forbidden_value
+    summary = json.loads(json.dumps(report["metrics_summary"]))
+    summary["label_ineligible_reason"] = forbidden_value
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+
+@pytest.mark.parametrize("field", ["candidate", "challenger", "champion", "production_ready", "promotion_ready"])
+def test_summary_projection_rejects_forbidden_machine_semantics_in_report(tmp_path: Path, field: str) -> None:
+    report = _pool500_comparison_report_for_label_fixture(tmp_path)
+    report = json.loads(json.dumps(report))
+    report[field] = "R1"
+    summary = json.loads(json.dumps(report["metrics_summary"]))
+
+    with pytest.raises(AssertionError):
+        pool500_shadow_ranking.assert_pool500_summary_projection_matches_report(report, summary)
+
+
+def test_category_high_missing_plus_r1_diagnostic_followup_blocks_promotion_ready(tmp_path: Path) -> None:
+    rows = [
+        {"user_id": "u1", "item_id": "i1", "source": "co_visit_fallback_repair", "score": 1.0, "rank": 1, "metadata": {"fallback_used": True}},
+        {"user_id": "u1", "item_id": "i2", "source": "popular", "score": 0.9, "rank": 2, "metadata": {"category": "cat"}},
+    ]
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, rows=rows, label_evaluator_enabled=False)
+
+    assert report["recommended_diagnostic_config_id"] == "R1"
+    assert report["recommendation_scope"] == "diagnostic_followup_only"
+    assert report["promotion_readiness"] == "not_allowed_in_this_report"
+    assert report["comparison_results"]["R1"]["category_missing_rate"] >= 0.5
+    assert report["comparison_results"]["R1"]["interpretation_label"] == "mechanism_only"
+    assert "production-ready" not in json.dumps(report).lower()
+    assert "promotion-ready" not in json.dumps(report).lower()
+
+
+@pytest.mark.parametrize(
+    "forbidden_payload",
+    [
+        {"source_artifact_gate_result": {"decision": FULL_POOL500_READY}},
+        {"candidate": {"id": "pool500"}},
+        {"challenger": "R1"},
+        {"champion": "B0"},
+        {"production_ready": True},
+        {"promotion_ready": True},
+        {"promotion_readiness": "promotion-ready"},
+    ],
+)
+def test_label_aware_forbidden_semantics_fail_validation(forbidden_payload: dict[str, object]) -> None:
+    evidence = {
+        "schema_version": DIAGNOSTIC_FROZEN_POOL_SCHEMA_VERSION,
+        "input_contract": "frozen_diagnostic_candidate_pool",
+        "pool500_candidates_path": "pool500_candidates.jsonl",
+        "candidate_manifest_path": "manifest.json",
+        "expected_candidate_hash": "a",
+        "computed_candidate_hash": "a",
+        "expected_manifest_hash": "b",
+        "computed_manifest_hash": "b",
+        "user_count": 1,
+        "underfilled_user_count": 0,
+        "source_coverage": {"popular": 1},
+        "category_coverage": {"cat": 1},
+        "multi_source_item_ratio": 0.0,
+        "metadata_missing_rate": 0.0,
+        "category_missing_rate": 0.0,
+        "top_category_ratio": 1.0,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+        "diagnostic_only": True,
+        "not_ranking_input": True,
+        "current_ranking_route_unchanged": True,
+        "promotion_requires_future_plan": True,
+        **forbidden_payload,
+    }
+
+    validation = validate_pool500_diagnostic_frozen_pool_ranking_evidence(evidence)
+
+    assert validation["status"] == STOP
+
+
+def test_label_artifact_discovery_precedence_and_known_output_not_consumed(tmp_path: Path) -> None:
+    explicit_label = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "explicit", "label_binary": 1}],
+        "explicit_labels.jsonl",
+    )
+    manifest_label = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "manifest", "label_binary": 1}],
+        "manifest_labels.jsonl",
+    )
+    _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "known", "label_binary": 1}],
+        "pool500_labels.jsonl",
+    )
+
+    explicit_report = _pool500_comparison_report_for_label_fixture(
+        tmp_path,
+        rows=[{"user_id": "u1", "item_id": "explicit", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}}],
+        manifest_overrides={"label_artifact_path": str(manifest_label)},
+        label_path=explicit_label,
+    )
+    manifest_report = _pool500_comparison_report_for_label_fixture(
+        tmp_path,
+        rows=[{"user_id": "u1", "item_id": "manifest", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}}],
+        manifest_overrides={"label_artifact_path": str(manifest_label)},
+    )
+    known_report = _pool500_comparison_report_for_label_fixture(
+        tmp_path,
+        rows=[{"user_id": "u1", "item_id": "known", "source": "popular", "score": 1.0, "rank": 1, "metadata": {"category": "cat"}}],
+    )
+
+    assert _summary_for_config(explicit_report)["label_artifact_metadata"]["path"] == str(explicit_label)
+    assert _summary_for_config(explicit_report)["label_state"] == "label_comparable"
+    assert _summary_for_config(manifest_report)["label_artifact_metadata"]["path"] == str(manifest_label)
+    assert _summary_for_config(manifest_report)["label_state"] == "label_comparable"
+    assert _summary_for_config(known_report)["label_state"] == "pending_label"
+    assert _summary_for_config(known_report)["label_metrics_available"] is False
+    assert _summary_for_config(known_report)["label_adjacent_metrics"] == {}
+
+
+def test_label_artifact_manifest_nested_path_reaches_comparable_state(tmp_path: Path) -> None:
+    manifest_label = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+        "manifest_nested_labels.jsonl",
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(
+        tmp_path,
+        manifest_overrides={"label_artifact": {"path": manifest_label.name}},
+    )
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_comparable"
+    assert summary["label_artifact_metadata"]["path"] == str(manifest_label)
+    assert summary["label_artifact_metadata"]["candidate_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["user_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["positive_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["join_key"] == "user_id,parent_asin"
+    assert report["metrics_summary"]["per_config"]["B0"]["label_state"] == "label_comparable"
+
+
+def test_label_artifact_item_id_join_key_is_comparable_with_positive_coverage(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "item_id": "i1", "rating": 5}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_comparable"
+    assert summary["label_metrics_available"] is True
+    assert summary["label_artifact_metadata"]["join_key"] == "user_id,item_id"
+    assert summary["label_artifact_metadata"]["candidate_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["positive_coverage"] == 1.0
+    assert summary["label_adjacent_metrics"]["label_positive_count"] == 1
+    assert summary["label_adjacent_metrics"]["hit_at_20"] == 1.0
+
+
+def test_label_artifact_zero_positive_coverage_is_not_comparable(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 0}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    summary = _summary_for_config(report)
+
+    assert summary["label_state"] == "label_insufficient"
+    assert summary["label_metrics_available"] is False
+    assert summary["label_adjacent_metrics"] == {}
+    assert summary["label_artifact_metadata"]["candidate_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["user_coverage"] == 1.0
+    assert summary["label_artifact_metadata"]["positive_coverage"] == 0.0
+
+
+def test_label_aware_report_never_emits_readiness_or_formal_ready_semantics(tmp_path: Path) -> None:
+    label_path = _write_label_artifact_fixture(
+        tmp_path,
+        [{"schema_version": "pool500_label_artifact_v1", "user_id": "u1", "parent_asin": "i1", "label_binary": 1}],
+    )
+
+    report = _pool500_comparison_report_for_label_fixture(tmp_path, label_path=label_path)
+    serialized = json.dumps(report)
+
+    assert report["promotion_readiness"] == "not_allowed_in_this_report"
+    assert report["promotion_allowed"] is False
+    assert report["ranking_input_replacement_allowed"] is False
+    assert report["ranking_replacement_allowed"] is False
+    assert "FULL_POOL500_READY" not in serialized
+    assert "promotion-ready" not in serialized.lower()
+    assert "production-ready" not in serialized.lower()
+    assert "FULL_POOL500_READY" not in report["promotion_readiness"]
+
+
+def test_run_pool500_shadow_ranking_has_no_formal_full_pool500_ready_path_usage() -> None:
+    source = inspect.getsource(run_pool500_shadow_ranking)
+
+    assert "FULL_POOL500_READY" not in source

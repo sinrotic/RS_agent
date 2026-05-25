@@ -59,3 +59,40 @@
 
 ## 专项优化 Agent 调用说明
 后续单独调用 Agent 优化本方法时，目标应是围绕 `heavy_cf_eligible` 用户扩展 strong ItemCF 的高置信 item-pair 数据集，重点比较 strong/weak 的精度、覆盖、重复率和资源成本。Agent 必须保留 batch/guard/memory limit，并输出 source index manifest、resource audit 和诊断候选 manifest；不得因为 strong 边更可信就跳过诊断门槛或直接宣称可晋升状态。
+
+## P2 method_dataset 数据清洗与筛选方案
+
+- 数据来源：只读取 `governance_train_only` 的用户质量、item 质量、train item frequency 与 `user_sequences.train.jsonl`。
+- 筛选单位：`user_positive_sequence_to_item_pairs`。先保留高质量用户序列，再构造高置信 item-pair。
+- 适用桶：用户桶 `collaborative_rich`；item 侧使用 `cf_ready`。
+- 清洗规则：过滤弱行为用户、非 `cf_ready` item、过热 item 的过量边；优先短窗口/强支持 pair，不让单次偶然共现进入 strong 主路。
+- 规模参数：`max_output_users=200000`、`max_items_per_user=50`、`max_item_user_freq=3000`、`min_pair_support=2`。
+
+## P2 method_dataset 特征与打分口径
+
+- builder 新增 `weighted_cooc`、`supporting_user_count`、`score_policy`、`itemcf_score_formula`、`active_user_penalty_policy`。
+- `itemcf_score = round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)`。
+- `active_user_penalty_policy` 是效果导向抑制超活跃用户和长序列随机共现，不是流程优化。
+- 这里记录的是 `method_dataset` / diagnostic evidence，不是 source/candidate/ranking/promotion 替换口径。
+
+### 规模档位
+
+| 档位 | max_output_users | max_items_per_user | max_item_user_freq | min_pair_support |
+| --- | ---: | ---: | ---: | ---: |
+| smoke | 1000 | 50 | 3000 | 2 |
+| diagnostic | 80000 | 50 | 3000 | 2 |
+| local_formal | 200000 | 50 | 3000 | 2 |
+
+- 泄漏边界：不读取 valid/test/holdout/LOPO/eval_label/oracle，不用诊断命中结果反向筛边，不声明 READY、promotion、ranking input replacement 或 pool1000。
+- 维护检查：strong 必须比 weak 更严格；修改后同步检查 registry、builder manifest、测试中的 `itemcf_strong_edges_v1`。
+
+## P2 smoke method_dataset 构建验证（2026-05-25）
+
+- 构建命令：`.venv/Scripts/python.exe -m rs_lab.experiments.recall.build_pool500_method_dataset --governance-manifest outputs/recall/data_governance/train_only_v1_smoke/manifest.json --source-method itemcf_strong --scale-tier smoke --output-root outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1 --overwrite`
+- 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1/itemcf_strong/`
+- manifest：`method_dataset_manifest.json`，`status=PASS`，`schema_name=itemcf_edge_features_v1`，上游 governance 为 `train_only_v1_smoke`。
+- strong smoke 参数：`max_output_users=1000`、`max_items_per_user=50`、`max_item_user_freq=3000`、`min_pair_support=2`、`top_k_per_seed=100`；该口径比 weak smoke 的 `max_item_user_freq=5000`、`min_pair_support=1` 更严格。
+- 规模统计：`row_count=0`、`user_count=0`、`item_count=0`、`unique_pair_count=0`、`edge_count=0`、`directed_edge_count_after_topk=0`。
+- dropped reason：`user_bucket_not_allowed=18103383`、`insufficient_pair_items=1`、`pair_below_min_support=0`、`item_over_hot=1461`、`item_not_cf_ready=2317958`。
+- 特征摘要：`weighted_cooc`、`supporting_user_count` 已进入 builder；`score_formula=round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)`；排序策略为 `source_method + src_item_id` 内按 `itemcf_score desc, cooc_cnt desc, dst_item_id asc`；`top_k_per_seed=100`。
+- 验证说明：audit validator 已改为读取 method manifest 的 `upstream_governance_manifest_path`，不再硬编码 default `train_only_v1`；当前 weighted smoke 仍为空，strong 只能作为构建链路验证证据，不能声明召回覆盖提升或下游晋升。

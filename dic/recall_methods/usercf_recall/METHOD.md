@@ -54,3 +54,22 @@ heavy28 侧车已经证明：在真实 high-quality 用户索引上，UserCF 可
 
 ## 专项优化 Agent 调用说明
 后续单独调用 Agent 优化本方法时，目标应继续围绕 `heavy_cf_eligible` 用户构建可分批、可恢复、带内存 guard 的 UserCF 诊断数据集，并输出 source index manifest、readiness contract、resource audit 和 per-source candidate manifest。Agent 不应对低行为用户强行跑全用户矩阵，也不得把 `DIAGNOSTIC_ONLY` 产物晋升为 READY、ranking input replacement 或 pool1000 依据。
+
+## P2 method_dataset 数据清洗与筛选方案
+
+- 数据来源：只读取 `governance_train_only` 的用户质量、item 质量、train item frequency 与 `user_sequences.train.jsonl`。
+- 筛选单位：`connected_user_item_subgraph`。围绕可形成相似邻居的用户-item 子图筛选，不独立随机抽 user/item。
+- 适用桶：用户桶 `sequence_sufficient`、`collaborative_rich`。
+- 清洗规则：过滤序列过短、无法形成共享 item 邻居、仅由过热 item 连接的用户边；记录 orphan/fallback 用户数量，避免静默混入无邻居用户。
+- 规模参数：`max_output_users=120000`、`max_items_per_user=80`、`max_item_user_freq=5000`、`similar_users_top_k=200`。
+
+### 规模档位
+
+| 档位 | max_output_users | max_items_per_user | max_item_user_freq | similar_users_top_k |
+| --- | ---: | ---: | ---: | ---: |
+| smoke | 1000 | 80 | 5000 | 50 |
+| diagnostic | 60000 | 80 | 5000 | 100 |
+| local_formal | 120000 | 80 | 5000 | 200 |
+
+- 泄漏边界：相似用户和共享 item 只从 train-only 行为构造，不读取 valid/test/holdout/LOPO/eval_label/oracle，不声明 READY、promotion、ranking input replacement 或 pool1000。
+- 维护检查：修改 shard 或邻居阈值时同步检查 graph 连通率、hot item influence control、`usercf_neighbors_v1` registry/builder/test 一致性。

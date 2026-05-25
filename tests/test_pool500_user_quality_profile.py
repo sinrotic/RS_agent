@@ -110,12 +110,27 @@ def test_user_quality_profile_writes_manifest_schema_and_summary(tmp_path: Path)
     assert manifest["ranking_input_replacement_allowed"] is False
     assert manifest["pool1000_allowed"] is False
     assert manifest["final_pool500_ready_claimed"] is False
+    assert manifest["profile_universe_scope"] == "first_n_train_users"
+    assert manifest["profiled_user_count"] == 6
+    assert manifest["profile_source_rows_scanned"] == 6
+    assert manifest["first_profiled_user_id"] == "heavy"
+    assert manifest["last_profiled_user_id"] == "fallback"
+    assert len(manifest["profiled_user_ids_sha256"]) == 64
+    assert "category_count_min" not in manifest["bucket_thresholds"]["heavy_cf_eligible"]
+    assert "category_count_min" not in manifest["bucket_thresholds"]["medium_behavior"]
     assert set(manifest["required_profile_fields"]) <= set(manifest["profiles"][0])
     assert summary["bucket_counts"] == {"heavy_cf_eligible": 1, "medium_behavior": 1, "fallback_only": 4}
     assert summary["eligible_counts"] == {"usercf": 1, "itemcf": 2, "swing": 2, "fallback_only": 4}
     assert resource_audit["uses_valid"] is False
     assert resource_audit["uses_test"] is False
     assert resource_audit["uses_holdout"] is False
+    assert resource_audit["profile_universe_scope"] == "first_n_train_users"
+    assert resource_audit["profile_source_rows_scanned"] == 6
+    assert resource_audit["runtime_seconds"] >= 0
+    assert resource_audit["memory_rss_start_mb"] >= 0
+    assert resource_audit["memory_rss_end_mb"] >= 0
+    assert resource_audit["memory_peak_rss_mb"] >= 0
+    assert resource_audit["memory_target_status"] in {"PASS", "FAIL", "UNMEASURED"}
 
 
 def test_user_quality_bucket_rules_and_eligibility(tmp_path: Path) -> None:
@@ -131,10 +146,12 @@ def test_user_quality_bucket_rules_and_eligibility(tmp_path: Path) -> None:
 
     profiles = {profile["user_id"]: profile for profile in manifest["profiles"]}
     assert profiles["heavy"]["quality_bucket"] == "heavy_cf_eligible"
+    assert profiles["heavy"]["shared_item_neighbor_count"] == 1
     assert profiles["heavy"]["eligible_for_usercf"] is True
     assert profiles["heavy"]["eligible_for_itemcf"] is True
     assert profiles["heavy"]["eligible_for_swing"] is True
     assert profiles["heavy"]["fallback_only"] is False
+    assert profiles["neighbor_a"]["shared_item_neighbor_count"] == 1
     assert profiles["medium"]["quality_bucket"] == "medium_behavior"
     assert profiles["medium"]["eligible_for_usercf"] is False
     assert profiles["medium"]["eligible_for_itemcf"] is True

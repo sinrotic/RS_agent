@@ -94,11 +94,11 @@ def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[Reca
     candidate_path = outputs.get("candidates")
     input_paths = shard_paths or ([candidate_path] if candidate_path else [])
     by_user: dict[str, list[RecallCandidate]] = defaultdict(list)
+    total_row_count = 0
     for input_path in input_paths:
         resolved_path = _resolve_manifest_path(manifest_path, input_path)
-        row_count = 0
         for line_number, row in enumerate(iter_jsonl(resolved_path), start=1):
-            row_count += 1
+            total_row_count += 1
             user_id = str(row.get("user_id") or "")
             if not user_id:
                 raise ValueError(f"missing user_id in usercf_recall row {line_number}: {input_path}")
@@ -111,8 +111,8 @@ def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[Reca
                 _append_usercf_candidate(by_user, user_id, row, manifest_path, input_path, line_number)
                 continue
             raise ValueError(f"missing candidates or item_id in usercf_recall row {line_number}: {input_path}")
-        if row_count == 0:
-            raise ValueError(f"empty usercf_recall candidate file: {input_path}")
+    if total_row_count == 0:
+        raise ValueError(f"empty usercf_recall candidate inputs: {input_paths}")
     for rows in by_user.values():
         rows.sort(key=lambda item: (-item.score, item.item_id))
     return by_user

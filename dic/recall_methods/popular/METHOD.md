@@ -37,3 +37,24 @@
 
 ## 专项优化 Agent 调用说明
 后续单独调用 Agent 优化本方法时，目标应是控制 popular fallback 的预算占比、重复率和长尾挤占风险，而不是建设定制高质量用户数据集。Agent 必须保持 `default_dataset_policy`，只使用 train-only popularity / metadata 统计，不得把 popular 兜底覆盖解释为 pool500 final ready、ranking input replacement 或 pool1000 权限。
+
+## P2 数据统计与输出控制方案
+
+- 数据来源：允许扫描 full train-only popularity statistics；Popular 是允许 no input cap 的轻量统计方法。
+- 筛选单位：`global_train_popularity`。不构造 user-user、item-item pair，不训练 embedding/graph 模型。
+- 清洗规则：只统计 train-only 可用 item，过滤不可用/下架/缺失 item id 的商品；不使用用户评估命中或 label 信息调热门顺序。
+- 规模口径：输入不做人为缩减；资源边界由 streaming item counter 与 distinct train items 决定。
+
+### 规模档位
+
+Popular 在三个档位都不设置输入 cap；档位只约束输出/评估批量范围。
+
+| 档位 | input_size_cap_required | batch_user_limit |
+| --- | --- | --- |
+| smoke | false | 500 |
+| diagnostic | false | 5000 |
+| local_formal | false | full_pool500_scope |
+
+- 输出控制：通过 `popular_per_user_cap`、source share cap、去重和 fallback 顺序控制最终占比。
+- 泄漏边界：不读取 valid/test/holdout/LOPO/eval_label/oracle，不声明 final pool500 ready、promotion、ranking input replacement 或 pool1000。
+- 维护检查：registry 中 Popular 必须保持 `uses_full_train_statistics=true`、`input_size_cap_required=false`；只有 Popular/Category 可使用该口径。

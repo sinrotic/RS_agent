@@ -6,6 +6,7 @@ import json
 import math
 import shutil
 import sys
+import threading
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from itertools import combinations
@@ -102,7 +103,7 @@ def build_full_train_itemcf_sidecar(
     output_dir.mkdir(parents=True, exist_ok=False)
 
     disk_free_start = shutil.disk_usage(_existing_ancestor(output_dir.parent)).free
-    peak_rss_mb = _peak_rss_mb()
+    memory_sampler = _MemorySampler().start()
     label_variant = SOURCES[source]
     edges_path = output_dir / f"{source}_edges.jsonl"
     build_stats = _build_itemcf_edges(
@@ -116,7 +117,12 @@ def build_full_train_itemcf_sidecar(
         target_user_limit=target_user_limit,
         eligible_user_ids=quality_policy["eligible_user_ids"],
         quality_bucket_by_user=quality_policy["quality_bucket_by_user"],
+        profile_source_rows_scanned=quality_policy["profile_source_rows_scanned"],
     )
+    runtime_seconds = round(perf_counter() - started, 6)
+    memory_fields = memory_sampler.stop()
+    peak_rss_mb = memory_fields["memory_peak_rss_mb"]
+    peak_rss_mb_end = memory_fields["memory_rss_end_mb"]
     diagnostic_only = target_user_limit > 0 or user_quality_manifest_path is not None
     readiness_status = "DIAGNOSTIC_ONLY" if diagnostic_only else "READY"
     output_status = "DIAGNOSTIC_OUTPUT_READY" if diagnostic_only else "FULL_OUTPUT_READY"
@@ -135,6 +141,12 @@ def build_full_train_itemcf_sidecar(
         "diagnostic_only": diagnostic_only,
         "user_quality_policy": quality_policy["policy_name"],
         "user_quality_manifest_path": str(user_quality_manifest_path) if user_quality_manifest_path else None,
+        "eligible_buckets": quality_policy["eligible_buckets"],
+        "profile_boundary": quality_policy["profile_boundary"],
+        "runtime_seconds": runtime_seconds,
+        "peak_rss_mb": peak_rss_mb,
+        "peak_rss_mb_end": peak_rss_mb_end,
+        **memory_fields,
         "source_clean_dir": str(clean_dir),
         "train_user_sequences_path": str(train_sequences_path),
         "edges_path": str(edges_path),
@@ -159,7 +171,22 @@ def build_full_train_itemcf_sidecar(
             "top_k_per_seed": top_k_per_seed,
             "target_user_limit": target_user_limit,
             "user_quality_policy": quality_policy["policy_name"],
+            "user_quality_manifest_path": str(user_quality_manifest_path) if user_quality_manifest_path else None,
+            "eligible_buckets": quality_policy["eligible_buckets"],
         },
+        "user_quality_manifest_path": str(user_quality_manifest_path) if user_quality_manifest_path else None,
+        "eligible_buckets": quality_policy["eligible_buckets"],
+        "actual_train_user_count": build_stats["actual_train_user_count"],
+        "users_with_source_items": build_stats["users_with_source_items"],
+        "users_scanned_within_profile": build_stats["users_scanned_within_profile"],
+        "users_filtered_by_quality": build_stats["users_filtered_by_quality"],
+        "used_quality_bucket_counts": build_stats["used_quality_bucket_counts"],
+        "edge_count": build_stats["rows_written"],
+        "unique_item_count_after_hot_cap": build_stats["unique_item_count_after_hot_cap"],
+        "runtime_seconds": runtime_seconds,
+        "peak_rss_mb": peak_rss_mb,
+        "peak_rss_mb_end": peak_rss_mb_end,
+        **memory_fields,
         "allowed_inputs": [str(train_sequences_path)] + ([str(user_quality_manifest_path)] if user_quality_manifest_path else []),
         "forbidden_inputs": [str(clean_dir / name) for name in FORBIDDEN_INPUT_NAMES],
     }
@@ -179,7 +206,17 @@ def build_full_train_itemcf_sidecar(
         "user_quality_policy": quality_policy["policy_name"],
         "eligible_user_count": len(quality_policy["eligible_user_ids"]) if quality_policy["eligible_user_ids"] is not None else None,
         "peak_rss_mb": peak_rss_mb,
+        "peak_rss_mb_end": peak_rss_mb_end,
+        "runtime_seconds": runtime_seconds,
+        **memory_fields,
+        "eligible_buckets": quality_policy["eligible_buckets"],
+        "actual_train_user_count": build_stats["actual_train_user_count"],
         "users_scanned": build_stats["users_scanned"],
+        "users_scanned_within_profile": build_stats["users_scanned_within_profile"],
+        "users_filtered_by_quality": build_stats["users_filtered_by_quality"],
+        "used_quality_bucket_counts": build_stats["used_quality_bucket_counts"],
+        "users_with_source_items": build_stats["users_with_source_items"],
+        "edge_count": build_stats["rows_written"],
         "users_used": build_stats["users_used"],
         "unique_item_count_before_hot_cap": build_stats["unique_item_count_before_hot_cap"],
         "unique_item_count_after_hot_cap": build_stats["unique_item_count_after_hot_cap"],
@@ -216,9 +253,13 @@ def build_full_train_itemcf_sidecar(
         user_quality_manifest_path=user_quality_manifest_path,
         consumer_user_limit=consumer_user_limit,
         max_items_per_user=max_items_per_user,
+        runtime_seconds=runtime_seconds,
+        peak_rss_mb=peak_rss_mb,
+        peak_rss_mb_end=peak_rss_mb_end,
+        memory_fields=memory_fields,
     )
     source_index_manifest.update(coverage_artifacts["source_index_fields"])
-    candidate_manifest = _candidate_manifest(source, output_dir, edges_path, build_stats, quality_policy, diagnostic_only, peak_rss_mb)
+    candidate_manifest = _candidate_manifest(source, output_dir, edges_path, build_stats, quality_policy, diagnostic_only, peak_rss_mb, peak_rss_mb_end, runtime_seconds, user_quality_manifest_path, memory_fields)
     comparison = _weak_strong_comparison(source, build_stats, quality_policy, diagnostic_only, peak_rss_mb)
     write_json(output_dir / "source_index_manifest.json", source_index_manifest)
     write_json(output_dir / "custom_index_selection_manifest.json", custom_index_selection_manifest)
@@ -241,7 +282,7 @@ def build_full_train_itemcf_sidecar(
         "schema_version": SCHEMA_VERSION,
         "status": "PASS",
         "generated_at": datetime.now(timezone.utc).isoformat(),
-        "runtime_seconds": round(perf_counter() - started, 6),
+        "runtime_seconds": runtime_seconds,
         "source": source,
         "label_variant": label_variant,
         "index_scope": "FULL_DERIVED_INDEX",
@@ -253,9 +294,13 @@ def build_full_train_itemcf_sidecar(
         "diagnostic_only": diagnostic_only,
         "user_quality_policy": quality_policy["policy_name"],
         "user_quality_manifest_path": str(user_quality_manifest_path) if user_quality_manifest_path else None,
+        "eligible_buckets": quality_policy["eligible_buckets"],
+        "profile_boundary": quality_policy["profile_boundary"],
         "project_venv_required": enforce_venv,
         "output_dir": str(output_dir),
         "peak_rss_mb": peak_rss_mb,
+        "peak_rss_mb_end": peak_rss_mb_end,
+        **memory_fields,
         "required_artifacts": {
             "edges": str(edges_path),
             "source_index_manifest": str(output_dir / "source_index_manifest.json"),
@@ -303,7 +348,12 @@ def _build_coverage_artifacts(
     user_quality_manifest_path: Path | None,
     consumer_user_limit: int,
     max_items_per_user: int,
+    runtime_seconds: float | None = None,
+    peak_rss_mb: float | None = None,
+    peak_rss_mb_end: float | None = None,
+    memory_fields: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
+    memory_fields = memory_fields or {}
     canonical_items_path = clean_dir / "canonical_items.jsonl"
     consumer_sequences = _load_consumer_sequences(train_sequences_path, consumer_user_limit)
     consumer_user_ids = [str(row["user_id"]) for row in consumer_sequences]
@@ -412,6 +462,19 @@ def _build_coverage_artifacts(
         "quality_builder_sidecar_required_for_policy_satisfaction": source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar",
         "quality_builder_sidecar_path": None if source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar" else str(output_dir),
         "selection_scope": "legacy_unfiltered_index_builder" if source_artifact_user_quality_policy == "unfiltered_legacy_itemcf_sidecar" else "index_builder_only",
+        "user_quality_manifest_path": str(user_quality_manifest_path) if user_quality_manifest_path else None,
+        "eligible_buckets": quality_policy["eligible_buckets"],
+        "target_user_limit": build_stats.get("target_user_limit"),
+        "actual_train_user_count": build_stats.get("actual_train_user_count"),
+        "users_with_source_items": build_stats["users_with_source_items"],
+        "users_scanned_within_profile": build_stats.get("users_scanned_within_profile"),
+        "users_filtered_by_quality": build_stats.get("users_filtered_by_quality"),
+        "used_quality_bucket_counts": build_stats["used_quality_bucket_counts"],
+        "unique_item_count_after_hot_cap": build_stats.get("unique_item_count_after_hot_cap"),
+        "runtime_seconds": runtime_seconds,
+        "peak_rss_mb": peak_rss_mb,
+        "peak_rss_mb_end": peak_rss_mb_end,
+        **memory_fields,
         "does_not_define_consumer_universe": True,
         "consumer_user_manifest_path": str(consumer_manifest_path),
         "consumer_coverage_audit_path": str(coverage_audit_path),
@@ -485,11 +548,7 @@ def _load_canonical_item_universe(canonical_items_path: Path) -> set[str]:
 
 
 def _custom_dataset_manifest_path(output_dir: Path, source: str) -> Path:
-    try:
-        output_dir.resolve().relative_to(ROOT.resolve())
-    except ValueError:
-        return output_dir / f"{source}_custom_dataset_manifest.json"
-    return ROOT / "configs" / "recall" / "full_data_pool500" / f"{source}_custom_dataset_manifest.json"
+    return output_dir / f"{source}_custom_dataset_manifest.json"
 
 
 def augment_existing_itemcf_manifest(
@@ -570,29 +629,35 @@ def _build_itemcf_edges(
     target_user_limit: int,
     eligible_user_ids: set[str] | None,
     quality_bucket_by_user: dict[str, str],
+    profile_source_rows_scanned: int | None,
 ) -> dict[str, Any]:
     sequences: list[list[str]] = []
     item_user_count: Counter[str] = Counter()
     users_scanned = 0
+    users_scanned_within_profile = 0
     users_filtered_by_quality = 0
     used_quality_buckets: Counter[str] = Counter()
 
     for record in iter_jsonl(user_sequences_path):
+        if profile_source_rows_scanned is not None and users_scanned >= profile_source_rows_scanned:
+            break
         users_scanned += 1
+        users_scanned_within_profile += 1
         user_id = str(record.get("user_id", ""))
-        if eligible_user_ids is not None and user_id not in eligible_user_ids:
-            users_filtered_by_quality += 1
-            continue
-        used_quality_buckets.update([quality_bucket_by_user.get(user_id, "unprofiled")])
         items = record.get(label_variant, [])
         if not isinstance(items, list):
             continue
         unique_items = unique_recent_items(items, max_items_per_user)
-        if unique_items:
-            item_user_count.update(unique_items)
-            sequences.append(unique_items)
-            if target_user_limit and len(sequences) >= target_user_limit:
-                break
+        if not unique_items:
+            continue
+        if eligible_user_ids is not None and user_id not in eligible_user_ids:
+            users_filtered_by_quality += 1
+            continue
+        used_quality_buckets.update([quality_bucket_by_user.get(user_id, "unprofiled")])
+        item_user_count.update(unique_items)
+        sequences.append(unique_items)
+        if target_user_limit and len(sequences) >= target_user_limit:
+            break
 
     hot_items = {item for item, count in item_user_count.items() if count > max_item_user_freq}
     capped_item_user_count = Counter({item: count for item, count in item_user_count.items() if item not in hot_items})
@@ -640,9 +705,12 @@ def _build_itemcf_edges(
 
     return {
         "output_path": str(output_path),
+        "actual_train_user_count": len(sequences),
         "users_scanned": users_scanned,
+        "users_scanned_within_profile": users_scanned_within_profile,
         "users_filtered_by_quality": users_filtered_by_quality,
         "users_with_source_items": len(sequences),
+        "edge_count": rows_written,
         "target_user_limit": target_user_limit,
         "used_quality_bucket_counts": dict(sorted(used_quality_buckets.items())),
         "users_used": users_used,
@@ -664,11 +732,26 @@ def _load_user_quality_policy(user_quality_manifest_path: Path | None, source: s
             "eligible_user_ids": None,
             "quality_bucket_by_user": {},
             "profiled_user_count": None,
+            "profile_source_rows_scanned": None,
+            "profile_boundary": None,
         }
     manifest = read_json(user_quality_manifest_path)
     profiles = manifest.get("profiles", [])
     if not isinstance(profiles, list):
         raise ValueError("user_quality manifest must contain a profiles list")
+    profile_user_ids = [str(profile.get("user_id", "")) for profile in profiles if isinstance(profile, dict) and profile.get("user_id")]
+    profiled_user_count = _required_int(manifest, "profiled_user_count")
+    profile_source_rows_scanned = _required_int(manifest, "profile_source_rows_scanned")
+    first_profiled_user_id = str(manifest.get("first_profiled_user_id") or "")
+    last_profiled_user_id = str(manifest.get("last_profiled_user_id") or "")
+    profiled_user_ids_sha256 = str(manifest.get("profiled_user_ids_sha256") or "")
+    profile_universe_scope = str(manifest.get("profile_universe_scope") or "")
+    if profiled_user_count != len(profile_user_ids):
+        raise ValueError("user_quality profiled_user_count does not match profiles")
+    if profile_user_ids and (profile_user_ids[0] != first_profiled_user_id or profile_user_ids[-1] != last_profiled_user_id):
+        raise ValueError("user_quality first/last profiled user boundary does not match profiles")
+    if profiled_user_ids_sha256 != _user_ids_sha256(profile_user_ids):
+        raise ValueError("user_quality profiled_user_ids_sha256 does not match profiles")
     eligible_buckets = SOURCE_USER_QUALITY_POLICIES[source]
     eligible_user_ids: set[str] = set()
     quality_bucket_by_user: dict[str, str] = {}
@@ -688,11 +771,44 @@ def _load_user_quality_policy(user_quality_manifest_path: Path | None, source: s
         "eligible_buckets": sorted(eligible_buckets),
         "eligible_user_ids": eligible_user_ids,
         "quality_bucket_by_user": quality_bucket_by_user,
-        "profiled_user_count": len(quality_bucket_by_user),
+        "profiled_user_count": profiled_user_count,
+        "profile_source_rows_scanned": profile_source_rows_scanned,
+        "profile_boundary": {
+            "profiled_user_count": profiled_user_count,
+            "profile_source_rows_scanned": profile_source_rows_scanned,
+            "first_profiled_user_id": first_profiled_user_id,
+            "last_profiled_user_id": last_profiled_user_id,
+            "profiled_user_ids_sha256": profiled_user_ids_sha256,
+            "profile_universe_scope": profile_universe_scope,
+        },
     }
 
 
-def _candidate_manifest(source: str, output_dir: Path, edges_path: Path, build_stats: dict[str, Any], quality_policy: dict[str, Any], diagnostic_only: bool, peak_rss_mb: float) -> dict[str, Any]:
+def _required_int(manifest: dict[str, Any], field: str) -> int:
+    value = manifest.get(field)
+    if not isinstance(value, int):
+        raise ValueError(f"user_quality manifest must contain integer {field}")
+    return value
+
+
+def _user_ids_sha256(user_ids: list[str]) -> str:
+    return hashlib.sha256("\n".join(user_ids).encode("utf-8")).hexdigest()
+
+
+def _candidate_manifest(
+    source: str,
+    output_dir: Path,
+    edges_path: Path,
+    build_stats: dict[str, Any],
+    quality_policy: dict[str, Any],
+    diagnostic_only: bool,
+    peak_rss_mb: float,
+    peak_rss_mb_end: float,
+    runtime_seconds: float,
+    user_quality_manifest_path: Path | None,
+    memory_fields: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    memory_fields = memory_fields or {}
     return {
         "schema_version": f"{SCHEMA_VERSION}.per_source_candidate_manifest",
         "status": "PASS",
@@ -710,19 +826,29 @@ def _candidate_manifest(source: str, output_dir: Path, edges_path: Path, build_s
         "source_index_manifest_path": str(output_dir / "source_index_manifest.json"),
         "readiness_contract_path": str(output_dir / "readiness_contract.json"),
         "user_quality_policy": quality_policy["policy_name"],
+        "user_quality_manifest_path": str(user_quality_manifest_path) if user_quality_manifest_path else None,
+        "eligible_buckets": quality_policy["eligible_buckets"],
         "eligible_quality_buckets": quality_policy["eligible_buckets"],
+        "target_user_limit": build_stats["target_user_limit"],
+        "actual_train_user_count": build_stats["actual_train_user_count"],
         "profiled_user_count": quality_policy["profiled_user_count"],
         "users_scanned": build_stats["users_scanned"],
+        "users_scanned_within_profile": build_stats["users_scanned_within_profile"],
         "users_filtered_by_quality": build_stats["users_filtered_by_quality"],
+        "used_quality_bucket_counts": build_stats["used_quality_bucket_counts"],
         "users_with_source_items": build_stats["users_with_source_items"],
         "edge_count": build_stats["rows_written"],
         "candidate_user_count": build_stats["users_with_source_items"],
         "candidate_total_count": build_stats["rows_written"],
         "unique_item_count": build_stats["unique_item_count_after_hot_cap"],
+        "unique_item_count_after_hot_cap": build_stats["unique_item_count_after_hot_cap"],
         "duplicate_overlap": 0,
         "marginal_candidate_share": 1.0 if build_stats["rows_written"] else 0.0,
         "underfilled_user_coverage": 1.0 if build_stats["users_with_source_items"] else 0.0,
+        "runtime_seconds": runtime_seconds,
         "peak_rss_mb": peak_rss_mb,
+        "peak_rss_mb_end": peak_rss_mb_end,
+        **memory_fields,
         "rows_written": build_stats["rows_written"],
     }
 
@@ -867,6 +993,51 @@ def _file_signature(path: Path) -> dict[str, Any]:
         "row_count": rows,
         "sha256": digest.hexdigest(),
     }
+
+
+class _MemorySampler:
+    def __init__(self) -> None:
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self._start_mb = 0.0
+        self._end_mb = 0.0
+        self._peak_mb = 0.0
+
+    def start(self) -> "_MemorySampler":
+        self._start_mb = _peak_rss_mb()
+        self._peak_mb = self._start_mb
+        if self._start_mb:
+            self._thread = threading.Thread(target=self._sample, daemon=True)
+            self._thread.start()
+        return self
+
+    def stop(self) -> dict[str, Any]:
+        self._end_mb = _peak_rss_mb()
+        if self._end_mb > self._peak_mb:
+            self._peak_mb = self._end_mb
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=1)
+        if not self._peak_mb:
+            status = "UNMEASURED"
+            measurement = "fallback_not_authoritative_for_os_rss"
+        else:
+            status = "PASS" if self._peak_mb <= 400 else "FAIL"
+            measurement = "sampled_process_rss_peak"
+        return {
+            "memory_rss_start_mb": self._start_mb,
+            "memory_rss_end_mb": self._end_mb,
+            "memory_peak_rss_mb": self._peak_mb,
+            "memory_target_mb": 400,
+            "memory_target_status": status,
+            "memory_peak_measurement": measurement,
+        }
+
+    def _sample(self) -> None:
+        while not self._stop.wait(0.05):
+            current = _peak_rss_mb()
+            if current > self._peak_mb:
+                self._peak_mb = current
 
 
 def _peak_rss_mb() -> float:

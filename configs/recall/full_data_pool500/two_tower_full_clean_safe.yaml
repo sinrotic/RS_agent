@@ -7,6 +7,7 @@
   "evaluation_mode": "train_only",
   "candidate_pool_size": 500,
   "index_scope": "FULL_DERIVED_INDEX",
+  "two_tower_item_vocab_manifest_path": "outputs/recall/pool500_full_sources/two_tower/item_vocab/two_tower_item_vocab_manifest.json",
   "required_artifact_manifest_fields": [
     "clean_manifest_sha256",
     "train_sequence_sha256",

@@ -6,9 +6,15 @@ import json
 import math
 import re
 import shutil
+import sys
+from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[6]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 import yaml
 
@@ -34,6 +40,8 @@ def build_co_visit_fallback_repair_source(
     candidate_per_user: int = 120,
     candidate_per_seed: int = 40,
     seed_window: int = 30,
+    transition_window: int = 5,
+    transition_per_seed: int = 200,
     checkpoint_every_users: int = 50,
     overwrite: bool = False,
 ) -> dict[str, Any]:
@@ -43,6 +51,8 @@ def build_co_visit_fallback_repair_source(
     candidate_per_user = int(method_config.get("candidate_per_user", candidate_per_user))
     candidate_per_seed = int(method_config.get("candidate_per_seed", candidate_per_seed))
     seed_window = int(method_config.get("seed_window", seed_window))
+    transition_window = int(method_config.get("transition_window", transition_window))
+    transition_per_seed = int(method_config.get("transition_per_seed", transition_per_seed))
     checkpoint_every_users = int(method_config.get("checkpoint_every_users", checkpoint_every_users))
 
     output_root = output_root if output_root.is_absolute() else _resolve_repo_path(output_root)
@@ -57,6 +67,7 @@ def build_co_visit_fallback_repair_source(
     views_manifest = read_json(lightweight_views_manifest_path)
     eligible_manifest = read_json(eligible_user_manifest_path)
     train_sequences_path = _resolve_repo_path(clean_manifest["train_user_sequences_path"])
+    train_interactions_path = _resolve_train_interactions_path(clean_manifest)
     semantic_inputs_path = _resolve_repo_path(views_manifest["outputs"]["semantic_recall_inputs"])
     target_users = [str(user_id) for user_id in eligible_manifest.get("eligible_user_ids", [])]
     sequences = _load_target_sequences(train_sequences_path, target_users)
@@ -66,6 +77,12 @@ def build_co_visit_fallback_repair_source(
         for item_id in _recent_unique(sequence.get("recent_positive_item_sequence", []), seed_window)
     }
     metadata_index = _load_metadata_index(semantic_inputs_path, sequences, max_metadata_rows, seed_window)
+    transition_index, transition_scan_audit = _load_train_transition_index(
+        train_interactions_path,
+        target_seed_items,
+        transition_window,
+        transition_per_seed,
+    )
 
     generation_config = {
         "metadata_neighbor_enabled": True,
@@ -75,6 +92,8 @@ def build_co_visit_fallback_repair_source(
         "metadata_neighbor_min_token_overlap": int(method_config.get("min_token_overlap", 1)),
         "metadata_neighbor_max_bucket_candidates": int(method_config.get("max_bucket_candidates", 1000)),
         "metadata_neighbor_category_weight": float(method_config.get("category_weight", 2.0)),
+        "transition_window": transition_window,
+        "transition_per_seed": transition_per_seed,
     }
 
     rows: list[dict[str, Any]] = []
@@ -86,9 +105,12 @@ def build_co_visit_fallback_repair_source(
     missing_users = sorted(target_user_set - set(sequences))
     for processed_count, user_id in enumerate(target_users, start=1):
         sequence = sequences.get(user_id)
-        candidates = metadata_neighbor_candidates_for_user(sequence or {"user_id": user_id}, metadata_index, generation_config) if sequence else []
+        metadata_candidates = metadata_neighbor_candidates_for_user(sequence or {"user_id": user_id}, metadata_index, generation_config) if sequence else []
+        transition_candidates = _transition_candidates_for_user(sequence or {"user_id": user_id}, transition_index, metadata_index, seed_window, candidate_per_user) if sequence else []
+        candidates = _merge_repair_candidates(metadata_candidates, transition_candidates, candidate_per_user)
         seed_items = _recent_unique(sequence.get("recent_positive_item_sequence", []) if sequence else [], seed_window)
         co_visit_seed_count = sum(1 for item_id in seed_items if item_id in metadata_index)
+        transition_seed_count = sum(1 for item_id in seed_items if item_id in transition_index)
         user_rows = []
         for rank, candidate in enumerate(candidates, start=1):
             metadata = dict(candidate.metadata)
@@ -109,8 +131,11 @@ def build_co_visit_fallback_repair_source(
             "seed_item_count": len(seed_items),
             "co_visit_seed_count": co_visit_seed_count,
             "co_visit_seed_covered": co_visit_seed_count > 0,
-            "metadata_neighbor_candidate_count": len(user_rows),
-            "metadata_neighbor_covered": len(user_rows) > 0,
+            "metadata_neighbor_candidate_count": len(metadata_candidates),
+            "metadata_neighbor_covered": len(metadata_candidates) > 0,
+            "sequence_transition_seed_count": transition_seed_count,
+            "sequence_transition_candidate_count": len(transition_candidates),
+            "sequence_transition_covered": len(transition_candidates) > 0,
             "repair_candidate_count": len(user_rows),
         }
         if checkpoint_every_users > 0 and processed_count % checkpoint_every_users == 0:
@@ -121,9 +146,10 @@ def build_co_visit_fallback_repair_source(
     stats = _count_stats(candidate_counts)
     seed_covered_users = sum(1 for item in per_user.values() if item["co_visit_seed_covered"])
     metadata_covered_users = sum(1 for item in per_user.values() if item["metadata_neighbor_covered"])
+    transition_covered_users = sum(1 for item in per_user.values() if item["sequence_transition_covered"])
     user_coverage_count = sum(1 for count in candidate_counts if count > 0)
     unique_items = len({row["item_id"] for row in rows})
-    input_paths = [clean_manifest_path, lightweight_views_manifest_path, eligible_user_manifest_path, train_sequences_path, semantic_inputs_path]
+    input_paths = [clean_manifest_path, lightweight_views_manifest_path, eligible_user_manifest_path, train_sequences_path, train_interactions_path, semantic_inputs_path]
     forbidden_inputs = [str(path) for path in input_paths if _is_forbidden_path(path)]
 
     required_paths = {name: str(output_dir / name) for name in REQUIRED_SOURCE_OUTPUTS}
@@ -137,6 +163,8 @@ def build_co_visit_fallback_repair_source(
         "index_scope": "TARGET_SLICE_DERIVED_INDEX",
         "train_only": True,
         "metadata_index_path": str(semantic_inputs_path),
+        "train_interactions_path": str(train_interactions_path),
+        "sequence_transition_index_mode": "train_only_seed_triggered_time_window",
         "candidates_path": str(source_candidates_path),
         "candidate_row_count": len(rows),
         "user_coverage_count": user_coverage_count,
@@ -160,8 +188,10 @@ def build_co_visit_fallback_repair_source(
         "loaded_target_user_count": len(sequences),
         "missing_target_user_count": len(missing_users),
         "metadata_index_row_count": len(metadata_index),
+        "sequence_transition_scan": transition_scan_audit,
         "co_visit_seed_coverage": _coverage(seed_covered_users, len(target_users)),
         "metadata_neighbor_coverage": _coverage(metadata_covered_users, len(target_users)),
+        "sequence_transition_coverage": _coverage(transition_covered_users, len(target_users)),
         "candidate_row_count": len(rows),
         "user_coverage_count": user_coverage_count,
         "candidate_count_stats": stats,
@@ -179,6 +209,7 @@ def build_co_visit_fallback_repair_source(
         "source": SOURCE,
         "co_visit_seed_coverage": _coverage(seed_covered_users, len(target_users)),
         "metadata_neighbor_coverage": _coverage(metadata_covered_users, len(target_users)),
+        "sequence_transition_coverage": _coverage(transition_covered_users, len(target_users)),
         "repair_candidate_count": len(rows),
         "user_coverage_count": user_coverage_count,
         "candidate_row_count": len(rows),
@@ -216,6 +247,7 @@ def build_co_visit_fallback_repair_source(
         "max_candidate_metadata_rows": max_metadata_rows,
         "seed_metadata_row_count": seed_metadata_row_count,
         "metadata_index_row_count": len(metadata_index),
+        "sequence_transition_scan": transition_scan_audit,
         "target_user_count": len(target_users),
         "disk_free_bytes_end": shutil.disk_usage(output_dir).free,
         "batch_scoped_evidence_only": True,
@@ -264,6 +296,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--candidate-per-user", type=int, default=120)
     parser.add_argument("--candidate-per-seed", type=int, default=40)
     parser.add_argument("--seed-window", type=int, default=30)
+    parser.add_argument("--transition-window", type=int, default=5)
+    parser.add_argument("--transition-per-seed", type=int, default=200)
     parser.add_argument("--checkpoint-every-users", type=int, default=50)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args(argv)
@@ -278,6 +312,8 @@ def main(argv: list[str] | None = None) -> None:
         candidate_per_user=args.candidate_per_user,
         candidate_per_seed=args.candidate_per_seed,
         seed_window=args.seed_window,
+        transition_window=args.transition_window,
+        transition_per_seed=args.transition_per_seed,
         checkpoint_every_users=args.checkpoint_every_users,
         overwrite=args.overwrite,
     )
@@ -295,7 +331,16 @@ def _resolve_repo_path(path: str | Path) -> Path:
     candidate = Path(path)
     if candidate.is_absolute():
         return candidate
-    return Path(__file__).resolve().parents[6] / candidate
+    return ROOT / candidate
+
+
+
+def _resolve_train_interactions_path(clean_manifest: dict[str, Any]) -> Path:
+    split_paths = clean_manifest.get("split_paths") if isinstance(clean_manifest.get("split_paths"), dict) else {}
+    value = split_paths.get("train") or clean_manifest.get("train_interactions_path")
+    if not value:
+        return _resolve_repo_path(Path(clean_manifest["train_user_sequences_path"]).parent / "canonical_interactions.train.jsonl")
+    return _resolve_repo_path(value)
 
 
 def _load_target_sequences(path: Path, target_users: list[str]) -> dict[str, dict[str, Any]]:
@@ -336,6 +381,124 @@ def _load_metadata_index(path: Path, sequences: dict[str, dict[str, Any]], max_r
             if _tokens(record) & seed_tokens or _categories(record) & seed_categories:
                 candidate_records[item_id] = record
     return {**candidate_records, **seed_records}
+
+
+def _load_train_transition_index(path: Path, seed_items: set[str], transition_window: int, transition_per_seed: int) -> tuple[dict[str, list[tuple[str, float]]], dict[str, Any]]:
+    if not seed_items or transition_window <= 0 or transition_per_seed <= 0:
+        return {}, {
+            "status": "SKIPPED",
+            "train_interactions_path": str(path),
+            "seed_item_count": len(seed_items),
+            "transition_window": transition_window,
+            "transition_per_seed": transition_per_seed,
+        }
+    counters: dict[str, Counter[str]] = {item_id: Counter() for item_id in seed_items}
+    active: dict[str, list[tuple[str, int]]] = defaultdict(list)
+    scanned_row_count = 0
+    seed_event_count = 0
+    transition_event_count = 0
+    for row in iter_jsonl(path):
+        scanned_row_count += 1
+        user_id = str(row.get("user_id") or "")
+        item_id = str(row.get("parent_asin") or row.get("item_id") or "")
+        if not user_id or not item_id:
+            continue
+        active_events = active.get(user_id)
+        if active_events:
+            retained_events = []
+            for seed_item, distance in active_events:
+                if item_id != seed_item:
+                    counters[seed_item][item_id] += transition_window + 1 - distance
+                    transition_event_count += 1
+                if distance < transition_window:
+                    retained_events.append((seed_item, distance + 1))
+            if retained_events:
+                active[user_id] = retained_events
+            else:
+                active.pop(user_id, None)
+        if item_id in seed_items and _positive_interaction(row):
+            active[user_id].append((item_id, 1))
+            seed_event_count += 1
+    transition_index = {
+        seed_item: [(item_id, float(score)) for item_id, score in counter.most_common(transition_per_seed)]
+        for seed_item, counter in counters.items()
+        if counter
+    }
+    return transition_index, {
+        "status": "PASS",
+        "train_interactions_path": str(path),
+        "seed_item_count": len(seed_items),
+        "seed_with_transition_count": len(transition_index),
+        "scanned_row_count": scanned_row_count,
+        "seed_event_count": seed_event_count,
+        "transition_event_count": transition_event_count,
+        "transition_window": transition_window,
+        "transition_per_seed": transition_per_seed,
+    }
+
+
+
+def _positive_interaction(row: dict[str, Any]) -> bool:
+    if "label_binary" in row:
+        return int(row.get("label_binary") or 0) == 1
+    return float(row.get("rating") or 0.0) >= 3.0
+
+
+
+def _transition_candidates_for_user(
+    sequence: dict[str, Any],
+    transition_index: dict[str, list[tuple[str, float]]],
+    metadata_index: dict[str, dict[str, Any]],
+    seed_window: int,
+    limit: int,
+) -> list[Any]:
+    seen_items = {str(item_id) for item_id in sequence.get("recent_item_sequence", []) if item_id}
+    seed_items = _recent_unique(sequence.get("recent_positive_item_sequence", []), seed_window)
+    by_item: dict[str, Any] = {}
+    for seed_rank, seed_item in enumerate(seed_items, start=1):
+        recency_weight = 1.0 / math.sqrt(seed_rank)
+        for source_rank, (item_id, source_score) in enumerate(transition_index.get(seed_item, []), start=1):
+            if item_id in seen_items:
+                continue
+            record = metadata_index.get(item_id, {})
+            score = float(source_score) * recency_weight
+            metadata = {
+                "reason": "train_interaction_sequence_transition",
+                "seed_item_id": seed_item,
+                "source_rank": source_rank,
+                "sequence_transition_seed_rank": seed_rank,
+                "sequence_transition_score": float(source_score),
+                "sequence_transition_index_mode": "train_only_seed_triggered_time_window",
+            }
+            if record:
+                metadata.update({k: v for k, v in record.items() if k not in {"semantic_tokens", "two_tower_tokens"}})
+            candidate = _candidate(item_id, score, str(record.get("main_category") or record.get("category") or ""), metadata)
+            current = by_item.get(item_id)
+            if current is None or candidate.score > current.score:
+                by_item[item_id] = candidate
+    rows = list(by_item.values())
+    rows.sort(key=lambda item: (-item.score, item.item_id))
+    return rows[:limit]
+
+
+
+def _candidate(item_id: str, score: float, category: str, metadata: dict[str, Any]) -> Any:
+    from rs_core.recsys.types import RecallCandidate
+
+    return RecallCandidate(item_id=item_id, source=SOURCE, score=score, category=category, metadata=metadata)
+
+
+
+def _merge_repair_candidates(metadata_candidates: list[Any], transition_candidates: list[Any], limit: int) -> list[Any]:
+    by_item = {candidate.item_id: candidate for candidate in metadata_candidates}
+    for candidate in transition_candidates:
+        current = by_item.get(candidate.item_id)
+        if current is None or candidate.score > current.score:
+            by_item[candidate.item_id] = candidate
+    rows = list(by_item.values())
+    rows.sort(key=lambda item: (-item.score, item.item_id))
+    return rows[:limit]
+
 
 
 def _recent_unique(values: Any, window: int) -> list[str]:

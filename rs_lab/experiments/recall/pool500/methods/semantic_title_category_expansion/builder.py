@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import heapq
 import json
 import math
 import re
 import shutil
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
@@ -28,6 +29,12 @@ DEFAULT_SOURCE_STATUS = "TARGET_SLICE_DIAGNOSTIC"
 FORBIDDEN_SPLIT_PARTS = {"valid", "test", "lopo"}
 FORBIDDEN_PATH_SUBSTRINGS = ("holdout", "clean_10000", "views_10000", "pool1000")
 TEXT_FIELDS = ("title_clean", "main_category", "categories_flat")
+FULL_METADATA_OVERLAP_TEXT_FIELDS = ("title_clean", "main_category", "category", "categories_flat", "description_text", "features_text", "item_text", "store", "brand")
+FULL_METADATA_OVERLAP_STOP_WORDS = {
+    "the", "and", "for", "with", "from", "this", "that", "your", "you", "are", "black", "white", "edition", "products", "product", "amazon", "into", "full", "size", "made", "great", "compatible", "replacement", "case"
+}
+SELECTION_MODE_TITLE_CATEGORY_SCORER = "title_category_scorer"
+SELECTION_MODE_FULL_METADATA_OVERLAP = "full_metadata_overlap"
 
 
 def build_semantic_title_category_expansion_source(
@@ -43,12 +50,15 @@ def build_semantic_title_category_expansion_source(
     per_seed: int = 40,
     per_token_item_limit: int = 2000,
     max_candidate_items: int = 80000,
+    selection_mode: str = SELECTION_MODE_TITLE_CATEGORY_SCORER,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
     started = perf_counter()
     if enforce_venv:
         enforce_project_venv(ROOT)
+    if selection_mode not in {SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP}:
+        raise ValueError(f"unsupported semantic selection mode: {selection_mode}")
     run_id = run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_dir = method_output_dir(output_root.resolve(), SOURCE, run_id)
     if output_dir.exists() and any(output_dir.iterdir()) and not overwrite:
@@ -76,12 +86,39 @@ def build_semantic_title_category_expansion_source(
     seed_items = {item for items in seed_items_by_user.values() for item in items}
     seed_records = _load_records_by_ids(semantic_inputs_path, seed_items)
     seed_tokens = _record_tokens(seed_records.values())
-    candidate_item_ids, token_bucket_stats = _candidate_ids_from_inverted_index(
-        semantic_inverted_index_path,
-        seed_tokens,
-        per_token_item_limit=per_token_item_limit,
-        max_candidate_items=max_candidate_items,
-    )
+    if selection_mode == SELECTION_MODE_FULL_METADATA_OVERLAP:
+        rows, candidate_item_ids, token_bucket_stats = _full_metadata_overlap_candidate_rows(
+            semantic_inputs_path,
+            sequences,
+            seed_items_by_user,
+            seed_records,
+            per_user=per_user,
+        )
+    else:
+        candidate_item_ids, token_bucket_stats = _candidate_ids_from_inverted_index(
+            semantic_inverted_index_path,
+            seed_tokens,
+            per_token_item_limit=per_token_item_limit,
+            max_candidate_items=max_candidate_items,
+        )
+        candidate_records = _load_records_by_ids(semantic_inputs_path, candidate_item_ids | seed_items)
+        semantic_index = {item_id: _with_semantic_tokens(record) for item_id, record in candidate_records.items()}
+        generation_config = {
+            "semantic_title_category_expansion": {
+                "enabled": True,
+                "per_user": per_user,
+                "per_seed": per_seed,
+                "seed_window": seed_window,
+                "min_title_overlap": 1,
+                "category_weight": 2.0,
+                "weak_category_boost": 0.5,
+                "weak_categories": ["All Electronics", "Office Products", "Computers"],
+                "text_fields": list(TEXT_FIELDS),
+                "require_category_overlap": True,
+                "max_bucket_candidates": max_candidate_items,
+            }
+        }
+        rows = _title_category_scorer_candidate_rows(sequences, seed_items_by_user, seed_records, semantic_index, generation_config, per_user)
     candidate_records = _load_records_by_ids(semantic_inputs_path, candidate_item_ids | seed_items)
     semantic_index = {item_id: _with_semantic_tokens(record) for item_id, record in candidate_records.items()}
     write_json(checkpoint_path, {
@@ -91,56 +128,18 @@ def build_semantic_title_category_expansion_source(
         "seed_metadata_count": len(seed_records),
         "candidate_item_id_count": len(candidate_item_ids),
         "semantic_index_record_count": len(semantic_index),
+        "selection_mode": selection_mode,
         "source": SOURCE,
     })
 
     input_dataset_path = output_dir / "semantic_title_category_input_dataset.jsonl"
     write_jsonl(input_dataset_path, _input_dataset_rows(semantic_index))
-
-    generation_config = {
-        "semantic_title_category_expansion": {
-            "enabled": True,
-            "per_user": per_user,
-            "per_seed": per_seed,
-            "seed_window": seed_window,
-            "min_title_overlap": 1,
-            "category_weight": 2.0,
-            "weak_category_boost": 0.5,
-            "weak_categories": ["All Electronics", "Office Products", "Computers"],
-            "text_fields": list(TEXT_FIELDS),
-            "require_category_overlap": True,
-            "max_bucket_candidates": max_candidate_items,
-        }
+    per_user_counts = Counter(str(row.get("user_id") or "") for row in rows)
+    undercovered_reasons = _undercovered_reasons(sequences, seed_items_by_user, seed_records, per_user_counts, per_user, selection_mode)
+    user_seed_metadata_hits = {
+        str(sequence.get("user_id") or ""): sum(1 for item in seed_items_by_user.get(str(sequence.get("user_id") or ""), []) if item in seed_records)
+        for sequence in sequences
     }
-    rows: list[dict[str, Any]] = []
-    per_user_counts: dict[str, int] = {}
-    undercovered_reasons: Counter[str] = Counter()
-    user_seed_metadata_hits: dict[str, int] = {}
-    for sequence in sequences:
-        user_id = str(sequence.get("user_id", ""))
-        candidates = semantic_title_category_expansion_candidates_for_user(sequence, semantic_index, generation_config)
-        per_user_counts[user_id] = len(candidates)
-        seed_hits = sum(1 for item in seed_items_by_user.get(user_id, []) if item in seed_records)
-        user_seed_metadata_hits[user_id] = seed_hits
-        if not seed_items_by_user.get(user_id):
-            undercovered_reasons["no_positive_seed_items"] += 1
-        elif seed_hits == 0:
-            undercovered_reasons["missing_seed_item_metadata"] += 1
-        elif not candidates:
-            undercovered_reasons["no_title_category_overlap_candidates"] += 1
-        elif len(candidates) < per_user:
-            undercovered_reasons["below_method_target_per_user"] += 1
-        for rank, candidate in enumerate(candidates, start=1):
-            rows.append({
-                "user_id": user_id,
-                "item_id": candidate.item_id,
-                "source": SOURCE,
-                "canonical_source": SOURCE,
-                "sources": [SOURCE],
-                "score": candidate.score,
-                "rank": rank,
-                "metadata": {**candidate.metadata, "source_scores": {SOURCE: candidate.score}},
-            })
     candidates_path = output_dir / "candidates.jsonl"
     write_jsonl(candidates_path, rows)
 
@@ -198,6 +197,7 @@ def build_semantic_title_category_expansion_source(
             "seed_window": seed_window,
             "per_token_item_limit": per_token_item_limit,
             "max_candidate_items": max_candidate_items,
+            "selection_mode": selection_mode,
         },
         "runtime_seconds": round(perf_counter() - started, 6),
         "source_signatures": signatures,
@@ -208,6 +208,7 @@ def build_semantic_title_category_expansion_source(
         "canonical_source": SOURCE,
         "source_status": DEFAULT_SOURCE_STATUS,
         "dataset_name": "semantic_title_category_input_dataset",
+        "selection_mode": selection_mode,
         "train_only": True,
         "target_user_count": len(sequences),
         "seed_item_count": len(seed_items),
@@ -227,6 +228,7 @@ def build_semantic_title_category_expansion_source(
         "source_status": DEFAULT_SOURCE_STATUS,
         "status": DEFAULT_SOURCE_STATUS,
         "run_id": run_id,
+        "selection_mode": selection_mode,
         "output_dir": str(output_dir),
         "method_dataset_manifest_path": str(output_dir / "method_dataset_manifest.json"),
         "semantic_title_category_input_dataset_path": str(input_dataset_path),
@@ -321,6 +323,163 @@ def _load_records_by_ids(path: Path, item_ids: set[str]) -> dict[str, dict[str, 
     return records
 
 
+def _title_category_scorer_candidate_rows(
+    sequences: list[dict[str, Any]],
+    seed_items_by_user: dict[str, list[str]],
+    seed_records: dict[str, dict[str, Any]],
+    semantic_index: dict[str, dict[str, Any]],
+    generation_config: dict[str, Any],
+    per_user: int,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for sequence in sequences:
+        user_id = str(sequence.get("user_id", ""))
+        candidates = semantic_title_category_expansion_candidates_for_user(sequence, semantic_index, generation_config)
+        for rank, candidate in enumerate(candidates, start=1):
+            rows.append({
+                "user_id": user_id,
+                "item_id": candidate.item_id,
+                "source": SOURCE,
+                "canonical_source": SOURCE,
+                "sources": [SOURCE],
+                "score": candidate.score,
+                "rank": rank,
+                "metadata": {**candidate.metadata, "source_scores": {SOURCE: candidate.score}},
+            })
+    return rows
+
+
+def _full_metadata_overlap_candidate_rows(
+    semantic_inputs_path: Path,
+    sequences: list[dict[str, Any]],
+    seed_items_by_user: dict[str, list[str]],
+    seed_records: dict[str, dict[str, Any]],
+    *,
+    per_user: int,
+    min_overlap: int = 2,
+) -> tuple[list[dict[str, Any]], set[str], dict[str, Any]]:
+    user_profiles = _full_metadata_user_profiles(sequences, seed_items_by_user, seed_records)
+    heaps: dict[str, list[tuple[float, str, dict[str, Any]]]] = {user_id: [] for user_id in user_profiles}
+    scanned_rows = 0
+    candidate_rows_considered = 0
+    for record in iter_jsonl(semantic_inputs_path):
+        scanned_rows += 1
+        item_id = str(record.get("parent_asin") or record.get("item_id") or "")
+        if not item_id:
+            continue
+        candidate_tokens = _overlap_tokens(record)
+        if not candidate_tokens:
+            continue
+        candidate_categories = _category_values(record)
+        for user_id, profile in user_profiles.items():
+            if item_id in profile["seen_items"]:
+                continue
+            overlap = len(candidate_tokens & profile["seed_tokens"])
+            if overlap < min_overlap:
+                continue
+            category_overlap = len(candidate_categories & profile["seed_categories"])
+            score = float(overlap) + float(category_overlap) * 8.0
+            _push_bounded_candidate(
+                heaps[user_id],
+                per_user,
+                score,
+                item_id,
+                {
+                    "source_score": round(score, 6),
+                    "selection_mode": SELECTION_MODE_FULL_METADATA_OVERLAP,
+                    "title_token_overlap": overlap,
+                    "category_overlap": category_overlap,
+                    "semantic_overlap_min_overlap": min_overlap,
+                    "category": record.get("main_category") or record.get("category") or "",
+                },
+            )
+            candidate_rows_considered += 1
+    rows: list[dict[str, Any]] = []
+    candidate_item_ids: set[str] = set()
+    for user_id, heap in heaps.items():
+        ranked = sorted(heap, key=lambda item: (-item[0], item[1]))
+        for rank, (score, item_id, metadata) in enumerate(ranked, start=1):
+            candidate_item_ids.add(item_id)
+            rows.append({
+                "user_id": user_id,
+                "item_id": item_id,
+                "source": SOURCE,
+                "canonical_source": SOURCE,
+                "sources": [SOURCE],
+                "score": round(score, 6),
+                "rank": rank,
+                "metadata": {**metadata, "source_scores": {SOURCE: round(score, 6)}},
+            })
+    return rows, candidate_item_ids, {
+        "selection_mode": SELECTION_MODE_FULL_METADATA_OVERLAP,
+        "scanned_semantic_input_rows": scanned_rows,
+        "candidate_rows_considered": candidate_rows_considered,
+        "target_user_count": len(user_profiles),
+        "candidate_item_id_count": len(candidate_item_ids),
+        "min_overlap": min_overlap,
+    }
+
+
+def _full_metadata_user_profiles(
+    sequences: list[dict[str, Any]],
+    seed_items_by_user: dict[str, list[str]],
+    seed_records: dict[str, dict[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    profiles: dict[str, dict[str, Any]] = {}
+    for sequence in sequences:
+        user_id = str(sequence.get("user_id") or "")
+        if not user_id:
+            continue
+        seed_tokens: set[str] = set()
+        seed_categories: set[str] = set()
+        for seed_item in seed_items_by_user.get(user_id, []):
+            record = seed_records.get(seed_item)
+            if not record:
+                continue
+            seed_tokens.update(_overlap_tokens(record))
+            seed_categories.update(_category_values(record))
+        profiles[user_id] = {
+            "seed_tokens": seed_tokens,
+            "seed_categories": seed_categories,
+            "seen_items": {str(item) for item in sequence.get("recent_item_sequence", []) or [] if item},
+        }
+    return profiles
+
+
+def _push_bounded_candidate(heap: list[tuple[float, str, dict[str, Any]]], limit: int, score: float, item_id: str, metadata: dict[str, Any]) -> None:
+    item = (score, item_id, metadata)
+    if len(heap) < limit:
+        heapq.heappush(heap, item)
+        return
+    if score > heap[0][0] or score == heap[0][0] and item_id < heap[0][1]:
+        heapq.heapreplace(heap, item)
+
+
+def _undercovered_reasons(
+    sequences: list[dict[str, Any]],
+    seed_items_by_user: dict[str, list[str]],
+    seed_records: dict[str, dict[str, Any]],
+    per_user_counts: Counter[str],
+    per_user: int,
+    selection_mode: str,
+) -> Counter[str]:
+    reasons: Counter[str] = Counter()
+    for sequence in sequences:
+        user_id = str(sequence.get("user_id", ""))
+        seed_items = seed_items_by_user.get(user_id, [])
+        seed_hits = sum(1 for item in seed_items if item in seed_records)
+        candidate_count = per_user_counts.get(user_id, 0)
+        if not seed_items:
+            reasons["no_positive_seed_items"] += 1
+        elif seed_hits == 0:
+            reasons["missing_seed_item_metadata"] += 1
+        elif not candidate_count:
+            reasons[f"no_{selection_mode}_candidates"] += 1
+        elif candidate_count < per_user:
+            reasons["below_method_target_per_user"] += 1
+    return reasons
+
+
 def _candidate_ids_from_inverted_index(
     path: Path,
     seed_tokens: set[str],
@@ -382,6 +541,16 @@ def _tokens_from_fields(record: dict[str, Any], fields: Iterable[str]) -> set[st
         else:
             parts.append(str(value))
     return {token for token in re.findall(r"[a-z0-9]+", " ".join(parts).lower()) if len(token) >= 3}
+
+
+def _overlap_tokens(record: dict[str, Any]) -> set[str]:
+    return _tokens_from_fields(record, FULL_METADATA_OVERLAP_TEXT_FIELDS) - FULL_METADATA_OVERLAP_STOP_WORDS
+
+
+def _category_values(record: dict[str, Any]) -> set[str]:
+    values = {str(record.get("main_category") or ""), str(record.get("category") or "")}
+    values.update(str(item) for item in record.get("categories_flat", []) or [])
+    return {value.lower() for value in values if value}
 
 
 def _title_tokens(record: dict[str, Any]) -> set[str]:
@@ -510,6 +679,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--per-seed", type=int, default=40)
     parser.add_argument("--per-token-item-limit", type=int, default=2000)
     parser.add_argument("--max-candidate-items", type=int, default=80000)
+    parser.add_argument("--selection-mode", choices=[SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP], default=SELECTION_MODE_TITLE_CATEGORY_SCORER)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
@@ -528,6 +698,7 @@ def main() -> None:
         per_seed=args.per_seed,
         per_token_item_limit=args.per_token_item_limit,
         max_candidate_items=args.max_candidate_items,
+        selection_mode=args.selection_mode,
         overwrite=args.overwrite,
         enforce_venv=not args.skip_venv_check,
     )

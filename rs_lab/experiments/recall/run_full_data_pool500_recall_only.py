@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, Iterable
 
 ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
@@ -30,6 +30,7 @@ from rs_core.recsys.candidate_merge import (
     two_tower_candidates_for_user,
 )
 from rs_core.recsys.types import RecallCandidate
+from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
 from rs_core.recsys.vector_index import VectorIndex, average_vectors
 from rs_core.workflow.full_data_pool500_route_gate import (
     CANONICAL_SOURCES,
@@ -51,6 +52,7 @@ from rs_lab.experiments.recall.pool500.fallback_completion import (
     build_fallback_completion_context,
     complete_pool500_for_user,
 )
+from rs_lab.experiments.recall.pool500.governance.fallback_completion_contract import FallbackSource
 
 SCHEMA_VERSION = "full_data_pool500_recall_only_generation_v1"
 DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_clean_full" / "manifest.json"
@@ -193,8 +195,7 @@ def run_full_data_pool500_recall_only(
     source_artifacts = _load_source_artifacts(source_manifest_paths)
 
     available_artifacts = _available_source_artifacts(view_outputs) | {source: artifact["path"].is_file() for source, artifact in source_artifacts.items()}
-    source_target_user_ids = _source_aligned_target_user_ids(source_artifacts) if limit_users > 0 else []
-    batch_sequences = _load_batch_sequences(sequence_path, limit_users, source_target_user_ids)
+    batch_sequences = _load_batch_sequences(sequence_path, limit_users)
     popular = load_popular_candidates(view_outputs["popular_recall"], limit=10000)
     category_top = load_category_candidates(view_outputs["category_top_items"])
     item_category = _load_item_category(view_outputs["category_recall_items"])
@@ -287,8 +288,8 @@ def run_full_data_pool500_recall_only(
             context=fallback_context,
             config=fallback_config,
         )
-        candidates = completion.candidates
-        fallback_audit_inputs.append(completion.audit_input)
+        candidates = _enforce_popular_category_cap(completion.candidates)
+        fallback_audit_inputs.append(_fallback_audit_with_final_candidates(completion.audit_input, candidates))
         if enable_semantic:
             semantic_candidate_diagnostics[user_id] = _semantic_candidate_diagnostic_for_user(
                 sequence,
@@ -304,7 +305,7 @@ def run_full_data_pool500_recall_only(
         popular_category_count = 0
         for rank, candidate in enumerate(candidates, start=1):
             canonical_sources = _canonical_sources(candidate.sources)
-            primary_source = _primary_source(canonical_sources)
+            primary_source = _primary_source(canonical_sources, generation_config.get("candidate_fill_order", FILL_ORDER))
             if primary_source in {"popular", "category"}:
                 popular_category_count += 1
             source_coverage.update(canonical_sources)
@@ -345,7 +346,7 @@ def run_full_data_pool500_recall_only(
     canonical_source_registry = build_canonical_source_registry()
     canonical_source_registry_path = output_dir / "canonical_source_registry.json"
     write_json(canonical_source_registry_path, canonical_source_registry)
-    source_budget_contract = _source_budget_contract(clean_manifest, views_manifest, limit_users, full_run)
+    source_budget_contract = _source_budget_contract(clean_manifest, views_manifest, limit_users, full_run, generation_config)
     source_budget_contract_path = output_dir / "source_budget_contract.json"
     write_json(source_budget_contract_path, source_budget_contract)
     per_source_readiness_contracts = _source_readiness_contracts(per_source_output_manifests, source_coverage, source_artifacts)
@@ -436,6 +437,7 @@ def run_full_data_pool500_recall_only(
         "runtime_seconds": round(perf_counter() - started, 6),
         "scope": "full_data_pool500_recall_only_generation",
         "mode": "full" if full_run and limit_users <= 0 else "diagnostic_limited",
+        "recall_config": _recall_config_manifest(generation_config, fallback_config),
         "decision": readiness_result["decision"],
         "status": readiness_result["status"],
         "artifact_gate_decision": artifact_gate_result["decision"],
@@ -560,13 +562,14 @@ def _source_manifest_paths(overrides: dict[str, Path] | None, usercf_sidecar_man
     return paths
 
 
+
 def _load_source_artifacts(source_manifest_paths: dict[str, Path]) -> dict[str, dict[str, Any]]:
     artifacts = {}
     for source, path in sorted(source_manifest_paths.items()):
         manifest_path = _resolve_repo_path(path)
         if not manifest_path.is_file():
             continue
-        manifest = read_json(manifest_path)
+        manifest = validate_two_tower_source_index_manifest(manifest_path) if source == "two_tower" else read_json(manifest_path)
         manifest_source = str(manifest.get("source") or source)
         if manifest_source != source:
             raise ValueError(f"source manifest mismatch for {source}: {manifest_source!r}")
@@ -631,6 +634,7 @@ def _load_batch_sequences(sequence_path: Path, limit_users: int, priority_user_i
     selected = [priority_sequences[user_id] for user_id in priority_user_ids if user_id in priority_sequences]
     if limit_users <= 0:
         return selected
+    selected = selected[:limit_users]
     selected_user_ids = {str(sequence.get("user_id") or "") for sequence in selected}
     for sequence in filler_sequences:
         if len(selected) >= limit_users:
@@ -641,36 +645,6 @@ def _load_batch_sequences(sequence_path: Path, limit_users: int, priority_user_i
         selected.append(sequence)
         selected_user_ids.add(user_id)
     return selected
-
-
-def _source_aligned_target_user_ids(source_artifacts: dict[str, dict[str, Any]]) -> list[str]:
-    target_user_ids: list[str] = []
-    seen: set[str] = set()
-    for source in ("usercf_recall",):
-        manifest = (source_artifacts.get(source) or {}).get("manifest") or {}
-        for user_id in _source_manifest_target_user_ids(source_artifacts.get(source), manifest):
-            if user_id not in seen:
-                target_user_ids.append(user_id)
-                seen.add(user_id)
-    return target_user_ids
-
-
-def _source_manifest_target_user_ids(artifact: dict[str, Any] | None, manifest: dict[str, Any]) -> list[str]:
-    values = manifest.get("target_user_ids")
-    if isinstance(values, list):
-        return [str(user_id) for user_id in values if user_id]
-    method_dataset_path = _artifact_data_path(artifact, "method_dataset_manifest") if artifact else None
-    if method_dataset_path and method_dataset_path.is_file():
-        method_dataset = read_json(method_dataset_path)
-        values = method_dataset.get("target_user_ids")
-        if isinstance(values, list):
-            return [str(user_id) for user_id in values if user_id]
-    eligible_path = _artifact_data_path(artifact, "eligible_user_quality_manifest") if artifact else None
-    if eligible_path and eligible_path.is_file():
-        eligible_manifest = read_json(eligible_path)
-        profiles = eligible_manifest.get("profiles") if isinstance(eligible_manifest.get("profiles"), list) else []
-        return [str(profile.get("user_id")) for profile in profiles if isinstance(profile, dict) and profile.get("user_id")]
-    return []
 
 
 def _load_batch_semantic_index(path: Path, sequences: list[dict[str, Any]], max_rows: int) -> dict[str, dict[str, Any]]:
@@ -802,12 +776,29 @@ def _load_pregenerated_recall_sources(source_artifacts: dict[str, dict[str, Any]
 
 
 def _load_optional_two_tower(artifact: dict[str, Any] | None) -> Any:
-    path = _artifact_data_path(artifact, "recall_index_path") or _artifact_data_path(artifact, "recall_index") if artifact else None
-    if path is None:
-        path = _artifact_data_path(artifact, "artifact_manifest") if artifact else None
-    if path is None or not path.is_file():
+    if not artifact:
         return {}
-    return load_two_tower_index(path)
+    manifest_path = artifact["path"]
+    validate_two_tower_source_index_manifest(manifest_path)
+    return load_two_tower_index(manifest_path)
+
+
+def _recall_config_manifest(config: dict[str, Any], fallback_config: Pool500FallbackCompletionConfig) -> dict[str, Any]:
+    return {
+        "candidate_pool_size": int(config.get("candidate_pool_size", 500)),
+        "candidate_pool_strategy": config.get("candidate_pool_strategy"),
+        "candidate_source_minimums": config.get("candidate_source_minimums", {}),
+        "candidate_source_maximums": config.get("candidate_source_maximums", {}),
+        "candidate_fill_order": config.get("candidate_fill_order", []),
+        "popular_fallback_count": config.get("popular_fallback_count"),
+        "popular_max_in_pool": config.get("popular_max_in_pool"),
+        "fallback_source_caps": fallback_config.source_caps,
+        "fallback_source_ladder": [source.value for source in fallback_config.source_ladder],
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "pool1000_allowed": False,
+    }
+
 
 
 def _apply_source_generation_overrides(config: dict[str, Any], source_artifacts: dict[str, dict[str, Any]]) -> None:
@@ -1087,6 +1078,49 @@ def _enforce_popular_category_cap(candidates: list[Any], cap: int = 175) -> list
     return capped
 
 
+def _would_exceed_source_maximum(candidate_sources: list[str], group_counts: Counter[str], maximums: dict[str, int]) -> bool:
+    for group, maximum in maximums.items():
+        if _candidate_sources_in_group(candidate_sources, group) and (maximum <= 0 or group_counts[group] >= maximum):
+            return True
+    return False
+
+
+def _increment_source_group_counts(candidate_sources: list[str], group_counts: Counter[str], maximums: dict[str, int]) -> None:
+    for group in maximums:
+        if _candidate_sources_in_group(candidate_sources, group):
+            group_counts[group] += 1
+
+
+def _candidate_sources_in_group(candidate_sources: list[str], group: str) -> bool:
+    if group == "itemcf":
+        return any(source in {"itemcf_weak", "itemcf_strong"} for source in candidate_sources)
+    return group in candidate_sources
+
+
+def _fallback_audit_with_final_candidates(audit_input: dict[str, Any], candidates: list[Any]) -> dict[str, Any]:
+    candidate_item_ids = [str(candidate.item_id) for candidate in candidates]
+    source_mix: Counter[str] = Counter()
+    for candidate in candidates:
+        metadata = candidate.metadata if isinstance(candidate.metadata, dict) else {}
+        fallback_subtype = str(metadata.get("fallback_subtype") or "")
+        if fallback_subtype:
+            source_mix[fallback_subtype] += 1
+        else:
+            source_mix[FallbackSource.PERSONALIZED_PRIMARY.value] += 1
+    final_audit_input = dict(audit_input)
+    final_audit_input.update(
+        {
+            "final_candidate_count": len(candidates),
+            "fallback_added_count": sum(count for source, count in source_mix.items() if source != FallbackSource.PERSONALIZED_PRIMARY.value),
+            "source_mix": dict(source_mix),
+            "candidate_item_ids": candidate_item_ids,
+            "duplicate_item_per_user_count": len(candidate_item_ids) - len(set(candidate_item_ids)),
+            "post_fallback_profile_budget_removed_count": max(0, int(audit_input.get("final_candidate_count", 0)) - len(candidates)),
+        }
+    )
+    return final_audit_input
+
+
 def _canonical_sources(sources: list[str]) -> list[str]:
     normalized = []
     for source in sources:
@@ -1096,10 +1130,14 @@ def _canonical_sources(sources: list[str]) -> list[str]:
     return normalized or ["popular"]
 
 
-def _primary_source(sources: list[str]) -> str:
-    for source in FILL_ORDER:
+def _primary_source(sources: list[str], fill_order: Iterable[str] = FILL_ORDER) -> str:
+    for source in fill_order:
         if source in sources:
             return source
+        if source == "itemcf":
+            for itemcf_source in ("itemcf_strong", "itemcf_weak"):
+                if itemcf_source in sources:
+                    return itemcf_source
     return sources[0]
 
 
@@ -1161,19 +1199,40 @@ def _eligible_user_manifest(clean_manifest: dict[str, Any], users: list[str], se
         "eligible_user_ids": users,
         "eligible_user_hash": canonical_user_set_hash(users),
         "clean_manifest_sha256": canonical_manifest_sha256(clean_manifest),
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+        "final_pool500_ready_claimed": False,
     }
 
 
-def _source_budget_contract(clean_manifest: dict[str, Any], views_manifest: dict[str, Any], limit_users: int, full_run: bool) -> dict[str, Any]:
+def _source_budget_contract(
+    clean_manifest: dict[str, Any],
+    views_manifest: dict[str, Any],
+    limit_users: int,
+    full_run: bool,
+    generation_config: dict[str, Any],
+) -> dict[str, Any]:
     view_outputs = list(views_manifest.get("outputs", {}).values()) if isinstance(views_manifest.get("outputs"), dict) else []
     train_split = clean_manifest.get("split_paths", {}).get("train") if isinstance(clean_manifest.get("split_paths"), dict) else None
     return {
         "schema_version": f"{SCHEMA_VERSION}.source_budget_contract",
-        "candidate_pool_size": 500,
+        "candidate_pool_size": int(generation_config.get("candidate_pool_size", 500)),
         "budget_frozen": True,
         "train_only": True,
         "popular_category_combined_cap": 175,
-        "candidate_fill_order": FILL_ORDER,
+        "candidate_source_minimums": generation_config.get("candidate_source_minimums", {}),
+        "candidate_source_maximums": generation_config.get("candidate_source_maximums", {}),
+        "candidate_fill_order": generation_config.get("candidate_fill_order", FILL_ORDER),
+        "popular_fallback_count": generation_config.get("popular_fallback_count"),
+        "popular_max_in_pool": generation_config.get("popular_max_in_pool"),
+        "category_per_bucket": generation_config.get("category_per_bucket"),
+        "category_max_total_per_user": generation_config.get("category_max_total_per_user"),
+        "category_long_tail_enabled": generation_config.get("category_long_tail_enabled", False),
+        "category_long_tail_seed_window": generation_config.get("category_long_tail_seed_window"),
+        "category_long_tail_per_category": generation_config.get("category_long_tail_per_category"),
+        "category_long_tail_per_user": generation_config.get("category_long_tail_per_user"),
         "mode": "full" if full_run and limit_users <= 0 else "diagnostic_limited",
         "input_path": clean_manifest.get("train_user_sequences_path"),
         "train_inputs": [
@@ -1328,6 +1387,11 @@ def _merged_manifest(
             "clean_manifest_sha256": canonical_manifest_sha256(clean_manifest),
             "views_manifest_sha256": canonical_manifest_sha256(views_manifest),
         },
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+        "final_pool500_ready_claimed": False,
     }
 
 
@@ -1629,16 +1693,21 @@ def _route_input_manifest(
     views_manifest: dict[str, Any],
     view_outputs: dict[str, Path],
 ) -> dict[str, Any]:
+    declared_inputs = [
+        str(clean_manifest_path),
+        str(lightweight_views_manifest_path),
+        str(_resolve_repo_path(clean_manifest.get("train_user_sequences_path"))),
+        str(_resolve_repo_path(clean_manifest.get("split_paths", {}).get("train"))) if isinstance(clean_manifest.get("split_paths"), dict) else None,
+        *[str(path) for path in view_outputs.values()],
+    ]
     return {
         "schema_version": f"{SCHEMA_VERSION}.route_input_manifest",
-        "declared_inputs": [
-            str(clean_manifest_path),
-            str(lightweight_views_manifest_path),
-            str(_resolve_repo_path(clean_manifest.get("train_user_sequences_path"))),
-            str(_resolve_repo_path(clean_manifest.get("split_paths", {}).get("train"))) if isinstance(clean_manifest.get("split_paths"), dict) else None,
-            *[str(path) for path in view_outputs.values()],
-        ],
+        "declared_inputs": declared_inputs,
         "ranking_input_replacement": False,
+        "candidate_generation_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+        "final_pool500_ready_claimed": False,
     }
 
 

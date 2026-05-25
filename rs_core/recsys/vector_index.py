@@ -12,6 +12,7 @@ except ImportError:  # pragma: no cover - exercised in environments without nump
     np = None
 
 from rs_core.common.io import iter_jsonl, read_json
+from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
 
 
 @dataclass
@@ -147,6 +148,8 @@ class VectorIndex:
 def load_vector_index_artifact(path: str | Path) -> VectorIndex:
     artifact_path = Path(path)
     manifest = read_json(artifact_path) if artifact_path.suffix == ".json" else {}
+    if manifest.get("schema_version") == "two_tower_source_index_v1":
+        return _load_two_tower_source_index(artifact_path)
     contract = manifest.get("contract", {}) if manifest else {}
     index_path = _contract_path(artifact_path, contract.get("recall_index")) if contract else artifact_path
     user_path = _contract_path(artifact_path, contract.get("user_embeddings")) if contract.get("user_embeddings") else None
@@ -162,6 +165,24 @@ def load_vector_index_artifact(path: str | Path) -> VectorIndex:
             "artifact_type": manifest.get("artifact_type", "two_tower_recall_index"),
             "variant": manifest.get("variant") or model_metadata.get("variant", ""),
             "model_type": model_metadata.get("model_type", ""),
+            "source_name": source_name,
+        },
+    )
+
+
+def _load_two_tower_source_index(manifest_path: Path) -> VectorIndex:
+    manifest = validate_two_tower_source_index_manifest(manifest_path)
+    index_path = _contract_path(manifest_path, manifest["index_path"])
+    user_path = _contract_path(manifest_path, manifest.get("user_embedding_path")) if manifest.get("user_embedding_path") else None
+    source_name = str(manifest["source_name"])
+    return VectorIndex(
+        items=_load_item_vectors(index_path, source_name, manifest, manifest),
+        user_embeddings=_load_user_vectors(user_path) if user_path else {},
+        source_name=source_name,
+        model_metadata={
+            "artifact_type": manifest["schema_version"],
+            "variant": manifest["variant"],
+            "model_type": manifest["model_type"],
             "source_name": source_name,
         },
     )

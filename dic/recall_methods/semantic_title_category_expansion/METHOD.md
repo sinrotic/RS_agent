@@ -108,3 +108,22 @@ D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m rs_l
 ## 专项优化 Agent 调用说明
 
 后续单独调用 Agent 优化本方法时，应优先围绕 title/category overlap 的覆盖率、去重后边际贡献、underfill 改善与资源边界做诊断。Agent 必须保持 `deferred_evidence_policy`，禁止使用 holdout/valid/test/clean_10000/LOPO 等证据；未形成 full-clean-safe source manifest 与 readiness contract 前，不得宣称 READY、ranking input replacement 或 pool1000。
+
+## P2 method_dataset 数据清洗与筛选方案
+
+- 数据来源：只读取 train-only 用户历史与 train-only/static item metadata；不继承 Popular/Category 的 full-statistics no-input-cap 合同。
+- 筛选单位：`user_seed_item_metadata_buckets`。从用户近期 train-only seed item 出发，受控展开 title/category/token bucket。
+- 适用数据：seed item 必须有可用 `title_clean` 或 `main_category`；metadata 字段限于可审计静态字段。
+- 清洗规则：过滤无 item id、无 metadata universe、标题/类目同时缺失、过短 token、高频泛化 token 和过大类目桶；用户内去重并保持确定性排序。
+- 规模参数：`max_metadata_rows=300000`、`max_target_users=500`、`seed_window=80`、`max_seed_items_per_user=80`、`per_token_item_limit=200`、`max_category_items=5000`。
+
+### 规模档位
+
+| 档位 | max_metadata_rows | max_target_users | seed_window | max_seed_items_per_user | per_token_item_limit | max_category_items |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| smoke | 20000 | 500 | 20 | 20 | 500 | 1000 |
+| diagnostic | 150000 | 500 | 50 | 50 | 1000 | 3000 |
+| local_formal | 300000 | 500 | 80 | 80 | 200 | 5000 |
+
+- 泄漏边界：不读取 valid/test/holdout/LOPO/clean_10000/eval_label/oracle，不用评估命中反向选择 token/category，不声明 READY、promotion、ranking input replacement 或 pool1000。
+- 维护检查：修改 token/category 策略时同步检查 `semantic_seed_metadata_v1`、泛词过滤、类目桶上限和 registry/builder/test 一致性。

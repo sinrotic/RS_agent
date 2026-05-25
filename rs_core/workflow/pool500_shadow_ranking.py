@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 from collections import Counter
 from copy import deepcopy
-from math import isfinite
+from math import isfinite, log2
 from pathlib import Path
 from statistics import mean
 from typing import Any, Iterable
@@ -49,17 +49,29 @@ DEFAULT_RESOURCE_BUDGET = {
 
 FORBIDDEN_FIELDS = {
     "current_ranking_route",
+    "candidate",
     "candidate_id",
     "candidate_type",
+    "challenger",
+    "champion",
     "promotion_lane",
     "promotion_eligible",
+    "promotion_ready",
+    "production_ready",
     "lane",
 }
 FORBIDDEN_RUN_KINDS = {"variant", "challenger", "candidate", "champion"}
+FORBIDDEN_READY_VALUES = {"promotion-ready", "production-ready"}
 FIXED_COMPARISON_TOP_K = 20
 FIXED_COMPARISON_TOP10_K = 10
 FIXED_COMPARISON_CONFIG_IDS = ("B0", "D1", "D2", "A1", "A2", "R1", "R2", "R3")
 FIXED_COMPARISON_REQUIRED_ITEM_FIELDS = ("parent_asin", "score_trace", "rank_movement", "score_components")
+LABEL_METRIC_DEFINITION_VERSION = "pool500_label_metrics_per_user_mean_v1"
+STRICT_LABEL_GATE_THRESHOLDS = {
+    "topk_union_candidate_coverage": 1.0,
+    "user_label_coverage": 1.0,
+    "positive_user_coverage": 1.0,
+}
 QUALITY_GUARD_THRESHOLDS = {
     "fallback_exposure_topk_ratio": 0.5,
     "metadata_missing_rate": 0.01,
@@ -192,6 +204,8 @@ def run_pool500_diagnostic_frozen_pool_ranking(
     source_artifact_gate_result: dict[str, Any] | None = None,
     recall_shadow_evidence_validation: dict[str, Any] | None = None,
     top_k: int = 20,
+    label_artifact_path: str | Path | None = None,
+    label_evaluator_enabled: bool = False,
 ) -> dict[str, Any]:
     input_validation = _validate_diagnostic_frozen_pool_input(
         pool500_candidates_path=pool500_candidates_path,
@@ -201,7 +215,16 @@ def run_pool500_diagnostic_frozen_pool_ranking(
         diagnostic_input_contract=diagnostic_input_contract,
         source_artifact_gate_result=source_artifact_gate_result,
     )
+    label_context = _build_pool500_label_context(
+        candidate_path=Path(input_validation["pool500_candidates_path"]),
+        manifest_path=Path(input_validation["candidate_manifest_path"]),
+        explicit_label_artifact_path=label_artifact_path,
+        evaluator_enabled=label_evaluator_enabled,
+        ranking_results=None,
+    )
     if input_validation["blockers"]:
+        label_context["label_state"] = "blocked"
+        label_context["label_blockers"] = [*label_context.get("label_blockers", []), *input_validation["blockers"]]
         evidence = build_pool500_diagnostic_frozen_pool_ranking_evidence(
             diagnostic_method_id=diagnostic_method_id,
             comparison_group=comparison_group,
@@ -209,6 +232,7 @@ def run_pool500_diagnostic_frozen_pool_ranking(
             shadow_metrics={"user_count": 0, "top_k": top_k, "stopped_before_ranking": True},
             source_artifact_gate_result=source_artifact_gate_result,
             source_shadow_evidence_validation=recall_shadow_evidence_validation,
+            label_context=label_context,
         )
         validation = validate_pool500_diagnostic_frozen_pool_ranking_evidence(evidence)
         evidence["interpretation_label"] = validation["interpretation_label"]
@@ -229,11 +253,19 @@ def run_pool500_diagnostic_frozen_pool_ranking(
             shadow_metrics={"user_count": 0, "top_k": top_k, "stopped_before_ranking": True},
             source_artifact_gate_result=source_artifact_gate_result,
             source_shadow_evidence_validation=recall_shadow_evidence_validation,
+            label_context=label_context,
         )
         validation = validate_pool500_diagnostic_frozen_pool_ranking_evidence(evidence)
         evidence["interpretation_label"] = validation["interpretation_label"]
         return _diagnostic_frozen_pool_result(evidence, validation, {}, core.get("adapter_result"), [*core["blockers"], *validation["blockers"]])
 
+    label_context = _build_pool500_label_context(
+        candidate_path=Path(input_validation["pool500_candidates_path"]),
+        manifest_path=Path(input_validation["candidate_manifest_path"]),
+        explicit_label_artifact_path=label_artifact_path,
+        evaluator_enabled=label_evaluator_enabled,
+        ranking_results=core["ranking_results"],
+    )
     evidence = build_pool500_diagnostic_frozen_pool_ranking_evidence(
         diagnostic_method_id=diagnostic_method_id,
         comparison_group=comparison_group,
@@ -241,6 +273,7 @@ def run_pool500_diagnostic_frozen_pool_ranking(
         shadow_metrics=core["shadow_metrics"],
         source_artifact_gate_result=source_artifact_gate_result,
         source_shadow_evidence_validation=recall_shadow_evidence_validation,
+        label_context=label_context,
     )
     validation = validate_pool500_diagnostic_frozen_pool_ranking_evidence(evidence)
     status = PASS if validation["status"] == PASS else STOP
@@ -270,6 +303,8 @@ def run_pool500_fixed_ranking_comparison_report(
     diagnostic_input_contract: str = DIAGNOSTIC_FROZEN_POOL_INPUT_CONTRACT,
     source_artifact_gate_result: dict[str, Any] | None = None,
     recall_shadow_evidence_validation: dict[str, Any] | None = None,
+    label_artifact_path: str | Path | None = None,
+    label_evaluator_enabled: bool = False,
 ) -> dict[str, Any]:
     comparison_results: dict[str, dict[str, Any]] = {}
     blockers: list[dict[str, Any]] = []
@@ -286,6 +321,8 @@ def run_pool500_fixed_ranking_comparison_report(
             source_artifact_gate_result=source_artifact_gate_result,
             recall_shadow_evidence_validation=recall_shadow_evidence_validation,
             top_k=FIXED_COMPARISON_TOP_K,
+            label_artifact_path=label_artifact_path,
+            label_evaluator_enabled=label_evaluator_enabled,
         )
         comparison_results[config_id] = _fixed_comparison_run_summary(config_id, config, result)
         blockers.extend(result.get("blockers", []))
@@ -301,8 +338,15 @@ def run_pool500_fixed_ranking_comparison_report(
         if config_id != "B0"
     }
     blockers.extend(_case_diff_blockers(case_diffs))
+    label_aggregation = _apply_fixed_comparison_label_context(
+        comparison_results=comparison_results,
+        candidate_path=Path(pool500_candidates_path),
+        manifest_path=Path(candidate_manifest_path),
+        explicit_label_artifact_path=label_artifact_path,
+        evaluator_enabled=label_evaluator_enabled,
+    )
     status = PASS if not blockers and all(summary.get("status") == PASS for summary in comparison_results.values()) else STOP
-    return {
+    report = {
         "schema_version": DIAGNOSTIC_FROZEN_POOL_SCHEMA_VERSION,
         "status": status,
         "decision": status,
@@ -312,12 +356,19 @@ def run_pool500_fixed_ranking_comparison_report(
         "fixed_config_ids": list(FIXED_COMPARISON_CONFIG_IDS),
         "top_k": FIXED_COMPARISON_TOP_K,
         "top10_view_source": "truncated_from_top20",
+        "recommended_diagnostic_config_id": "R1",
+        "recommendation_scope": "diagnostic_followup_only",
+        "promotion_readiness": "not_allowed_in_this_report",
+        **label_aggregation,
         "comparison_results": comparison_results,
         "case_diffs": case_diffs,
         "blockers": blockers,
         **DIAGNOSTIC_ONLY_FLAGS,
         **SHADOW_REPORT_BOUNDARY_FLAGS,
     }
+    report["metrics_summary"] = build_pool500_fixed_ranking_metrics_summary(report)
+    assert_pool500_summary_projection_matches_report(report, report["metrics_summary"])
+    return report
 
 
 def build_pool500_fixed_ranking_comparison_configs() -> dict[str, dict[str, Any]]:
@@ -380,6 +431,124 @@ def build_pool500_fixed_ranking_comparison_configs() -> dict[str, dict[str, Any]
     return {config_id: configs[config_id] for config_id in FIXED_COMPARISON_CONFIG_IDS}
 
 
+def build_pool500_fixed_ranking_metrics_summary(comparison_report: dict[str, Any]) -> dict[str, Any]:
+    comparison_results = comparison_report.get("comparison_results")
+    if not isinstance(comparison_results, dict):
+        raise ValueError("comparison_report.comparison_results is required")
+    return {
+        "schema_version": comparison_report.get("schema_version"),
+        "status": comparison_report.get("status"),
+        "decision": comparison_report.get("decision"),
+        "report_semantics": comparison_report.get("report_semantics"),
+        "fixed_config_ids": list(comparison_report.get("fixed_config_ids") or []),
+        "top_k": comparison_report.get("top_k"),
+        "top10_view_source": comparison_report.get("top10_view_source"),
+        "recommended_diagnostic_config_id": comparison_report.get("recommended_diagnostic_config_id"),
+        "recommendation_scope": comparison_report.get("recommendation_scope"),
+        "promotion_readiness": comparison_report.get("promotion_readiness"),
+        "label_evaluation_state_by_config": comparison_report.get("label_evaluation_state_by_config", {}),
+        "all_configs_label_comparable": comparison_report.get("all_configs_label_comparable", False),
+        "baseline_label_comparable": comparison_report.get("baseline_label_comparable", False),
+        "label_metric_eligibility": comparison_report.get("label_metric_eligibility", False),
+        "label_ineligible_reason": comparison_report.get("label_ineligible_reason"),
+        "label_metric_definition_version": comparison_report.get("label_metric_definition_version"),
+        "per_config": {
+            config_id: {
+                "status": summary.get("status"),
+                "decision": summary.get("decision"),
+                "interpretation_label": summary.get("interpretation_label"),
+                "fallback_exposure_topk_ratio": summary.get("fallback_exposure_topk_ratio"),
+                "metadata_missing_rate": summary.get("metadata_missing_rate"),
+                "category_missing_rate": summary.get("category_missing_rate"),
+                "top_category_ratio": summary.get("top_category_ratio"),
+                "topk_source_mix": summary.get("topk_source_mix", {}),
+                "repaired_user_topk_stats": summary.get("repaired_user_topk_stats", {}),
+                "label_state": summary.get("label_state"),
+                "label_discovery_policy": summary.get("label_discovery_policy"),
+                "label_artifact_metadata": _public_label_artifact_metadata(summary.get("label_artifact_metadata")),
+                "label_metrics_available": summary.get("label_metrics_available", False),
+                "label_adjacent_metrics": summary.get("label_adjacent_metrics", {}),
+                "blocker_count": len(summary.get("blockers", [])),
+            }
+            for config_id, summary in comparison_results.items()
+            if isinstance(summary, dict)
+        },
+        "blocker_count": len(comparison_report.get("blockers", [])),
+    }
+
+
+def assert_pool500_summary_projection_matches_report(report: dict[str, Any], summary: dict[str, Any]) -> None:
+    allowed_top_level = {
+        "schema_version",
+        "status",
+        "decision",
+        "report_semantics",
+        "fixed_config_ids",
+        "top_k",
+        "top10_view_source",
+        "recommended_diagnostic_config_id",
+        "recommendation_scope",
+        "promotion_readiness",
+        "label_evaluation_state_by_config",
+        "all_configs_label_comparable",
+        "baseline_label_comparable",
+        "label_metric_eligibility",
+        "label_ineligible_reason",
+        "label_metric_definition_version",
+        "per_config",
+        "blocker_count",
+    }
+    extra = set(summary) - allowed_top_level
+    if extra:
+        raise AssertionError(f"summary contains report-absent authority fields: {sorted(extra)}")
+    for field in allowed_top_level - {"per_config", "blocker_count"}:
+        if summary.get(field) != report.get(field):
+            raise AssertionError(f"summary field {field} does not match report")
+    semantic_blockers = [
+        *_validate_forbidden_semantics(report),
+        *_validate_forbidden_semantics(summary),
+        *_validate_fixed_report_summary_ready_semantics(report),
+        *_validate_fixed_report_summary_ready_semantics(summary),
+    ]
+    if semantic_blockers:
+        raise AssertionError(f"report/summary contains forbidden semantics: {semantic_blockers}")
+    if summary.get("blocker_count") != len(report.get("blockers", [])):
+        raise AssertionError("summary blocker_count does not match report")
+    comparison_results = report.get("comparison_results") or {}
+    per_config = summary.get("per_config") or {}
+    if set(per_config) != set(comparison_results):
+        raise AssertionError("summary per_config ids do not match report")
+    per_config_allowed = {
+        "status",
+        "decision",
+        "interpretation_label",
+        "fallback_exposure_topk_ratio",
+        "metadata_missing_rate",
+        "category_missing_rate",
+        "top_category_ratio",
+        "topk_source_mix",
+        "repaired_user_topk_stats",
+        "label_state",
+        "label_discovery_policy",
+        "label_artifact_metadata",
+        "label_metrics_available",
+        "label_adjacent_metrics",
+        "blocker_count",
+    }
+    for config_id, projected in per_config.items():
+        source = comparison_results[config_id]
+        extra_config_fields = set(projected) - per_config_allowed
+        if extra_config_fields:
+            raise AssertionError(f"summary config {config_id} contains report-absent fields: {sorted(extra_config_fields)}")
+        for field in per_config_allowed - {"blocker_count", "label_artifact_metadata"}:
+            if projected.get(field) != source.get(field):
+                raise AssertionError(f"summary config {config_id} field {field} does not match report")
+        if projected.get("label_artifact_metadata") != _public_label_artifact_metadata(source.get("label_artifact_metadata")):
+            raise AssertionError(f"summary config {config_id} label_artifact_metadata does not match public report projection")
+        if projected.get("blocker_count") != len(source.get("blockers", [])):
+            raise AssertionError(f"summary config {config_id} blocker_count does not match report")
+
+
 def _merge_ranking_config(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
     merged = deepcopy(base)
     for key, value in override.items():
@@ -394,6 +563,7 @@ def _merge_ranking_config(base: dict[str, Any], override: dict[str, Any]) -> dic
 
 def _fixed_comparison_run_summary(config_id: str, config: dict[str, Any], result: dict[str, Any]) -> dict[str, Any]:
     ranking_results = result.get("ranking_results", {}) if result.get("status") == PASS else {}
+    persisted_ranking_results = _redact_ranking_results(ranking_results)
     shadow_metrics = result.get("evidence", {}).get("shadow_metrics", {})
     return {
         "config_id": config_id,
@@ -410,17 +580,124 @@ def _fixed_comparison_run_summary(config_id: str, config: dict[str, Any], result
         "top_category_ratio": shadow_metrics.get("top_category_ratio"),
         "topk_source_mix": shadow_metrics.get("topk_source_mix", {}),
         "repaired_user_topk_stats": shadow_metrics.get("repaired_user_topk_stats", {}),
-        "label_metrics_available": shadow_metrics.get("label_metrics_available", False),
-        "label_adjacent_metrics": shadow_metrics.get("label_adjacent_metrics", {}),
+        "label_metrics_available": result.get("evidence", {}).get("label_metrics_available", shadow_metrics.get("label_metrics_available", False)),
+        "label_adjacent_metrics": result.get("evidence", {}).get("label_adjacent_metrics", shadow_metrics.get("label_adjacent_metrics", {})),
+        "label_state": result.get("evidence", {}).get("label_state"),
+        "label_discovery_policy": result.get("evidence", {}).get("label_discovery_policy"),
+        "label_artifact_metadata": result.get("evidence", {}).get("label_artifact_metadata"),
+        "label_blockers": result.get("evidence", {}).get("label_blockers", []),
         "stage_trace_coverage": shadow_metrics.get("stage_trace_coverage", {}),
         "topk_source_contribution": shadow_metrics.get("topk_source_contribution", {}),
-        "ranking_results": ranking_results,
-        "top10_results": {user_id: items[:FIXED_COMPARISON_TOP10_K] for user_id, items in ranking_results.items()},
-        "score_trace": {user_id: [{"parent_asin": item.get("parent_asin"), "score_trace": item.get("score_trace", [])} for item in items] for user_id, items in ranking_results.items()},
-        "rank_movement": {user_id: [{"parent_asin": item.get("parent_asin"), "rank_movement": item.get("rank_movement", {})} for item in items] for user_id, items in ranking_results.items()},
-        "score_components": {user_id: [{"parent_asin": item.get("parent_asin"), "score_components": item.get("score_components", {})} for item in items] for user_id, items in ranking_results.items()},
+        "ranking_results": persisted_ranking_results,
+        "top10_results": {user_id: items[:FIXED_COMPARISON_TOP10_K] for user_id, items in persisted_ranking_results.items()},
+        "score_trace": {user_id: [{"parent_asin": item.get("parent_asin"), "score_trace": item.get("score_trace", [])} for item in items] for user_id, items in persisted_ranking_results.items()},
+        "rank_movement": {user_id: [{"parent_asin": item.get("parent_asin"), "rank_movement": item.get("rank_movement", {})} for item in items] for user_id, items in persisted_ranking_results.items()},
+        "score_components": {user_id: [{"parent_asin": item.get("parent_asin"), "score_components": item.get("score_components", {})} for item in items] for user_id, items in persisted_ranking_results.items()},
         "blockers": result.get("blockers", []),
     }
+
+
+def _apply_fixed_comparison_label_context(
+    *,
+    comparison_results: dict[str, dict[str, Any]],
+    candidate_path: Path,
+    manifest_path: Path,
+    explicit_label_artifact_path: str | Path | None,
+    evaluator_enabled: bool,
+) -> dict[str, Any]:
+    union_pairs = _topk_union_pairs(comparison_results)
+    full_pool_pairs = _full_pool_candidate_pairs(candidate_path)
+    discovered = _discover_pool500_label_artifact(candidate_path, manifest_path, explicit_label_artifact_path)
+    metadata = None
+    if discovered.get("source") in {"explicit", "manifest"} and discovered.get("path"):
+        metadata = _label_artifact_metadata(discovered["path"], None, candidate_pairs=union_pairs, full_pool_candidate_pairs=full_pool_pairs)
+    blockers = list(discovered.get("blockers", []))
+    if metadata is not None:
+        blockers.extend(metadata.get("blockers", []))
+    state = _pool500_label_state(evaluator_enabled, metadata, blockers, discovered.get("source"))
+    metrics_available = state == "label_comparable"
+    sanitized_metadata = _public_label_artifact_metadata(metadata)
+    for summary in comparison_results.values():
+        config_metrics = _label_artifact_metrics_for_ranking(metadata, summary.get("ranking_results", {}), FIXED_COMPARISON_TOP_K) if metrics_available else {}
+        summary["label_metrics_available"] = metrics_available
+        summary["label_adjacent_metrics"] = config_metrics
+        summary["label_state"] = state
+        summary["label_discovery_policy"] = "explicit_label_path > manifest_declared_label_path > known_output_directory_read_only_discovery"
+        summary["label_artifact_metadata"] = sanitized_metadata
+        summary["label_blockers"] = blockers
+    state_by_config = {config_id: summary.get("label_state") for config_id, summary in comparison_results.items()}
+    all_comparable = bool(comparison_results) and all(state == "label_comparable" for state in state_by_config.values())
+    baseline_comparable = state_by_config.get("B0") == "label_comparable"
+    return {
+        "label_evaluation_state_by_config": state_by_config,
+        "all_configs_label_comparable": all_comparable,
+        "baseline_label_comparable": baseline_comparable,
+        "label_metric_eligibility": all_comparable,
+        "label_ineligible_reason": None if all_comparable else _label_ineligible_reason(state_by_config, blockers),
+        "label_metric_definition_version": LABEL_METRIC_DEFINITION_VERSION,
+    }
+
+
+def _topk_union_pairs(comparison_results: dict[str, dict[str, Any]]) -> set[tuple[str, str]]:
+    pairs: set[tuple[str, str]] = set()
+    for summary in comparison_results.values():
+        ranking_results = summary.get("ranking_results", {})
+        if not isinstance(ranking_results, dict):
+            continue
+        for user_id, items in ranking_results.items():
+            for item in items[:FIXED_COMPARISON_TOP_K]:
+                if isinstance(item, dict) and item.get("parent_asin"):
+                    pairs.add((str(user_id), str(item.get("parent_asin"))))
+    return pairs
+
+
+def _full_pool_candidate_pairs(candidate_path: Path) -> set[tuple[str, str]]:
+    pairs: set[tuple[str, str]] = set()
+    for row in iter_jsonl(candidate_path):
+        user_id = str(row.get("user_id") or "")
+        item_id = str(row.get("parent_asin") or row.get("item_id") or "")
+        if user_id and item_id:
+            pairs.add((user_id, item_id))
+    return pairs
+
+
+def _label_ineligible_reason(state_by_config: dict[str, Any], blockers: list[dict[str, Any]]) -> str | None:
+    states = sorted({str(state) for state in state_by_config.values()})
+    if not states:
+        return "no_fixed_config_results"
+    if blockers:
+        codes = sorted({str(blocker.get("code")) for blocker in blockers})
+        return f"label_state={','.join(states)}; blockers={','.join(codes)}"
+    return f"label_state={','.join(states)}"
+
+
+def _public_label_artifact_metadata(metadata: dict[str, Any] | None) -> dict[str, Any] | None:
+    if metadata is None:
+        return None
+    fields = (
+        "path",
+        "hash",
+        "row_count",
+        "schema_version",
+        "join_key",
+        "candidate_coverage",
+        "user_coverage",
+        "positive_coverage",
+        "topk_union_candidate_coverage",
+        "user_label_coverage",
+        "positive_user_coverage",
+        "full_pool_candidate_coverage_diagnostic",
+        "positive_count",
+        "coverage_thresholds",
+        "failed_thresholds",
+        "eligible_user_count",
+    )
+    return {field: metadata.get(field) for field in fields if field in metadata}
+
+
+def _redact_ranking_results(ranking_results: dict[str, list[dict[str, Any]]]) -> dict[str, list[dict[str, Any]]]:
+    return {user_id: [_ranking_item_payload(item) for item in items] for user_id, items in ranking_results.items()}
+
 
 
 def _ranking_result_explainability_blockers(config_id: str, ranking_results: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
@@ -543,8 +820,10 @@ def build_pool500_diagnostic_frozen_pool_ranking_evidence(
     shadow_metrics: dict[str, Any],
     source_artifact_gate_result: dict[str, Any] | None = None,
     source_shadow_evidence_validation: dict[str, Any] | None = None,
+    label_context: dict[str, Any] | None = None,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
+    label_context = label_context or {"label_state": "mechanism_only", "label_artifact_metadata": None, "label_blockers": []}
     return {
         "schema_version": DIAGNOSTIC_FROZEN_POOL_SCHEMA_VERSION,
         "report_semantics": "diagnostic frozen-pool shadow ranking report",
@@ -576,8 +855,12 @@ def build_pool500_diagnostic_frozen_pool_ranking_evidence(
         "fallback_exposure_topk_ratio": shadow_metrics.get("fallback_exposure_topk_ratio"),
         "topk_source_mix": shadow_metrics.get("topk_source_mix", {}),
         "repaired_user_topk_stats": shadow_metrics.get("repaired_user_topk_stats", {}),
-        "label_metrics_available": shadow_metrics.get("label_metrics_available", False),
-        "label_adjacent_metrics": shadow_metrics.get("label_adjacent_metrics", {}),
+        "label_metrics_available": label_context.get("label_metrics_available", shadow_metrics.get("label_metrics_available", False)),
+        "label_adjacent_metrics": label_context.get("label_adjacent_metrics", shadow_metrics.get("label_adjacent_metrics", {})),
+        "label_state": label_context.get("label_state"),
+        "label_discovery_policy": label_context.get("label_discovery_policy"),
+        "label_artifact_metadata": label_context.get("label_artifact_metadata"),
+        "label_blockers": label_context.get("label_blockers", []),
         "config_delta_vs_B0": _config_delta_vs_b0(shadow_metrics.get("config", {})) if isinstance(shadow_metrics.get("config"), dict) else {},
         "input_validation_status": PASS if not input_validation.get("blockers") else STOP,
         **DIAGNOSTIC_ONLY_FLAGS,
@@ -609,6 +892,8 @@ def validate_pool500_diagnostic_frozen_pool_ranking_evidence(evidence: dict[str,
         blockers.append(_blocker("POOL500_DIAGNOSTIC_RANKING_MANIFEST_HASH_MISMATCH", {"expected": evidence.get("expected_manifest_hash"), "computed": evidence.get("computed_manifest_hash")}))
     if evidence.get("source_artifact_gate_decision") == FULL_POOL500_READY or evidence.get("source_artifact_gate_decision_observed") == FULL_POOL500_READY:
         blockers.append(_blocker("POOL500_DIAGNOSTIC_RANKING_FULL_READY_FORBIDDEN", {"source_artifact_gate_decision": evidence.get("source_artifact_gate_decision"), "source_artifact_gate_decision_observed": evidence.get("source_artifact_gate_decision_observed")}))
+    if evidence.get("label_state") == "blocked":
+        blockers.append(_blocker("POOL500_DIAGNOSTIC_LABEL_BLOCKED", {"label_state": evidence.get("label_state"), "label_blockers": evidence.get("label_blockers", [])}))
     blockers.extend(_validate_diagnostic_required_aggregations(evidence))
     blockers.extend(_validate_forbidden_source_labels(evidence))
     blockers.extend(_validate_forbidden_semantics(evidence))
@@ -826,6 +1111,252 @@ def _validate_diagnostic_frozen_pool_input(
         "expected_manifest_hash": expected_manifest_hash,
         "computed_manifest_hash": computed_manifest_hash,
         **stats,
+    }
+
+
+def _build_pool500_label_context(
+    *,
+    candidate_path: Path,
+    manifest_path: Path,
+    explicit_label_artifact_path: str | Path | None,
+    evaluator_enabled: bool,
+    ranking_results: dict[str, list[dict[str, Any]]] | None,
+) -> dict[str, Any]:
+    discovered = _discover_pool500_label_artifact(candidate_path, manifest_path, explicit_label_artifact_path)
+    metadata = None
+    if discovered.get("source") in {"explicit", "manifest"} and discovered.get("path"):
+        metadata = _label_artifact_metadata(discovered["path"], ranking_results)
+    blockers = list(discovered.get("blockers", []))
+    if metadata is not None:
+        blockers.extend(metadata.get("blockers", []))
+    state = _pool500_label_state(evaluator_enabled, metadata, blockers, discovered.get("source"))
+    return {
+        "label_discovery_policy": "explicit_label_path > manifest_declared_label_path > known_output_directory_read_only_discovery",
+        "label_artifact_source": discovered.get("source"),
+        "label_artifact_metadata": metadata,
+        "label_state": state,
+        "label_metrics_available": state == "label_comparable",
+        "label_adjacent_metrics": _label_artifact_adjacent_metrics(metadata) if state == "label_comparable" else {},
+        "label_blockers": blockers,
+    }
+
+
+def _discover_pool500_label_artifact(candidate_path: Path, manifest_path: Path, explicit_label_artifact_path: str | Path | None) -> dict[str, Any]:
+    if explicit_label_artifact_path is not None:
+        path = Path(explicit_label_artifact_path)
+        return {"source": "explicit", "path": path if path.exists() and not path.is_dir() else None, "blockers": [] if path.exists() and not path.is_dir() else [_blocker("POOL500_LABEL_EXPLICIT_ARTIFACT_MISSING", {"path": str(path)})]}
+    manifest = read_json(manifest_path) if manifest_path.exists() and not manifest_path.is_dir() else {}
+    manifest_label_artifact = manifest.get("label_artifact")
+    manifest_label_path = manifest.get("label_artifact_path") or manifest.get("label_path")
+    if manifest_label_path is None and isinstance(manifest_label_artifact, dict):
+        manifest_label_path = manifest_label_artifact.get("path")
+    if manifest_label_path:
+        path = Path(manifest_label_path)
+        if not path.is_absolute():
+            path = manifest_path.parent / path
+        return {"source": "manifest", "path": path if path.exists() and not path.is_dir() else None, "blockers": [] if path.exists() and not path.is_dir() else [_blocker("POOL500_LABEL_MANIFEST_ARTIFACT_MISSING", {"path": str(path)})]}
+    known_path = candidate_path.parent / "pool500_labels.jsonl"
+    return {"source": "known_output_directory_read_only", "path": known_path if known_path.exists() and not known_path.is_dir() else None, "blockers": []}
+
+
+def _label_artifact_metadata(
+    path: Path,
+    ranking_results: dict[str, list[dict[str, Any]]] | None,
+    *,
+    candidate_pairs: set[tuple[str, str]] | None = None,
+    full_pool_candidate_pairs: set[tuple[str, str]] | None = None,
+) -> dict[str, Any]:
+    blockers: list[dict[str, Any]] = []
+    row_count = 0
+    positive_count = 0
+    label_pairs: set[tuple[str, str]] = set()
+    positive_pairs: set[tuple[str, str]] = set()
+    label_users: set[str] = set()
+    positive_users: set[str] = set()
+    ranked_positions = _ranking_result_positions(ranking_results)
+    evaluated_pairs = set(candidate_pairs) if candidate_pairs is not None else set(ranked_positions)
+    full_pool_pairs = set(full_pool_candidate_pairs) if full_pool_candidate_pairs is not None else set(evaluated_pairs)
+    candidate_users = {user_id for user_id, _ in evaluated_pairs}
+    schema_version: str | None = None
+    join_key: str | None = None
+    for row in iter_jsonl(path):
+        row_count += 1
+        if schema_version is None:
+            schema_version = str(row.get("schema_version") or "pool500_label_artifact_v1")
+        user_id = str(row.get("user_id") or "")
+        item_id = str(row.get("parent_asin") or row.get("item_id") or "")
+        if not user_id or not item_id:
+            blockers.append(_blocker("POOL500_LABEL_JOIN_KEY_INVALID", {"row_number": row_count, "user_id": user_id, "item_id": item_id}))
+            continue
+        pair = (user_id, item_id)
+        label_pairs.add(pair)
+        label_users.add(user_id)
+        if join_key is None:
+            join_key = "user_id,parent_asin" if row.get("parent_asin") is not None else "user_id,item_id"
+        try:
+            positive = _label_row_positive(row)
+        except ValueError as exc:
+            blockers.append(_blocker("POOL500_LABEL_VALUE_INVALID", {"row_number": row_count, "error": str(exc)}))
+            continue
+        if positive:
+            positive_count += 1
+            positive_pairs.add(pair)
+            positive_users.add(user_id)
+    topk_union_candidate_coverage = round(len(evaluated_pairs & label_pairs) / len(evaluated_pairs), 6) if evaluated_pairs else 0.0
+    full_pool_candidate_coverage = round(len(full_pool_pairs & label_pairs) / len(full_pool_pairs), 6) if full_pool_pairs else 0.0
+    user_label_coverage = round(len(candidate_users & label_users) / len(candidate_users), 6) if candidate_users else 0.0
+    positive_user_coverage = round(len(candidate_users & positive_users) / len(candidate_users), 6) if candidate_users else 0.0
+    failed_thresholds = [
+        name
+        for name, threshold in STRICT_LABEL_GATE_THRESHOLDS.items()
+        if {
+            "topk_union_candidate_coverage": topk_union_candidate_coverage,
+            "user_label_coverage": user_label_coverage,
+            "positive_user_coverage": positive_user_coverage,
+        }[name]
+        < threshold
+    ]
+    if row_count == 0:
+        blockers.append(_blocker("POOL500_LABEL_SCHEMA_INVALID", {"path": str(path), "reason": "empty_label_artifact"}))
+    if schema_version not in {None, "pool500_label_artifact_v1"}:
+        blockers.append(_blocker("POOL500_LABEL_SCHEMA_INVALID", {"path": str(path), "schema_version": schema_version}))
+    if join_key not in {None, "user_id,parent_asin", "user_id,item_id"}:
+        blockers.append(_blocker("POOL500_LABEL_JOIN_KEY_INVALID", {"join_key": join_key}))
+    return {
+        "path": str(path),
+        "hash": _sha256_file(path),
+        "row_count": row_count,
+        "schema_version": schema_version,
+        "join_key": join_key,
+        "candidate_coverage": topk_union_candidate_coverage,
+        "user_coverage": user_label_coverage,
+        "positive_coverage": positive_user_coverage,
+        "topk_union_candidate_coverage": topk_union_candidate_coverage,
+        "user_label_coverage": user_label_coverage,
+        "positive_user_coverage": positive_user_coverage,
+        "full_pool_candidate_coverage_diagnostic": full_pool_candidate_coverage,
+        "positive_count": positive_count,
+        "positive_pairs": sorted(positive_pairs),
+        "positive_pairs_by_user": _pairs_by_user(positive_pairs),
+        "eligible_user_count": len(candidate_users & positive_users),
+        "ranked_positive_positions": {f"{user_id}\t{item_id}": rank for (user_id, item_id), rank in ranked_positions.items() if (user_id, item_id) in positive_pairs},
+        "coverage_thresholds": dict(STRICT_LABEL_GATE_THRESHOLDS),
+        "failed_thresholds": failed_thresholds,
+        "blockers": blockers,
+    }
+
+
+def _pairs_by_user(pairs: set[tuple[str, str]]) -> dict[str, list[str]]:
+    by_user: dict[str, list[str]] = {}
+    for user_id, item_id in sorted(pairs):
+        by_user.setdefault(user_id, []).append(item_id)
+    return by_user
+
+
+def _ranking_result_positions(ranking_results: dict[str, list[dict[str, Any]]] | None) -> dict[tuple[str, str], int]:
+    if not ranking_results:
+        return {}
+    positions: dict[tuple[str, str], int] = {}
+    for user_id, items in ranking_results.items():
+        for index, item in enumerate(items, start=1):
+            if item.get("parent_asin"):
+                positions[(str(user_id), str(item.get("parent_asin")))] = int(item.get("final_rank") or index)
+    return positions
+
+
+def _label_row_positive(row: dict[str, Any]) -> bool:
+    for field in ("label_binary", "label", "holdout_hit", "is_hit", "clicked", "purchased"):
+        if field in row:
+            return _strict_positive_value(row.get(field))
+    if "rating" in row:
+        return float(row.get("rating") or 0.0) > 0.0
+    return False
+
+
+def _strict_positive_value(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return float(value) > 0.0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "y", "positive"}:
+            return True
+        if normalized in {"0", "false", "no", "n", "negative", ""}:
+            return False
+        raise ValueError(f"Unsupported label value: {value!r}")
+    return bool(value)
+
+
+def _pool500_label_state(evaluator_enabled: bool, metadata: dict[str, Any] | None, blockers: list[dict[str, Any]], artifact_source: str | None) -> str:
+    if blockers and all(blocker.get("code") in {"POOL500_LABEL_EXPLICIT_ARTIFACT_MISSING", "POOL500_LABEL_MANIFEST_ARTIFACT_MISSING"} for blocker in blockers):
+        return "pending_label" if evaluator_enabled else "mechanism_only"
+    if not evaluator_enabled:
+        return "mechanism_only"
+    if artifact_source not in {"explicit", "manifest"}:
+        return "pending_label"
+    if metadata is None:
+        return "pending_label"
+    if metadata.get("blockers") or not metadata.get("schema_version") or not metadata.get("join_key"):
+        return "label_invalid"
+    if not metadata.get("row_count") or metadata.get("failed_thresholds"):
+        return "label_insufficient"
+    return "label_comparable"
+
+
+def _label_artifact_adjacent_metrics(metadata: dict[str, Any] | None) -> dict[str, Any]:
+    if not metadata:
+        return {}
+    return {
+        "label_metric_definition_version": LABEL_METRIC_DEFINITION_VERSION,
+        "label_row_count": metadata.get("row_count"),
+        "label_positive_count": metadata.get("positive_count"),
+        "candidate_coverage": metadata.get("candidate_coverage"),
+        "user_coverage": metadata.get("user_coverage"),
+        "positive_coverage": metadata.get("positive_coverage"),
+        **_label_artifact_topk_metrics(metadata, {}, 20),
+    }
+
+
+def _label_artifact_metrics_for_ranking(metadata: dict[str, Any] | None, ranking_results: Any, k: int) -> dict[str, Any]:
+    if not metadata or not isinstance(ranking_results, dict):
+        return {}
+    return {
+        "label_metric_definition_version": LABEL_METRIC_DEFINITION_VERSION,
+        "label_row_count": metadata.get("row_count"),
+        "label_positive_count": metadata.get("positive_count"),
+        "candidate_coverage": metadata.get("candidate_coverage"),
+        "user_coverage": metadata.get("user_coverage"),
+        "positive_coverage": metadata.get("positive_coverage"),
+        **_label_artifact_topk_metrics(metadata, ranking_results, k),
+    }
+
+
+def _label_artifact_topk_metrics(metadata: dict[str, Any], ranking_results: dict[str, list[dict[str, Any]]], k: int) -> dict[str, Any]:
+    positive_by_user = {str(user_id): set(items) for user_id, items in dict(metadata.get("positive_pairs_by_user", {})).items()}
+    eligible_users = sorted(positive_by_user)
+    if not eligible_users:
+        return {"eligible_user_count": 0, f"hit_at_{k}": 0.0, f"ndcg_at_{k}": 0.0, f"mrr_at_{k}": 0.0, f"recall_at_{k}": 0.0}
+    user_hit: list[float] = []
+    user_ndcg: list[float] = []
+    user_mrr: list[float] = []
+    user_recall: list[float] = []
+    for user_id in eligible_users:
+        positives = positive_by_user[user_id]
+        ranked_items = [str(item.get("parent_asin")) for item in ranking_results.get(user_id, [])[:k] if isinstance(item, dict) and item.get("parent_asin")]
+        hit_positions = [rank for rank, item_id in enumerate(ranked_items, start=1) if item_id in positives]
+        user_hit.append(1.0 if hit_positions else 0.0)
+        dcg = sum(1.0 / log2(position + 1) for position in hit_positions)
+        ideal_dcg = sum(1.0 / log2(index + 2) for index in range(min(len(positives), k)))
+        user_ndcg.append(dcg / ideal_dcg if ideal_dcg else 0.0)
+        user_mrr.append(1.0 / hit_positions[0] if hit_positions else 0.0)
+        user_recall.append(len(hit_positions) / len(positives) if positives else 0.0)
+    return {
+        "eligible_user_count": len(eligible_users),
+        f"hit_at_{k}": round(mean(user_hit), 6),
+        f"ndcg_at_{k}": round(mean(user_ndcg), 6),
+        f"mrr_at_{k}": round(mean(user_mrr), 6),
+        f"recall_at_{k}": round(mean(user_recall), 6),
     }
 
 
@@ -1287,7 +1818,17 @@ def _validate_forbidden_semantics(payload: Any) -> list[dict[str, Any]]:
             blockers.append(_blocker("POOL500_SHADOW_RANKING_FORBIDDEN_FIELD", {"field": key, "value": value}))
         if leaf == "run_kind" and str(value) in FORBIDDEN_RUN_KINDS:
             blockers.append(_blocker("POOL500_SHADOW_RANKING_FORBIDDEN_RUN_KIND", {"field": key, "value": value}))
+        if isinstance(value, str) and value in FORBIDDEN_READY_VALUES:
+            blockers.append(_blocker("POOL500_SHADOW_RANKING_FORBIDDEN_READY_SEMANTIC", {"field": key, "value": value}))
     return blockers
+
+
+def _validate_fixed_report_summary_ready_semantics(payload: Any) -> list[dict[str, Any]]:
+    return [
+        _blocker("POOL500_SHADOW_RANKING_FORBIDDEN_READY_SEMANTIC", {"field": key, "value": value})
+        for key, value in _walk(payload)
+        if value == FULL_POOL500_READY
+    ]
 
 
 def _walk(payload: Any, prefix: str = "") -> list[tuple[str, Any]]:

@@ -11,6 +11,8 @@ from rs_core.recsys.ltr import (
     load_ltr_model,
     save_ltr_model,
     score_ltr,
+    score_ltr_model,
+    train_lightgbm_lambdamart,
     train_pairwise_perceptron,
     train_pointwise_logistic,
     validate_ltr_feature_contract_gate,
@@ -146,6 +148,30 @@ def test_extract_ltr_features_includes_two_tower_source_features():
     assert features["semantic_only"] == 0.0
 
 
+def test_ltr_feature_contract_gate_passes_ranking_v2_feature_set():
+    candidate = MergedCandidate(
+        item_id="item1",
+        sources=["two_tower", "semantic", "itemcf_strong", "co_visit_fallback_repair"],
+        source_scores={"two_tower": 0.9, "semantic": 0.3, "itemcf_strong": 0.6, "popular": 0.2, "co_visit_fallback_repair": 0.4},
+        category="cat_a",
+        metadata={
+            "pool500_source_lineage": [{"rank": 1}, {"rank": 5}],
+            "average_rating": "4.5",
+            "rating_number": "120",
+            "fallback_used": True,
+            "repair_marker": True,
+        },
+    )
+    rows = [{"user_id": "u1", "item_id": "item1", "label": 1, "features": extract_ltr_features(candidate, {"include_ranking_v2": True})}]
+
+    summary = validate_ltr_feature_contract_gate(rows)
+
+    assert summary["status"] == "PASS"
+    assert summary["unknown_feature_names"] == []
+    assert summary["forbidden_feature_names"] == []
+
+
+
 def test_ltr_feature_contract_gate_passes_allowed_feature_set():
     rows = [
         {"user_id": "u1", "item_id": "i1", "label": 1, "features": {"score_semantic": 0.7, "source_count": 2.0}},
@@ -265,6 +291,25 @@ def test_pointwise_logistic_promotes_positive_over_negative():
     assert model["training"]["updates"] == 20
     assert model["training"]["average_loss"] > 0
 
+
+
+def test_lightgbm_lambdamart_interface_is_optional_and_serializable():
+    rows = [
+        {"user_id": "u1", "item_id": "positive", "label": 1, "features": {"itemcf_source": 1.0, "score_itemcf_strong": 1.0}},
+        {"user_id": "u1", "item_id": "negative", "label": 0, "features": {"popular_only": 1.0, "score_popular": 1.0}},
+    ]
+
+    model = train_lightgbm_lambdamart(rows, {"n_estimators": 2, "min_data_in_leaf": 1})
+
+    assert model["model_type"] == "lightgbm_lambdamart_ltr_v1"
+    assert set(model["feature_names"]) == {"itemcf_source", "popular_only", "score_itemcf_strong", "score_popular"}
+    if model["training"]["status"] == "dependency_unavailable":
+        score, events = score_ltr_model(rows[0]["features"], model)
+        assert score == 0.0
+        assert events[0]["type"] == "ltr_model_unavailable"
+    else:
+        assert model["training"]["status"] == "trained"
+        assert isinstance(model["booster_model"], str)
 
 
 def test_save_and_load_ltr_model_preserves_scores(tmp_path):

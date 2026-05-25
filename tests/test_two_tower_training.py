@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -12,14 +13,13 @@ from rs_core.recsys.candidate_merge import load_two_tower_index, two_tower_candi
 from rs_core.recsys.vector_index import VectorIndex
 from rs_core.recsys import two_tower
 from rs_core.recsys.two_tower import save_two_tower_artifacts, train_two_tower_model
-from rs_core.workflow.two_tower_training import build_two_tower_seed_sidecar, build_two_tower_seed_sidecar_from_config, train_two_tower_recall
+from rs_core.workflow.two_tower_training import build_two_tower_item_vocab, build_two_tower_seed_sidecar, build_two_tower_seed_sidecar_from_config, train_two_tower_recall
+from scripts.training.train_two_tower import main as train_two_tower_cli_main
 
 
 def _write_training_workflow_fixture(tmp_path: Path) -> dict[str, Path]:
     clean_dir = tmp_path / "clean"
-    views_dir = tmp_path / "views"
     clean_dir.mkdir()
-    views_dir.mkdir()
 
     write_jsonl(
         clean_dir / "user_sequences.train.jsonl",
@@ -28,17 +28,31 @@ def _write_training_workflow_fixture(tmp_path: Path) -> dict[str, Path]:
             {"user_id": "u2", "recent_positive_item_sequence": ["camera_seed", "camera_next"], "recent_item_sequence": ["camera_seed", "camera_next"]},
         ],
     )
-    write_jsonl(views_dir / "category_recall_items.jsonl", _items())
-    write_jsonl(views_dir / "popular_recall.jsonl", [])
+    write_jsonl(
+        clean_dir / "canonical_interactions.train.jsonl",
+        [
+            {"user_id": "u1", "parent_asin": "audio_seed"},
+            {"user_id": "u1", "parent_asin": "audio_next"},
+            {"user_id": "u2", "parent_asin": "camera_seed"},
+            {"user_id": "u2", "parent_asin": "camera_next"},
+        ],
+    )
+    write_jsonl(clean_dir / "canonical_items.jsonl", _items())
+    vocab_manifest_path = tmp_path / "item_vocab" / "two_tower_item_vocab_manifest.json"
+    build_two_tower_item_vocab(
+        clean_dir / "canonical_interactions.train.jsonl",
+        tmp_path / "item_vocab" / "two_tower_item_vocab.jsonl",
+        vocab_manifest_path,
+        clean_dir / "canonical_items.jsonl",
+    )
 
     config_path = tmp_path / "config.json"
     write_json(
         config_path,
         {
             "clean_dir": str(clean_dir),
-            "views_dir": str(views_dir),
             "evaluation_mode": "train_only",
-            "two_tower_training": {"variant": "youtube_dnn", "source_name": "two_tower_youtube_dnn"},
+            "two_tower_training": {"variant": "youtube_dnn", "source_name": "two_tower_youtube_dnn", "item_vocab_manifest": str(vocab_manifest_path)},
         },
     )
     user_quality_path = tmp_path / "eligible_user_quality_manifest.json"
@@ -72,6 +86,81 @@ def _items() -> list[dict]:
         {"parent_asin": "camera_seed", "title_clean": "mirrorless camera", "main_category": "Camera"},
         {"parent_asin": "camera_next", "title_clean": "camera tripod", "main_category": "Camera"},
     ]
+
+
+def test_two_tower_item_vocab_is_canonical_train_only_and_metadata_does_not_expand(tmp_path: Path):
+    train_path = tmp_path / "canonical_interactions.train.jsonl"
+    metadata_path = tmp_path / "canonical_items.jsonl"
+    vocab_path = tmp_path / "two_tower_item_vocab.jsonl"
+    manifest_path = tmp_path / "two_tower_item_vocab_manifest.json"
+    write_jsonl(train_path, [{"parent_asin": "train_a"}, {"item_id": "train_b"}, {"parent_asin": "train_a"}])
+    write_jsonl(
+        metadata_path,
+        [
+            {"parent_asin": "train_a", "title_clean": "kept metadata"},
+            {"parent_asin": "metadata_only", "title_clean": "must not expand"},
+        ],
+    )
+
+    manifest = build_two_tower_item_vocab(train_path, vocab_path, manifest_path, metadata_path)
+    rows = read_jsonl(vocab_path)
+
+    assert {row["parent_asin"] for row in rows} == {"train_a", "train_b"}
+    assert {row["item_id"] for row in rows} == {"train_a", "train_b"}
+    assert "metadata_only" not in {row["parent_asin"] for row in rows}
+    assert manifest["item_count"] == len(rows) == 2
+    assert manifest["metadata_join_added_items"] is False
+    assert manifest["content_hash"].startswith("sha256:")
+    assert read_json(manifest_path) == manifest
+
+
+def test_two_tower_item_vocab_min_frequency_prunes_train_items_only(tmp_path: Path):
+    train_path = tmp_path / "canonical_interactions.train.jsonl"
+    metadata_path = tmp_path / "canonical_items.jsonl"
+    vocab_path = tmp_path / "two_tower_item_vocab.jsonl"
+    manifest_path = tmp_path / "two_tower_item_vocab_manifest.json"
+    write_jsonl(train_path, [{"parent_asin": "keep_a"}, {"parent_asin": "keep_a"}, {"parent_asin": "drop_b"}])
+    write_jsonl(metadata_path, [{"parent_asin": "keep_a"}, {"parent_asin": "drop_b"}, {"parent_asin": "metadata_only"}])
+
+    manifest = build_two_tower_item_vocab(train_path, vocab_path, manifest_path, metadata_path, min_frequency=2)
+    rows = read_jsonl(vocab_path)
+
+    assert [row["parent_asin"] for row in rows] == ["keep_a"]
+    assert manifest["item_count"] == 1
+    assert manifest["original_item_count"] == 2
+    assert manifest["filtered_item_count"] == 1
+    assert manifest["min_frequency"] == 2
+    assert manifest["metadata_join_added_items"] is False
+
+
+def test_train_two_tower_recall_rejects_eval_scoped_item_vocab_manifest(tmp_path: Path):
+    paths = _write_training_workflow_fixture(tmp_path)
+    config = read_json(paths["config"])
+    manifest_path = Path(config["two_tower_training"]["item_vocab_manifest"])
+    manifest = read_json(manifest_path)
+    manifest["source_paths"]["canonical_interactions_train"] = str(tmp_path / "canonical_interactions.valid.jsonl")
+    write_json(manifest_path, manifest)
+
+    with pytest.raises(ValueError, match="eval/valid/test/holdout"):
+        train_two_tower_recall(
+            paths["config"],
+            output_dir=tmp_path / "artifacts",
+            variant="youtube_dnn",
+            config_overrides={"two_tower_training": {"embedding_dim": 8, "epochs": 1, "negative_samples": 1}},
+        )
+
+
+def test_train_two_tower_cli_blocks_default_and_explicit_all(monkeypatch, tmp_path: Path):
+    config_path = tmp_path / "config.json"
+    write_json(config_path, {"clean_dir": str(tmp_path)})
+
+    monkeypatch.setattr(sys, "argv", ["train_two_tower.py", "--config", str(config_path)])
+    with pytest.raises(SystemExit, match="variant youtube_dnn"):
+        train_two_tower_cli_main()
+
+    monkeypatch.setattr(sys, "argv", ["train_two_tower.py", "--config", str(config_path), "--variant", "all"])
+    with pytest.raises(SystemExit, match="variant youtube_dnn"):
+        train_two_tower_cli_main()
 
 
 def test_two_tower_artifacts_write_complete_default_off_contract(tmp_path: Path):
@@ -232,6 +321,10 @@ def test_train_two_tower_recall_filters_user_quality_policy(tmp_path: Path):
     metrics = read_json(result["train_metrics_path"])
     user_embeddings = read_jsonl(result["user_embeddings_path"])
     assert metrics["training_input_users"] == 1
+    assert metrics["split_scope"] == "train_only"
+    assert metrics["leakage_checks"] == {"train_inputs_only": True, "eval_paths_rejected": True}
+    assert metrics["item_vocab_size"] == 4
+    assert Path(metrics["item_vocab_manifest_path"]).name == "two_tower_item_vocab_manifest.json"
     assert metrics["user_quality_selected_user_count"] == 1
     assert metrics["user_quality_matched_user_count"] == 1
     assert metrics["user_quality_bucket"] == "heavy"

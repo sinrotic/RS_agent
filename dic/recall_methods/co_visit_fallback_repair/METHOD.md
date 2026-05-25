@@ -79,3 +79,22 @@ D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m rs_l
 ## 专项优化 Agent 调用说明
 
 后续单独调用 Agent 优化本方法时，目标应是建设或确认真实 train-only co-visit graph，并验证 fallback repair 是否能补 underfill，而不是把 metadata neighbor diagnostic evidence 包装成 READY。Agent 必须保持 `deferred_evidence_policy`，产出 train-only co-visit input、触发条件、repair boundary、resource audit 和诊断 manifest；未通过 source gate 前不得宣称 READY、ranking input replacement 或 pool1000。
+
+## P2 method_dataset 数据清洗与筛选方案
+
+- 数据来源：只读取 train-only 用户历史、train-only co-visit edges 与 train-only/static item metadata；不继承 Popular/Category 的 full-statistics no-input-cap 合同。
+- 筛选单位：`user_seed_item_to_bounded_co_visit_edges`。从用户近期 train-only seed item 出发，保留有支撑的 bounded repair 边。
+- 适用数据：seed 来自 train-only 用户历史；repair 可使用 `title_clean`、`main_category` 等静态字段做弱约束。
+- 清洗规则：过滤缺失 user/item id、pair support 不足、distinct user support 不足、超过热度上限的高噪声 item、非 train-only universe item；用户内去重并保持确定性排序。
+- 规模参数：`max_target_users=500`、`seed_window=80`、`max_seed_items_per_user=80`、`items_per_seed=100`、`items_per_user=500`、`max_bucket_items=5000`、`min_pair_support=2`、`min_distinct_user_support=2`、`max_item_user_frequency=3000`。
+
+### 规模档位
+
+| 档位 | max_target_users | seed_window | max_seed_items_per_user | items_per_seed | items_per_user | max_bucket_items | min_pair_support | min_distinct_user_support | max_item_user_frequency |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| smoke | 500 | 20 | 20 | 40 | 120 | 1000 | 1 | 1 | 3000 |
+| diagnostic | 500 | 50 | 50 | 80 | 300 | 3000 | 2 | 2 | 3000 |
+| local_formal | 500 | 80 | 80 | 100 | 500 | 5000 | 2 | 2 | 3000 |
+
+- 泄漏边界：不读取 valid/test/holdout/LOPO/clean_10000/eval_label/oracle，不用评估命中反向筛边，不声明 READY、promotion、ranking input replacement 或 pool1000。
+- 维护检查：修改 repair 边策略时同步检查 `co_visit_fallback_repair_v1`、pair 支撑阈值、热门 item 上限和 registry/builder/test 一致性。

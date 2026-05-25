@@ -38,3 +38,24 @@
 
 ## 专项优化 Agent 调用说明
 后续单独调用 Agent 优化本方法时，目标应是检查 category fallback 的覆盖、预算占比和与 popular 的重复率，而不是建设定制高质量用户数据集。Agent 必须保持 `default_dataset_policy`，只使用 train-only category metadata / lightweight views，不得把 category 的 READY 状态解释为 pool500 final ready、ranking input replacement 或 pool1000 权限。
+
+## P2 数据统计与输出控制方案
+
+- 数据来源：允许扫描 full train-only category/item statistics；Category 是允许 no input cap 的轻量统计方法。
+- 筛选单位：`category_conditioned_train_popularity`。按用户历史类目弱个性化，不构造 item-item pair 或 user-user graph。
+- 清洗规则：只统计 train-only 可用 item 与可解析 category；缺失类目的 item 不进入 category bucket，可交由 Popular 兜底。
+- 规模口径：输入不做人为缩减；资源边界由 category-item counter、item-category lookup 与 distinct train categories 决定。
+
+### 规模档位
+
+Category 在三个档位都不设置输入 cap；档位只约束输出/评估批量范围。
+
+| 档位 | input_size_cap_required | batch_user_limit |
+| --- | --- | --- |
+| smoke | false | 500 |
+| diagnostic | false | 5000 |
+| local_formal | false | full_pool500_scope |
+
+- 输出控制：通过 `category_bucket_cap_per_user`、单类目占比、source share cap、去重和 fallback 顺序控制最终占比。
+- 泄漏边界：不读取 valid/test/holdout/LOPO/eval_label/oracle，不声明 final pool500 ready、promotion、ranking input replacement 或 pool1000。
+- 维护检查：registry 中 Category 必须保持 `uses_full_train_statistics=true`、`input_size_cap_required=false`；只有 Popular/Category 可使用该口径。

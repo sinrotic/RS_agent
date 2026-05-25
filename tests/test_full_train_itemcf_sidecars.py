@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -21,6 +22,10 @@ def read_json(path: Path) -> dict[str, object]:
 
 def read_jsonl(path: Path) -> list[dict[str, object]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def user_ids_sha256(user_ids: list[str]) -> str:
+    return hashlib.sha256("\n".join(user_ids).encode("utf-8")).hexdigest()
 
 
 def make_clean_dir(tmp_path: Path) -> Path:
@@ -110,12 +115,18 @@ def test_user_quality_manifest_filters_weak_and_strong_policies(tmp_path: Path) 
     quality_manifest.write_text(
         json.dumps(
             {
+                "profiled_user_count": 4,
+                "profile_source_rows_scanned": 4,
+                "first_profiled_user_id": "u1",
+                "last_profiled_user_id": "u4",
+                "profiled_user_ids_sha256": user_ids_sha256(["u1", "u2", "u3", "u4"]),
+                "profile_universe_scope": "first_n_train_users",
                 "profiles": [
                     {"user_id": "u1", "quality_bucket": "heavy_cf_eligible"},
                     {"user_id": "u2", "quality_bucket": "medium_behavior"},
                     {"user_id": "u3", "quality_bucket": "fallback_only"},
                     {"user_id": "u4", "quality_bucket": "fallback_only"},
-                ]
+                ],
             },
             ensure_ascii=False,
         ),
@@ -135,6 +146,40 @@ def test_user_quality_manifest_filters_weak_and_strong_policies(tmp_path: Path) 
     assert strong_comparison["source_policy"] == "heavy_cf_eligible"
     assert weak_manifest["users_filtered_by_quality"] == 2
     assert strong_manifest["users_filtered_by_quality"] == 3
+
+
+
+def test_user_quality_manifest_stops_at_profiled_train_boundary(tmp_path: Path) -> None:
+    clean_dir = make_clean_dir(tmp_path)
+    quality_manifest = tmp_path / "quality" / "eligible_user_quality_manifest.json"
+    quality_manifest.parent.mkdir()
+    quality_manifest.write_text(
+        json.dumps(
+            {
+                "profiled_user_count": 2,
+                "profile_source_rows_scanned": 2,
+                "first_profiled_user_id": "u1",
+                "last_profiled_user_id": "u2",
+                "profiled_user_ids_sha256": user_ids_sha256(["u1", "u2"]),
+                "profile_universe_scope": "first_n_train_users",
+                "profiles": [
+                    {"user_id": "u1", "quality_bucket": "fallback_only"},
+                    {"user_id": "u2", "quality_bucket": "medium_behavior"},
+                ],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    manifest = build_for_test(clean_dir, tmp_path / "weak_quality_boundary", "itemcf_weak", user_quality_manifest_path=quality_manifest)
+
+    assert manifest["actual_train_user_count"] == 1
+    assert manifest["users_scanned_within_profile"] == 2
+    assert manifest["users_with_source_items"] == 1
+    assert manifest["users_filtered_by_quality"] == 1
+    assert manifest["used_quality_bucket_counts"] == {"medium_behavior": 1}
+    assert manifest["profile_boundary"]["last_profiled_user_id"] == "u2"
 
 
 

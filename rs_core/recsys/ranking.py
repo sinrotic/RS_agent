@@ -5,7 +5,7 @@ from itertools import groupby, product
 from pathlib import Path
 from typing import Any
 
-from rs_core.recsys.ltr import extract_ltr_features, load_ltr_model, score_ltr
+from rs_core.recsys.ltr import extract_ltr_features, load_ltr_model, score_ltr_model
 from rs_core.recsys.types import MergedCandidate, RankingResult
 
 _ALLOWED_ADDITIVE_WEIGHT_GRID = {
@@ -24,13 +24,15 @@ def rank_candidates(
     allowed_sources: set[str] | None = None,
 ) -> RankingResult:
     k = int(top_k or config.get("top_k", 5))
-    rows = rerank_candidates(fine_rank_candidates(coarse_rank_candidates(candidates, config, allowed_sources), config), config)
+    coarse_rows = _apply_coarse_top_n(coarse_rank_candidates(candidates, config, allowed_sources), config)
+    rows = rerank_candidates(fine_rank_candidates(coarse_rows, config), config)
     _annotate_stage_ranks(rows)
     rows.sort(key=lambda item: (-item["score"], item["parent_asin"]))
     _annotate_stable_tie_breaks(rows)
-    if not config.get("topk_source_minimums"):
-        return RankingResult(user_id=user_id, items=rows[:k], fallback_used=not candidates)
-    return RankingResult(user_id=user_id, items=_apply_source_minimums(rows, k, config["topk_source_minimums"]), fallback_used=not candidates)
+    if config.get("topk_source_minimums"):
+        return RankingResult(user_id=user_id, items=_apply_source_minimums(rows, k, config["topk_source_minimums"]), fallback_used=not candidates)
+    rows = _apply_policy_rerank_guards(rows, k, config)
+    return RankingResult(user_id=user_id, items=rows[:k], fallback_used=not candidates)
 
 
 def coarse_rank_candidates(
@@ -39,6 +41,7 @@ def coarse_rank_candidates(
     allowed_sources: set[str] | None = None,
 ) -> list[dict[str, Any]]:
     weights = config.get("rank_weights", {})
+    coarse_policy = config.get("coarse_ranking", {}) if isinstance(config.get("coarse_ranking", {}), dict) else {}
     rows: list[dict[str, Any]] = []
     for candidate in candidates:
         sources = [source for source in candidate.sources if allowed_sources is None or source in allowed_sources]
@@ -46,15 +49,33 @@ def coarse_rank_candidates(
             continue
         base_score = 0.0
         feedback_boost = 0.0
+        source_components: dict[str, dict[str, float]] = {}
         for source in sources:
-            contribution = float(weights.get(source, 1.0)) * float(candidate.source_scores.get(source, 0.0))
+            raw_score = float(candidate.source_scores.get(source, 0.0))
+            calibrated_score = _calibrated_source_score(raw_score, source, coarse_policy)
+            contribution = float(weights.get(source, 1.0)) * calibrated_score
+            source_components[source] = {
+                "raw_score": round(raw_score, 6),
+                "calibrated_score": round(calibrated_score, 6),
+                "weight": round(float(weights.get(source, 1.0)), 6),
+                "contribution": round(contribution, 6),
+            }
             if source.startswith("feedback_"):
                 feedback_boost += contribution
             else:
                 base_score += contribution
-        base_score += float(weights.get("recent", 0.0)) * float(candidate.metadata.get("recent_pop_score", 0.0) or 0.0)
-        base_score += float(weights.get("verified", 0.0)) * float(candidate.metadata.get("verified_pop_score", 0.0) or 0.0)
-        base_score += float(weights.get("time_decay", 0.0)) * float(candidate.metadata.get("time_decay_pop_score", 0.0) or 0.0)
+        source_prior = _source_prior_score(sources, coarse_policy)
+        rrf_score = _reciprocal_rank_fusion_score(candidate, sources, coarse_policy)
+        multi_source_boost = _coarse_multi_source_boost(sources, coarse_policy)
+        metadata_score = _coarse_metadata_score(candidate, weights)
+        base_score += metadata_score + source_prior + rrf_score + multi_source_boost
+        coarse_components = {
+            "source_score_calibration": source_components,
+            "source_prior": round(source_prior, 6),
+            "reciprocal_rank_fusion": round(rrf_score, 6),
+            "multi_source_boost": round(multi_source_boost, 6),
+            "metadata_score": round(metadata_score, 6),
+        }
         rows.append(
             {
                 "_candidate": candidate,
@@ -62,14 +83,95 @@ def coarse_rank_candidates(
                 "base_score": round(base_score, 6),
                 "_feedback_boost": feedback_boost,
                 "coarse_score": round(base_score, 6),
+                "coarse_components": coarse_components,
                 "sources": sources,
                 "category": candidate.category,
                 "score_trace": [
-                    {"stage": "coarse", "score": round(base_score, 6), "reason_codes": _coarse_reason_codes(sources)},
+                    {"stage": "coarse", "score": round(base_score, 6), "reason_codes": _coarse_reason_codes(sources, coarse_components), "components": coarse_components},
                 ],
             }
         )
     return rows
+
+
+def _calibrated_source_score(raw_score: float, source: str, coarse_policy: dict[str, Any]) -> float:
+    calibration = coarse_policy.get("source_score_calibration", {})
+    source_calibration = calibration.get(source, {}) if isinstance(calibration, dict) else {}
+    if not isinstance(source_calibration, dict):
+        return raw_score
+    scale = float(source_calibration.get("scale", 1.0))
+    offset = float(source_calibration.get("offset", 0.0))
+    lower = source_calibration.get("min")
+    upper = source_calibration.get("max")
+    calibrated = raw_score * scale + offset
+    if lower is not None:
+        calibrated = max(float(lower), calibrated)
+    if upper is not None:
+        calibrated = min(float(upper), calibrated)
+    return calibrated
+
+
+def _source_prior_score(sources: list[str], coarse_policy: dict[str, Any]) -> float:
+    priors = coarse_policy.get("source_prior", {})
+    if not isinstance(priors, dict):
+        return 0.0
+    return sum(float(priors.get(source, 0.0)) for source in _ranking_source_set(sources))
+
+
+def _reciprocal_rank_fusion_score(candidate: MergedCandidate, sources: list[str], coarse_policy: dict[str, Any]) -> float:
+    policy = coarse_policy.get("reciprocal_rank_fusion", {})
+    if not isinstance(policy, dict) or not policy.get("enabled"):
+        return 0.0
+    weight = float(policy.get("weight", 1.0))
+    rrf_k = float(policy.get("k", 60.0))
+    ranks = _candidate_source_ranks(candidate)
+    return sum(weight / (rrf_k + rank) for source, rank in ranks.items() if source in sources and rank > 0)
+
+
+def _candidate_source_ranks(candidate: MergedCandidate) -> dict[str, float]:
+    lineage = candidate.metadata.get("pool500_source_lineage")
+    ranks: dict[str, float] = {}
+    if isinstance(lineage, list):
+        for row in lineage:
+            if not isinstance(row, dict):
+                continue
+            source = str(row.get("source") or row.get("canonical_source") or "")
+            rank = row.get("rank")
+            if source and rank not in (None, ""):
+                ranks[source] = min(float(rank), ranks.get(source, float("inf")))
+    for source in candidate.sources:
+        key = f"{source}_rank"
+        if candidate.metadata.get(key) not in (None, ""):
+            ranks[source] = min(float(candidate.metadata[key]), ranks.get(source, float("inf")))
+    return ranks
+
+
+def _coarse_multi_source_boost(sources: list[str], coarse_policy: dict[str, Any]) -> float:
+    boost = float(coarse_policy.get("multi_source_boost", 0.0))
+    source_count = len(_ranking_source_set(sources))
+    return max(source_count - 1, 0) * boost
+
+
+def _coarse_metadata_score(candidate: MergedCandidate, weights: dict[str, Any]) -> float:
+    return (
+        float(weights.get("recent", 0.0)) * float(candidate.metadata.get("recent_pop_score", 0.0) or 0.0)
+        + float(weights.get("verified", 0.0)) * float(candidate.metadata.get("verified_pop_score", 0.0) or 0.0)
+        + float(weights.get("time_decay", 0.0)) * float(candidate.metadata.get("time_decay_pop_score", 0.0) or 0.0)
+    )
+
+
+def _apply_coarse_top_n(rows: list[dict[str, Any]], config: dict) -> list[dict[str, Any]]:
+    top_n = int(config.get("coarse_top_n") or config.get("coarse_topN") or 0)
+    if top_n <= 0 or len(rows) <= top_n:
+        return rows
+    ranked = sorted(rows, key=lambda item: (-float(item["coarse_score"]), item["parent_asin"]))
+    for rank, row in enumerate(ranked, start=1):
+        row["coarse_candidate_rank"] = rank
+        for stage_row in row.get("score_trace", []):
+            if stage_row.get("stage") == "coarse":
+                stage_row["candidate_rank_before_cutoff"] = rank
+                stage_row["coarse_top_n"] = top_n
+    return ranked[:top_n]
 
 
 def fine_rank_candidates(rows: list[dict[str, Any]], config: dict) -> list[dict[str, Any]]:
@@ -126,6 +228,9 @@ def rerank_candidates(rows: list[dict[str, Any]], config: dict) -> list[dict[str
                 "rerank_score": round(rerank_score, 6),
                 "final_score": round(final_score, 6),
                 "score": round(final_score, 6),
+                "metadata_present": bool(candidate.metadata),
+                "fallback_indicator": _candidate_has_policy_marker(candidate, ("fallback",)),
+                "repaired_indicator": _candidate_has_policy_marker(candidate, ("repair", "repaired")),
                 "score_trace": [
                     *row["score_trace"],
                     {"stage": "rerank", "score": round(final_score, 6), "delta": round(rerank_score, 6), "reason_codes": _rerank_reason_codes(ltr_events, model_rerank_events)},
@@ -291,8 +396,18 @@ def _annotate_stage_ranks(rows: list[dict[str, Any]]) -> None:
 
 
 
-def _coarse_reason_codes(sources: list[str]) -> list[str]:
-    return [f"source:{source}" for source in sources]
+def _coarse_reason_codes(sources: list[str], components: dict[str, Any] | None = None) -> list[str]:
+    reason_codes = [f"source:{source}" for source in sources]
+    components = components or {}
+    if components.get("source_prior"):
+        reason_codes.append("source_prior")
+    if components.get("reciprocal_rank_fusion"):
+        reason_codes.append("reciprocal_rank_fusion")
+    if components.get("multi_source_boost"):
+        reason_codes.append("multi_source_boost")
+    if components.get("metadata_score"):
+        reason_codes.append("metadata_score")
+    return reason_codes
 
 
 
@@ -340,6 +455,177 @@ def _annotate_stable_tie_breaks(rows: list[dict[str, Any]]) -> None:
             })
 
 
+def _apply_policy_rerank_guards(rows: list[dict[str, Any]], top_k: int, config: dict) -> list[dict[str, Any]]:
+    policy = config.get("policy_rerank_guard", {})
+    if not policy.get("enabled"):
+        return rows
+    guarded = list(rows)
+    for rule_name, predicate, cap_key in (
+        ("fallback_exposure_cap", _is_fallback_policy_item, "max_fallback_topk_ratio"),
+        ("repaired_candidate_cap", _is_repaired_policy_item, "max_repaired_topk_ratio"),
+        ("metadata_missing_cap", _is_metadata_missing_policy_item, "max_metadata_missing_topk_ratio"),
+        ("category_missing_cap", _is_category_missing_policy_item, "max_category_missing_topk_ratio"),
+    ):
+        if cap_key in policy:
+            guarded = _cap_policy_items(guarded, top_k, float(policy[cap_key]), predicate, rule_name)
+    source_cap = policy.get("max_per_source_topk_ratio", policy.get("max_top_source_concentration_ratio"))
+    if source_cap is not None:
+        guarded = _cap_policy_group(guarded, top_k, float(source_cap), _primary_policy_source, "source_diversity_guard")
+    category_cap = policy.get("max_per_category_topk_ratio", policy.get("max_top_category_concentration_ratio"))
+    if category_cap is not None:
+        guarded = _cap_policy_group(guarded, top_k, float(category_cap), _policy_category, "category_diversity_guard")
+    if "max_abs_rank_movement" in policy:
+        guarded = _cap_rank_movement(guarded, top_k, int(policy["max_abs_rank_movement"]))
+    _renumber_policy_final_ranks(guarded)
+    return guarded
+
+
+def _cap_policy_items(
+    rows: list[dict[str, Any]],
+    top_k: int,
+    max_ratio: float,
+    predicate: Any,
+    rule_name: str,
+) -> list[dict[str, Any]]:
+    eligible, previously_deferred = _split_policy_guard_deferred(rows)
+    cap = max(0, int(top_k * max_ratio))
+    selected: list[dict[str, Any]] = []
+    deferred: list[dict[str, Any]] = []
+    count = 0
+    for row in eligible:
+        if predicate(row) and len(selected) < top_k:
+            if count >= cap:
+                _mark_policy_guard_deferred(row, rule_name)
+                deferred.append(row)
+                continue
+            count += 1
+        selected.append(row)
+    return [*selected, *deferred, *previously_deferred]
+
+
+def _cap_policy_group(
+    rows: list[dict[str, Any]],
+    top_k: int,
+    max_ratio: float,
+    group_key: Any,
+    rule_name: str,
+) -> list[dict[str, Any]]:
+    eligible, previously_deferred = _split_policy_guard_deferred(rows)
+    cap = max(1, int(top_k * max_ratio))
+    selected: list[dict[str, Any]] = []
+    deferred: list[dict[str, Any]] = []
+    counts: dict[str, int] = {}
+    for row in eligible:
+        key = str(group_key(row))
+        if len(selected) < top_k and counts.get(key, 0) >= cap:
+            _mark_policy_guard_deferred(row, rule_name, key)
+            deferred.append(row)
+            continue
+        counts[key] = counts.get(key, 0) + 1
+        selected.append(row)
+    return [*selected, *deferred, *previously_deferred]
+
+
+def _cap_rank_movement(rows: list[dict[str, Any]], top_k: int, max_abs_rank_movement: int) -> list[dict[str, Any]]:
+    eligible, previously_deferred = _split_policy_guard_deferred(rows)
+    selected: list[dict[str, Any]] = []
+    deferred: list[dict[str, Any]] = []
+    for row in eligible:
+        movement = int((row.get("rank_movement") or {}).get("coarse_to_final", 0))
+        if len(selected) < top_k and abs(movement) > max_abs_rank_movement:
+            _mark_policy_guard_deferred(row, "rank_movement_guard", str(movement))
+            deferred.append(row)
+            continue
+        selected.append(row)
+    return [*selected, *deferred, *previously_deferred]
+
+
+def _split_policy_guard_deferred(rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    eligible: list[dict[str, Any]] = []
+    deferred: list[dict[str, Any]] = []
+    for row in rows:
+        if _has_policy_guard_defer_event(row):
+            deferred.append(row)
+        else:
+            eligible.append(row)
+    return eligible, deferred
+
+
+
+def _has_policy_guard_defer_event(row: dict[str, Any]) -> bool:
+    return any(
+        event.get("type") == "policy_rerank_guard" and event.get("action") == "defer_beyond_guarded_topk"
+        for event in row.get("rerank_events", [])
+        if isinstance(event, dict)
+    )
+
+
+
+def _mark_policy_guard_deferred(row: dict[str, Any], rule_name: str, group_key: str | None = None) -> None:
+    event = {"type": "policy_rerank_guard", "rule": rule_name, "action": "defer_beyond_guarded_topk"}
+    if group_key is not None:
+        event["group_key"] = group_key
+    row.setdefault("rerank_events", []).append(event)
+    for stage_row in row.get("score_trace", []):
+        if stage_row.get("stage") == "rerank":
+            stage_row.setdefault("reason_codes", []).append(f"policy_guard:{rule_name}")
+
+
+def _renumber_policy_final_ranks(rows: list[dict[str, Any]]) -> None:
+    for rank, row in enumerate(rows, start=1):
+        previous_final_rank = int(row.get("final_rank", rank))
+        row["final_rank"] = rank
+        row["rank_movement"] = dict(row.get("rank_movement", {}))
+        coarse_rank = int(row.get("coarse_rank", rank))
+        fine_rank = int(row.get("fine_rank", rank))
+        row["rank_movement"]["fine_to_final"] = fine_rank - rank
+        row["rank_movement"]["coarse_to_final"] = coarse_rank - rank
+        row["rank_movement"]["policy_rerank_guard"] = previous_final_rank - rank
+        for stage_row in row.get("score_trace", []):
+            if stage_row.get("stage") == "rerank":
+                stage_row["rank"] = rank
+                stage_row["rank_movement_from_previous"] = fine_rank - rank
+
+
+def _is_fallback_policy_item(row: dict[str, Any]) -> bool:
+    sources = {str(source) for source in row.get("sources", [])}
+    return bool(row.get("fallback_indicator")) or "co_visit_fallback_repair" in sources
+
+
+def _is_repaired_policy_item(row: dict[str, Any]) -> bool:
+    sources = {str(source) for source in row.get("sources", [])}
+    return bool(row.get("repaired_indicator")) or "co_visit_fallback_repair" in sources
+
+
+def _is_metadata_missing_policy_item(row: dict[str, Any]) -> bool:
+    return not bool(row.get("metadata_present"))
+
+
+def _is_category_missing_policy_item(row: dict[str, Any]) -> bool:
+    return not row.get("category")
+
+
+def _primary_policy_source(row: dict[str, Any]) -> str:
+    sources = [str(source) for source in row.get("sources", []) if not str(source).startswith("feedback_")]
+    if any(source in {"itemcf_weak", "itemcf_strong"} for source in sources):
+        return "itemcf"
+    return sources[0] if sources else "unknown"
+
+
+def _policy_category(row: dict[str, Any]) -> str:
+    return str(row.get("category") or "missing")
+
+
+def _candidate_has_policy_marker(candidate: MergedCandidate, tokens: tuple[str, ...]) -> bool:
+    if "co_visit_fallback_repair" in candidate.sources and any(token in {"fallback", "repair", "repaired"} for token in tokens):
+        return True
+    for key, value in candidate.metadata.items():
+        lowered = str(key).lower()
+        if value and any(token in lowered for token in tokens):
+            return True
+    return False
+
+
 def _resolve_ltr_model(config: dict) -> dict[str, Any] | None:
     policy = config.get("ltr_model", {})
     if not policy.get("enabled"):
@@ -358,16 +644,18 @@ def _load_ltr_model_cached(model_path: str) -> dict[str, Any]:
 
 
 def _apply_ltr_model_score(candidate: MergedCandidate, model: dict[str, Any] | None, config: dict) -> tuple[float, list[dict]]:
-    if not model:
-        return 0.0, []
     policy = config.get("ltr_model", {})
+    if not policy.get("enabled") or not model:
+        return 0.0, []
     features = extract_ltr_features(candidate, policy.get("features", {}))
-    raw_score = score_ltr(features, model.get("weights", {}), float(model.get("bias", 0.0)))
+    raw_score, events = score_ltr_model(features, model)
     scale = float(policy.get("score_scale", 1.0))
     ltr_score = raw_score * scale
     if not ltr_score:
-        return 0.0, []
-    return ltr_score, [{"type": "ltr_model", "model_type": model.get("model_type", "unknown"), "delta": round(ltr_score, 6)}]
+        return 0.0, events
+    for event in events:
+        event["delta"] = round(ltr_score, 6)
+    return ltr_score, events
 
 
 def _apply_source_aware_fusion_delta(sources: list[str], config: dict) -> tuple[float, list[dict]]:

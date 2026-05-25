@@ -7,7 +7,7 @@ from typing import Any
 
 from rs_core.recsys.types import MergedCandidate
 
-SOURCE_NAMES = ("popular", "itemcf_weak", "itemcf_strong", "category", "semantic", "two_tower")
+SOURCE_NAMES = ("popular", "itemcf_weak", "itemcf_strong", "category", "semantic", "semantic_title_category_expansion", "usercf_recall", "swing_recall", "two_tower", "co_visit_fallback_repair")
 LEAKAGE_GATE_SCHEMA_VERSION = "ranking_feature_leakage_gate_v1"
 FEATURE_CONTRACT_GATE_SCHEMA_VERSION = "ranking_feature_contract_gate_v1"
 FORBIDDEN_FEATURE_NAME_TOKENS = ("target", "label", "holdout", "future")
@@ -38,12 +38,26 @@ ALLOWED_EXACT_FEATURE_NAMES = {
     "two_tower_overlap",
     "average_rating",
     "rating_number",
+    "source_rank_min",
+    "source_rank_mean",
+    "source_rank_reciprocal_max",
+    "category_known",
+    "metadata_present",
+    "fallback_indicator",
+    "repaired_indicator",
+    "fallback_or_repaired_indicator",
+    "source_diversity_count",
+    "source_diversity_entropy",
+    "category_source_diversity",
+    "quality_score",
+    "freshness_score",
 }
 ALLOWED_FEATURE_PREFIXES = (
     "has_",
     "score_",
     "source_score_",
     "candidate_rank",
+    "source_rank_",
 )
 
 
@@ -161,6 +175,32 @@ def score_ltr(features: dict[str, float], weights: dict[str, float], bias: float
     return float(bias) + sum(float(weights.get(name, 0.0)) * float(value) for name, value in features.items())
 
 
+def score_ltr_model(features: dict[str, float], model: dict[str, Any]) -> tuple[float, list[dict[str, Any]]]:
+    model_type = str(model.get("model_type") or "")
+    if model_type == "lightgbm_lambdamart_ltr_v1":
+        score, event = _score_lightgbm_lambdamart(features, model)
+        return score, [event]
+    weights = model.get("weights")
+    if not isinstance(weights, dict) or not weights:
+        return 0.0, []
+    return score_ltr(features, weights, float(model.get("bias", 0.0))), [{"type": "ltr_model", "model_type": model.get("model_type", "unknown")}]
+
+
+def _score_lightgbm_lambdamart(features: dict[str, float], model: dict[str, Any]) -> tuple[float, dict[str, Any]]:
+    try:
+        import lightgbm as lgb  # type: ignore[import-not-found]
+    except Exception as exc:  # pragma: no cover - depends on optional local dependency
+        return 0.0, {"type": "ltr_model_unavailable", "model_type": model.get("model_type"), "dependency": "lightgbm", "reason": type(exc).__name__}
+    booster_model = model.get("booster_model")
+    feature_names = [str(name) for name in model.get("feature_names", [])]
+    if not booster_model or not feature_names:
+        return 0.0, {"type": "ltr_model_unavailable", "model_type": model.get("model_type"), "reason": "missing_booster_or_features"}
+    booster = lgb.Booster(model_str=str(booster_model))
+    vector = [[float(features.get(name, 0.0)) for name in feature_names]]
+    prediction = booster.predict(vector)
+    return float(prediction[0]), {"type": "ltr_model", "model_type": model.get("model_type"), "dependency": "lightgbm"}
+
+
 def _ranking_v2_enabled(config: dict[str, Any]) -> bool:
     ranking_v2 = config.get("ranking_v2", {})
     ranking_v2_enabled = isinstance(ranking_v2, dict) and ranking_v2.get("enabled")
@@ -202,6 +242,7 @@ def _ranking_v2_features(candidate: MergedCandidate, source_set: set[str], itemc
         "two_tower_overlap": _as_float(candidate.metadata.get("two_tower_overlap", 0.0)),
         "average_rating": _as_float(candidate.metadata.get("average_rating", candidate.metadata.get("rating", 0.0))),
         "rating_number": _as_float(candidate.metadata.get("rating_number", 0.0)),
+        **_pool500_industrial_features(candidate, source_set),
     }
     features["score_two_tower_semantic_ratio"] = _safe_ratio(two_tower_score, semantic_score)
     features["score_semantic_two_tower_ratio"] = _safe_ratio(semantic_score, two_tower_score)
@@ -209,6 +250,59 @@ def _ranking_v2_features(candidate: MergedCandidate, source_set: set[str], itemc
     features["score_semantic_itemcf_ratio"] = _safe_ratio(semantic_score, itemcf_score)
     features["score_non_popular_popular_ratio"] = _safe_ratio(best_non_popular_score, scores["popular"])
     return features
+
+
+def _pool500_industrial_features(candidate: MergedCandidate, source_set: set[str]) -> dict[str, float]:
+    lineage = candidate.metadata.get("pool500_source_lineage")
+    lineage_rows = lineage if isinstance(lineage, list) else []
+    ranks = [_as_float(row.get("rank")) for row in lineage_rows if isinstance(row, dict) and row.get("rank") not in (None, "")]
+    source_count = len(source_set)
+    fallback = _metadata_has_marker(candidate.metadata, ("fallback",)) or "co_visit_fallback_repair" in source_set
+    repaired = _metadata_has_marker(candidate.metadata, ("repair", "repaired")) or "co_visit_fallback_repair" in source_set
+    return {
+        "source_rank_min": min(ranks, default=0.0),
+        "source_rank_mean": sum(ranks) / len(ranks) if ranks else 0.0,
+        "source_rank_reciprocal_max": max((1.0 / rank for rank in ranks if rank > 0), default=0.0),
+        "category_known": float(bool(candidate.category or candidate.metadata.get("category"))),
+        "metadata_present": float(bool(candidate.metadata)),
+        "fallback_indicator": float(fallback),
+        "repaired_indicator": float(repaired),
+        "fallback_or_repaired_indicator": float(fallback or repaired),
+        "source_diversity_count": float(source_count),
+        "source_diversity_entropy": _source_entropy(source_set),
+        "category_source_diversity": float(bool(candidate.category) and source_count >= 2),
+        "quality_score": _quality_feature_value(candidate.metadata),
+        "freshness_score": _freshness_feature_value(candidate.metadata),
+    }
+
+
+def _metadata_has_marker(metadata: dict[str, Any], tokens: tuple[str, ...]) -> bool:
+    for key, value in metadata.items():
+        lowered = str(key).lower()
+        if value and any(token in lowered for token in tokens):
+            return True
+    return False
+
+
+def _source_entropy(source_set: set[str]) -> float:
+    if not source_set:
+        return 0.0
+    probability = 1.0 / len(source_set)
+    return -sum(probability * math.log2(probability) for _ in source_set)
+
+
+def _quality_feature_value(metadata: dict[str, Any]) -> float:
+    for key in ("quality_score", "verified_pop_score", "average_rating", "rating"):
+        if metadata.get(key) not in (None, ""):
+            return _as_float(metadata.get(key))
+    return 0.0
+
+
+def _freshness_feature_value(metadata: dict[str, Any]) -> float:
+    for key in ("freshness_score", "recent_pop_score", "time_decay_pop_score"):
+        if metadata.get(key) not in (None, ""):
+            return _as_float(metadata.get(key))
+    return 0.0
 
 
 def _safe_ratio(numerator: float, denominator: float) -> float:
@@ -235,6 +329,7 @@ def train_pairwise_perceptron(rows: list[dict[str, Any]], config: dict[str, Any]
     weights: dict[str, float] = {name: float(value) for name, value in config.get("initial_weights", {}).items()}
     bias = float(config.get("initial_bias", 0.0))
     grouped = _group_rows_by_user(rows)
+    positive_rows = [row for row in rows if row.get("label") == 1]
     update_count = 0
     pair_count = 0
     feature_names = sorted({name for row in rows for name in row["features"]})
@@ -262,6 +357,8 @@ def train_pairwise_perceptron(rows: list[dict[str, Any]], config: dict[str, Any]
         "training": {
             "rows": len(rows),
             "users": len(grouped),
+            "positive_rows": len(positive_rows),
+            "positive_users": len({row["user_id"] for row in positive_rows}),
             "epochs": epochs,
             "learning_rate": learning_rate,
             "negative_sample_per_positive": negatives_per_positive,
@@ -282,6 +379,7 @@ def train_pointwise_logistic(rows: list[dict[str, Any]], config: dict[str, Any] 
     weights: dict[str, float] = {name: float(value) for name, value in config.get("initial_weights", {}).items()}
     bias = float(config.get("initial_bias", 0.0))
     feature_names = sorted({name for row in rows for name in row["features"]})
+    positive_rows = [row for row in rows if row.get("label") == 1]
     updates = 0
     loss_sum = 0.0
     for _ in range(epochs):
@@ -302,12 +400,64 @@ def train_pointwise_logistic(rows: list[dict[str, Any]], config: dict[str, Any] 
         "feature_names": feature_names,
         "training": {
             "rows": len(rows),
+            "positive_rows": len(positive_rows),
+            "positive_users": len({row["user_id"] for row in positive_rows}),
             "epochs": epochs,
             "learning_rate": learning_rate,
             "positive_weight": positive_weight,
             "negative_weight": negative_weight,
             "updates": updates,
             "average_loss": round(loss_sum / updates, 10) if updates else 0.0,
+        },
+    }
+
+
+def train_lightgbm_lambdamart(rows: list[dict[str, Any]], config: dict[str, Any] | None = None) -> dict[str, Any]:
+    config = config or {}
+    try:
+        import lightgbm as lgb  # type: ignore[import-not-found]
+    except Exception as exc:
+        return {
+            "model_type": "lightgbm_lambdamart_ltr_v1",
+            "training": {"status": "dependency_unavailable", "dependency": "lightgbm", "reason": type(exc).__name__},
+            "feature_names": sorted({name for row in rows for name in row.get("features", {})}),
+        }
+    grouped = _group_rows_by_user(rows)
+    feature_names = sorted({name for row in rows for name in row.get("features", {})})
+    if not feature_names or not grouped:
+        return {"model_type": "lightgbm_lambdamart_ltr_v1", "training": {"status": "insufficient_rows"}, "feature_names": feature_names}
+    train_rows = [row for user_rows in grouped.values() for row in user_rows]
+    positive_rows = [row for row in train_rows if row.get("label") == 1]
+    labels = [int(row.get("label") == 1) for row in train_rows]
+    if len(set(labels)) < 2:
+        return {"model_type": "lightgbm_lambdamart_ltr_v1", "training": {"status": "single_class_labels"}, "feature_names": feature_names}
+    group_sizes = [len(user_rows) for user_rows in grouped.values()]
+    ranker = lgb.LGBMRanker(
+        objective="lambdarank",
+        n_estimators=int(config.get("n_estimators", 50)),
+        learning_rate=float(config.get("learning_rate", 0.05)),
+        num_leaves=int(config.get("num_leaves", 15)),
+        min_data_in_leaf=int(config.get("min_data_in_leaf", 1)),
+        verbose=-1,
+        random_state=int(config.get("random_state", 42)),
+    )
+    matrix = [[float(row.get("features", {}).get(name, 0.0)) for name in feature_names] for row in train_rows]
+    ranker.fit(matrix, labels, group=group_sizes)
+    booster = ranker.booster_
+    return {
+        "model_type": "lightgbm_lambdamart_ltr_v1",
+        "feature_names": feature_names,
+        "booster_model": booster.model_to_string(),
+        "feature_importance": {name: int(value) for name, value in zip(feature_names, booster.feature_importance(), strict=True) if int(value)},
+        "training": {
+            "status": "trained",
+            "dependency": "lightgbm",
+            "rows": len(train_rows),
+            "users": len(grouped),
+            "positive_rows": len(positive_rows),
+            "positive_users": len({row["user_id"] for row in positive_rows}),
+            "n_estimators": int(config.get("n_estimators", 50)),
+            "learning_rate": float(config.get("learning_rate", 0.05)),
         },
     }
 

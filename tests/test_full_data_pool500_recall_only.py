@@ -16,6 +16,7 @@ def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
     path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in rows) + "\n", encoding="utf-8")
 
 
+
 def test_load_batch_sequences_prioritizes_source_target_users(tmp_path: Path) -> None:
     from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _load_batch_sequences
 
@@ -34,6 +35,71 @@ def test_load_batch_sequences_prioritizes_source_target_users(tmp_path: Path) ->
     sequences = _load_batch_sequences(sequence_path, limit_users=4, priority_user_ids=["target_1", "target_2"])
 
     assert [sequence["user_id"] for sequence in sequences] == ["target_1", "target_2", "filler_1", "filler_2"]
+
+
+
+def test_load_batch_sequences_caps_priority_users_by_limit(tmp_path: Path) -> None:
+    from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _load_batch_sequences
+
+    sequence_path = tmp_path / "sequences.jsonl"
+    _write_jsonl(
+        sequence_path,
+        [
+            {"user_id": "target_1"},
+            {"user_id": "target_2"},
+            {"user_id": "target_3"},
+            {"user_id": "filler_1"},
+        ],
+    )
+
+    sequences = _load_batch_sequences(sequence_path, limit_users=2, priority_user_ids=["target_1", "target_2", "target_3"])
+
+    assert [sequence["user_id"] for sequence in sequences] == ["target_1", "target_2"]
+
+
+
+def test_recall_runner_has_no_profile_or_target_user_runtime_overrides() -> None:
+    source_path = Path("D:/sinrotic_code/python_project/summer/RS_agent/rs_lab/experiments/recall/run_full_data_pool500_recall_only.py")
+    source = source_path.read_text(encoding="utf-8")
+
+    assert "--recall-profile" not in source
+    assert "DEFAULT_RECALL_PROFILE" not in source
+    assert "POOL500_VNEXT_RECALL_PROFILE" not in source
+    assert "target_user_manifest" not in source
+    assert "target-user-manifest" not in source
+
+
+
+def test_source_budget_contract_uses_default_generation_config_only() -> None:
+    from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _source_budget_contract
+
+    config = {"candidate_pool_size": 500, "candidate_fill_order": ["itemcf", "popular"]}
+
+    contract = _source_budget_contract(
+        {"train_user_sequences_path": "train_sequences.jsonl", "split_paths": {"train": "train.jsonl"}},
+        {"outputs": {"popular_recall": "popular.jsonl"}},
+        limit_users=10,
+        full_run=False,
+        generation_config=config,
+    )
+
+    assert "recall_profile" not in contract
+    assert contract["candidate_pool_size"] == 500
+    assert contract["candidate_fill_order"] == ["itemcf", "popular"]
+
+
+
+def test_primary_source_uses_active_fill_order() -> None:
+    from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _primary_source
+
+    assert (
+        _primary_source(
+            ["semantic_title_category_expansion", "co_visit_fallback_repair"],
+            ["co_visit_fallback_repair", "semantic_title_category_expansion"],
+        )
+        == "co_visit_fallback_repair"
+    )
+    assert _primary_source(["itemcf_weak", "popular"], ["itemcf", "popular"]) == "itemcf_weak"
 
 
 
@@ -141,6 +207,8 @@ def test_generation_overrides_from_source_manifests_are_applied(tmp_path: Path) 
 def test_usercf_sidecar_loader_accepts_flat_candidate_shards(tmp_path: Path) -> None:
     from rs_core.recsys.candidate_merge import load_usercf_recall_sidecar
 
+    empty_shard = tmp_path / "empty_usercf.jsonl"
+    empty_shard.write_text("", encoding="utf-8")
     shard = tmp_path / "flat_usercf.jsonl"
     _write_jsonl(
         shard,
@@ -159,7 +227,7 @@ def test_usercf_sidecar_loader_accepts_flat_candidate_shards(tmp_path: Path) -> 
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
         "pool1000_allowed": False,
-        "outputs": {"candidate_shards": [str(shard)]},
+        "outputs": {"candidate_shards": [str(empty_shard), str(shard)]},
     }
     manifest_path = tmp_path / "source_index_manifest.json"
     manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
@@ -201,6 +269,97 @@ def test_semantic_no_holdout_audit_blocks_forbidden_scopes(tmp_path: Path) -> No
     assert audit["ranking_input_replacement_allowed"] is False
     assert audit["pool1000_allowed"] is False
     assert audit["forbidden_inputs"] == [str(forbidden_semantic)]
+
+
+def test_recall_layer_shadow_audit_covers_sources_without_runtime_ready_claims(tmp_path: Path) -> None:
+    from rs_lab.experiments.recall.validate_pool500_recall_layer_shadow_audit import build_recall_layer_shadow_audit
+
+    views_manifest = _write_views_manifest(tmp_path)
+    source_manifests = _write_source_artifacts(tmp_path)
+    co_visit_dir = tmp_path / "sources" / "co_visit_fallback_repair"
+    _write_pair_source(co_visit_dir, "co_visit_fallback_repair", "seed", "covisit_1")
+    source_manifests["co_visit_fallback_repair"] = co_visit_dir / "source_index_manifest.json"
+    itemcf_payload = read_json(source_manifests["itemcf_weak"])
+    itemcf_payload["method_dataset_manifest"] = {
+        "input_features": ["recent_positive_item_sequence"],
+        "output_path": str(tmp_path / "method_dataset" / "itemcf_weak.jsonl"),
+    }
+    source_manifests["itemcf_weak"].write_text(json.dumps(itemcf_payload), encoding="utf-8")
+
+    audit = build_recall_layer_shadow_audit(
+        lightweight_views_manifest_path=views_manifest,
+        source_manifest_paths=source_manifests,
+        usercf_sidecar_manifest_path=source_manifests["usercf_recall"],
+    )
+
+    assert set(audit["sources"]) == {
+        "itemcf_weak",
+        "itemcf_strong",
+        "usercf_recall",
+        "swing_recall",
+        "semantic_title_category_expansion",
+        "co_visit_fallback_repair",
+        "two_tower",
+        "popular",
+        "category",
+    }
+    assert audit["runtime_gate"] is False
+    assert audit["candidate_generation_changed"] is False
+    assert audit["sources"]["popular"]["qualification"]["fallback_view_source"] is True
+    assert audit["sources"]["category"]["manifest_path"] == str(views_manifest)
+    assert audit["sources"]["itemcf_weak"]["legacy_state"] == {"legacy_or_custom": True, "allowed": True}
+    assert audit["sources"]["itemcf_weak"]["forbidden_scan"]["matches"] == []
+    serialized = json.dumps(audit, ensure_ascii=False)
+    assert "READY" not in serialized
+    assert "promotion" not in serialized.lower()
+
+
+
+def test_recall_layer_shadow_audit_blocks_eval_label_leakage(tmp_path: Path) -> None:
+    from rs_lab.experiments.recall.validate_pool500_recall_layer_shadow_audit import build_recall_layer_shadow_audit
+
+    views_manifest = _write_views_manifest(tmp_path)
+    source_manifests = _write_source_artifacts(tmp_path)
+    payload = read_json(source_manifests["itemcf_strong"])
+    payload["method_dataset_manifest"] = {
+        "label_artifact_path": "eval_diagnostic/labels.json",
+        "recent_positive_item_sequence": ["allowed_train_seed"],
+    }
+    source_manifests["itemcf_strong"].write_text(json.dumps(payload), encoding="utf-8")
+
+    audit = build_recall_layer_shadow_audit(
+        lightweight_views_manifest_path=views_manifest,
+        source_manifest_paths=source_manifests,
+        usercf_sidecar_manifest_path=source_manifests["usercf_recall"],
+    )
+
+    source_audit = audit["sources"]["itemcf_strong"]
+    assert source_audit["status"] == "AUDIT_BLOCKED"
+    assert {blocker["code"] for blocker in source_audit["blockers"]} >= {"FORBIDDEN_EVAL_DIAGNOSTIC_LEAKAGE"}
+    assert {match["kind"] for match in source_audit["forbidden_scan"]["matches"]} == {"field", "path"}
+
+
+
+def test_recall_layer_shadow_audit_surfaces_two_tower_validator_mismatch(tmp_path: Path) -> None:
+    from rs_lab.experiments.recall.validate_pool500_recall_layer_shadow_audit import build_recall_layer_shadow_audit
+
+    views_manifest = _write_views_manifest(tmp_path)
+    source_manifests = _write_source_artifacts(tmp_path)
+    payload = read_json(source_manifests["two_tower"])
+    payload["embedding_row_count"] = 2
+    source_manifests["two_tower"].write_text(json.dumps(payload), encoding="utf-8")
+
+    audit = build_recall_layer_shadow_audit(
+        lightweight_views_manifest_path=views_manifest,
+        source_manifest_paths=source_manifests,
+        usercf_sidecar_manifest_path=source_manifests["usercf_recall"],
+    )
+
+    two_tower_audit = audit["sources"]["two_tower"]
+    assert two_tower_audit["status"] == "AUDIT_BLOCKED"
+    assert two_tower_audit["qualification"]["strict_validator"] == "two_tower_source_index_v1"
+    assert any(blocker["code"] == "TWO_TOWER_SOURCE_MANIFEST_INVALID" for blocker in two_tower_audit["blockers"])
+
 
 
 def test_recall_only_runner_loads_source_artifacts_and_writes_contracts(tmp_path: Path) -> None:
@@ -323,7 +482,7 @@ def test_recall_only_runner_loads_source_artifacts_and_writes_contracts(tmp_path
     assert manifest["fallback_completion"]["pool1000_allowed"] is False
     assert manifest["fallback_completion"]["full_pool500_ready_declared"] is False
     assert fallback_completion_audit["config"]["promotion_allowed"] is False
-    assert fallback_completion_audit["global"]["users_with_target_candidates"] == 1
+    assert fallback_completion_audit["global"]["users_with_target_candidates"] == 0
     assert {diagnostic["code"] for diagnostic in manifest["diagnostics"]} >= {"POOL500_FALLBACK_COMPLETION_SHADOW_ONLY"}
     assert not any(source.startswith("fallback_") for source in row_sources)
     assert final_merge_manifest["final_pool500_ready_claimed"] is False
@@ -368,12 +527,21 @@ def _write_clean_manifest(tmp_path: Path) -> Path:
     sequences = clean_dir / "user_sequences.train.jsonl"
     _write_jsonl(
         sequences,
-        [{"user_id": "u1", "recent_item_sequence": ["seed"], "recent_positive_item_sequence": ["seed"], "recent_strong_positive_item_sequence": ["strong_seed"]}],
+        [
+            {"user_id": "u1", "recent_item_sequence": ["seed"], "recent_positive_item_sequence": ["seed"], "recent_strong_positive_item_sequence": ["strong_seed"]},
+            {"user_id": "u2", "recent_item_sequence": ["seed2"], "recent_positive_item_sequence": ["seed2"], "recent_strong_positive_item_sequence": ["strong_seed2"]},
+        ],
     )
     train = clean_dir / "canonical_interactions.train.jsonl"
-    _write_jsonl(train, [{"user_id": "u1", "parent_asin": "seed"}])
+    _write_jsonl(train, [{"user_id": "u1", "parent_asin": "seed"}, {"user_id": "u2", "parent_asin": "seed2"}])
     items = clean_dir / "canonical_items.jsonl"
-    _write_jsonl(items, [{"parent_asin": "seed", "title_clean": "gaming mouse", "main_category": "Electronics", "brand": "Acme"}])
+    _write_jsonl(
+        items,
+        [
+            {"parent_asin": "seed", "title_clean": "gaming mouse", "main_category": "Electronics", "brand": "Acme"},
+            {"parent_asin": "seed2", "title_clean": "office keyboard", "main_category": "Office", "brand": "Acme"},
+        ],
+    )
     manifest = clean_dir / "manifest.json"
     manifest.write_text(
         json.dumps({"schema_version": "test", "train_user_sequences_path": str(sequences), "canonical_items_path": str(items), "split_paths": {"train": str(train)}}),
@@ -506,20 +674,33 @@ def _write_usercf_source(path: Path) -> Path:
 
 
 def _write_two_tower_source(path: Path) -> Path:
-    manifest_path = _write_two_tower_artifact(path)
+    artifact_manifest_path = _write_two_tower_artifact(path)
+    artifact_manifest = json.loads(artifact_manifest_path.read_text(encoding="utf-8"))
+    recall_index_path = artifact_manifest["contract"]["recall_index"]
+    user_embeddings_path = artifact_manifest["contract"]["user_embeddings"]
     source_manifest = {
+        "schema_version": "two_tower_source_index_v1",
         "status": "PASS",
         "source": "two_tower",
-        "source_name": "two_tower",
         "canonical_source": "two_tower",
+        "source_name": "two_tower_youtube_dnn",
+        "variant": "youtube_dnn",
+        "model_type": "youtube_dnn_two_tower_v1",
         "index_scope": "FULL_DERIVED_INDEX",
-        "recall_index_path": str(manifest_path),
+        "train_only": True,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "pool1000_allowed": False,
+        "row_count": 3,
+        "embedding_row_count": 3,
+        "index_row_count": 3,
+        "embedding_path": recall_index_path,
+        "index_path": recall_index_path,
+        "user_embedding_path": user_embeddings_path,
         "clean_manifest_sha256": "clean",
         "train_sequence_sha256": "train",
         "item_universe_sha256": "items",
         "model_config_sha256": "model",
-        "item_embedding_row_count": 3,
-        "recall_index_row_count": 3,
         "user_embedding_row_count": 1,
     }
     source_manifest_path = path / "source_index_manifest.json"

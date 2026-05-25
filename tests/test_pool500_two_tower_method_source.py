@@ -12,6 +12,7 @@ from rs_core.recsys.candidate_merge import load_two_tower_index
 from rs_core.recsys.vector_index import VectorIndex
 from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _apply_source_generation_overrides
 from rs_lab.experiments.recall.pool500.methods.two_tower.builder import build_two_tower_method_source
+from scripts.recall.build_two_tower_source_index import build_two_tower_source_index
 
 pytestmark = pytest.mark.unit
 
@@ -40,7 +41,7 @@ def test_build_two_tower_method_source_writes_target_slice_diagnostic_contract(t
     paths = _write_fixture(tmp_path)
 
     manifest = build_two_tower_method_source(
-        artifact_manifest_path=paths["artifact_manifest"],
+        source_index_manifest_path=paths["source_index_manifest"],
         clean_manifest_path=paths["clean_manifest"],
         output_root=tmp_path / "method_sources",
         run_id="unit",
@@ -58,8 +59,8 @@ def test_build_two_tower_method_source_writes_target_slice_diagnostic_contract(t
     assert "FULL_POOL500_READY" not in json.dumps(manifest, ensure_ascii=False)
 
     source_index = read_json(output_dir / "source_index_manifest.json")
-    assert source_index["recall_index_path"] == str(paths["artifact_manifest"].resolve())
-    assert source_index["artifact_manifest_path"] == str(paths["artifact_manifest"].resolve())
+    assert source_index["recall_index_path"] == str(paths["source_index_manifest"].resolve())
+    assert source_index["source_index_manifest_path"] == str(paths["source_index_manifest"].resolve())
     assert source_index["candidate_path"] == str((output_dir / "candidates.jsonl").resolve())
 
     rows = _read_jsonl(output_dir / "candidates.jsonl")
@@ -68,7 +69,7 @@ def test_build_two_tower_method_source_writes_target_slice_diagnostic_contract(t
     assert {row["source"] for row in rows} == {"two_tower"}
     assert {row["canonical_source"] for row in rows} == {"two_tower"}
     assert all(row["score"] > 0.0 for row in rows)
-    assert all(row["metadata"]["artifact_manifest_path"] == str(paths["artifact_manifest"].resolve()) for row in rows)
+    assert all(row["metadata"]["source_index_manifest_path"] == str(paths["source_index_manifest"].resolve()) for row in rows)
     assert all(row["metadata"].get("config_hash") for row in rows)
     assert all("seed_item_count" in row["metadata"] for row in rows)
 
@@ -101,7 +102,7 @@ def test_two_tower_method_source_blocks_forbidden_actual_reads_but_ignores_decla
     write_json(paths["clean_manifest"], clean_manifest)
 
     manifest = build_two_tower_method_source(
-        artifact_manifest_path=paths["artifact_manifest"],
+        source_index_manifest_path=paths["source_index_manifest"],
         clean_manifest_path=paths["clean_manifest"],
         output_root=tmp_path / "method_sources",
         run_id="clean_manifest_eval_metadata",
@@ -130,7 +131,7 @@ def test_two_tower_method_source_blocks_forbidden_actual_reads_but_ignores_decla
 
     with pytest.raises(ValueError, match="forbidden|holdout|valid|test"):
         build_two_tower_method_source(
-            artifact_manifest_path=paths["artifact_manifest"],
+            source_index_manifest_path=paths["source_index_manifest"],
             clean_manifest_path=forbidden_manifest,
             output_root=tmp_path / "method_sources",
             run_id="forbidden_actual_read",
@@ -159,7 +160,7 @@ def test_two_tower_method_source_checkpoint_resume_and_overwrite_contract(tmp_pa
     monkeypatch.setattr(builder_module, "_write_candidate_batch", interrupt_once)
     with pytest.raises(KeyboardInterrupt):
         build_two_tower_method_source(
-            artifact_manifest_path=paths["artifact_manifest"],
+            source_index_manifest_path=paths["source_index_manifest"],
             clean_manifest_path=paths["clean_manifest"],
             output_root=output_root,
             run_id="resume",
@@ -174,7 +175,7 @@ def test_two_tower_method_source_checkpoint_resume_and_overwrite_contract(tmp_pa
 
     monkeypatch.setattr(builder_module, "_write_candidate_batch", original_write_batch)
     first_manifest = build_two_tower_method_source(
-        artifact_manifest_path=paths["artifact_manifest"],
+        source_index_manifest_path=paths["source_index_manifest"],
         clean_manifest_path=paths["clean_manifest"],
         output_root=output_root,
         run_id="resume",
@@ -191,7 +192,7 @@ def test_two_tower_method_source_checkpoint_resume_and_overwrite_contract(tmp_pa
 
     with pytest.raises(ValueError, match="config hash|resume"):
         build_two_tower_method_source(
-            artifact_manifest_path=paths["artifact_manifest"],
+            source_index_manifest_path=paths["source_index_manifest"],
             clean_manifest_path=paths["clean_manifest"],
             output_root=output_root,
             run_id="resume",
@@ -205,7 +206,7 @@ def test_two_tower_method_source_checkpoint_resume_and_overwrite_contract(tmp_pa
 
     with pytest.raises(FileExistsError, match="already exists"):
         build_two_tower_method_source(
-            artifact_manifest_path=paths["artifact_manifest"],
+            source_index_manifest_path=paths["source_index_manifest"],
             clean_manifest_path=paths["clean_manifest"],
             output_root=output_root,
             run_id="resume",
@@ -229,7 +230,7 @@ def test_two_tower_method_source_explicit_args_override_config_defaults(tmp_path
                 "source: two_tower",
                 f"output_root: {tmp_path / 'configured_outputs'}",
                 "method_config:",
-                f"  artifact_manifest_path: {paths['artifact_manifest']}",
+                f"  source_index_manifest_path: {paths['source_index_manifest']}",
                 f"  clean_manifest_path: {paths['clean_manifest']}",
                 "  target_user_limit: 4",
                 "  batch_size: 2",
@@ -264,8 +265,8 @@ def test_two_tower_method_source_cli_and_runner_compatibility(tmp_path: Path) ->
             str(PYTHON),
             "-m",
             "rs_lab.experiments.recall.pool500.methods.two_tower.builder",
-            "--artifact-manifest-path",
-            str(paths["artifact_manifest"]),
+            "--source-index-manifest-path",
+            str(paths["source_index_manifest"]),
             "--clean-manifest-path",
             str(paths["clean_manifest"]),
             "--output-root",
@@ -369,8 +370,33 @@ def _write_fixture(tmp_path: Path) -> dict[str, Path]:
             },
         },
     )
+    canonical_interactions = clean_dir / "canonical_interactions.train.jsonl"
+    item_vocab = clean_dir / "two_tower_item_vocab.jsonl"
+    item_vocab_manifest = clean_dir / "two_tower_item_vocab_manifest.json"
+    write_jsonl(canonical_interactions, [{"parent_asin": row["parent_asin"]} for row in rows])
+    write_jsonl(item_vocab, [{"parent_asin": row["parent_asin"], "item_id": row["item_id"], "main_category": row["main_category"]} for row in rows])
+    write_json(
+        item_vocab_manifest,
+        {
+            "schema_version": "two_tower_item_vocab_v1",
+            "item_vocab_path": str(item_vocab),
+            "source_paths": {"canonical_interactions_train": str(canonical_interactions), "canonical_items_metadata": None},
+            "item_count": len(rows),
+            "metadata_join_added_items": False,
+            "forbidden_sources": ["popular_recall.jsonl", "category_recall_items.jsonl", "valid", "test", "holdout", "eval_label"],
+            "content_hash": "sha256:fixture",
+        },
+    )
+    source_index_manifest = tmp_path / "source_index" / "source_index_manifest.json"
+    build_two_tower_source_index(
+        training_run_dir=run_dir,
+        item_vocab_manifest=item_vocab_manifest,
+        output_dir=source_index_manifest.parent,
+        output_source_manifest=source_index_manifest,
+    )
     return {
         "artifact_manifest": artifact_manifest,
+        "source_index_manifest": source_index_manifest,
         "clean_manifest": clean_manifest,
         "train_sequences": train_sequences,
     }
