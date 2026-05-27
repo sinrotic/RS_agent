@@ -17,7 +17,6 @@ from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
 from rs_core.recsys.vector_index import dot_score
 from rs_core.workflow.two_tower_training import train_two_tower_recall
-from rs_lab.experiments.recall.run_pool500_offline_eval_baseline import _parse_metric_ks
 from scripts.recall.build_two_tower_source_index import build_two_tower_source_index
 
 SCHEMA_VERSION = "pool500_two_tower_diagnostic_loop_v1"
@@ -46,6 +45,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--epochs", type=int, default=1)
     parser.add_argument("--negative-samples", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=128)
+    parser.add_argument("--gradient-accumulation-steps", type=int, default=1)
+    parser.add_argument("--mixed-precision", action="store_true")
+    parser.add_argument("--min-user-positives", type=int, default=3)
+    parser.add_argument("--max-samples-per-user", type=int, default=5)
+    parser.add_argument("--negative-sampling-power", type=float, default=0.75)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
@@ -63,6 +67,11 @@ def run_pool500_two_tower_diagnostic_loop(
     epochs: int = 1,
     negative_samples: int = 3,
     batch_size: int = 128,
+    gradient_accumulation_steps: int = 1,
+    mixed_precision: bool = False,
+    min_user_positives: int = 3,
+    max_samples_per_user: int = 5,
+    negative_sampling_power: float = 0.75,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
@@ -106,7 +115,7 @@ def run_pool500_two_tower_diagnostic_loop(
         raise ValueError("P2 method dataset produced no train samples for diagnostic loop")
     sequences = _sample_rows_to_sequences(sample_rows)
     _write_canonical_interactions(sample_rows, canonical_interactions_train_path)
-    item_count = _write_item_vocab(outputs["training_item_universe"], item_vocab_path)
+    item_count = _write_item_vocab(outputs["training_item_universe"], item_vocab_path, sample_rows)
     write_json(
         item_vocab_manifest_path,
         {
@@ -137,8 +146,12 @@ def run_pool500_two_tower_diagnostic_loop(
                 "epochs": epochs,
                 "negative_samples": negative_samples,
                 "batch_size": batch_size,
+                "gradient_accumulation_steps": gradient_accumulation_steps,
+                "mixed_precision": mixed_precision,
                 "sequence_keys": ["recent_positive_item_sequence"],
-                "min_user_positives": 1,
+                "min_user_positives": min_user_positives,
+                "max_samples_per_user": max_samples_per_user,
+                "negative_sampling_power": negative_sampling_power,
             },
         },
     )
@@ -166,6 +179,9 @@ def run_pool500_two_tower_diagnostic_loop(
         metric_ks=metric_ks,
     )
     write_json(metrics_path, metrics)
+    training_backend = training_result["metrics"].get("training_backend", {})
+    if not isinstance(training_backend, dict):
+        training_backend = {}
 
     report = {
         "schema_version": SCHEMA_VERSION,
@@ -192,12 +208,20 @@ def run_pool500_two_tower_diagnostic_loop(
             "epochs": epochs,
             "negative_samples": negative_samples,
             "batch_size": batch_size,
+            "gradient_accumulation_steps": gradient_accumulation_steps,
+            "effective_batch_size": training_result["metrics"].get("effective_batch_size", batch_size * max(1, gradient_accumulation_steps)),
+            "mixed_precision": mixed_precision,
+            "mixed_precision_enabled": training_backend.get("mixed_precision_enabled", False),
+            "optimizer_steps": training_backend.get("optimizer_steps"),
+            "min_user_positives": min_user_positives,
+            "max_samples_per_user": max_samples_per_user,
+            "negative_sampling_power": negative_sampling_power,
             "training_input_users": training_result["metrics"].get("training_input_users"),
             "users_with_training_rows": training_result["metrics"].get("users_with_training_rows"),
         },
         "retrieval_metrics": metrics,
-        "offline_eval_helpers_reused": ["_parse_metric_ks"],
-        "offline_eval_helpers_not_run_reason": "diagnostic loop stays train_only and does not touch label/oracle/challenger paths",
+        "offline_eval_helpers_reused": [],
+        "offline_eval_helpers_not_run_reason": "diagnostic loop stays train_only and uses local metric cutoff parsing without touching label/oracle/challenger paths",
         "no_oracle_label_injection": True,
     }
     write_json(manifest_path, report)
@@ -208,6 +232,18 @@ def run_pool500_two_tower_diagnostic_loop(
 def _precheck_output_dir(output_dir: Path, overwrite: bool) -> None:
     if output_dir.exists() and any(output_dir.iterdir()) and not overwrite:
         raise FileExistsError(f"Output directory already exists and is non-empty: {output_dir}")
+
+
+def _parse_metric_ks(values: Iterable[int] | str) -> list[int]:
+    if isinstance(values, str):
+        raw_values = [value.strip() for value in values.split(",") if value.strip()]
+    else:
+        raw_values = list(values)
+    metric_ks = sorted({int(value) for value in raw_values})
+    if not metric_ks or any(k <= 0 for k in metric_ks):
+        raise ValueError("--metric-ks must contain positive integer cutoffs")
+    return metric_ks
+
 
 
 def _load_method_dataset_manifest(path: Path) -> dict[str, Any]:
@@ -325,22 +361,39 @@ def _write_canonical_interactions(samples: list[dict[str, Any]], output_path: Pa
     write_jsonl(output_path, rows)
 
 
-def _write_item_vocab(training_item_universe_path: Path, output_path: Path) -> int:
+def _write_item_vocab(training_item_universe_path: Path, output_path: Path, sample_rows: list[dict[str, Any]]) -> int:
+    required_items = _diagnostic_item_ids(sample_rows)
     rows = []
     seen = set()
     for row in iter_jsonl(training_item_universe_path):
         item_id = str(row.get("parent_asin") or row.get("item_id") or "")
-        if not item_id or item_id in seen:
+        if not item_id or item_id in seen or item_id not in required_items:
             continue
         seen.add(item_id)
-        item_row = dict(row)
-        item_row["parent_asin"] = item_id
-        item_row["item_id"] = item_id
-        rows.append(item_row)
+        rows.append(
+            {
+                "parent_asin": item_id,
+                "item_id": item_id,
+                "title_clean": str(row.get("title_clean") or ""),
+                "main_category": str(row.get("main_category") or ""),
+                "category": str(row.get("category") or ""),
+            }
+        )
+        if len(seen) == len(required_items):
+            break
     if not rows:
-        raise ValueError("training_item_universe is empty")
+        raise ValueError("training_item_universe did not cover diagnostic sampled target/history items")
     write_jsonl(output_path, rows)
     return len(rows)
+
+
+def _diagnostic_item_ids(sample_rows: list[dict[str, Any]]) -> set[str]:
+    item_ids = set()
+    for row in sample_rows:
+        for item_id in [*row.get("history_items", []), row.get("target_item") or row.get("positive_item_id")]:
+            if item_id:
+                item_ids.add(str(item_id))
+    return item_ids
 
 
 def _write_diagnostic_topk_and_metrics(
@@ -435,6 +488,11 @@ def main() -> None:
         epochs=args.epochs,
         negative_samples=args.negative_samples,
         batch_size=args.batch_size,
+        gradient_accumulation_steps=args.gradient_accumulation_steps,
+        mixed_precision=args.mixed_precision,
+        min_user_positives=args.min_user_positives,
+        max_samples_per_user=args.max_samples_per_user,
+        negative_sampling_power=args.negative_sampling_power,
         overwrite=args.overwrite,
         enforce_venv=not args.skip_venv_check,
     )

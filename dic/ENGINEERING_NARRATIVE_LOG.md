@@ -12,6 +12,386 @@
 - 不记录无意义的中间尝试，不堆 raw log。
 - 简单机械修改不需要单独记录。
 
+### 2026-05-26 - 推荐 Agent 内部工具 schema 与灵活查库能力
+
+**任务：**
+把推荐 Agent 的后台能力从简单 manifest 推进到更接近 Claude Code Tool 思路的 internal tool spec，并实现一个能处理“这件太贵了，找更便宜但类似商品”的灵活商品库约束检索工具。
+
+**遇到的问题：**
+如果为每种导购需求单独做工具，会很快膨胀成 `find_cheaper_item`、`find_similar_item`、`find_better_rating_item` 等大量分支；但只做简单关键词搜索又无法表达相对价格、同类相似、品牌排除、required/preferred/disliked keyword 等真实对话需求。首次独立 code review 还发现价格缺失、默认类目/品牌约束、required keyword 放宽等硬约束语义存在风险。
+
+**定位方式：**
+围绕 `rs_core/rsagent/tools.py` 和新增 `tests/test_agent_tools.py` 做 focused review：用“参考商品更便宜替代品”“默认类目过滤”“品牌/店铺不同”“required keyword 不可放宽”“preferred keyword 可放宽”等用例验证约束语义；独立 reviewer 对 missing price、category/brand default mode、keyword relaxation 和 schema name mismatch 做阻塞检查。
+
+**解决方式：**
+在 `rs_core/rsagent/tools.py` 中新增 `AgentToolSpec`、`UnderstandUserNeedInput/Output`、`DisplayResponseDraft`、`ProductSearchRequest`、`PriceConstraint`、`KeywordConstraint`、`CategoryConstraint`、`RatingConstraint`、`BrandConstraint` 和 `CatalogConstraintSearchOutput` 等内部 schema；`AGENT_TOOL_MANIFEST` 固定六个核心工具：`understand_user_need`、`rerank_for_browsing`、`match_specific_need_in_pool`、`catalog_constraint_search`、`build_product_reasoning`、`compose_shopping_response`。实现 `catalog_constraint_search` 的规则版，支持参考商品、相对价格、同类过滤、关键词正反向、品牌/店铺排除、soft constraint relaxation 和 grounded match reasons；修复 review 发现的硬约束问题，确保缺价商品不会通过“更便宜”筛选，required keyword 不被放宽。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_agent_tools.py tests/test_agent_capability_manifest.py tests/test_serving_smoke.py tests/test_display_contract.py -q`，结果 `49 passed in 0.93s`；ruff 检查 `rs_core/rsagent/tools.py tests/test_agent_tools.py tests/test_agent_capability_manifest.py` 为 `All checks passed!`。独立 code review 复核后确认此前 HIGH 阻塞均已解决；剩余 schema-name 提醒已通过新增本地 dataclass 和 grep 当前 manifest 消除。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 的工具系统做成少量工具 + 灵活约束 schema”：不把工具暴露给用户，也不急着 MCP/skill 化，而是在 Python 内部建立 ToolSpec、输入输出契约和可测试的 catalog constraint search。这样既能支持自然导购里的相对需求（更便宜、类似、不同品牌），又能守住候选/商品真实性、解释 grounding 和 public payload 防泄露边界。
+
+### 2026-05-26 - pool500 主路 fallback 补满与配比边界修复
+
+**任务：**
+在已固定 pool500 召回主路配比后，修复 hot7/warm3 10 用户评估中候选池 underfill 的问题，让个性化召回不足 500 时能由兜底链路补满，同时不使用 valid/test label 或 oracle 注入。
+
+**遇到的问题：**
+主路初次评估虽然启用了 fallback，但 10 个用户只有 2 个达到 500，`underfilled_user_count=8`，fallback 审计只出现 `fallback_seed_category_sibling` 和 `fallback_seed_metadata_neighbor`。进一步修完全局 popular 生成器后仍未补满，原因是主路在 fallback 后又执行 `category/popular <= 175` 的硬裁剪，把兜底补进去的候选再次裁掉。
+
+**定位方式：**
+先看 `fallback_completion_audit.json`、`source_audit.json` 和 `fallback_completion_resource_audit.json`，确认全局 popular 资源存在但未进入最终池；再审计 `rs_lab/experiments/recall/pool500/fallback_completion/sources.py`、`rs_core/recsys/recall/merge.py` 和 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py`，定位到全局 popular 的类目多样性前缀会因去重提前耗尽，以及 fallback 后二次 `_enforce_popular_category_cap` 会破坏“兜底补满 500”的设计。
+
+**解决方式：**
+调整 `fallback_global_diversity_popular`：先按类目多样性优先产出，再用 deferred rows 回填，避免真实 popular 前 2000 行类目集中时被生成器提前截断；同时把 `category/popular` 上限限定在 fallback 前的主路配比阶段，fallback 后不再二次裁剪，让 `category/popular` 真正作为最后兜底补满低供给用户。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_full_data_pool500_recall_only.py tests/test_pool500_fallback_completion_route.py`，结果 `26 passed in 1.00s`。重跑 `outputs/eval/pool500_current_route_hot7_warm3_10users_20260526.py` 后，`source_audit.json` 显示 `candidate_row_count=5000`、`average_candidates_per_user=500.0`、`underfilled_user_count=0`、`duplicate_user_item_count=0`；`fallback_completion_audit.json` 显示 `users_with_target_candidates=10`、`underfilled_user_count=0`、`average_fallback_ratio=0.4178`。召回指标仍为 `Recall@500=0.0`，说明本次修复解决的是候选池完整性和主路兜底能力，不把补满误宣称为效果提升。
+
+**面试可讲点：**
+这段可以讲成“推荐召回主路的低供给兜底治理”：先用 hot/warm 小样本暴露候选池 underfill，再从资源审计、生成器、merge 和主路 cap 多层定位；最终把上层个性化配比和底层冷启动/低历史兜底解耦，保证排序前每个用户有稳定 500 候选，同时守住 no-oracle、no-promotion 和 ranking input replacement 边界。
+
+### 2026-05-26 - Agent RAG 结构占位与边界收口
+
+**任务：**
+在不实现完整 RAG、不改变召回排序结果的前提下，先为后续商品知识检索和 Agent grounding 放好代码位置与文档边界。
+
+**遇到的问题：**
+当前还没有独立外部文档库，如果直接把 RAG 做成新召回源或让模型自由补商品卖点，容易混淆“候选生成”和“解释 grounding”，也可能形成 oracle/label 注入式的伪效果。
+
+**定位方式：**
+核对 `rs_core/recsys/vector_index.py`、`rs_core/rsagent/explanation.py`、`rs_core/rsagent/schema.py`、`dic/architecture/IMPLEMENTATION_PLAN.md` 和 `dic/PROJECT_STRUCTURE.md`，确认现有 Phase 4 已把 RAG 定位为 Agent 增强层，而不是召回主路。
+
+**解决方式：**
+新增 `rs_core/recsys/rag/`，只定义 `RagEvidence`、`RagContext` 和 `build_empty_rag_context`，作为商品知识证据 contract；在 `AgentTurn` 预留默认关闭的 `rag_context` 字段，`None` 时不改变现有序列化输出；文档中明确 RAG 负责商品知识上下文和解释证据，不直接参与召回、排序或候选集合决策。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `py_compile rs_core/recsys/rag/__init__.py rs_core/recsys/rag/schema.py rs_core/recsys/rag/context.py rs_core/rsagent/schema.py` 通过；focused tests `tests/test_agent_feedback.py tests/test_agent_dialogue.py tests/test_display_contract.py -q` 结果 `37 passed in 0.31s`。额外尝试跑 `tests/test_hybrid_demo.py` 时有 3 个旧配置路径缺失失败，集中在 `configs/phase_1_15_*.yaml`、`configs/phase_1_17_rank_weight_*.yaml` 和 `configs/hybrid_demo_electronics_10000_*_two_tower_*.yaml` 的历史路径断言，不属于本次 RAG 改动引入。
+
+**面试可讲点：**
+这段可以讲成“先定义 RAG 的工程边界，而不是急着堆向量库”：推荐结果仍由受治理的候选池和排序链路产生，RAG 只提供商品知识证据、解释 grounding 和幻觉控制入口，后续再逐步讨论 item knowledge card、候选内检索和评估门禁。
+
+### 2026-05-26 - Agent RAG SQLite BM25 第一版可用化
+
+**任务：**
+把前一版候选卡片证据选择器扩展为最小可用的经典检索 RAG：支持商品字段 chunk、SQLite FTS5/BM25 建库，并通过 `rag.index_path` 接入 Agent 解释链路。
+
+**遇到的问题：**
+如果直接把 BM25 做成新的召回源，会破坏“推荐候选由召回/排序决定，RAG 只负责解释证据”的边界；同时完整向量库、服务化索引和复杂 chunk pipeline 对当前 demo 过重。
+
+**定位方式：**
+沿用 `rs_core/recsys/rag/`、`rs_core/workflow/hybrid_environment.py` 和 `rs_core/rsagent/explanation.py` 的既有边界，只检查 RAG 是否在候选 item 范围内取证、是否保留 provenance gate、是否不修改 `candidates` / `ranking` / `final_items` / `scores`。
+
+**解决方式：**
+新增 `chunking.py` 与 `bm25.py`：title/category/summary 保持短字段整体 chunk，description 按句子和长度切分，features 按 bullet 切分；`build_sqlite_bm25_index()` 写入 `rag_chunks` 与 `rag_chunk_fts`，`SQLiteBM25CandidateRetriever` 在候选 item id 范围内执行 FTS5 MATCH + BM25 排序。Agent 配置中如存在 `rag.index_path` 或 `rag.bm25_index_path` 且文件存在，则使用 SQLite BM25；否则回退原有 in-memory candidate card retriever。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `py_compile rs_core/recsys/rag/chunking.py rs_core/recsys/rag/bm25.py rs_core/recsys/rag/retriever.py rs_core/recsys/rag/__init__.py rs_core/workflow/hybrid_environment.py tests/test_rag_core.py` 通过；`pytest tests/test_rag_core.py -q` 结果 `7 passed in 0.28s`；`pytest tests/test_agent_dialogue.py tests/test_display_contract.py -q` 结果 `35 passed in 0.35s`。随后补充 `scripts/recall/build_rag_bm25_index.py` 建库入口，`pytest tests/test_rag_core.py -q` 更新为 `8 passed in 0.22s`；真实小批命令生成 `outputs/agent/rag_bm25_demo.sqlite`，manifest 显示 `indexed_item_count=16753`、`chunk_count=33276`、`candidate_scoped=true`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“用轻量 BM25 把 RAG 从字段注入推进到可检索证据层”：不引入重依赖，不让 RAG 改推荐结果，只在已有候选池内通过 SQLite FTS5 找最相关的商品证据，再交给 Agent 做解释 grounding。
+
+### 2026-05-26 - Agent RAG Hybrid 检索第一版
+
+**任务：**
+在候选内 BM25 RAG 的基础上补充 Hybrid 检索方式，让证据选择同时参考关键词匹配和轻量向量相似度。
+
+**遇到的问题：**
+直接引入外部 embedding 模型、FAISS 或新的召回源会扩大工程范围，也容易让 RAG 从解释证据层越界成候选生成层；但只用 BM25 又对同义表达和近似文本不够友好。
+
+**定位方式：**
+复查 `rs_core/recsys/rag/bm25.py`、`rs_core/recsys/rag/retriever.py` 和 `rs_core/workflow/hybrid_environment.py`，确认可在现有 SQLite `rag_chunks` 表上增加第二路分数，并继续复用 `build_rag_context_for_ranked_candidates()` 的候选池过滤、字段过滤和 provenance gate。
+
+**解决方式：**
+新增 `rs_core/recsys/rag/hybrid.py`：BM25 分支复用 `SQLiteBM25CandidateRetriever`，向量分支对 query 和候选 chunk 文本构造 deterministic hashed text vector 并计算 cosine，相同 `(item_id, field, text)` 的 evidence 做 min-max 归一化后按 `bm25_weight` 与 `vector_weight` 融合。`rag.retriever=hybrid` 且 `rag.index_path` 存在时启用 Hybrid，否则保留 BM25 或 in-memory fallback；建库 manifest 增加 `hybrid_supported=true` 和 `hybrid_vector_method=hashed_text_vector_v1`。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `py_compile rs_core/recsys/rag/hybrid.py rs_core/recsys/rag/bm25.py rs_core/recsys/rag/retriever.py rs_core/recsys/rag/__init__.py rs_core/workflow/hybrid_environment.py scripts/recall/build_rag_bm25_index.py tests/test_rag_core.py` 通过；`pytest tests/test_rag_core.py -q` 结果 `10 passed in 0.45s`；`pytest tests/test_agent_dialogue.py tests/test_display_contract.py -q` 结果 `35 passed in 0.39s`。真实小批索引重建后 manifest 显示 `indexed_item_count=16753`、`chunk_count=33276`、`hybrid_supported=true`，且 `ranking_input_replacement_allowed=false`、`promotion_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“先用无重依赖 Hybrid 验证 RAG 融合检索边界”：BM25 负责精确词命中，hashed vector cosine 补充近似文本相似度，融合只影响 Agent 解释证据，不影响推荐候选池和排序；后续如果要接真实 embedding，只替换向量分支即可。
+
+### 2026-05-26 - pool500 全召回源主路接入与排序 shadow 诊断
+
+**任务：**
+确认 TwoTower formal full 产物可用后，把当前已完成的 pool500 召回源全部接入 recall-only 主路，并做最小排序侧 shadow 调整。
+
+**遇到的问题：**
+召回主路 5 用户 smoke 已能生成完整 2500 行候选，但排序 fixed comparison 一开始被 gate 拦截；blocker 不是排序算法失败，而是召回主路 `manifest.json` 顶层缺少 `ranking_replacement_allowed=false` 和 `promotion_allowed=false`，无法证明排序诊断不替换线上输入、不做 promotion。独立 review 还发现 TwoTower source manifest 与 full derived index audit 需要显式保留 `ranking_replacement_allowed=false`，并且 audit 应记录真实 `index_path` 而不是退回 source manifest 路径或旧 `recall_index` 元数据。
+
+**定位方式：**
+读取 `outputs/recall/full_data_pool500_recall_only_all_sources_smoke_20260526/manifest.json`、`source_contribution_audit.json`、`full_derived_index_manifests.json` 和排序 fixed comparison blocker，确认 all-source 候选生成成功：`candidate_rows=2500`、`underfilled_user_count=0`，实际贡献包括 category、semantic、semantic_title_category_expansion、co_visit_fallback_repair、itemcf_weak、itemcf_strong、swing_recall、two_tower；usercf artifact 已加载但该 5 用户样本无命中。
+
+**解决方式：**
+在 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的主 manifest、recall config、readiness/audit 透传中补齐 no-ranking-replacement/no-promotion 字段；在 `rs_core/recsys/two_tower_source_manifest.py` 和 `scripts/recall/build_two_tower_source_index.py` 中把 `ranking_replacement_allowed=false` 纳入 TwoTower source index 生成与校验；排序侧将 D2 shadow-only top-k source minimums 扩展到 itemcf、semantic、semantic_title_category_expansion、two_tower、usercf_recall、swing_recall、category；同时让 full derived index audit 优先使用 source manifest 顶层 `index_path`。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_pool500_two_tower_source_manifest.py tests/test_full_data_pool500_recall_only.py tests/test_pool500_shadow_ranking.py`，结果 `135 passed in 2.06s`；重新跑 5 用户 all-source smoke，输出 `candidate_rows=2500`、`underfilled_user_count=0`，顶层 `ranking_replacement_allowed=false`、`promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`；随后生成 `pool500_fixed_ranking_comparison_report.json`，fixed configs `B0/D1/D2/A1/A2/R1/R2/R3` 全部通过，报告 `status=PASS`、`blocker_count=0`，D2 top-k mix 覆盖 category、co_visit、itemcf、popular、semantic、semantic_title_category_expansion、swing、two_tower。独立 reviewer 复核后确认无剩余 HIGH/MEDIUM governance 问题。
+
+**面试可讲点：**
+这段可以讲成“从多召回源接入到排序诊断的治理闭环”：不仅证明多路召回能填满 pool500，还把模型源、规则源、协同过滤源统一进 frozen candidate pool；排序优化先以 shadow fixed comparison 观察机制差异，不急于宣称 READY 或替换线上输入，用 manifest contract、gate blocker 和独立 review 防止 diagnostic 产物越权晋升。
+
+### 2026-05-26 - TwoTower 工业化训练采样优化
+
+**任务：**
+按 YouTubeDNN/DSSM 工业实践优化双塔训练样本生成和负采样策略，目标是提升 validation/test 泛化召回，而不是继续复用已有效果较差的 formal artifact。
+
+**遇到的问题：**
+此前双塔已经修复了 label 泄漏和在线投影一致性，但 100 用户 raw eval 仍 `hit_at_500=0`，说明问题不只是在线检索路径，而是训练阶段样本分布和负采样过弱：高活跃用户可贡献过多样本，均匀随机负采样难以让模型学会区分真实偏好与全局热门，低活用户/低频 item 也会带来稀疏噪声。
+
+**定位方式：**
+审计 `rs_core/recsys/two_tower.py` 的 PyTorch batch 生成、负采样和 fallback 训练逻辑，以及 `rs_core/workflow/two_tower_training.py` 的训练配置入口和 item vocab manifest 读取路径，确认当前只有非对称时序分割，缺少 per-user 样本上限、popularity-power negative sampling 和 K-Core 训练参数默认透传。
+
+**解决方式：**
+在 `_torch_example_batches` 引入 `max_samples_per_user`，每个用户只保留最近的有限个时序样本，且所有样本保持 `history=positives[:offset]`；训练前统计 item 频次，按 `frequency ** 0.75` 构造负采样分布并用于 `_negative_indices`，fallback 路径也同步使用流行度加权负样本；workflow 默认补齐 `min_user_positives=3`、`max_samples_per_user=5`、`negative_sampling_power=0.75`，item vocab CLI 默认 `--min-freq=3`，并把相关参数写入 metrics/model payload。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_two_tower_training.py -q`，结果 `19 passed in 5.62s`；补跑 `tests/test_recsys_core.py tests/test_full_data_pool500_recall_only.py tests/test_two_tower_source_manifest_guard.py tests/test_pool500_two_tower_method_source.py -q`，结果 `38 passed in 1.58s`；补跑 `tests/test_pool500_two_tower_diagnostic_loop.py -q`，结果 `20 passed in 0.43s`；`py_compile` 检查 `rs_core/recsys/two_tower.py`、`rs_core/workflow/two_tower_training.py`、`scripts/recall/build_two_tower_item_vocab.py` 通过。随后用新策略跑 200 用户 diagnostic training：`training_examples=644`、`users_with_training_rows=197`、`negative_samples=5`、`max_samples_per_user=5`、`min_user_positives=3`、`negative_sampling_power=0.75`，训练内 `recall@100=0.401026`、`hit_rate@100=0.945`；但固定 100 用户 evaluation-only raw eval 仍为 `hit_at_20/50/100/500=0`、`raw_two_tower_unique_positive_hits=0`，说明小规模采样优化尚未转化为 valid/test 命中。
+
+**面试可讲点：**
+这段可以讲成“从修泄漏转向优化训练分布”：用户样本均衡解决高活用户支配，非对称时序保证因果训练，流行度加权负采样让模型学习热门商品中的真实偏好差异，K-Core 过滤降低稀疏噪声，是推荐召回模型从可运行到可泛化的关键工程步骤。
+
+### 2026-05-26 - TwoTower 训练泄漏修复与在线用户塔投影
+
+**任务：**
+修复 TwoTower/YouTubeDNN 训练样本历史包含当前 label 的泄漏问题，并把在线召回从静态 user embedding 查询切换为实时历史 seed 经 User Tower 投影后的向量检索。
+
+**遇到的问题：**
+原 `_torch_example_batches` 在第一个正样本无历史时会回退到完整 positives，导致当前目标和未来正样本进入 history；在线召回路径还会优先使用训练产出的静态 user embedding，在 LOPO/固定评估用户场景下可能混入未来行为表征。切换到实时历史后，一个旧测试暴露出 tiny fixture 只用唯一 seed 且该 seed 被已见集合排除，无法再保证返回候选。
+
+**定位方式：**
+对照 `rs_core/recsys/two_tower.py` 的滑窗样本生成、`rs_core/recsys/vector_index.py` 的 artifact/source manifest 加载、`rs_core/recsys/candidate_merge.py` 的 TwoTower 向量召回，以及 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的批量预计算路径，确认静态 user embedding 和在线 batch path 都需要收口到同一实时历史逻辑。
+
+**解决方式：**
+训练侧跳过第一个无历史正样本，并保证 `history = positives[:offset]` 不包含当前 target；向量索引加载和 source index manifest 写入 `model_parameters`；在线召回强制用 `recent_positive_item_sequence` 的 seed item 平均向量，经过 `user_tower.0/2` 权重执行 `Linear -> ReLU -> Linear -> Residual Add -> Normalize` 投影后检索，并让主路 `_precompute_two_tower_recall` 复用同一函数，避免批量路径绕过治理。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_two_tower_training.py tests/test_recsys_core.py tests/test_full_data_pool500_recall_only.py -q`，结果 `45 passed in 3.86s`；补跑 `tests/test_two_tower_source_manifest_guard.py tests/test_pool500_two_tower_method_source.py -q`，结果 `10 passed in 0.77s`；补跑 `tests/test_pool500_shadow_ranking.py -q`，结果 `110 passed in 1.03s`。回归测试覆盖了 label 泄漏修复、`model_parameters` 加载、实时历史优先于静态 user embedding、User Tower 投影生效，以及主路预计算路径的一致性。
+
+**面试可讲点：**
+这段可以讲成“双塔召回的数据泄漏与线上一致性治理”：不仅修了训练样本目标泄漏，还把评估/在线召回从静态用户向量改为实时行为 seed 投影，保证训练目标、检索空间和 LOPO 评估边界一致，同时用单测和主路相关测试证明没有破坏 pool500 排序入口。
+
+### 2026-05-26 - TwoTower formal full 远端训练产物接入主路
+
+**任务：**
+把远端 RTX 4090 完成的 TwoTower/YouTubeDNN formal full train-only artifact 拉回本地，重建 pool500 主路 `source_index_manifest.json`，并验证它能真实进入 recall-only 候选池。
+
+**遇到的问题：**
+远端训练产物可以被主路加载并产出候选，但首次 smoke 的 final readiness contract 仍出现 TwoTower blocker：source index manifest 缺少 full-clean gate 需要的 `item_embedding_row_count`、`recall_index_row_count`、clean/train/config/item universe hash，同时 gate 把算法名 `two_tower_youtube_dnn` 误当成非 canonical source 拦截。
+
+**定位方式：**
+先读取 `outputs/recall/pool500_recall_only_smoke/two_tower_remote_formal_1user_20260526/` 的 source manifest、source contribution audit 和 final readiness contract，确认 `two_tower.row_count=30`、已进入 500 行候选池，但 blocker 集中在 TwoTower full-clean 字段和别名校验；再对照 `full_data_pool500_route_gate.py` 和 `build_two_tower_source_index.py`，确认 source index 只写了通用 row count，未写 gate 所需字段别名和 hash 证据。
+
+**解决方式：**
+扩展 `scripts/recall/build_two_tower_source_index.py`，在重建 source index 时可显式接收 formal config、clean manifest、train sequence，并写入 `item_embedding_row_count`、`recall_index_row_count`、`clean_manifest_sha256`、`train_sequence_sha256`、`model_config_sha256`、`item_universe_sha256`；同时在 `rs_core/workflow/full_data_pool500_route_gate.py` 中使用 canonical source alias 校验 `two_tower_youtube_dnn`，并避免把 `source_name/variant/model_type` 这类算法标签误判为 forbidden artifact scope。
+
+**验证结果：**
+重建后的 `outputs/recall/pool500_full_sources/two_tower/index/source_index_manifest.json` 显示 `row_count=268816`、`item_embedding_row_count=268816`、`recall_index_row_count=268816`、`user_embedding_row_count=16639746`，并包含 clean/train/config/item universe hash。focused tests `tests/test_two_tower_source_manifest_guard.py tests/test_pool500_two_tower_source_manifest.py tests/test_pool500_two_tower_method_source.py tests/test_full_data_pool500_recall_only.py -q` 结果 `35 passed in 1.77s`。1 用户主路 smoke 生成 `pool500_rows=500`，TwoTower source 输出 `two_tower_rows=30`，`two_tower_manifest_status=READY`、`two_tower_index_status=INDEX_READY`、`two_tower_index_scope=FULL_DERIVED_INDEX`，final readiness 中 `two_tower_blocker_count=0`；整体仍保持 `decision=STOP`、`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`，没有越过主路晋升边界。
+
+**面试可讲点：**
+这段可以讲成“模型训练产物从算力迁移到主路接入的治理闭环”：不仅把远端 GPU 训练出的全量 embedding/index 拉回本地，还补齐 manifest 证据、哈希追溯和 readiness gate，证明模型召回源能贡献候选，同时不会因为单个 source 接入就误宣称全链路 READY 或替换 ranking 输入。
+
+### 2026-05-26 - TwoTower 10 epoch direct eval 与增训取舍
+
+**任务：**
+在 5 epoch formal full TwoTower 已接入 pool500 主路后，远端继续训练 10 epoch，并用同一组 10k fixed eval 用户做 TwoTower direct-only 效果评估，判断单纯增加 epoch 是否带来提升。
+
+**遇到的问题：**
+完整 pool500 runner 会混入多召回源和 fallback，不适合回答“两塔本身有没有提升”；同时首次自动 watcher 在构建 10 epoch source index 时传入了远端不存在的可选 `train_sequence` hash 路径，导致训练已完成但后续索引构建失败。
+
+**定位方式：**
+读取后台输出 `b8ntibd8l.output`，确认失败点是 `FileNotFoundError: .../training/user_sequences.train.jsonl`，不是训练失败；随后去掉可选 hash 参数，重新执行 `scripts/recall/build_two_tower_source_index.py` 和 `rs_lab/experiments/recall/run_pool500_two_tower_direct_eval.py`，评估输入限定为 train sequence + TwoTower recall index，valid/test labels 只用于打分。
+
+**解决方式：**
+保留 5 epoch 主路接入不变，单独为 10 epoch run 构建 `outputs/recall/pool500_full_sources/two_tower/index/twotower_formal_full_10epoch_20260526_1115/source_index_manifest.json`，再输出 direct eval manifest：`outputs/recall/pool500_full_sources/two_tower/index/twotower_formal_full_10epoch_20260526_1115/direct_eval_10k_manifest.json`。评估 manifest 明确 `eval_scope=two_tower_direct_only`、`no_oracle_label_injection=true`。
+
+**验证结果：**
+10 epoch source index `row_count=268816`，direct eval 覆盖 `user_count=10000`、`query_user_count=8709`、`queryless_user_count=1291`。10 epoch 指标为 `Recall@20=0.005608`、`HitRate@20=0.0104`、`Recall@50=0.009906`、`HitRate@50=0.0183`、`Recall@100=0.017034`、`HitRate@100=0.0306`、`Recall@500=0.04869`、`HitRate@500=0.0819`；低于 5 epoch baseline `Recall@500=0.051552`、`HitRate@500=0.0948`。结论是单纯从 5 epoch 加到 10 epoch 没有提升，下一步不应盲目跑 15 epoch，应优先诊断样本口径、queryless 用户、item universe 和召回目标分布。
+
+**面试可讲点：**
+这段可以讲成“模型增训不是越久越好，而要用一致评估口径做 stop-loss”：把 TwoTower 从主路混合召回中拆出来 direct eval，避免 fallback 或其他召回源掩盖模型真实变化；当 10 epoch 低于 5 epoch 时，用证据及时停止盲目加算力，转向数据分布和泛化误差诊断。
+
+### 2026-05-26 - ItemCF strong relaxed seed-src 数据口径与主路验证
+
+**任务：**
+把原本几乎不可用的 `itemcf_strong` 从 strict 高置信稀疏矩阵调整为仍偏 strong、但能在 pool500 主路产生稳定贡献的 relaxed diagnostic source。
+
+**遇到的问题：**
+strict strong formal 只有 208 条方向边；初版 relaxed strong 即使放宽到 support=1，也只有 56,518 条边，前 100 用户 strong seed 与 source `src_item_id` 仍 0 命中，主路贡献为 0。说明问题不只是边数少，而是 strong 查询 seed 与构建矩阵的 item/user 过滤口径不匹配。
+
+**定位方式：**
+先用 seed-hit audit 证明 `source_src_item_count=40629` 但 `strong_seed_hit_count=0`；再统计前 100 用户 strong seed 的质量桶和热度，发现 179 个 unique seed 中 178 个是 hot，且大多是 `embedding_ready`。进一步审计 allowed user 的 positive sequence，确认如果 dst 只允许 `cf_ready`，大多数 strong seed 没有可连接候选。
+
+**解决方式：**
+在 `rs_lab/experiments/recall/build_pool500_method_dataset.py` 为 `itemcf_strong` 新增 relaxed seed-src v3 口径：用户仍限制在 `sequence_sufficient/collaborative_rich`，构边改为 `recent_strong_positive_item_sequence -> recent_positive_item_sequence` 的有向边；src strong seed 允许 `cf_ready/embedding_ready` 且允许 hot，dst candidate 允许 `cf_ready/embedding_ready` 但排除 hot，并继续使用 train-only、active-user penalty、weighted cooc cosine score、topK per seed。source 转换使用 128 shard，避免主路一次加载 153 万边。
+
+**验证结果：**
+focused 单测 `tests/test_pool500_method_dataset.py` 结果 `23 passed`。v3 smoke method_dataset 输出 `outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_smoke_v3/itemcf_strong/`，`row_count=1,536,320`、`unique_pair_count=1,563,717`、`directed_edge_count_after_topk=1,536,320`，前 100 用户 strong seed 命中恢复到 `149/179`。sharded source 输出 `outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/smoke_sharded/source_index_manifest.json`，`row_count=1,536,320`、`shard_count=128`、`diagnostic_only=true`。100 用户主路 smoke 中 `itemcf_strong.row_count=1,557`、`user_coverage_count=68/100`、`marginal_candidate_share=0.033384`；500 用户受控验证中 `itemcf_strong.row_count=8,198`、`user_coverage_count=369/500`、`marginal_candidate_share=0.03469`。两次 `final_resource_audit.status=PASS`，`promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“按方法特性调数据口径，而不是盲目放宽过滤”：strong seed 本身常是高热强交互商品，适合作为查询锚点，但不适合直接作为候选输出。因此把 hot 仅放在 src 侧、dst 侧继续排除 hot，在保持 high-confidence/diagnostic 边界的同时恢复主路贡献，体现了推荐召回中 seed 侧与 candidate 侧不同治理策略的工程判断。
+
+### 2026-05-26 - ItemCF strong 三档独立重建与 formal 分片接入
+
+**任务：**
+把 relaxed seed-src v3 从单个 formal-like 产物整理成 smoke、diagnostic、local_formal 三档真实数据集，并使用 local_formal 矩阵构建分片 source 接入 pool500 主路验证。
+
+**遇到的问题：**
+ItemCF 数据集不能通过从已有 formal 边表抽用户或抽边来派生小档位，因为任一用户变化都会改变 pair support、`weighted_cooc`、`itemcf_score` 和 per-seed topK。三档必须各自从 train-only 原始序列独立重建，否则 smoke/diagnostic 的统计语义不成立。
+
+**定位方式：**
+复核 `build_pool500_method_dataset.py` 的构建路径，确认每档读取的是 governance manifest、user/item profile、train item frequency 和 `user_sequences.train.jsonl`，不是读取旧 method_dataset；同时用 manifest 核对三档的 `max_output_users`、`row_count`、`user_count` 和治理 flags。
+
+**解决方式：**
+将 relaxed strong v3 参数改为 scale-tier aware：smoke `max_output_users=5000`、diagnostic `80000`、local_formal `160000`，但核心策略不变：`recent_strong_positive_item_sequence -> recent_positive_item_sequence` 有向构边，src 允许 `cf_ready/embedding_ready` 且允许 hot，dst 允许 `cf_ready/embedding_ready` 但排除 hot。local_formal 再通过 adapter 转成 128 shard source，主路按 seed 命中 shard 加载。
+
+**验证结果：**
+focused tests 与 lint 通过：`tests/test_pool500_method_dataset.py -q` 为 `24 passed`，默认主路/registry focused tests 为 `39 passed`，ruff `All checks passed!`。三档独立构建均 PASS：smoke `row_count=47615`、`user_count=5000`；diagnostic `row_count=784463`、`user_count=80000`；local_formal `row_count=1536320`、`user_count=160000`。formal sharded source 为 `outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json`，`row_count=1536320`、`shard_count=128`、`diagnostic_only=true`，并已切换为 pool500 recall-only 主路默认 `itemcf_strong` source manifest。override 验证中，100 用户主路 smoke `itemcf_strong.row_count=1557`、`user_coverage_count=68/100`、`marginal_candidate_share=0.033384`；500 用户验证 `itemcf_strong.row_count=8198`、`user_coverage_count=369/500`、`marginal_candidate_share=0.03469`。默认主路无 override smoke 输出 `itemcf_strong.row_count=941`、`user_coverage_count=68/100`、`marginal_candidate_share=0.019991`，`per_source_output_manifests.json` 确认 `itemcf_strong.source_index_manifest_path` 指向 formal sharded source。三次验证 `final_resource_audit.status=PASS`，`promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“推荐召回数据集分层不能把聚合矩阵当可抽样明细”：对 ItemCF 这类共现统计方法，小样本档必须重新聚合而不是从大矩阵切片。最终通过三档独立重建、formal 分片和主路 contribution audit，既解决了 strong 可用性，又保住了 train-only、diagnostic-only 和非晋升边界。
+
+### 2026-05-25 - Swing local_formal source index 与主路接入
+
+**任务：**
+为 `swing_recall` 按方法特性补齐 `smoke`、`diagnostic(dam)`、`local_formal` 三档 source index，并把 formal 版本接入 pool500 主路。
+
+**遇到的问题：**
+`swing_recall` 之前主路默认读取的是 `target_slice_diagnostic_v1`，缺少按 Swing 方法特性定义的 formal/local_formal 构建口径。Swing 需要基于 train-only 用户序列构建 item-item 共现图，同时控制活跃用户和热门 item 噪声，不能简单把旧 diagnostic 产物改名成 formal。
+
+**定位方式：**
+对照 Datawhale Swing 方法说明，确认其核心是 item-item 共现关系、共同用户证据、活跃用户降权和 TopK 相似边；再审计 `enhanced_source.py` 的现有 builder，确认它已从 clean full train sequence、eligible users 和旧 swing baseline candidates 生成七件套 artifact，并写出 coverage/resource/no-holdout audit。
+
+**解决方式：**
+在 `configs/recall/full_data_pool500/swing_recall/source_config.yaml` 增加 `smoke`、`diagnostic`、`local_formal` tiers、`dam` / `最终数据集(local_formal)` alias、train-only input contract 和 governance 边界；在统一 runner `scripts/experiments/recall/pool500/run_pool500_method_source.py` 接入 `swing_recall`，复用现有 enhanced source builder。`local_formal` 使用 `max_graph_users=120000`、`max_item_user_freq=600`、`min_pair_support=2`，更偏稳定共同用户证据。
+
+**验证结果：**
+三档构建均 `PASS`：smoke `candidate_row_count=8614`、diagnostic `candidate_row_count=39637`、local_formal `candidate_row_count=12646`；local_formal 产物路径为 `outputs/recall/pool500_method_sources/swing_recall/local_formal_swing_recall_20260525/source_index_manifest.json`，`edge_count=86748`、`seed_count=14241`、`user_coverage_count=389`、`graph_user_count=120000`、`no_holdout_status=PASS`。focused tests `31 passed`；5 用户主路 smoke 生成 2500 行候选，其中 `swing_recall=143`，final contract 保持 `final_pool500_ready_claimed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“把 Swing 从诊断 source 推进到可复用 formal 召回源”：先按 Swing 的共同用户和活跃用户抑制机制定义数据层级，再用 train-only 全量序列构建稳定 item-item 边表，最后接入主路并用候选贡献、no-holdout audit 和 final contract 证明它能服务后续排序但不越过晋升边界。
+
+### 2026-05-25 - ItemCF weak full source 分片构建与按需加载
+
+**任务：**
+把 `itemcf_weak` 的 full formal source 从单个 4.4GB JSONL 改造成可分片构建、可按 batch seed 加载的 source index；`itemcf_strong` 因 full formal 只有 208 条边，继续保持单文件默认构建。
+
+**遇到的问题：**
+`itemcf_weak` coverage formal 有 5,640,872 条方向边，直接用主路一次性加载会把 4.4GB JSONL 膨胀成大量 Python 对象，小批量验证也可能消耗 20GB 级别内存；但此前 seed-hit 诊断已证明 full weak 对目标用户有贡献，不能简单放弃该矩阵。
+
+**定位方式：**
+先用 20 用户 seed-hit 审计确认 weak full 中 17/20 用户有 seed 命中，seed-filtered 主路贡献约 487 条候选；再对比 `limit_rows=10000` shard smoke 和 full sharded smoke，确认低贡献来自截断 smoke 覆盖不足，而不是分片加载逻辑丢边。
+
+**解决方式：**
+在 `method_dataset_to_itemcf_source.py` 中新增 `--shard-count`，当 `shard_count>1` 时按 `sha256(src_item) % shard_count` 写入 `edges_shards/` 并在 manifest 记录 `sharded=true`、`shard_count`、`shard_key=src_item_sha256_mod`、每个 shard 的 row/hash/size；在 `candidate_merge.py` 新增 manifest-aware loader，根据当前 batch 的 `allowed_src_items` 只加载命中 shard；主路从用户 recent positive sequence 提取 weak/strong seed 后传给 ItemCF loader，同时保留 train-only、diagnostic-only、no promotion、no ranking replacement、no pool1000 边界。
+
+**验证结果：**
+聚焦测试 `tests/test_pool500_itemcf_method_dataset_source_adapter.py tests/test_full_data_pool500_recall_only.py` 结果 `23 passed in 0.99s`，相关模块 `compileall` 通过。full weak sharded source 输出 `outputs/recall/pool500_method_sources/itemcf_formal_from_method_dataset_v1/itemcf_weak/sharded_full_v1/source_index_manifest.json`，`row_count=5,640,872`、`shard_count=256`、`edges_path=null`。20 用户主路 smoke 输出 `itemcf_weak.row_count=494`、`user_coverage_count=16/20`、`marginal_candidate_share=0.051165`；100 用户 smoke 输出 `itemcf_weak.row_count=2112`、`user_coverage_count=69/100`、`marginal_candidate_share=0.045021`，`final_resource_audit.status=PASS`，全链路仍保持 `promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“把大规模协同过滤矩阵从能产出推进到可服务化消费”：先证明 full weak 矩阵确实能为用户补候选，再针对 4.4GB JSONL 的内存瓶颈做 src_item hash 分片和 batch seed 按需加载，让小批量/后续主路验证不用全量加载矩阵，同时用 manifest/audit 保证诊断产物不会被误晋升为正式 ranking 输入。
+
+### 2026-05-25 - pool500 三个 local_formal source index 接入主路
+
+**任务：**
+把 `semantic`、`semantic_title_category_expansion`、`co_visit_fallback_repair` 三份已生成的 `local_formal` source index 接入 pool500 主路 recall-only 实验，让主路默认可读取并合并三类候选。
+
+**遇到的问题：**
+三份 source index 已经可调用，但如果只按文件存在自动标记，会把 diagnostic/local_formal 证据误写成 `READY`；同时 canonical `semantic` 必须独立进入主路，不能被 `semantic_title_category_expansion` 代替，`co_visit_fallback_repair` 也不能被误解为完整 co-visit graph。
+
+**定位方式：**
+审计 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的默认 source manifest、fill order、pregenerated recall 加载、readiness contract 与 full derived index manifest 写入路径，并补充 `tests/test_full_data_pool500_recall_only.py` 回归锁定默认路径、source identity、非 READY 状态和 co_visit v0 字段。
+
+**解决方式：**
+主路默认 manifest 指向 `local_formal_semantic_20260525`、`local_formal_semantic_title_category_20260525`、`local_formal_co_visit_repair_20260525`；新增 canonical `semantic` 的 pregenerated recall 合并入口，把 `semantic` 加入 fill order 但不加 minimum；对 deferred diagnostic source 即使 index 文件存在也保持 `BATCH_SCOPED_DIAGNOSTIC`，并透传 no-promotion/no-ranking-replacement/no-pool1000、`algorithm_scope`、`complete_co_visit_graph_claimed` 等治理字段。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_phase_1_21_recall_coverage.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_method_source_runner.py`，结果 `53 passed, 2 warnings`。随后运行 5 用户主路 smoke，输出 `pool500_candidates.jsonl` 共 2500 行，三类新 source 均进入候选：`semantic=563`、`semantic_title_category_expansion=360`、`co_visit_fallback_repair=597`；三者 readiness 与 full derived index status 均为 `BATCH_SCOPED_DIAGNOSTIC`，`semantic.canonical_source=semantic`，co_visit 保留 `algorithm_scope=train_transition_metadata_repair_v0` 与 `complete_co_visit_graph_claimed=false`，final contract 继续保持 `final_pool500_ready_claimed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“把召回方法产物接入主路但不越过治理边界”：既让真实候选进入 recall merge、可被后续排序/Agent 使用，又用 readiness contract 和 manifest 字段防止 diagnostic source 被包装成 READY 或正式晋升，体现推荐系统实验主路接入中的效果验证与风险隔离。
+
+### 2026-05-25 - pool500 三方法 local_formal source index 生成
+
+**任务：**
+为 `semantic`、`semantic_title_category_expansion`、`co_visit_fallback_repair` 生成可供后续召回读取的 `local_formal` source index 产物。
+
+**遇到的问题：**
+此前只完成了三档配置、builder/runner 和 dry-run 验证，`semantic` 没有保留实际输出，另外两个方法也需要按统一 runner 重新生成 formal 口径产物，不能把旧 diagnostic run 直接当作正式可调用索引。
+
+**定位方式：**
+用统一 runner 串行执行三个 source 的 `--tier local_formal`，避免并行打满本机资源；完成后在主会话独立检查每个输出目录的七件套、`candidates.jsonl` 行数、`source_index_manifest.json` 的 source identity、`no_holdout_audit.json` 状态和治理字段。
+
+**解决方式：**
+生成 `local_formal_semantic_20260525`、`local_formal_semantic_title_category_20260525`、`local_formal_co_visit_repair_20260525` 三个 run，并保留 `semantic` 的 canonical source identity、`semantic_title_category_expansion` 的 title/category expansion identity，以及 `co_visit_fallback_repair` 的 `train_transition_metadata_repair_v0` 边界。
+
+**验证结果：**
+三个输出目录均包含 `method_dataset_manifest.json`、`source_index_manifest.json`、`candidates.jsonl`、`coverage_audit.json`、`undercoverage_audit.json`、`resource_audit.json`、`no_holdout_audit.json`。候选行数分别为：`semantic=53280`、`semantic_title_category_expansion=25047`、`co_visit_fallback_repair=67222`，其中 co_visit `user_coverage_count=444`；三个 no-holdout audit 均为 `PASS`，治理字段保持 no-promotion/no-ranking-input-replacement/no-pool1000，co_visit 继续声明 `complete_co_visit_graph_claimed=false`。
+
+**面试可讲点：**
+这段可以讲成“召回源从配置治理走到可调用索引落盘”：先把方法专属数据筛选和 source contract 固化，再按 train-only local_formal 口径生成可复用 source index，并用七件套 manifest/audit 证明数据没有泄漏、没有 READY 误宣称、没有替换正式 ranking 输入。
+
+### 2026-05-25 - pool500 method source tier/identity 守门测试收口
+
+**任务：**
+为 `semantic`、`semantic_title_category_expansion`、`co_visit_fallback_repair` 三个 pool500 method source 补齐统一 runner、tier 合并、source identity、co_visit v0 语义和 forbidden audit 的测试与方法文档。
+
+**遇到的问题：**
+前置实现已完成 runner 和 builder 改造，但回归测试还没有固定 CLI 显式参数 > tier > defaults、argparse 默认值不覆盖配置、unknown tier、`dam` alias、semantic canonical identity、co_visit 七件套与 v0 manifest、youtube_dnn/pool1000 forbidden audit 等关键契约。首次目标测试暴露 registry 的 `forbidden_input_scopes` 已包含 `youtube_dnn` 但缺少 `pool1000`，与代码级 audit 列表不一致；独立验收又发现 `semantic_title_category_expansion` builder 存在未使用导入，且 runner 尚未解析 `tier_aliases.dam -> diagnostic`。
+
+**定位方式：**
+新增 `tests/test_pool500_method_source_runner.py` 覆盖 runner dry-run、默认 config path、tier precedence、`dam -> diagnostic` alias、semantic identity、co_visit manifest contract、METHOD 文档边界和 forbidden path helper；运行 `test_pool500_method_registry_drift.py` 时定位到 registry forbidden scope 漂移；用 ruff 和 runner dry-run 复现最终两个验收 blocker。
+
+**解决方式：**
+补充 runner/source 契约测试，把 registry 的所有 source `forbidden_input_scopes` 同步加入 `pool1000`；重写三份 METHOD 文档，统一声明 `configs/recall/full_data_pool500/<source>/source_config.yaml`、统一 runner smoke、`dam(diagnostic)` / `最终数据集(local_formal)` alias，以及不得 READY、不替换 ranking input、不进入 pool1000 的边界。co_visit 文档同步 `algorithm_scope=train_transition_metadata_repair_v0`、`complete_co_visit_graph_claimed=false`，并明确 `pair_support` / `distinct_user_support` 是 follow-up，不是 gate。最终补上 runner `tier_aliases` 解析，并清理 `semantic_title_category_expansion` builder 的未使用导入。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_method_source_runner.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_co_visit_fallback_repair_source.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_method_registry_drift.py`，结果 `25 passed in 0.44s`。随后对三个 source 分别执行统一 runner `--tier smoke --dry-run`，均返回七件套 `required_outputs`、正确 `config_path` 和 no-promotion/no-ranking-replacement/no-pool1000 governance；追加执行 `--source semantic --tier dam --dry-run`，输出 `tier=diagnostic`；ruff 检查 runner、测试和 semantic_title builder 结果为 `All checks passed!`，独立 verifier 复核为 PASS。
+
+**面试可讲点：**
+这段可以讲成“推荐召回 source 治理契约的测试化”：不是只靠文档说明 source 边界，而是把 config path、tier 合并优先级、semantic identity、防 pool1000 证据污染、co_visit v0 能力边界和七件套产物都固化成可执行测试，防止后续实验把 diagnostic source 包装成 READY 或正式 ranking 输入。
+
+### 2026-05-25 - ItemCF method_dataset strict 与 coverage formal 分层
+
+**任务：**
+为 `itemcf_weak` / `itemcf_strong` 制作更符合 ItemCF 特性的 P2 method dataset：在 strict 三级规模口径下保留高质量 train-only 证据，同时针对 weak 召回补量额外生成 coverage-oriented formal 数据集。
+
+**遇到的问题：**
+strict local_formal 确实按既定三级规模执行，但 `itemcf_weak` 只有 53540 条方向边，`itemcf_strong` 只有 208 条方向边。问题不在流程失败，而在 ItemCF 的过滤口径过严：`cf_ready + non-over_hot`、用户质量桶限制和 item user frequency cap 大量削掉可共现 item，使 weak 的 coverage 目标无法由 strict 口径承担。
+
+**定位方式：**
+对比 diagnostic、strict formal 和 coverage formal 的 manifest：strict weak 主要 drop 为 `user_bucket_not_allowed=17629532`、`insufficient_pair_items=458317`、`item_over_hot=866844`、`item_not_cf_ready=1208170`；strong strict formal 维持 `collaborative_rich` 与 `min_pair_support=2`，只剩 104 个无向 pair。由此确认 strong 应保留 high-confidence，weak 需要单独 coverage profile，而不是把 source/candidate/ranking 链路提前替换。
+
+**解决方式：**
+在 `build_pool500_method_dataset.py` 中新增显式 `--itemcf-coverage-profile weak_coverage`，只作用于 `itemcf_weak`：用户桶扩到 `medium_behavior/sequence_sufficient/collaborative_rich`，item 桶扩到 `cf_ready/embedding_ready`，`max_output_users=120000`、`max_items_per_user=80`、`max_item_user_freq=20000`、`top_k_per_seed=200`，并保留 `weighted_cooc`、active-user penalty 和 `itemcf_score = weighted_cooc / sqrt(src_user_count * dst_user_count)`。coverage formal 不覆盖 strict formal，只作为 weak 的广覆盖 method_dataset 证据。
+
+**验证结果：**
+strict diagnostic：weak `row_count=94`、strong `row_count=0`，audit PASS；strict local_formal：weak `row_count=53540`、`unique_pair_count=26770`，strong `row_count=208`、`unique_pair_count=104`，audit PASS。coverage formal 输出 `outputs/recall/pool500_method_datasets/itemcf_weighted_coverage_formal_v1/itemcf_weak/`，`row_count=5640872`、`unique_pair_count=3091726`、`edge_seed_count=239995`、`user_count=120000`、`item_count=239995`、`max_edges_per_seed_after_topk=200`、`score_mismatch_count=0`、`missing_field_counts={}`。新增 coverage profile 单测通过：`tests/test_pool500_method_dataset.py::test_itemcf_weak_coverage_profile_broadens_users_and_items_without_changing_layer`。
+
+**面试可讲点：**
+这段可以讲成“按方法特性做数据分层，而不是盲目放大同一套过滤规则”：strong 保持高置信、weak 引入广覆盖 profile；同时用 weighted cooc、活跃用户惩罚、top-k per seed 和 train-only audit 保证边表更适合 ItemCF 学习，但仍明确它只是 P2 method_dataset，不是 source index、candidate、ranking replacement 或正式晋升。
+
+### 2026-05-26 - 推荐 Agent 可用化契约与闭环验证
+
+**任务：**
+在召回链路基本可用、排序后续继续优化的阶段，把推荐 Agent 从实验组件推进到可直接联调使用的自然对话导购入口。
+
+**遇到的问题：**
+Agent 已有 runtime、dialogue、feedback、serving 和 display 基础，但关键契约仍偏隐式：`DialoguePlan` 的 intent/action 是自由字符串，后台工具能力没有显式边界清单，前台需要保证不会泄露 diagnostics、runtime trace、reward、training、source 或 capability 信息。同时 Agent 不能像 code agent 一样暴露工具选择和自主调度，必须把复杂能力藏在后台。
+
+**定位方式：**
+对照 `rs_core/rsagent/runtime.py`、`rs_core/rsagent/dialogue.py`、`rs_core/rsagent/tools.py`、`rs_core/serving/service.py`、`rs_core/display/builder.py` 和 RAG retriever/schema，确认现有主链路应复用 `RecommendationService -> HybridRecommendationEnvironment -> AgentRuntime`，而不是新增大型 orchestrator。架构复审还发现必须沿用现有 `recommend_request`、`preference_feedback`、`ask_explanation` 等字符串并常量化，不能为了“规范命名”破坏已有测试和 runtime summary。
+
+**解决方式：**
+在 `rs_core/rsagent/dialogue.py` 中把现有 intent/action 常量化并增加 allowlist，`AgentRuntime` 默认 `current_goal` 改为引用同一常量；在 `rs_core/rsagent/tools.py` 增加内部 `AgentCapability` manifest，描述 `parse_preferences`、`apply_constraints`、`retrieve_candidates`、`rank_candidates`、`build_rag_context`、`explain_recommendation`、`collect_feedback` 等后台能力，但不实现通用工具执行器、不进入 public payload；补齐 serving smoke，覆盖模糊需求追问、澄清后推荐、`show_different` 反馈生效和 `why` 只解释最近推荐。
+
+**验证结果：**
+使用项目默认 `.venv` 运行核心测试：`tests/test_agent_dialogue.py tests/test_agent_runtime.py tests/test_agent_feedback.py tests/test_agent_scorecard.py tests/test_agent_capability_manifest.py tests/test_serving_smoke.py tests/test_display_contract.py -q`，结果 `76 passed in 1.35s`；ruff 检查 `rs_core/rsagent`、`rs_core/serving` 和相关测试为 `All checks passed!`。独立验证还跑过 RAG 核心测试 `5 passed`、相关模块 `compileall` 通过，并用临时最小 fixture 验证 Agent evaluation 逻辑，`scene_count=1`、`overall_score=0.866667`。默认评估脚本直接按路径运行会遇到 `ModuleNotFoundError: No module named 'scripts'`，改用模块方式后默认配置缺少本地数据输入，因此未把全量 evaluation 作为本次门禁。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 从能跑推进到可联调使用”：不是重写 Agent 框架，而是把隐式 dialogue 契约、后台能力边界、公有 payload 防泄露和端到端导购闭环测试化。前台保持自然对话和商品卡，后台保留召回、排序、RAG、反馈和评估能力，体现了推荐 Agent 的产品形态和工程治理边界。
+
 ### 2026-05-25 - TwoTower diagnostic 训练检索评估闭环
 
 **任务：**
@@ -31,6 +411,46 @@
 
 **面试可讲点：**
 这段可以讲成“推荐模型从数据治理到诊断闭环的安全推进”：不是把 smoke 训练结果包装成效果，而是先把训练、索引、检索、指标和 no-promotion 边界串成可复现 diagnostic runner；同时通过独立 verifier 构造反例发现路径级数据泄漏风险，并把它固化成 guard 与回归测试，体现推荐系统实验链路中的数据边界意识和工程验证能力。
+
+### 2026-05-25 - UserCF formal train probe 与边界验收收口
+
+**任务：**
+为 UserCF formal train 补齐 method_dataset input mode、probe 与 formal 构建验收，沉淀本轮矩阵/索引产物的边界、证据和后续注意事项。
+
+**遇到的问题：**
+本轮验证重点不在效果提升，而在 method_dataset / source_index / probe 产物是否能按合同加载、是否跨过 promotion/ranking/final-ready 边界。verify-worker 还指出 `method_dataset_manifest` 里的 secondary source_index hash 可能陈旧，若直接用于 formal/consumer 可能出现血缘口径偏差。后续已把该 hash 改为基于落盘 `source_index_manifest.json` 的实际文件 sha256 写入，并刷新 probe 产物。
+
+**定位方式：**
+复核 focused tests 与 probe 输出，核对 `source_index_manifest`、candidate 统计、loadable shards、forbidden/no-holdout audit 和各类治理标志，确认问题属于 readiness contract / hash lineage，而不是召回效果本身。
+
+**解决方式：**
+把本轮结论收口为“可构建、可加载、边界守住”，不把 boundary pass 解释成效果提升；同时修正 wrapper 写入顺序，让 `method_dataset_manifest.source_index_manifest_sha256` 使用落盘 `source_index_manifest.json` 的实际 sha256，并补充回归断言，避免继续沿用旧血缘。
+
+**验证结果：**
+33 个 focused tests 通过；修复 hash 写入后复跑 focused tests，`33 passed in 1.24s`；刷新 probe 后 `method_dataset_manifest.source_index_manifest_sha256`、`readiness_contract.index_manifest_sha256` 与当前 `source_index_manifest.json` 实际 sha256 均一致。probe `source_index_manifest` `status=PASS`、`INDEX_READY`、`target_user_count=5000`、`candidate_user_count=22`、`candidate_total_count=36`；formal 全量构建输出 `outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_method_dataset/`，`target_user_count=90686`、`candidate_user_count=10630`、`candidate_total_count=17509`、`candidate_count_stats={min:1,p50:1,p90:3,max:20}`，相对旧诊断 baseline `candidate_row_count_delta=9145`、`user_coverage_count_delta=10340`；`16/16` shard 可加载，`malformed_shard_rows=0`，loader 覆盖 10630 个候选用户；forbidden/no-holdout audit PASS；`promotion/ranking/final-ready` flags 全 false。结论能证明 formal 矩阵/索引可构建、可加载、可用于诊断候选产出，但仍不能替代独立 recall-only 效果评估。
+
+**面试可讲点：**
+这段可以讲成“把推荐召回产物从能跑推进到可交付”：不是只看分数，而是把 manifest、shard loadability、治理标志和审计结果一起验收，确保 formal/consumer 接口边界清晰，并主动识别、修复 hash lineage 可能陈旧的问题。
+
+### 2026-05-25 - UserCF formal artifact 接入 recall-only 主路
+
+**任务：**
+把已完成的 UserCF formal method_dataset 构建产物接入 pool500 recall-only 主路，让主路默认读取新的 `usercf_recall` formal sidecar，同时保持 DIAGNOSTIC_ONLY 与非晋升边界。
+
+**遇到的问题：**
+UserCF formal 产物已经能从 90686 个 target user 构建出诊断候选，但它仍是 `DIAGNOSTIC_ONLY`，不能因为 `INDEX_READY` 或主路可读取就直接晋升为 READY、替换 ranking input 或声称 pool500 ready。另外，主路 shadow audit 里已经有 `semantic` source，但 audit registry 没覆盖它，测试暴露出口径不一致。
+
+**定位方式：**
+先用 `--usercf-sidecar-manifest` override 跑 1000 用户 smoke，验证新 formal artifact 能被 `run_full_data_pool500_recall_only.py` 读取并进入 contribution audit；再检查 `DEFAULT_SOURCE_MANIFESTS`、`pool500_method_registry.json`、`usercf_recall/source_config.yaml` 和 shadow audit source registry，确认默认指针、registry evidence 与 audit 覆盖范围需要同步。
+
+**解决方式：**
+将 `run_full_data_pool500_recall_only.py` 默认 `usercf_recall` manifest 指向 `outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_method_dataset/source_index_manifest.json`；更新 `pool500_method_registry.json` 的 UserCF latest artifact/readiness/evidence 与统计，但保持 `status=DIAGNOSTIC_ONLY` 和 promotion/ranking/pool1000 全 false；更新 `configs/recall/full_data_pool500/usercf_recall/source_config.yaml` 记录 formal method_dataset input mode；同时把 `semantic` 纳入 recall-layer shadow audit registry，避免主路有 source 但 shadow audit 漏审。
+
+**验证结果：**
+聚焦测试通过：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest ...test_full_train_usercf_sidecar.py ...test_pool500_usercf_method_source.py ...test_full_data_pool500_recall_only.py ...test_pool500_method_registry_drift.py -q`，结果 `66 passed in 3.47s`。1000 用户 override smoke 输出 `status=STOP` 且治理字段保持 false；默认指针更新后 5000 用户 diagnostic 输出 `status=STOP`，`usercf_recall` 进入主路 contribution audit：`row_count=5`、`user_coverage_count=3`、`readiness_status=DIAGNOSTIC_ONLY`，per-source readiness 指向 formal source manifest 且 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`pool1000_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“把离线方法产物安全接入召回主路”：不是把 UserCF 的 formal 构建产物直接包装成效果提升，而是先通过 override smoke、默认指针切换、registry evidence、shadow audit 和 diagnostic route 验证，让主路能消费新的协同过滤信号，同时保留 STOP/DIAGNOSTIC_ONLY/非晋升门禁。这样既推进了工程链路，也避免了未评估产物污染排序输入。
 
 ### 2026-05-25 - TwoTower P2 负样本多样性与数据质量门禁
 
@@ -252,6 +672,26 @@ legacy ItemCF weak/strong 主要来自未分层的旧切片，边数约 9 万/8 
 **面试可讲点：**
 这段可以讲成“把 ItemCF 的效果导向特征和治理证据一起收口”：不是只改一个分数公式，而是把 weighted cooc、活跃用户惩罚、审计器治理来源和空输出证据一起固化，防止把诊断性 method_dataset 误说成召回晋升或下游替换。
 
+### 2026-05-25 - TwoTower strict full 训练内存安全改造
+
+**任务：**
+将 TwoTower strict full GPU 训练从“无用户截断但一次性全量载入”改造成可观测、内存更安全的 full-data 路径，同时保持当前 20260524 CUDA source 作为 fallback，不在 full run 完成前替换 source index。
+
+**遇到的问题：**
+strict full run 使用 `limit_users=null` 后，进程在 `model_constructed` 前停留，未产生 `first_batch_devices` 或 `artifact_manifest.json`。诊断显示 `user_sequences.train.jsonl` 约 9.7GB、item vocab JSONL 约 868MB，PID private memory 约 54.8GB，系统 free virtual memory 约 0.37GB，属于 pre-model 数据加载/预处理内存压力，而不是 GPU batch 训练。
+
+**定位方式：**
+检查 `gpu_device_trace.log`、stdout/stderr、PID/GPU 进程、CPU/IO 采样和系统内存；确认 trace 只有 `preflight/cuda_probe_allocated/training_start`，无模型构建事件。随后定位到 `rs_core/workflow/two_tower_training.py` 的 `read_jsonl` 全量载入，以及 `rs_core/recsys/two_tower.py` 在训练行、item feature 构建前缺少进度回调。
+
+**解决方式：**
+在 `train_two_tower_recall` 增加可选 `compact_inputs` 与 `progress_callback`：JSONL 改为流式读取并只保留训练所需字段，item vocab manifest 行数校验改为 streaming count，训练序列只保留 `user_id` 和窗口内序列字段；在训练行构造、item token_df、item feature rows、torch examples、model construction 和 first batch device 阶段输出进度事件。CLI 增加 `--compact-inputs` 与 `--progress-log`，strict full launcher 改为传入 compact/progress callback。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_two_tower_training.py -q`，结果 `16 passed in 10.71s`；对修改文件运行 `py_compile` 无输出、退出码 0。新增回归确认 compact input 路径保持 `split_scope=train_only`、`leakage_checks` 不变，并输出 `load_item_records_complete`、`load_training_sequences_complete`、`training_rows_complete`、`item_feature_rows_complete`、`first_batch_devices`。
+
+**面试可讲点：**
+这段可以讲成“full-data 训练不是只把 limit 去掉”：先用进程、内存、trace 证据证明瓶颈在 pre-model materialization，再通过 streaming/compact input 和阶段化进度日志把不可观测的全量训练改成可诊断、可回滚、不会误替换线上 fallback 的工程路径。
+
 ### 2026-05-24 - 召回分层规划与工程叙事收口
 
 **任务：**
@@ -294,6 +734,26 @@ legacy ItemCF weak/strong 主要来自未分层的旧切片，边数约 9 万/8 
 
 **2026-05-24 路线更新：**
 该 shared capped base 路线已废弃，不再作为 P2 主路或必经共享底座。当前口径恢复为 `governance_train_only → method-specific dataset`：统一治理只保留在 governance_train_only，缩减/采样逻辑下沉到各方法自己的 method_dataset builder 中，按方法信号使用 v2 bucket 定制。
+
+### 2026-05-25 - ItemCF formal method_dataset 到主路 source adapter
+
+**任务：**
+把已有 P2 formal `itemcf_weak` / `itemcf_strong` method_dataset 转换为 pool500 主路可加载的 ItemCF edge source/index，并先做受控 smoke/effect 验证，保持 train-only 与 diagnostic-only 边界。
+
+**遇到的问题：**
+主路 `load_itemcf_by_source` 期望 edge row 字段为 `source/src_item/dst_item/score`，而 formal method_dataset row 字段是 `src_item_id/dst_item_id/itemcf_score/edge_rank`，现有 weak/strong builder 只会从 train sequences 重建 source，不能直接消费 formal rows。首次主路 smoke 还暴露默认 two_tower manifest 是旧 schema，需要显式覆盖为合法 `two_tower_source_index_v1`；完整 weak formal 有 5,640,872 条边，直接用全量边表做小 smoke 仍会触发较重加载。
+
+**定位方式：**
+检查 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的 `--source-manifest` 覆盖逻辑、`_load_source_itemcf()` 和 `rs_core/recsys/candidate_merge.py::load_itemcf_by_source`，确认只需提供兼容 `edges_path` 的 `source_index_manifest.json`。用真实 formal 输入做 `--limit-rows 100` 转换验证字段映射，再用主路 `source_contribution_audit.json` 判断 ItemCF 是否在候选池产生贡献。
+
+**解决方式：**
+新增流式 adapter `rs_lab/experiments/recall/pool500/method_dataset_to_itemcf_source.py` 与 CLI 包装 `scripts/experiments/recall/pool500/build_itemcf_source_from_method_dataset.py`：逐行读取 `method_dataset_rows.jsonl`，输出 `{source, src_item, dst_item, score, rank, metadata}` edge jsonl，并生成只描述 source/index 与 diagnostic boundary 的 `source_index_manifest.json`，记录输入 manifest/path/hash、row_count、schema mapping 和 no-label-generation 边界，不写 promotion/ranking/final-ready 语义。完整转换输出到 `outputs/recall/pool500_method_sources/itemcf_formal_from_method_dataset_v1/`，weak `row_count=5640872`，strong `row_count=208`。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 targeted tests：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_itemcf_method_dataset_source_adapter.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_full_data_pool500_recall_only.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_label_coverage_diagnostic.py -q`，结果 `21 passed in 4.92s`。真实 limit100 source loader 验证：weak `src_count=5/edge_count=100`，strong `src_count=30/edge_count=100`。受控主路 smoke 输出 `outputs/recall/full_data_pool500_recall_only/itemcf_formal_limit100_smoke20/`：`processed_users=20`、`candidate_rows=7993`、`underfilled_user_count=18`，但 `itemcf_weak.row_count=0`、`itemcf_strong.row_count=0`，后验 label diagnostic `positive_overlap_count=0`。因此本轮只证明 formal adapter 可加载，未证明 formal ItemCF 对该受控 smoke 有有效贡献，停止扩大 formal 主路验证。
+
+**面试可讲点：**
+这段可以讲成“把方法层数据集接入主路前先做 schema adapter 与贡献门禁”：不是把 P2 method_dataset 直接宣称为召回产物，而是通过流式转换、manifest hash、loader 测试、主路 source contribution 和后验 label diagnostic 逐级验收；当受控 smoke 没有 ItemCF 贡献时及时停止，避免把无效 source 包装成 promotion 或 final-ready。
 
 ## 条目模板
 
@@ -4134,3 +4594,127 @@ P2 数据集需要继承 P1 分层口径，但不能调用旧 `methods/*/builder
 
 **面试可讲点：**
 这段可以讲成“把重资源 ItemCF 从能跑 sidecar 推进到可审计的方法级数据集 contract”：即使 smoke 样本没有产出有效边，也保留了 train-only 输入、禁止 holdout/oracle、特征 schema、drop reason 和构建命令证据，避免把空输出误读成方法失败或把 smoke PASS 误读成召回晋升。
+
+
+### 2026-05-25 - UserCF 三档 method_dataset 最终验收
+
+**任务：**
+验证 `usercf_v1_smoke`、`usercf_v1_diagnostic`、`usercf_v1_local_formal` 三档 UserCF method_dataset 是否满足 P2 dataset-only 契约，并补齐 focused test 证据。
+
+**遇到的问题：**
+UserCF 三档产物需要证明只是 eligible user sequence 数据集，不能夹带 candidates、source index、readiness 或 promotion 语义；同时 local_formal 规模较大，必须用 row file 实际行数复核 manifest 的 `row_count`。
+
+**定位方式：**
+逐档读取 `outputs/recall/pool500_method_datasets/*/usercf_method_dataset/method_dataset_manifest.json`，检查 `status`、`outputs.dataset_schema`、`forbidden_scope_audit.status`、四个 no-promotion/no-replacement 开关和禁用文件列表，并逐行统计 `method_dataset_rows.jsonl`。
+
+**解决方式：**
+按 smoke、diagnostic、local_formal 三档分别执行 manifest + row file 审计，确认 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`final_pool500_ready_claimed=false`，且目录内不存在 `candidates.jsonl`、`source_index_manifest.json`、`readiness_manifest.json`、`promotion_manifest.json`。
+
+**验证结果：**
+三档审计均为 `AUDIT_RESULT=PASS`：smoke `row_count=213/user_count=213/item_count=207/schema=eligible_user_sequence_v1`；diagnostic 改为使用 full/local_formal governance + diagnostic caps 后，`row_count=60000/user_count=60000/item_count=66263/schema=eligible_user_sequence_v1`；local_formal `row_count=90686/user_count=90686/item_count=94553/schema=eligible_user_sequence_v1`，三档 row file 实际行数均等于 manifest `row_count`。使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_pool500_method_dataset.py -q`，结果 `21 passed in 0.45s`。
+
+**面试可讲点：**
+这段可以讲成“推荐召回 P2 数据集契约验收”：不仅看 manifest PASS，还用实际行数、schema、forbidden-scope audit 和禁用产物缺失共同证明 UserCF 当前只提供可审计的 eligible user sequence 输入，不越界声明候选生成、排序替换或 pool500 晋升。
+
+### 2026-05-25 - TwoTower full train-only formal dataset 与 bounded diagnostic package
+
+**任务：**
+生成缺失的 `train_only_v1` upstream governance manifest，并基于全量 clean train 数据制作 TwoTower formal method dataset、audit evidence 与 200 用户 bounded diagnostic loop package。
+
+**遇到的问题：**
+formal governance 输入最初缺少 `outputs/recall/data_governance/train_only_v1/manifest.json`，不能用 smoke/diagnostic manifest 替代。后续 full local_formal 构建还暴露两个工程瓶颈：TwoTower method dataset 每个样本复制全量 negative universe 导致运行过慢；diagnostic loop 默认把 889431 个 training item 的完整文本写入训练 vocab，导致 GB 级 JSON 和全量 topK scoring 过重。audit 首次还 BLOCKED 了 12 个 positive target 的 `title_clean` 缺失。
+
+**定位方式：**
+用 `.venv` 运行指定 builder 并检查 manifest/audit 输出：governance manifest PASS，`profiled_user_count=18103384`、`total_item_count=2320263`；formal TwoTower dataset 首次 audit blocker 为 `two_tower_positive_target_metadata_incomplete`，定位到 canonical metadata 中部分 target `title_clean` 为空但有 description/category。通过输出文件大小和进程状态确认 diagnostic bottleneck 来自完整 item vocab 与全量 item scoring。
+
+**解决方式：**
+先用 full clean manifest 生成 `outputs/recall/data_governance/train_only_v1/manifest.json`，再生成 formal method dataset。将负采样从“每样本构造 eligible negatives 全量列表”改为从 hash offset 流式扫描并跳过 history/target，保持 deterministic rotated negatives 语义但避免 O(samples × universe copy)。对 title 缺失的 target，用已有 description/features/category 文本作为 `title_clean` fallback，确保 item tower metadata contract 可消费。diagnostic loop 保持 200 用户 bounded 口径，只对样本涉及的 history/target items 构建紧凑 vocab，不生成正式 candidates/ranking/promotion/READY 产物。
+
+**验证结果：**
+formal governance 输出 PASS：`outputs/recall/data_governance/train_only_v1/manifest.json`。formal TwoTower method dataset 输出 PASS：`train_sample_count=751574`、`negative_universe_item_count=866802`、`training_item_universe_item_count=889431`。audit evidence PASS：`outputs/recall/pool500_method_datasets/audit_evidence_v1/diagnostic_audit_report.json`，`blocker_count=0`，`positive_target_metadata_incomplete_count=0`，negative leakage/duplicate/empty 均为 0。diagnostic package PASS：`outputs/recall/pool500_two_tower_diagnostic_loop/diagnostic_report.json`，`source_index_row_count=1137`、`diagnostic_topk_row_count=10000`、200 users、975 targets，Recall@20=`0.294359`、Recall@50=`0.434872`。相关测试使用 `.venv` 运行 `tests/test_pool500_two_tower_method_dataset.py tests/test_pool500_two_tower_diagnostic_loop.py`，结果 `33 passed in 0.86s`。
+
+**面试可讲点：**
+这段可以讲成“把双塔训练数据从 smoke 证据推进到 full train-only formal 包装”：先补齐 upstream governance，再用 audit 把 history→target、target universe 覆盖、负样本多样性、metadata 完备性和 no-oracle/no-label/no-promotion 边界固化下来；同时对大规模数据物化做必要的复杂度治理，避免诊断任务被全量文本和全量 scoring 拖成生产训练。
+
+
+### 2026-05-26 - TwoTower formal full è®­ç»ƒè¿œç¨‹ç®—åŠ›è¿�ç§»
+
+**ä»»åŠ¡ï¼š**
+å½“æœ¬æœº full formal TwoTower è®­ç»ƒé¢„è®¡é•¿æœŸå� ç”¨ CPU/GPU/å†…å­˜æ—¶ï¼Œå°†è®­ç»ƒè¿�ç§»åˆ°æŽˆæ�ƒè¿œç¨‹æœ�åŠ¡å™¨æ‰§è¡Œï¼Œå®Œæˆ�å�Žæ‹‰å›žå¿…è¦� artifact å¹¶åœ¨æœ¬åœ°éªŒè¯�å�Žå†�æŽ¥å…¥ä¸»è·¯ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+æœ¬æœº strict full/no-limit è®­ç»ƒè™½ç„¶å·²è¿›å…¥ CUDA batchï¼Œä½†æ•°æ�®ç®¡çº¿ä¸Ž Python batch æž„é€ ä½¿ GPU åˆ©ç”¨çŽ‡é•¿æœŸå��ä½Žï¼›å�³ä½¿æ”¹æˆ� streaming ä¸Ž `batch_size=1024`ï¼ŒæŒ‰å®žæµ‹é€Ÿåº¦ä»�å�¯èƒ½éœ€è¦�æ•°å¤©åˆ°å��å¤©çº§ï¼Œæ— æ³•æ»¡è¶³é�¢è¯•å‰�å¿«é€Ÿæ”¶å�£ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+é€šè¿‡ `gpu_device_trace.log`ã€�`nvidia-smi`ã€�è¿›ç¨‹ CPU/RAM ä¸Ž `torch_training_batches` äº‹ä»¶å®šä½�ï¼šæœ¬æœºè®­ç»ƒå·²ç¡®è®¤ä½¿ç”¨ CUDAï¼Œä½† batch å�žå��ä¸�è¶³ã€‚è¿›ä¸€æ­¥å®¡è®¡ `rs_core/recsys/two_tower.py`ï¼Œå�‘çŽ°è´Ÿé‡‡æ ·åŽŸå®žçŽ°æ¯�æ�¡æ ·æœ¬éƒ½ä¼šæž„é€ ä¸€æ¬¡å…¨ item å€™é€‰åˆ—è¡¨ï¼Œå¯¼è‡´æ¯�æ ·æœ¬éš�å¼�æ‰«æ��çº¦ 26 ä¸‡ itemï¼›å�Œæ—¶ user embedding å�Žå¤„ç�†é€�ç”¨æˆ·è°ƒç”¨ GPUã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+å…ˆåœ¨æœ¬åœ°ä¿®å¤�è®­ç»ƒå�žå��ç“¶é¢ˆï¼šè´Ÿé‡‡æ ·æ”¹ä¸º rejection samplingï¼Œé�¿å…�æ¯�æ ·æœ¬å…¨ item æ‰«æ��ï¼›user embedding æ”¹ä¸ºæ‰¹é‡� GPU ç¼–ç �ã€‚éš�å�Žä½¿ç”¨æŽˆæ�ƒæœ�åŠ¡å™¨ `ssh luo@10.112.125.22`ï¼Œå·¥ä½œç›®å½•å›ºå®šä¸º `/home/luo/RS_agent_remote`ï¼Œå�ªè¿�ç§»æœ€å°�è®­ç»ƒé—­åŒ…ï¼šä»£ç �ã€�é…�ç½®ã€�å…¨é‡� train sequenceã€�TwoTower item vocabã€�method dataset manifest/auditï¼Œä¸�è¿�ç§» diagnostic/oracle/eval äº§ç‰©ã€‚è¿œç«¯åˆ›å»º `.venv`ï¼Œå®‰è£… CUDA PyTorchï¼Œä½¿ç”¨ `nohup .venv/bin/python scripts/launch_two_tower_remote_formal.py > logs/<run>.stdout.log 2> logs/<run>.stderr.log &` å�Žå�°å�¯åŠ¨ formal full è®­ç»ƒï¼Œå¹¶é€šè¿‡ `gpu_device_trace.log`ã€�`gpu_launch_status.json` å’Œ `nvidia-smi` ç›‘æŽ§ã€‚å¯†ç �ä¸�å¾—å†™å…¥è„šæœ¬ã€�æ—¥å¿—ã€�å‘½ä»¤å�‚æ•°æˆ–æ–‡æ¡£ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+è¿œç«¯ preflight æ˜¾ç¤º `torch=2.11.0+cu128`ã€�`cuda_available=true`ã€�GPU ä¸º `NVIDIA GeForce RTX 4090`ã€�`strict_full_no_user_limit=true`ã€�`limit_users=null`ã€�`method_dataset_status=PASS`ã€�`method_dataset_train_only=true`ã€‚è®­ç»ƒå�‚æ•°ä¸º `epochs=3`ã€�`batch_size=16384`ã€�`user_embedding_batch_size=32768`ã€‚è¿œç«¯ä»Ž preflight åˆ° `first_batch_devices` çº¦ 12 åˆ†é’Ÿï¼›é¦–ä¸ª `torch_training_batches batch_index=1000` çº¦ 5 åˆ†é’Ÿåˆ°è¾¾ï¼Œè¯´æ˜Žæœ�åŠ¡å™¨ç‰ˆæœ¬å·²ä»Žæœ¬æœºâ€œæ•°å¤©çº§â€�å�˜ä¸ºå°�æ—¶çº§ã€‚äº§ç‰©å®Œæˆ�å�Žéœ€è¦�æ‹‰å›ž `artifact_manifest.json`ã€�`train_config.json`ã€�`train_metrics.json`ã€�model/embedding/id mapã€�`two_tower_recall_index.jsonl`ã€�GPU trace/status æ—¥å¿—ï¼Œå†�åœ¨æœ¬åœ°é‡�å»ºæˆ–éªŒè¯� `source_index_manifest.json` å�ŽæŽ¥å…¥ä¸»è·¯ã€‚
+
+**è°ƒç”¨æ–¹å¼�è®°å½•ï¼š**
+èµ„æº�é¢„ä¼°è¿‡å¤§æ—¶ï¼Œå…ˆç”¨ `ssh luo@10.112.125.22` æ£€æŸ¥ `nvidia-smi`ã€�`free -h`ã€�`df -h ~`ï¼›ç”¨ `tar -C <repo> -I 'gzip -1' -cf - <å¿…è¦�æ–‡ä»¶...> | ssh luo@10.112.125.22 'tar -C /home/luo/RS_agent_remote -xzf -'` ä¼ è¾“æœ€å°�é—­åŒ…ï¼›è¿œç«¯ç”¨ `/home/luo/RS_agent_remote/.venv` æ‰§è¡Œè®­ç»ƒ launcherï¼›å®Œæˆ�å�Žç”¨ `scp`/`rsync` ä»…æ‹‰å›ž run ç›®å½•ä¸­çš„æ­£å¼�è®­ç»ƒäº§ç‰©å’Œæ—¥å¿—ã€‚å›žä¼ å�Žä¸�ç›´æŽ¥ä¿¡ä»»è¿œç«¯ç»�å¯¹è·¯å¾„ï¼Œåº”åœ¨æœ¬åœ°é‡�æ–°æ ¡éªŒ train-only/no-leakage/row count å¹¶é‡�å»ºä¸»è·¯ source index manifestã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œèµ„æº�çº¦æ�Ÿä¸‹çš„è®­ç»ƒå·¥ç¨‹åŒ–è¿�ç§»â€�ï¼šä¸�æ˜¯ç›²ç›®ç­‰å¾…æœ¬æœºæ…¢è·‘ï¼Œè€Œæ˜¯å…ˆç”¨æ—¥å¿—å®šä½�çœŸå®žç“¶é¢ˆï¼Œå†�ç”¨ç®—æ³•çº§å°�æ”¹åŠ¨æ¶ˆé™¤è´Ÿé‡‡æ ·å¤�æ�‚åº¦é—®é¢˜ï¼Œæœ€å�ŽæŠŠ full-scope train-only formal è®­ç»ƒè¿�ç§»åˆ°æ›´å¼ºæœ�åŠ¡å™¨ï¼Œå¹¶ä¿�ç•™ manifestã€�traceã€�å›žä¼ éªŒè¯�å’Œæœ¬åœ°ä¸»è·¯æŽ¥å…¥è¾¹ç•Œï¼Œä½“çŽ°æŽ¨è��ç³»ç»Ÿè®­ç»ƒé“¾è·¯çš„èµ„æº�è¯„ä¼°ã€�å�¯å¤�çŽ°æ‰§è¡Œå’Œäº§ç‰©æ²»ç�†èƒ½åŠ›ã€‚
+
+
+## 2026-05-26 - TwoTower formal full å›ºå®šè¯„ä¼°é›†åˆ�æµ‹
+
+- ä»»åŠ¡ï¼šåœ¨ formal full TwoTower source index æŽ¥å…¥ pool500 ä¸»è·¯å�Žï¼Œç”¨å›ºå®š offline eval ç”¨æˆ·é›†éªŒè¯�å�Œå¡”å�¬å›žæ•ˆæžœã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šçŽ°æœ‰ offline eval è„šæœ¬å�‘ä¸»è·¯ runner ä¼ å…¥ `target_user_manifest_path`ï¼Œä½†ä¸»è·¯å¥‘çº¦æµ‹è¯•ç¦�æ­¢ target-user runtime overrideï¼Œç›´æŽ¥è¿�è¡Œ 10k å‰�å…ˆåœ¨ 100 ç”¨æˆ· dry-run æš´éœ²äº†æŽ¥å�£æ¼‚ç§»ã€‚
+- å®šä½�æ–¹å¼�ï¼š100 ç”¨æˆ· raw eval é¦–æ¬¡å¤±è´¥äºŽ `run_full_data_pool500_recall_only()` å�‚æ•°ä¸�åŒ¹é…�ï¼›éš�å�Žé€šè¿‡ `tests/test_full_data_pool500_recall_only.py` å�‘çŽ°ä¸»è·¯ç¦�æ­¢ `target_user_manifest` å­—ç¬¦ä¸²ï¼Œç¡®è®¤ä¸�èƒ½æŠŠè¯„ä¼°ç”¨æˆ·é€‰æ‹©å�šæˆ�ä¸»è·¯è¿�è¡Œæ—¶è¦†ç›–ã€‚
+- è§£å†³æ–¹å¼�ï¼šä¿�æŒ�ä¸»è·¯ runner æŽ¥å�£ä¸�å�˜ï¼Œåœ¨ offline eval è„šæœ¬ä¸­ä¸ºçœŸå®ž runner ç”Ÿæˆ�å�ªåŒ…å�«å›ºå®šè¯„ä¼°ç”¨æˆ· train history çš„ä¸´æ—¶ train-only sequence viewï¼Œå¹¶æŠŠ label/valid/test ä»�é™�å®šä¸º evaluation-onlyã€‚
+- éªŒè¯�ç»“æžœï¼š`tests/test_full_data_pool500_recall_only.py` 19 passedï¼Œ`tests/test_pool500_offline_eval_baseline.py` 4 passedï¼›100 ç”¨æˆ· raw eval ä¸­ TwoTower è´¡çŒ® 2460 æ�¡å€™é€‰ä½† `raw_two_tower_unique_positive_hits=0`ï¼Œwith/without ablation çš„ HitRate@500 å�‡ä¸º 0.01ï¼Œ`marginal_unique_positive_hits=0`ï¼Œå†³ç­–ä¸º `exclude`ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šä¸�æ˜¯å�ªçœ‹æ¨¡åž‹è®­ç»ƒ lossï¼Œè€Œæ˜¯æŠŠæ¨¡åž‹äº§ç‰©æŽ¥å…¥å€™é€‰ä¸»è·¯å�Žç”¨å›ºå®šè¯„ä¼°é›†ã€�source-level hit å’Œ ablation gate éªŒè¯�çœŸå®žä¸šåŠ¡å�¬å›žè´¡çŒ®ï¼›å�Œæ—¶é€šè¿‡å¥‘çº¦æµ‹è¯•é�¿å…�ä¸ºäº†è¯„ä¼°ä¾¿åˆ©ç ´å��ä¸»è·¯æ•°æ�®æ²»ç�†è¾¹ç•Œã€‚
+
+
+## 2026-05-26 - TwoTower å�¬å›žå¤±è´¥åŽŸå›  label-rank è¯Šæ–­
+
+- ä»»åŠ¡ï¼šè§£é‡Š formal full TwoTower å·²æŽ¥å…¥ä¸»è·¯ä½† 100 ç”¨æˆ·å›ºå®šè¯„ä¼° raw hit ä¸º 0 çš„åŽŸå› ã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šä»…çœ‹è®­ç»ƒ loss å’Œ source å€™é€‰è´¡çŒ®æ— æ³•åˆ¤æ–­å�Œå¡”å¤±è´¥æ˜¯æŽ¥å…¥é—®é¢˜ã€�item universe è¦†ç›–é—®é¢˜ã€�ç”¨æˆ·å�‘é‡�ç¼ºå¤±ï¼Œè¿˜æ˜¯ label rank å¤ªé� å�Žã€‚
+- å®šä½�æ–¹å¼�ï¼šå¯¹ 100 ä¸ªå›ºå®š eval ç”¨æˆ·é€� label è®¡ç®— TwoTower å…¨é‡� item æ‰“åˆ† rankï¼Œå¹¶è¡¥æŸ¥ç¼ºå¤± user embedding ç”¨æˆ·çš„ train-only åŽ†å�² seed æ˜¯å�¦å­˜åœ¨äºŽ item indexã€‚
+- è§£å†³æ–¹å¼�ï¼šä¸�é‡�æ–°è®­ç»ƒã€�ä¸�ä½¿ç”¨ label æ³¨å…¥å€™é€‰ï¼Œå�ªç¦»çº¿è¯»å�– eval label å�š evaluation-only rank auditï¼›ç»Ÿè®¡ label in-universeã€�query vector æ�¥æº�ã€�TopK hit å’Œ rank åˆ†å¸ƒã€‚
+- éªŒè¯�ç»“æžœï¼š142 ä¸ª label ä¸­å�ªæœ‰ 75 ä¸ªåœ¨ TwoTower item universeï¼›å�¯ rank label ä¸º 59 ä¸ªï¼ŒTop20/Top50 ä¸º 0ï¼ŒTop500 ä»… 4 ä¸ªï¼Œä¸­ä½� rank 39549ï¼Œå¹³å�‡ rank 66521ï¼›18 ä¸ªç¼ºå¤± user embedding çš„ç”¨æˆ·éƒ½å�ªæœ‰ 1 ä¸ª recent positiveï¼Œä¸” seed item å…¨éƒ¨ä¸�åœ¨ item indexï¼Œæ— æ³• fallbackã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šé€šè¿‡ label-rank è¯Šæ–­æŠŠâ€œæ¨¡åž‹æ•ˆæžœå·®â€�æ‹†æˆ�å�¯æ‰§è¡Œé—®é¢˜ï¼šitem universe è¦†ç›–ä¸�è¶³ã€�å†·/å¼±ç”¨æˆ· query ç¼ºå¤±ã€�ä»¥å�Šè®­ç»ƒç›®æ ‡å¯¼è‡´æ­£æ ·æœ¬ rank å¤§å¹…é� å�Žï¼Œè€Œä¸�æ˜¯ç›²ç›®åŠ  epoch æˆ–æ‰©å¤§è®­ç»ƒã€‚
+
+
+## 2026-05-26 - TwoTower min_frequency=5 å°�æ ·æœ¬è¯Šæ–­å®žéªŒ
+
+- ä»»åŠ¡ï¼šéªŒè¯�é™�ä½Ž TwoTower item vocab é¢‘çŽ‡é—¨æ§›æ˜¯å�¦èƒ½æ”¹å–„ formal full å�Œå¡”åœ¨å›ºå®šè¯„ä¼°ç”¨æˆ·ä¸Šçš„ label è¦†ç›–å’Œ rankã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šformal full ä½¿ç”¨ `min_frequency=20`ï¼Œå¯¼è‡´ 100 ç”¨æˆ· eval label å�ªæœ‰ 52.8% åœ¨ item universeï¼Œå¼±ç”¨æˆ· seed è¦†ç›–ä¹Ÿä¸�è¶³ï¼›ä½†ç›²ç›®æ‰©å¤§ vocab ä¼šå¢žåŠ æ£€ç´¢ç©ºé—´å¹¶å�¯èƒ½ç¨€é‡ŠæŽ’åº�ä¿¡å�·ã€‚
+- å®šä½�æ–¹å¼�ï¼šå…ˆæ‰«æ�� `min_frequency=20/10/5/3/2/1` çš„ train-only è¦†ç›–ï¼Œå†�æž„é€  `min_frequency=5`ã€�100 ç”¨æˆ·ã€�1 epochã€�16 ç»´ã€�20 negatives çš„å°�æ¨¡åž‹è¯Šæ–­å®žéªŒï¼Œå¹¶ç”¨å�Œä¸€ label-rank å�£å¾„æ¯”è¾ƒã€‚
+- è§£å†³æ–¹å¼�ï¼šç”Ÿæˆ� train-only min_freq=5 item vocabï¼ˆ703240 itemsï¼‰ï¼Œå�ªç”¨ 100 ä¸ªå›ºå®šè¯„ä¼°ç”¨æˆ·çš„ train history è®­ç»ƒè¯Šæ–­æ¨¡åž‹ï¼›valid/test label å�ªç”¨äºŽç¦»çº¿ rank auditï¼Œä¸�è¿›å…¥è®­ç»ƒæˆ–å€™é€‰ç”Ÿæˆ�ã€‚
+- éªŒè¯�ç»“æžœï¼šmin_freq=5 å°† label è¦†ç›–ä»Ž 75/142 æ��å�‡åˆ° 93/142ï¼Œç”¨æˆ· embedding è¦†ç›–ä»Ž 82/100 æ��å�‡åˆ° 95/100ï¼›ä½† rank æ˜¾è‘—å�˜å·®ï¼ŒTop500=0ã€�Top10000=2ï¼Œrank ä¸­ä½�æ•° 353964ï¼Œè¯´æ˜Žä»…æ‰©å¤§ universe ä¸�è¶³ä»¥æ”¹å–„å�¬å›žï¼Œå��è€Œæš´éœ²è®­ç»ƒç›®æ ‡/è´Ÿé‡‡æ ·ä¿¡å�·ä¸�è¶³ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šé€šè¿‡å°�æ ·æœ¬å�¯æŽ§å®žéªŒéªŒè¯�â€œè¦†ç›–ä¿®å¤�ä¸�æ˜¯å……åˆ†æ�¡ä»¶â€�ï¼Œé�¿å…�ç›´æŽ¥æ‰©å¤§ full æ¨¡åž‹èµ„æº�ï¼›ä¸‹ä¸€æ­¥åº”æ”¹è®­ç»ƒç›®æ ‡å’Œè´Ÿé‡‡æ ·ï¼Œè€Œä¸�æ˜¯å�•çº¯é™�ä½Ž item é¢‘çŽ‡é—¨æ§›ã€‚
+
+
+## 2026-05-26 - TwoTower 小 batch 加速与远程实验配置
+
+- 任务：为 pool500 TwoTower 训练补齐小 batch 下的吞吐优化能力，并让远程服务器训练/评估 sweep 可以直接通过配置或 CLI 控制。
+- 遇到的问题：当前训练只有物理 batch size，无法在显存受限时保持较大有效 batch；AMP 也没有显式开关，远程 GPU 长跑难以稳定复用同一套配置。
+- 定位方式：检查 `rs_core/recsys/two_tower.py`、`rs_core/workflow/two_tower_training.py`、`scripts/training/train_two_tower.py` 和 diagnostic runner，确认此前没有 `gradient_accumulation_steps` / `mixed_precision` 支持。
+- 解决方式：在 PyTorch 训练路径加入梯度累积、CUDA AMP 安全开关、`effective_batch_size`/`optimizer_steps` 记录；CLI 和 diagnostic loop 透传同名参数；formal full 配置调整为 `batch_size=2048`、`gradient_accumulation_steps=4`、`effective_batch_size=8192`、`mixed_precision=true`，并同步采用更适合泛化的 TwoTower 调参默认值。
+- 验证结果：`./.venv/Scripts/python.exe -m pytest tests/test_two_tower_training.py tests/test_pool500_two_tower_diagnostic_loop.py -q` 结果为 41 passed；`ruff check` 覆盖变更文件后通过；独立 verifier 复跑 CUDA 隐藏设备场景后通过。
+- 面试可讲点：这一步不是单纯“提速”，而是把推荐模型训练从固定物理 batch 改造成可控有效 batch，并把训练吞吐、显存策略和可复现实验记录写入 artifact，为后续远程 10k/50k/150k 用户 sweep 提供工程化基础。
+
+### 2026-05-26 - RAG 候选内证据选择器落地
+
+- 任务：把 RAG 从规划项收敛为可用的候选内证据选择器，并补齐文档与工程叙事。
+- 遇到的问题：必须同时满足解释可用、候选不变、可回滚和证据净化，不能让 label / holdout / oracle 类字段混入解释。
+- 定位方式：核对 `rag.evidence_mode` 三态、`rag.max_evidence_per_item`、provenance gate，以及 shadow / explain 下的 `rag_context` 与 display payload。
+- 解决方式：明确 `off` / `shadow` / `explain` 语义，保持 `candidates`、`ranking`、`final_items`、`scores` 不变，把不安全证据从 `source` / `provenance` / `source_path` / `artifact_scope` 侧拦截。
+- 验证结果：`pytest tests/test_rag_core.py tests/test_agent_dialogue.py tests/test_agent_rollout_schema.py tests/test_agent_runtime.py tests/test_display_contract.py` 共 `45 passed in 0.59s`；`py_compile` 通过；最小脚本验证 `shadow` / `explain` 均有 `rag_context_exists=true`、`kept_evidence_count=3`，`explain` 的 why 使用 Audio evidence，display payload 未暴露 `rag_context` / diagnostics。
+- 面试可讲点：可以讲成“先把 RAG 做成候选内证据层，再通过模式开关、证据门禁和展示边界把它做成可回滚、可审计、不会污染主链路的解释能力”。
+
+
+## 2026-05-26 - Agent 联调用 `/recommend` 线上推荐入口
+
+- 任务：为推荐 Agent tool 联调新增 stateless 线上推荐服务入口，使 Agent 可以直接传入用户历史序列并获得真实召回、排序后的商品展示结果。
+- 遇到的问题：原 serving 层主要是 sessionful demo `/chat`/`/feedback`，没有无需 session 的推荐接口；离线 pool500 runner 又包含 manifest、audit、output_dir 写入等副作用，不适合直接放进请求路径。
+- 定位方式：检查 `rs_core/serving/app.py`、`rs_core/serving/schema.py`、`rs_core/serving/service.py` 与 `rs_core/workflow/hybrid_demo.py`，确认可复用 `recommend_for_user(...)` 作为真实召回排序入口，并用 display builder 收敛 public payload。
+- 解决方式：新增 `rs_core/workflow/online_recommendation.py` 作为纯在线 adapter；在 `RecommendationService` 增加 `recommend_from_sequence(...)`；在 FastAPI 暴露 `POST /recommend`；请求 schema 递归拒绝 `label/target_item/ground_truth/holdout` 等 evaluation-only 字段，响应不暴露 score/source/ranking/diagnostics。
+- 验证结果：`tests/test_serving_recommend_from_sequence.py` 5 个新增用例通过；`test_serving_smoke.py`、`test_agent_runtime.py`、`test_pool500_fallback_completion_route.py` 回归合计 `38 passed in 1.08s`；changed serving modules `py_compile` 通过。全量包含 `test_hybrid_demo.py` 的命令仍有既有配置文件缺失失败，与本次 `/recommend` 改动无关。
+- 面试可讲点：把离线推荐实验链路抽象为无副作用的在线 adapter，并通过 schema 和测试守住“评估标签不进候选生成、内部排序证据不外泄”的边界，实现了 Agent tool 可调用的真实推荐闭环。

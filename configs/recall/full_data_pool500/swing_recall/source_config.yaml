@@ -1,22 +1,86 @@
 schema_version: pool500_method_source_config_v1
 source: swing_recall
-output_root: outputs/recall/pool500_method_sources/swing_recall
-run_id: null
+canonical_source: swing_recall
 source_status: TARGET_SLICE_DIAGNOSTIC
-resource_guard:
-  batch_size: null
-  checkpoint_enabled: true
-  heavy_job: false
-  max_graph_users: 120000
-  max_items_per_user: 80
-  max_item_user_freq: 600
-swing_enhancement:
-  min_user_items: 2
-  min_pair_support: 1
-  per_seed_top_k: 120
-  seed_window: 40
-  per_user: 120
-  swing_alpha: 1.0
+algorithm_scope: train_item_item_swing_graph_v1
+complete_swing_graph_claimed: false
+tier_aliases:
+  dam: diagnostic
+  dam(diagnostic): diagnostic
+  最终数据集: local_formal
+  最终数据集(local_formal): local_formal
+defaults:
+  output_root: outputs/recall/pool500_method_sources
+  run_id: null
+  input_contract:
+    clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
+    baseline_dir: outputs/recall/pool500_main_route_direct_recall_full_promoted
+    train_only: true
+  resource_guard:
+    batch_size: null
+    checkpoint_enabled: true
+    heavy_job: false
+    max_graph_users: 50000
+    max_items_per_user: 80
+    max_item_user_freq: 1000
+    min_free_bytes: 10737418240
+  swing_enhancement:
+    min_user_items: 2
+    min_pair_support: 1
+    per_seed_top_k: 120
+    seed_window: 40
+    per_user: 120
+    swing_alpha: 1.0
+  diagnostics:
+    hot_item_cap_check: true
+    heavy_user_dampening_check: true
+    common_user_support_check: true
+tiers:
+  smoke:
+    resource_guard:
+      batch_size: 20
+      heavy_job: false
+      max_graph_users: 2000
+      max_items_per_user: 50
+      max_item_user_freq: 1000
+      min_free_bytes: 0
+    swing_enhancement:
+      min_user_items: 2
+      min_pair_support: 1
+      per_seed_top_k: 40
+      seed_window: 20
+      per_user: 40
+      swing_alpha: 1.0
+  diagnostic:
+    alias: dam(diagnostic)
+    resource_guard:
+      batch_size: null
+      heavy_job: false
+      max_graph_users: 50000
+      max_items_per_user: 80
+      max_item_user_freq: 1000
+    swing_enhancement:
+      min_user_items: 2
+      min_pair_support: 1
+      per_seed_top_k: 120
+      seed_window: 40
+      per_user: 120
+      swing_alpha: 1.0
+  local_formal:
+    alias: 最终数据集(local_formal)
+    resource_guard:
+      batch_size: null
+      heavy_job: false
+      max_graph_users: 120000
+      max_items_per_user: 80
+      max_item_user_freq: 600
+    swing_enhancement:
+      min_user_items: 2
+      min_pair_support: 2
+      per_seed_top_k: 120
+      seed_window: 40
+      per_user: 120
+      swing_alpha: 1.0
 manifest_contract:
   source_index_manifest: source_index_manifest.json
   method_dataset_manifest: method_dataset_manifest.json
@@ -25,3 +89,11 @@ manifest_contract:
   undercoverage_audit: undercoverage_audit.json
   resource_audit: resource_audit.json
   no_holdout_audit: no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  full_pool500_ready_declared: false
+  final_pool500_ready_claimed: false
+  complete_swing_graph_claimed: false

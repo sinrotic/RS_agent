@@ -44,8 +44,8 @@ RS_agent/
 - `common/`：配置、路径、日志、通用工具
 - `dataproc/`：数据清洗、切分、采样、数据集构造
 - `features/`：推荐与排序所需的特征工程
-- `recsys/`：传统推荐 backbone，负责召回、排序、规则过滤、基线能力、PyTorch 双塔训练表示和本地向量索引旁路
-- `rsagent/`：Agent 决策层，负责意图理解、约束抽取、工具调用和推荐编排
+- `recsys/`：传统推荐 backbone，负责召回、排序、规则过滤、基线能力、PyTorch 双塔训练表示、本地向量索引旁路和 RAG 候选内证据 contract
+- `rsagent/`：Agent 决策层，负责意图理解、约束抽取、工具调用、RAG 证据消费和推荐编排
 - `llm/`：模型训练与推理支撑，承载当前固定路线相关封装
 - `workflow/`：串联推荐、Agent 和模型相关流程
 - `evaluation/`：离线评估、案例分析、对比分析
@@ -138,6 +138,7 @@ React Web Demo 入口，目标是消费服务层和展示层 contract，而不�
 - `llm/` 是训练与对齐支撑，不抢主轴
 - `display/` 负责把推荐结果转换成可展示商品卡，不参与召回排序
 - `simulation/` 负责生成合成客户交互和评估流量，不直接改写推荐策略
+- `recsys/rag/` 负责候选内证据选择与上下文 contract，不直接改写召回、排序、候选集合或分数
 - `animation/` 负责可视化展示或回放，不参与线上决策
 - `frontend/` 只消费服务层和展示层 contract，不直接依赖推荐内部字段
 - `scripts/` 只做入口，不做核心逻辑

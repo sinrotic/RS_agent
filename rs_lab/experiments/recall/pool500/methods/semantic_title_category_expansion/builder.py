@@ -7,16 +7,19 @@ import json
 import math
 import re
 import shutil
-from collections import Counter, defaultdict
+from collections import Counter
+from copy import deepcopy
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Iterable
 
+import yaml
+
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
 from rs_core.recsys.candidate_merge import semantic_title_category_expansion_candidates_for_user
-from rs_lab.experiments.recall.pool500.common.source_layout import method_output_dir
+from rs_lab.experiments.recall.pool500.common.source_layout import FORBIDDEN_EVIDENCE_SCOPES, method_output_dir
 
 ROOT = Path(__file__).resolve().parents[6]
 SOURCE = "semantic_title_category_expansion"
@@ -25,9 +28,11 @@ DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_clean
 DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_views_full_lightweight" / "manifest.json"
 DEFAULT_ELIGIBLE_USER_MANIFEST = ROOT / "outputs" / "recall" / "pool500_main_route_direct_recall_full_promoted" / "eligible_user_manifest.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "outputs" / "recall" / "pool500_method_sources"
+DEFAULT_CONFIG_PATH = ROOT / "configs" / "recall" / "full_data_pool500" / SOURCE / "source_config.yaml"
 DEFAULT_SOURCE_STATUS = "TARGET_SLICE_DIAGNOSTIC"
+CONFIG_STRUCTURAL_KEYS = {"defaults", "tiers", "tier_aliases"}
 FORBIDDEN_SPLIT_PARTS = {"valid", "test", "lopo"}
-FORBIDDEN_PATH_SUBSTRINGS = ("holdout", "clean_10000", "views_10000", "pool1000")
+FORBIDDEN_PATH_SUBSTRINGS = tuple(token.lower() for token in FORBIDDEN_EVIDENCE_SCOPES if token.lower() not in FORBIDDEN_SPLIT_PARTS)
 TEXT_FIELDS = ("title_clean", "main_category", "categories_flat")
 FULL_METADATA_OVERLAP_TEXT_FIELDS = ("title_clean", "main_category", "category", "categories_flat", "description_text", "features_text", "item_text", "store", "brand")
 FULL_METADATA_OVERLAP_STOP_WORDS = {
@@ -39,27 +44,60 @@ SELECTION_MODE_FULL_METADATA_OVERLAP = "full_metadata_overlap"
 
 def build_semantic_title_category_expansion_source(
     *,
-    clean_manifest_path: Path = DEFAULT_CLEAN_MANIFEST,
-    lightweight_views_manifest_path: Path = DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST,
-    eligible_user_manifest_path: Path | None = DEFAULT_ELIGIBLE_USER_MANIFEST,
-    output_root: Path = DEFAULT_OUTPUT_ROOT,
+    clean_manifest_path: Path | None = None,
+    lightweight_views_manifest_path: Path | None = None,
+    eligible_user_manifest_path: Path | None = None,
+    output_root: Path | None = None,
     run_id: str | None = None,
-    limit_users: int = 500,
-    seed_window: int = 20,
-    per_user: int = 80,
-    per_seed: int = 40,
-    per_token_item_limit: int = 2000,
-    max_candidate_items: int = 80000,
-    selection_mode: str = SELECTION_MODE_TITLE_CATEGORY_SCORER,
+    config_path: Path | None = None,
+    tier: str | None = None,
+    limit_users: int | None = None,
+    seed_window: int | None = None,
+    per_user: int | None = None,
+    per_seed: int | None = None,
+    per_token_item_limit: int | None = None,
+    max_candidate_items: int | None = None,
+    selection_mode: str | None = None,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
     started = perf_counter()
     if enforce_venv:
         enforce_project_venv(ROOT)
+    config = _effective_config(config_path, tier, {
+        "run_id": run_id,
+        "output_root": str(output_root) if output_root is not None else None,
+        "input_contract": {
+            "clean_manifest": str(clean_manifest_path) if clean_manifest_path is not None else None,
+            "lightweight_views_manifest": str(lightweight_views_manifest_path) if lightweight_views_manifest_path is not None else None,
+            "eligible_user_manifest": str(eligible_user_manifest_path) if eligible_user_manifest_path is not None else None,
+        },
+        "method_config": {
+            "limit_users": limit_users,
+            "seed_window": seed_window,
+            "per_user": per_user,
+            "per_seed": per_seed,
+            "per_token_item_limit": per_token_item_limit,
+            "max_candidate_items": max_candidate_items,
+            "selection_mode": selection_mode,
+        },
+    })
+    input_contract = config.get("input_contract") if isinstance(config.get("input_contract"), dict) else {}
+    method_config = config.get("method_config") if isinstance(config.get("method_config"), dict) else {}
+    clean_manifest_path = _config_path(input_contract, DEFAULT_CLEAN_MANIFEST, "clean_manifest", "clean_manifest_path")
+    lightweight_views_manifest_path = _config_path(input_contract, DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST, "lightweight_views_manifest", "lightweight_views_manifest_path")
+    eligible_user_manifest_path = _config_path(input_contract, DEFAULT_ELIGIBLE_USER_MANIFEST, "eligible_user_manifest", "eligible_user_manifest_path")
+    output_root = _resolve_repo_path(config.get("output_root") or DEFAULT_OUTPUT_ROOT)
+    run_id = str(config.get("run_id") or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
+    limit_users = int(method_config.get("limit_users", 500))
+    seed_window = int(method_config.get("seed_window", 20))
+    per_user = int(method_config.get("per_user", 80))
+    per_seed = int(method_config.get("per_seed", 40))
+    per_token_item_limit = int(method_config.get("per_token_item_limit", 2000))
+    max_candidate_items = int(method_config.get("max_candidate_items", 80000))
+    selection_mode = str(method_config.get("selection_mode") or SELECTION_MODE_TITLE_CATEGORY_SCORER)
     if selection_mode not in {SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP}:
         raise ValueError(f"unsupported semantic selection mode: {selection_mode}")
-    run_id = run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     output_dir = method_output_dir(output_root.resolve(), SOURCE, run_id)
     if output_dir.exists() and any(output_dir.iterdir()) and not overwrite:
         raise FileExistsError(f"Output directory already exists: {output_dir}")
@@ -260,6 +298,64 @@ def build_semantic_title_category_expansion_source(
 def _resolve_repo_path(raw_path: str | Path) -> Path:
     path = Path(raw_path)
     return path.resolve() if path.is_absolute() else (ROOT / path).resolve()
+
+
+def _config_path(config: dict[str, Any], default: Path, *keys: str) -> Path:
+    for key in keys:
+        value = config.get(key)
+        if value:
+            return _resolve_repo_path(str(value))
+    return default.resolve()
+
+
+def _effective_config(config_path: Path | None, tier: str | None, cli_overrides: dict[str, Any]) -> dict[str, Any]:
+    raw_config = _load_source_config(config_path)
+    selected_tier = _resolve_tier(raw_config, tier)
+    config = {key: deepcopy(value) for key, value in raw_config.items() if key not in CONFIG_STRUCTURAL_KEYS}
+    defaults = raw_config.get("defaults") if isinstance(raw_config.get("defaults"), dict) else {}
+    tiers = raw_config.get("tiers") if isinstance(raw_config.get("tiers"), dict) else {}
+    tier_config: dict[str, Any] = {}
+    if selected_tier is not None:
+        if selected_tier not in tiers:
+            raise ValueError(f"unknown tier: {selected_tier}; available tiers: {', '.join(sorted(str(key) for key in tiers))}")
+        selected = tiers[selected_tier]
+        if not isinstance(selected, dict):
+            raise ValueError(f"tier config must be a mapping: {selected_tier}")
+        tier_config = selected
+    return _deep_merge(config, defaults, tier_config, _drop_none(cli_overrides))
+
+
+def _load_source_config(config_path: Path | None) -> dict[str, Any]:
+    path = config_path or DEFAULT_CONFIG_PATH
+    path = path if path.is_absolute() else ROOT / path
+    if not path.is_file():
+        return {}
+    loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return loaded if isinstance(loaded, dict) else {}
+
+
+def _resolve_tier(config: dict[str, Any], tier: str | None) -> str | None:
+    if tier is None:
+        return None
+    aliases = config.get("tier_aliases") if isinstance(config.get("tier_aliases"), dict) else {}
+    return str(aliases.get(tier, tier))
+
+
+def _drop_none(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: cleaned for key, child in value.items() if (cleaned := _drop_none(child)) is not None}
+    return value
+
+
+def _deep_merge(*configs: dict[str, Any]) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for config in configs:
+        for key, value in config.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = _deep_merge(merged[key], value)
+            else:
+                merged[key] = deepcopy(value)
+    return merged
 
 
 def _target_user_ids(path: Path | None, limit_users: int) -> set[str] | None:
@@ -669,17 +765,20 @@ def _is_forbidden_input_path(path: Path) -> bool:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build pool500 semantic title/category diagnostic method source.")
-    parser.add_argument("--clean-manifest", type=Path, default=DEFAULT_CLEAN_MANIFEST)
-    parser.add_argument("--lightweight-views-manifest", type=Path, default=DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST)
-    parser.add_argument("--eligible-user-manifest", type=Path, default=DEFAULT_ELIGIBLE_USER_MANIFEST)
-    parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
+    parser.add_argument("--clean-manifest", type=Path, default=None)
+    parser.add_argument("--lightweight-views-manifest", type=Path, default=None)
+    parser.add_argument("--eligible-user-manifest", type=Path, default=None)
+    parser.add_argument("--config", type=Path, default=None)
+    parser.add_argument("--tier", default=None)
+    parser.add_argument("--output-root", type=Path, default=None)
     parser.add_argument("--run-id", default=None)
-    parser.add_argument("--limit-users", type=int, default=500)
-    parser.add_argument("--per-user", type=int, default=80)
-    parser.add_argument("--per-seed", type=int, default=40)
-    parser.add_argument("--per-token-item-limit", type=int, default=2000)
-    parser.add_argument("--max-candidate-items", type=int, default=80000)
-    parser.add_argument("--selection-mode", choices=[SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP], default=SELECTION_MODE_TITLE_CATEGORY_SCORER)
+    parser.add_argument("--limit-users", type=int, default=None)
+    parser.add_argument("--seed-window", type=int, default=None)
+    parser.add_argument("--per-user", type=int, default=None)
+    parser.add_argument("--per-seed", type=int, default=None)
+    parser.add_argument("--per-token-item-limit", type=int, default=None)
+    parser.add_argument("--max-candidate-items", type=int, default=None)
+    parser.add_argument("--selection-mode", choices=[SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP], default=None)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
@@ -693,7 +792,10 @@ def main() -> None:
         eligible_user_manifest_path=args.eligible_user_manifest,
         output_root=args.output_root,
         run_id=args.run_id,
+        config_path=args.config,
+        tier=args.tier,
         limit_users=args.limit_users,
+        seed_window=args.seed_window,
         per_user=args.per_user,
         per_seed=args.per_seed,
         per_token_item_limit=args.per_token_item_limit,

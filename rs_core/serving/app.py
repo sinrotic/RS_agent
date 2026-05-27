@@ -13,6 +13,8 @@ from rs_core.serving.schema import (
     DemoRoundtripResponse,
     FeedbackRequest,
     FeedbackResponse,
+    RecommendFromSequenceRequest,
+    RecommendFromSequenceResponse,
     SessionExportResponse,
     SimulationBatchRequest,
     SimulationBatchResponse,
@@ -75,6 +77,15 @@ def feedback(request: FeedbackRequest) -> FeedbackResponse:
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return FeedbackResponse(session_id=result.session_id, display=result.display)
+
+
+@app.post("/recommend", response_model=RecommendFromSequenceResponse)
+def recommend_from_sequence(request: RecommendFromSequenceRequest) -> RecommendFromSequenceResponse:
+    try:
+        result = get_service().recommend_from_sequence(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return RecommendFromSequenceResponse(**result)
 
 
 @app.get("/session/{session_id}", response_model=SessionExportResponse)

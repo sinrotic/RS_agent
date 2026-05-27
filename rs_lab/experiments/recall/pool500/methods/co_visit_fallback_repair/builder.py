@@ -8,6 +8,7 @@ import re
 import shutil
 import sys
 from collections import Counter, defaultdict
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -20,40 +21,67 @@ import yaml
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.recsys.candidate_merge import metadata_neighbor_candidates_for_user
-from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir
+from rs_lab.experiments.recall.pool500.common.source_layout import FORBIDDEN_EVIDENCE_SCOPES, REQUIRED_SOURCE_OUTPUTS, method_output_dir
 
 SOURCE = "co_visit_fallback_repair"
 SOURCE_STATUS = "TARGET_SLICE_DIAGNOSTIC"
 SCHEMA_VERSION = "pool500_co_visit_fallback_repair_v1"
-FORBIDDEN_TOKENS = ("holdout", "valid", "test", "lopo", "clean_10000")
+ALGORITHM_SCOPE = "train_transition_metadata_repair_v0"
+DEFAULT_CONFIG_PATH = ROOT / "configs" / "recall" / "full_data_pool500" / SOURCE / "source_config.yaml"
+CONFIG_STRUCTURAL_KEYS = {"defaults", "tiers", "tier_aliases"}
+FORBIDDEN_TOKENS = tuple(token.lower() for token in FORBIDDEN_EVIDENCE_SCOPES)
 
 
 def build_co_visit_fallback_repair_source(
     *,
-    clean_manifest_path: Path,
-    lightweight_views_manifest_path: Path,
-    eligible_user_manifest_path: Path,
-    output_root: Path,
-    run_id: str,
+    clean_manifest_path: Path | None = None,
+    lightweight_views_manifest_path: Path | None = None,
+    eligible_user_manifest_path: Path | None = None,
+    output_root: Path | None = None,
+    run_id: str | None = None,
     config_path: Path | None = None,
-    max_metadata_rows: int = 250_000,
-    candidate_per_user: int = 120,
-    candidate_per_seed: int = 40,
-    seed_window: int = 30,
-    transition_window: int = 5,
-    transition_per_seed: int = 200,
-    checkpoint_every_users: int = 50,
+    tier: str | None = None,
+    max_metadata_rows: int | None = None,
+    candidate_per_user: int | None = None,
+    candidate_per_seed: int | None = None,
+    seed_window: int | None = None,
+    transition_window: int | None = None,
+    transition_per_seed: int | None = None,
+    checkpoint_every_users: int | None = None,
     overwrite: bool = False,
 ) -> dict[str, Any]:
-    config = _load_yaml(config_path) if config_path else {}
+    config = _effective_config(config_path, tier, {
+        "run_id": run_id,
+        "output_root": str(output_root) if output_root is not None else None,
+        "input_contract": {
+            "clean_manifest": str(clean_manifest_path) if clean_manifest_path is not None else None,
+            "lightweight_views_manifest": str(lightweight_views_manifest_path) if lightweight_views_manifest_path is not None else None,
+            "eligible_user_manifest": str(eligible_user_manifest_path) if eligible_user_manifest_path is not None else None,
+        },
+        "method_config": {
+            "max_metadata_rows": max_metadata_rows,
+            "candidate_per_user": candidate_per_user,
+            "candidate_per_seed": candidate_per_seed,
+            "seed_window": seed_window,
+            "transition_window": transition_window,
+            "transition_per_seed": transition_per_seed,
+            "checkpoint_every_users": checkpoint_every_users,
+        },
+    })
+    input_contract = config.get("input_contract") if isinstance(config.get("input_contract"), dict) else {}
     method_config = config.get("method_config") if isinstance(config.get("method_config"), dict) else {}
-    max_metadata_rows = int(method_config.get("max_metadata_rows", max_metadata_rows))
-    candidate_per_user = int(method_config.get("candidate_per_user", candidate_per_user))
-    candidate_per_seed = int(method_config.get("candidate_per_seed", candidate_per_seed))
-    seed_window = int(method_config.get("seed_window", seed_window))
-    transition_window = int(method_config.get("transition_window", transition_window))
-    transition_per_seed = int(method_config.get("transition_per_seed", transition_per_seed))
-    checkpoint_every_users = int(method_config.get("checkpoint_every_users", checkpoint_every_users))
+    clean_manifest_path = _config_path(input_contract, "data/processed/amazon_2023_recall_clean_full/manifest.json", "clean_manifest", "clean_manifest_path")
+    lightweight_views_manifest_path = _config_path(input_contract, "data/processed/amazon_2023_recall_views_full_lightweight/manifest.json", "lightweight_views_manifest", "lightweight_views_manifest_path")
+    eligible_user_manifest_path = _config_path(input_contract, "outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json", "eligible_user_manifest", "eligible_user_manifest_path")
+    output_root = _config_path(config, "outputs/recall/pool500_method_sources", "output_root")
+    run_id = str(config.get("run_id") or datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"))
+    max_metadata_rows = int(method_config.get("max_metadata_rows", 250_000))
+    candidate_per_user = int(method_config.get("candidate_per_user", 120))
+    candidate_per_seed = int(method_config.get("candidate_per_seed", 40))
+    seed_window = int(method_config.get("seed_window", 30))
+    transition_window = int(method_config.get("transition_window", 5))
+    transition_per_seed = int(method_config.get("transition_per_seed", 200))
+    checkpoint_every_users = int(method_config.get("checkpoint_every_users", 50))
 
     output_root = output_root if output_root.is_absolute() else _resolve_repo_path(output_root)
     output_dir = output_root / run_id if output_root.name == SOURCE else method_output_dir(output_root, SOURCE, run_id)
@@ -176,6 +204,12 @@ def build_co_visit_fallback_repair_source(
         "promotion_allowed": False,
         "ranking_input_replacement_allowed": False,
         "pool1000_allowed": False,
+        "algorithm_scope": ALGORITHM_SCOPE,
+        "complete_co_visit_graph_claimed": False,
+        "follow_up_metrics": {
+            "pair_support": "follow_up_only_not_gate",
+            "distinct_user_support": "follow_up_only_not_gate",
+        },
     }
     method_dataset_manifest = {
         "schema_version": f"{SCHEMA_VERSION}.method_dataset_manifest",
@@ -202,6 +236,12 @@ def build_co_visit_fallback_repair_source(
         "promotion_allowed": False,
         "ranking_input_replacement_allowed": False,
         "pool1000_allowed": False,
+        "algorithm_scope": ALGORITHM_SCOPE,
+        "complete_co_visit_graph_claimed": False,
+        "follow_up_metrics": {
+            "pair_support": "follow_up_only_not_gate",
+            "distinct_user_support": "follow_up_only_not_gate",
+        },
     }
     coverage_audit = {
         "schema_version": f"{SCHEMA_VERSION}.coverage_audit",
@@ -286,19 +326,20 @@ def build_co_visit_fallback_repair_source(
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Build pool500 co_visit_fallback_repair method source artifacts.")
-    parser.add_argument("--clean-manifest", type=Path, default=Path("data/processed/amazon_2023_recall_clean_full/manifest.json"))
-    parser.add_argument("--lightweight-views-manifest", type=Path, default=Path("data/processed/amazon_2023_recall_views_full_lightweight/manifest.json"))
-    parser.add_argument("--eligible-user-manifest", type=Path, default=Path("outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json"))
-    parser.add_argument("--config", type=Path, default=Path("configs/recall/full_data_pool500/co_visit_fallback_repair/source_config.yaml"))
-    parser.add_argument("--output-root", type=Path, default=Path("outputs/recall/pool500_method_sources"))
-    parser.add_argument("--run-id", default=datetime.now(UTC).strftime("%Y%m%d_%H%M%S"))
-    parser.add_argument("--max-metadata-rows", type=int, default=250_000)
-    parser.add_argument("--candidate-per-user", type=int, default=120)
-    parser.add_argument("--candidate-per-seed", type=int, default=40)
-    parser.add_argument("--seed-window", type=int, default=30)
-    parser.add_argument("--transition-window", type=int, default=5)
-    parser.add_argument("--transition-per-seed", type=int, default=200)
-    parser.add_argument("--checkpoint-every-users", type=int, default=50)
+    parser.add_argument("--clean-manifest", type=Path, default=None)
+    parser.add_argument("--lightweight-views-manifest", type=Path, default=None)
+    parser.add_argument("--eligible-user-manifest", type=Path, default=None)
+    parser.add_argument("--config", type=Path, default=None)
+    parser.add_argument("--tier", default=None)
+    parser.add_argument("--output-root", type=Path, default=None)
+    parser.add_argument("--run-id", default=None)
+    parser.add_argument("--max-metadata-rows", type=int, default=None)
+    parser.add_argument("--candidate-per-user", type=int, default=None)
+    parser.add_argument("--candidate-per-seed", type=int, default=None)
+    parser.add_argument("--seed-window", type=int, default=None)
+    parser.add_argument("--transition-window", type=int, default=None)
+    parser.add_argument("--transition-per-seed", type=int, default=None)
+    parser.add_argument("--checkpoint-every-users", type=int, default=None)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args(argv)
     manifest = build_co_visit_fallback_repair_source(
@@ -308,6 +349,7 @@ def main(argv: list[str] | None = None) -> None:
         output_root=args.output_root,
         run_id=args.run_id,
         config_path=args.config,
+        tier=args.tier,
         max_metadata_rows=args.max_metadata_rows,
         candidate_per_user=args.candidate_per_user,
         candidate_per_seed=args.candidate_per_seed,
@@ -325,6 +367,55 @@ def _load_yaml(path: Path) -> dict[str, Any]:
         return {}
     payload = yaml.safe_load(path.read_text(encoding="utf-8"))
     return payload if isinstance(payload, dict) else {}
+
+
+def _effective_config(config_path: Path | None, tier: str | None, cli_overrides: dict[str, Any]) -> dict[str, Any]:
+    raw_config = _load_yaml((config_path or DEFAULT_CONFIG_PATH).resolve() if (config_path or DEFAULT_CONFIG_PATH).is_absolute() else ROOT / (config_path or DEFAULT_CONFIG_PATH))
+    selected_tier = _resolve_tier(raw_config, tier)
+    config = {key: deepcopy(value) for key, value in raw_config.items() if key not in CONFIG_STRUCTURAL_KEYS}
+    defaults = raw_config.get("defaults") if isinstance(raw_config.get("defaults"), dict) else {}
+    tiers = raw_config.get("tiers") if isinstance(raw_config.get("tiers"), dict) else {}
+    tier_config: dict[str, Any] = {}
+    if selected_tier is not None:
+        if selected_tier not in tiers:
+            raise ValueError(f"unknown tier: {selected_tier}; available tiers: {', '.join(sorted(str(key) for key in tiers))}")
+        selected = tiers[selected_tier]
+        if not isinstance(selected, dict):
+            raise ValueError(f"tier config must be a mapping: {selected_tier}")
+        tier_config = selected
+    return _deep_merge(config, defaults, tier_config, _drop_none(cli_overrides))
+
+
+def _resolve_tier(config: dict[str, Any], tier: str | None) -> str | None:
+    if tier is None:
+        return None
+    aliases = config.get("tier_aliases") if isinstance(config.get("tier_aliases"), dict) else {}
+    return str(aliases.get(tier, tier))
+
+
+def _drop_none(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: cleaned for key, child in value.items() if (cleaned := _drop_none(child)) is not None}
+    return value
+
+
+def _deep_merge(*configs: dict[str, Any]) -> dict[str, Any]:
+    merged: dict[str, Any] = {}
+    for config in configs:
+        for key, value in config.items():
+            if isinstance(value, dict) and isinstance(merged.get(key), dict):
+                merged[key] = _deep_merge(merged[key], value)
+            else:
+                merged[key] = deepcopy(value)
+    return merged
+
+
+def _config_path(config: dict[str, Any], default: str | Path, *keys: str) -> Path:
+    for key in keys:
+        value = config.get(key)
+        if value:
+            return _resolve_repo_path(value)
+    return _resolve_repo_path(default)
 
 
 def _resolve_repo_path(path: str | Path) -> Path:

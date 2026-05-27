@@ -6,6 +6,32 @@ from typing import Any
 from rs_core.recsys.types import AgentDecision
 
 
+INTENT_RECOMMEND_REQUEST = "recommend_request"
+INTENT_PREFERENCE_FEEDBACK = "preference_feedback"
+INTENT_ASK_EXPLANATION = "ask_explanation"
+INTENT_CLARIFICATION_ANSWER = "clarification_answer"
+INTENT_UNSUPPORTED = "unsupported"
+
+ACTION_RECOMMEND_ITEMS = "recommend_items"
+ACTION_ASK_CLARIFYING_QUESTION = "ask_clarifying_question"
+ACTION_EXPLAIN_RECOMMENDATION = "explain_recommendation"
+ACTION_REVISE_RECOMMENDATION = "revise_recommendation"
+
+DIALOGUE_PLAN_INTENTS = frozenset({
+    INTENT_RECOMMEND_REQUEST,
+    INTENT_PREFERENCE_FEEDBACK,
+    INTENT_ASK_EXPLANATION,
+    INTENT_CLARIFICATION_ANSWER,
+    INTENT_UNSUPPORTED,
+})
+DIALOGUE_PLAN_ACTIONS = frozenset({
+    ACTION_RECOMMEND_ITEMS,
+    ACTION_ASK_CLARIFYING_QUESTION,
+    ACTION_EXPLAIN_RECOMMENDATION,
+    ACTION_REVISE_RECOMMENDATION,
+})
+
+
 def _jsonable(value: Any) -> Any:
     if isinstance(value, set):
         return sorted(value)
@@ -126,12 +152,15 @@ class AgentTurn:
     ranking: list[dict[str, Any]]
     fallback_used: bool
     diagnostics: dict[str, Any]
+    rag_context: dict[str, Any] | None = None
     assistant_response: str = ""
     reward_evidence: RewardEvidence = field(default_factory=RewardEvidence)
     reward: AgentReward | None = None
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
+        if self.rag_context is None:
+            payload.pop("rag_context", None)
         payload["feedback_constraints"] = self.feedback_constraints.to_dict()
         payload["recommendation"] = self.recommendation.to_dict()
         payload["reward_evidence"] = self.reward_evidence.to_dict()

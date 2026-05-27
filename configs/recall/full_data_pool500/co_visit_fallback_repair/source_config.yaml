@@ -1,21 +1,92 @@
 schema_version: pool500_method_source_config_v1
 source: co_visit_fallback_repair
-output_root: outputs/recall/pool500_method_sources/co_visit_fallback_repair
-run_id: null
-resource_guard:
-  batch_size: 50
-  checkpoint_enabled: true
-  heavy_job: false
-method_config:
-  max_metadata_rows: 250000
-  seed_window: 30
-  candidate_per_seed: 40
-  candidate_per_user: 120
-  min_token_overlap: 1
-  max_bucket_candidates: 1000
-  category_weight: 2.0
-  checkpoint_every_users: 50
+canonical_source: co_visit_fallback_repair
+source_status: TARGET_SLICE_DIAGNOSTIC
+algorithm_scope: train_transition_metadata_repair_v0
+complete_co_visit_graph_claimed: false
+tier_aliases:
+  dam: diagnostic
+  dam(diagnostic): diagnostic
+  最终数据集: local_formal
+  最终数据集(local_formal): local_formal
+defaults:
+  output_root: outputs/recall/pool500_method_sources
+  run_id: null
+  input_contract:
+    clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
+    lightweight_views_manifest: data/processed/amazon_2023_recall_views_full_lightweight/manifest.json
+    eligible_user_manifest: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
+    train_only: true
+  resource_guard:
+    batch_size: 50
+    checkpoint_enabled: true
+    heavy_job: false
+  method_config:
+    max_metadata_rows: 250000
+    seed_window: 30
+    candidate_per_seed: 40
+    candidate_per_user: 120
+    transition_window: 5
+    transition_per_seed: 200
+    min_token_overlap: 1
+    max_bucket_candidates: 1000
+    category_weight: 2.0
+    checkpoint_every_users: 50
+  follow_up_metrics:
+    pair_support: follow_up_only_not_gate
+    distinct_user_support: follow_up_only_not_gate
+tiers:
+  smoke:
+    method_config:
+      max_metadata_rows: 50000
+      seed_window: 10
+      candidate_per_seed: 20
+      candidate_per_user: 40
+      transition_window: 3
+      transition_per_seed: 50
+      checkpoint_every_users: 20
+    resource_guard:
+      batch_size: 20
+      heavy_job: false
+  diagnostic:
+    alias: dam(diagnostic)
+    method_config:
+      max_metadata_rows: 250000
+      seed_window: 30
+      candidate_per_seed: 40
+      candidate_per_user: 120
+      transition_window: 5
+      transition_per_seed: 200
+      checkpoint_every_users: 50
+    resource_guard:
+      batch_size: 50
+      heavy_job: false
+  local_formal:
+    alias: 最终数据集(local_formal)
+    method_config:
+      max_metadata_rows: 500000
+      seed_window: 30
+      candidate_per_seed: 60
+      candidate_per_user: 160
+      transition_window: 5
+      transition_per_seed: 300
+      checkpoint_every_users: 50
+    resource_guard:
+      batch_size: 50
+      heavy_job: false
 manifest_contract:
-  source_index_manifest: source_index_manifest.json
   method_dataset_manifest: method_dataset_manifest.json
+  source_index_manifest: source_index_manifest.json
   candidates: candidates.jsonl
+  coverage_audit: coverage_audit.json
+  undercoverage_audit: undercoverage_audit.json
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  full_pool500_ready_declared: false
+  final_pool500_ready_claimed: false
+  complete_co_visit_graph_claimed: false

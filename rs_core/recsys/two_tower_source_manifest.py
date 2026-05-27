@@ -14,6 +14,16 @@ EXPECTED_FIELDS = {
     "model_type": "youtube_dnn_two_tower_v1",
     "index_scope": "FULL_DERIVED_INDEX",
 }
+SOURCE_STATUS = "FULL_DERIVED_INDEX_DIAGNOSTIC"
+GOVERNANCE_FIELDS = {
+    "train_only": True,
+    "candidate_generation_allowed": False,
+    "ranking_input_replacement_allowed": False,
+    "ranking_replacement_allowed": False,
+    "pool1000_allowed": False,
+    "promotion_allowed": False,
+    "final_pool500_ready_claimed": False,
+}
 FORBIDDEN_PATH_TOKENS = {"valid", "validation", "test", "holdout", "eval", "oracle"}
 
 
@@ -27,6 +37,12 @@ def validate_two_tower_source_index_manifest(path: str | Path) -> dict[str, Any]
     for field, expected in EXPECTED_FIELDS.items():
         actual = manifest.get(field)
         if actual != expected:
+            raise ValueError(f"invalid two_tower source manifest {field}: {actual!r}")
+    if manifest.get("source_status") != SOURCE_STATUS:
+        raise ValueError(f"invalid two_tower source manifest source_status: {manifest.get('source_status')!r}")
+    for field, expected in GOVERNANCE_FIELDS.items():
+        actual = manifest.get(field)
+        if actual is not expected:
             raise ValueError(f"invalid two_tower source manifest {field}: {actual!r}")
     row_count = _positive_int(manifest, "row_count")
     embedding_row_count = _positive_int(manifest, "embedding_row_count")

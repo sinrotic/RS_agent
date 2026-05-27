@@ -76,13 +76,28 @@ def _context_popular(seed_keys: dict[str, set[str]], context: FallbackCompletion
 def _global_diversity_popular(context: FallbackCompletionContext, config: Pool500FallbackCompletionConfig) -> Iterator[FallbackCandidate]:
     fallback_source = FallbackSource.GLOBAL_DIVERSITY_POPULAR.value
     per_category: dict[str, int] = {}
+    deferred_rows: list[dict[str, Any]] = []
+    emitted_item_ids: set[str] = set()
     cap = max(config.source_caps.get(fallback_source, config.target_candidate_count), 1)
     per_category_cap = max(1, cap // config.global_popular_category_diversity_buckets)
     for row in context.global_popular_items:
+        item_id = _item_id(row)
+        if not item_id or item_id in emitted_item_ids:
+            continue
         category = str(row.get("category") or "")
         if category and per_category.get(category, 0) >= per_category_cap:
+            deferred_rows.append(row)
             continue
+        emitted_item_ids.add(item_id)
         per_category[category] = per_category.get(category, 0) + 1
+        yield _candidate(row, fallback_source, config, {"fallback_reason": "global_diversity_popular_last_resort", "category": category})
+
+    for row in deferred_rows:
+        item_id = _item_id(row)
+        if not item_id or item_id in emitted_item_ids:
+            continue
+        category = str(row.get("category") or "")
+        emitted_item_ids.add(item_id)
         yield _candidate(row, fallback_source, config, {"fallback_reason": "global_diversity_popular_last_resort", "category": category})
 
 

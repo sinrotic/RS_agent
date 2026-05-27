@@ -35,8 +35,8 @@ def test_recall_source_readiness_groups_match_pool500_status() -> None:
     diagnostic = {name for name, spec in specs.items() if spec.readiness == DIAGNOSTIC_ONLY}
     deferred = {name for name, spec in specs.items() if spec.readiness == DEFERRED}
 
-    assert ready == {"category", "popular", "swing_recall"}
-    assert diagnostic == {"usercf_recall", "itemcf_weak", "itemcf_strong"}
+    assert ready == {"category", "popular", "swing_recall", "usercf_recall"}
+    assert diagnostic == {"itemcf_weak", "itemcf_strong"}
     assert deferred == {
         "semantic",
         "semantic_title_category_expansion",

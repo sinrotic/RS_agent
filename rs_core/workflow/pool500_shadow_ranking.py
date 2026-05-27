@@ -380,7 +380,20 @@ def build_pool500_fixed_ranking_comparison_configs() -> dict[str, dict[str, Any]
     configs = {
         "B0": deepcopy(b0),
         "D1": _merge_ranking_config(b0, {"topk_source_minimums": {"itemcf": 1}}),
-        "D2": _merge_ranking_config(b0, {"topk_source_minimums": {"itemcf": 1, "semantic": 1, "category": 1}}),
+        "D2": _merge_ranking_config(
+            b0,
+            {
+                "topk_source_minimums": {
+                    "itemcf": 1,
+                    "semantic": 1,
+                    "semantic_title_category_expansion": 1,
+                    "two_tower": 1,
+                    "usercf_recall": 1,
+                    "swing_recall": 1,
+                    "category": 1,
+                }
+            },
+        ),
         "A1": _merge_ranking_config(
             b0,
             {

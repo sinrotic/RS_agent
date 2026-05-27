@@ -23,6 +23,9 @@ def build_recommendation_explanation(session: AgentSession, item_id: str | None 
 
     title = _clean_text(item.get("title"))
     item_label = f"{title}（{item['parent_asin']}）" if title else f"商品 {item['parent_asin']}"
+    rag_reason = _rag_reason(turn, item["parent_asin"])
+    if rag_reason:
+        return f"最近一次推荐列表里推荐{item_label}，主要因为{rag_reason}。"
     reasons = _public_reasons(item)
     if reasons:
         return f"最近一次推荐列表里推荐{item_label}，主要因为{'；'.join(reasons)}。"
@@ -66,6 +69,25 @@ def _first_item_id(items: list[dict[str, Any]]) -> str | None:
         return None
     parent_asin = items[0].get("parent_asin")
     return str(parent_asin) if parent_asin else None
+
+
+def _rag_reason(turn: AgentTurn, item_id: str) -> str | None:
+    context = turn.rag_context or {}
+    metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
+    if metadata.get("evidence_mode") != "explain":
+        return None
+    evidence = context.get("evidence") if isinstance(context.get("evidence"), list) else []
+    texts = [
+        _clean_text(row.get("text"))
+        for row in evidence
+        if isinstance(row, dict) and row.get("item_id") == item_id and row.get("field") in {"title", "category", "description", "summary"}
+    ]
+    texts = [text for text in texts if text]
+    if not texts:
+        return None
+    metadata["consumed_by_explanation"] = True
+    turn.diagnostics.setdefault("rag", {})["consumed_by_explanation"] = True
+    return "商品信息显示" + "，".join(texts[:2])
 
 
 def _public_reasons(item: dict[str, Any]) -> list[str]:

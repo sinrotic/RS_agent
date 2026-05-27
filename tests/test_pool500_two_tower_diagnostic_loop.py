@@ -59,6 +59,14 @@ def test_two_tower_diagnostic_loop_writes_guarded_train_only_schema(tmp_path: Pa
         "epochs": 1,
         "negative_samples": 1,
         "batch_size": 4,
+        "gradient_accumulation_steps": 1,
+        "effective_batch_size": 4,
+        "mixed_precision": False,
+        "mixed_precision_enabled": False,
+        "optimizer_steps": None,
+        "min_user_positives": 3,
+        "max_samples_per_user": 5,
+        "negative_sampling_power": 0.75,
         "training_input_users": 2,
         "users_with_training_rows": 2,
     }
@@ -68,6 +76,11 @@ def test_two_tower_diagnostic_loop_writes_guarded_train_only_schema(tmp_path: Pa
     train_config = read_json(output_dir / "train_only_compat_inputs" / "two_tower_train_config.json")
     item_vocab_manifest = read_json(output_dir / "train_only_compat_inputs" / "two_tower_item_vocab_manifest.json")
     assert train_config["evaluation_mode"] == "train_only"
+    assert train_config["two_tower_training"]["min_user_positives"] == 3
+    assert train_config["two_tower_training"]["max_samples_per_user"] == 5
+    assert train_config["two_tower_training"]["negative_sampling_power"] == 0.75
+    assert train_config["two_tower_training"]["gradient_accumulation_steps"] == 1
+    assert train_config["two_tower_training"]["mixed_precision"] is False
     assert item_vocab_manifest["split_scope"] == "train_only"
     assert item_vocab_manifest["diagnostic_only"] is True
     assert item_vocab_manifest["source_paths"] == {

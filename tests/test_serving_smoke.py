@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -117,6 +118,34 @@ def test_fixed_smoke_user_returns_public_display_items_without_recovery_diagnost
     assert result.display["items"]
     _assert_no_blocked_keys(result.display)
     _assert_no_blocked_public_terms(result.display)
+
+
+def test_service_smoke_completes_clarification_feedback_and_explanation_loop(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    service = RecommendationService(str(config_path), limit_users=1)
+    session_id = service.start_session("u1")
+
+    vague = service.chat(session_id, "I want headphones")
+    assert vague.display["items"] == []
+    assert service.get_agent_session(session_id).turns[-1].recommendation.trigger_reason == "clarification_needed"
+
+    recommendation = service.chat(session_id, "For commute, prefer bluetooth and Audio")
+    recommended_item_ids = _display_item_ids(recommendation.display)
+    assert recommended_item_ids
+
+    changed = service.feedback(session_id, "show_different", recommended_item_ids[0])
+    changed_item_ids = _display_item_ids(changed.display)
+    assert changed_item_ids != recommended_item_ids
+
+    stale = service.feedback(session_id, "why", recommended_item_ids[0])
+    assert stale.display["assistant_message"] == "我只能解释最近一次推荐列表里的商品。"
+    assert stale.display["items"] == []
+
+    recent = service.feedback(session_id, "why", changed_item_ids[0])
+    assert changed_item_ids[0] in recent.display["assistant_message"]
+    assert recent.display["items"] == []
+    _assert_no_blocked_keys(service.export_session(session_id))
+    _assert_no_blocked_public_terms(service.export_session(session_id))
 
 
 def test_repeated_user_sessions_do_not_conflict(client: TestClient):
@@ -336,6 +365,10 @@ def _assert_no_blocked_public_terms(value):
         lowered = value.lower()
         for term in BLOCKED_PUBLIC_TERMS:
             assert term not in lowered
+
+
+def _display_item_ids(display: dict[str, Any]) -> list[str]:
+    return [str(item["parent_asin"]) for item in display["items"]]
 
 
 def _is_uuid(value: str) -> bool:

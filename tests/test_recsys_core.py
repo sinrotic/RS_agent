@@ -4,9 +4,10 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates, metadata_neighbor_candidates_for_user
+from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates, metadata_neighbor_candidates_for_user, two_tower_candidates_for_user
 from rs_core.recsys.ranking import rank_candidates
 from rs_core.recsys.types import MergedCandidate
+from rs_core.recsys.vector_index import VectorIndex
 
 
 def test_merge_dedups_sources_and_excludes_seen_items():
@@ -23,6 +24,34 @@ def test_merge_dedups_sources_and_excludes_seen_items():
     assert merged[0].item_id == "a"
     assert merged[0].sources == ["popular", "category"]
     assert merged[0].source_scores == {"popular": 1.0, "category": 2.0}
+
+
+def test_vector_two_tower_applies_user_tower_projection_to_realtime_history():
+    index = VectorIndex(
+        items={
+            "seed": {"embedding": [1.0, 0.0]},
+            "raw_match": {"embedding": [1.0, 0.0]},
+            "projected_match": {"embedding": [0.0, 1.0]},
+        },
+        user_embeddings={"u1": [1.0, 0.0]},
+        source_name="two_tower_youtube_dnn",
+        model_metadata={
+            "model_parameters": {
+                "user_tower.0.weight": [[1.0, 0.0], [1.0, 0.0]],
+                "user_tower.0.bias": [0.0, 0.0],
+                "user_tower.2.weight": [[-1.0, 0.0], [0.0, 1.0]],
+                "user_tower.2.bias": [0.0, 0.0],
+            }
+        },
+    )
+
+    rows = two_tower_candidates_for_user(
+        {"user_id": "u1", "recent_item_sequence": ["seed"], "recent_positive_item_sequence": ["seed"]},
+        index,
+        {"two_tower_enabled": True, "two_tower_per_user": 1},
+    )
+
+    assert [row.item_id for row in rows] == ["projected_match"]
 
 
 def test_ranking_weights_and_tie_break_order():

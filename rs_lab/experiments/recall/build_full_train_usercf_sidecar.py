@@ -36,8 +36,10 @@ DEFAULT_MAX_RSS_MB = 4096
 FORBIDDEN_PATH_PARTS = (
     "amazon_2023_recall_clean_10000",
     "amazon_2023_recall_views_10000",
+    "clean_10000",
     "pool1000",
 )
+FORBIDDEN_PATH_TOKENS = {"holdout", "valid", "test", "lopo", "oracle", "eval_label"}
 FORBIDDEN_INPUT_NAMES = (
     "canonical_interactions.valid.jsonl",
     "canonical_interactions.test.jsonl",
@@ -45,11 +47,19 @@ FORBIDDEN_INPUT_NAMES = (
     "user_sequences.test.jsonl",
     "holdout.jsonl",
 )
+FORBIDDEN_SWITCHES = {
+    "candidate_generation_allowed": False,
+    "ranking_input_replacement_allowed": False,
+    "pool1000_allowed": False,
+    "promotion_allowed": False,
+    "final_pool500_ready_claimed": False,
+}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a guarded diagnostic train-only UserCF recall sidecar index.")
     parser.add_argument("--clean-manifest", default=str(DEFAULT_CLEAN_MANIFEST))
+    parser.add_argument("--method-dataset-manifest", default=None)
     parser.add_argument("--eligible-user-quality-manifest", default=str(DEFAULT_ELIGIBLE_USER_QUALITY_MANIFEST))
     parser.add_argument("--include-medium-behavior", action="store_true")
     parser.add_argument("--max-items-per-user", type=int, default=DEFAULT_MAX_ITEMS_PER_USER)
@@ -74,6 +84,7 @@ def build_full_train_usercf_sidecar(
     clean_manifest: Path = DEFAULT_CLEAN_MANIFEST,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     eligible_user_quality_manifest: Path | None = DEFAULT_ELIGIBLE_USER_QUALITY_MANIFEST,
+    method_dataset_manifest: Path | None = None,
     include_medium_behavior: bool = False,
     max_items_per_user: int = DEFAULT_MAX_ITEMS_PER_USER,
     max_item_user_freq: int = DEFAULT_MAX_ITEM_USER_FREQ,
@@ -111,20 +122,34 @@ def build_full_train_usercf_sidecar(
     clean_manifest = clean_manifest.resolve()
     output_dir = output_dir.resolve()
     eligible_user_quality_manifest = eligible_user_quality_manifest.resolve() if eligible_user_quality_manifest else None
-    _precheck_paths(clean_manifest, output_dir, overwrite, resume, eligible_user_quality_manifest)
+    method_dataset_manifest = method_dataset_manifest.resolve() if method_dataset_manifest else None
+    method_dataset_payload: dict[str, Any] | None = None
+    method_dataset_rows_path: Path | None = None
+    if method_dataset_manifest is None:
+        _precheck_paths(clean_manifest, output_dir, overwrite, resume, eligible_user_quality_manifest)
+    else:
+        _precheck_paths(clean_manifest, output_dir, overwrite, resume, None, require_clean_manifest=False)
+        method_dataset_payload, method_dataset_rows_path = _resolve_method_dataset_rows(method_dataset_manifest)
+        _precheck_input_path(method_dataset_manifest, "method_dataset_manifest_path")
+        _precheck_input_path(method_dataset_rows_path, "method_dataset_rows_path")
     _enforce_memory_guard(memory_samples, max_rss_mb=max_rss_mb, min_free_memory_bytes=min_free_memory_bytes)
     disk_free_start = shutil.disk_usage(_existing_ancestor(output_dir.parent)).free
     if disk_free_start < min_free_bytes:
         raise RuntimeError(f"Free disk bytes below --min-free-bytes: {disk_free_start} < {min_free_bytes}")
 
-    manifest_payload = read_json(clean_manifest)
-    train_sequence_path = _resolve_train_sequence_path(clean_manifest, manifest_payload)
-    _precheck_train_path(train_sequence_path)
-    eligible_manifest_payload, eligible_target_user_ids = _resolve_eligible_target_users(
-        eligible_user_quality_manifest,
-        include_medium_behavior=include_medium_behavior,
-        target_user_limit=target_user_limit,
-    )
+    if method_dataset_manifest is None:
+        manifest_payload = read_json(clean_manifest)
+        train_sequence_path = _resolve_train_sequence_path(clean_manifest, manifest_payload)
+        _precheck_train_path(train_sequence_path)
+        eligible_manifest_payload, eligible_target_user_ids = _resolve_eligible_target_users(
+            eligible_user_quality_manifest,
+            include_medium_behavior=include_medium_behavior,
+            target_user_limit=target_user_limit,
+        )
+    else:
+        train_sequence_path = method_dataset_rows_path
+        eligible_manifest_payload = None
+        eligible_target_user_ids = None
 
     if output_dir.exists() and overwrite:
         shutil.rmtree(output_dir)
@@ -135,12 +160,19 @@ def build_full_train_usercf_sidecar(
     shards_dir.mkdir(parents=True, exist_ok=resume)
     checkpoint_dir.mkdir(parents=True, exist_ok=resume)
 
-    user_items, item_users_raw, load_audit, target_user_ids = _load_train_user_items(
-        train_sequence_path,
-        max_items_per_user,
-        target_user_limit=target_user_limit,
-        eligible_target_user_ids=eligible_target_user_ids,
-    )
+    if method_dataset_manifest is None:
+        user_items, item_users_raw, load_audit, target_user_ids = _load_train_user_items(
+            train_sequence_path,
+            max_items_per_user,
+            target_user_limit=target_user_limit,
+            eligible_target_user_ids=eligible_target_user_ids,
+        )
+    else:
+        user_items, item_users_raw, load_audit, target_user_ids = _load_method_dataset_user_items(
+            train_sequence_path,
+            max_items_per_user,
+            target_user_limit=target_user_limit,
+        )
     hot_items = {item_id for item_id, users in item_users_raw.items() if len(users) > max_item_user_freq}
     item_users = {item_id: users for item_id, users in item_users_raw.items() if item_id not in hot_items}
     _sample_memory(memory_samples, "after_index_load")
@@ -193,20 +225,22 @@ def build_full_train_usercf_sidecar(
         "source": SOURCE_NAME,
         "index_scope": INDEX_SCOPE,
         "train_only": True,
-        "candidate_generation_allowed": False,
-        "ranking_input_replacement_allowed": False,
-        "pool1000_allowed": False,
+        **FORBIDDEN_SWITCHES,
     }
+    input_mode = "method_dataset" if method_dataset_manifest is not None else "clean_train_sequences"
     resolved_paths = {
-        "clean_manifest": str(clean_manifest),
-        "train_user_sequences_path": str(train_sequence_path),
+        "input_mode": input_mode,
+        "clean_manifest": str(clean_manifest) if method_dataset_manifest is None else None,
+        "train_user_sequences_path": str(train_sequence_path) if method_dataset_manifest is None else None,
+        "method_dataset_manifest": str(method_dataset_manifest) if method_dataset_manifest else None,
+        "method_dataset_rows_path": str(method_dataset_rows_path) if method_dataset_rows_path else None,
         "eligible_user_quality_manifest": str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None,
         "output_dir": str(output_dir),
         "shards_dir": str(shards_dir),
         "checkpoint_dir": str(checkpoint_dir),
     }
     forbidden_inputs = [str(train_sequence_path.parent / name) for name in FORBIDDEN_INPUT_NAMES]
-    source_signature = _source_signature(train_sequence_path)
+    source_signature = _method_dataset_source_signature(method_dataset_manifest, train_sequence_path) if method_dataset_manifest else _source_signature(train_sequence_path)
     eligible_signature = _file_signature(eligible_user_quality_manifest) if eligible_user_quality_manifest else None
     dropped_hot_items = {
         "schema_version": SCHEMA_VERSION,
@@ -223,7 +257,15 @@ def build_full_train_usercf_sidecar(
         "schema_version": SCHEMA_VERSION,
         "status": "PASS",
         **hard_contract,
-        "read_files": [path for path in (str(train_sequence_path), str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None) if path],
+        "read_files": [
+            path
+            for path in (
+                str(method_dataset_manifest) if method_dataset_manifest else None,
+                str(method_dataset_rows_path) if method_dataset_rows_path else str(train_sequence_path),
+                str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None,
+            )
+            if path
+        ],
         "forbidden_inputs": forbidden_inputs,
         "uses_valid": False,
         "uses_test": False,
@@ -231,7 +273,7 @@ def build_full_train_usercf_sidecar(
         "uses_10k": False,
         "uses_pool1000": False,
         "ranking_input_modified": False,
-        "train_sequence_field": "recent_positive_item_sequence",
+        "train_sequence_field": "eligible_item_sequence" if method_dataset_manifest else "recent_positive_item_sequence",
     }
     resource_audit = {
         "schema_version": SCHEMA_VERSION,
@@ -281,7 +323,9 @@ def build_full_train_usercf_sidecar(
         },
     }
     eligible_user_policy = "heavy_cf_eligible_or_medium_behavior" if include_medium_behavior else "heavy_cf_eligible"
-    if eligible_manifest_payload and eligible_manifest_payload.get("scope") == "target500_train_only_high_cost_slice_users":
+    if method_dataset_manifest is not None:
+        eligible_user_policy = str(method_dataset_payload.get("effective_user_bucket_policy") or "method_dataset_target_users")
+    elif eligible_manifest_payload and eligible_manifest_payload.get("scope") == "target500_train_only_high_cost_slice_users":
         eligible_user_policy = "target500_train_only_high_cost_slice"
     source_index_manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -322,7 +366,7 @@ def build_full_train_usercf_sidecar(
         "eligible_user_quality_manifest": str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None,
         "eligible_user_quality_summary": _eligible_quality_summary(eligible_manifest_payload),
         "target_user_ids": target_user_ids,
-        "allowed_inputs": ["clean_manifest.train_user_sequences_path", "eligible_user_quality_manifest.profiles"],
+        "allowed_inputs": ["method_dataset_manifest.outputs.dataset_rows_path", "method_dataset_rows.eligible_item_sequence"] if method_dataset_manifest else ["clean_manifest.train_user_sequences_path", "eligible_user_quality_manifest.profiles"],
         "forbidden_inputs": forbidden_inputs,
         "source_signature": source_signature,
         "eligible_user_quality_signature": eligible_signature,
@@ -377,19 +421,27 @@ def _validate_caps(
         raise ValueError("--min-free-memory-bytes must be non-negative")
 
 
-def _precheck_paths(clean_manifest: Path, output_dir: Path, overwrite: bool, resume: bool, eligible_user_quality_manifest: Path | None) -> None:
-    for path in (clean_manifest, output_dir, eligible_user_quality_manifest):
+def _precheck_paths(
+    clean_manifest: Path,
+    output_dir: Path,
+    overwrite: bool,
+    resume: bool,
+    eligible_user_quality_manifest: Path | None,
+    *,
+    require_clean_manifest: bool = True,
+) -> None:
+    for path in (clean_manifest if require_clean_manifest else None, output_dir, eligible_user_quality_manifest):
         if path is None:
             continue
-        lowered = str(path).replace("\\", "/").lower()
-        if any(part in lowered for part in FORBIDDEN_PATH_PARTS):
-            raise ValueError(f"Forbidden holdout/10k/pool1000 path is not allowed: {path}")
-    if not clean_manifest.is_file():
+        _precheck_input_path(path, "path")
+    if require_clean_manifest and not clean_manifest.is_file():
         raise FileNotFoundError(clean_manifest)
     if eligible_user_quality_manifest and not eligible_user_quality_manifest.is_file():
         raise FileNotFoundError(eligible_user_quality_manifest)
     if overwrite and resume:
         raise ValueError("--overwrite and --resume cannot be used together")
+    if not require_clean_manifest:
+        return
     try:
         output_dir.relative_to(clean_manifest.parent)
     except ValueError:
@@ -397,10 +449,18 @@ def _precheck_paths(clean_manifest: Path, output_dir: Path, overwrite: bool, res
     raise ValueError(f"Output directory must not be inside clean manifest directory: {output_dir}")
 
 
+def _precheck_input_path(path: Path, label: str) -> None:
+    lowered = str(path).replace("\\", "/").lower()
+    if any(part in lowered for part in FORBIDDEN_PATH_PARTS):
+        raise ValueError(f"Forbidden holdout/10k/pool1000 path is not allowed: {path}")
+    tokens = {token for token in lowered.replace("-", "_").replace(".", "_").split("/") if token}
+    if tokens & FORBIDDEN_PATH_TOKENS:
+        raise ValueError(f"Forbidden holdout/valid/test/LOPO/oracle/eval path is not allowed for {label}: {path}")
+
+
 def _precheck_train_path(train_sequence_path: Path) -> None:
     lowered = str(train_sequence_path).replace("\\", "/").lower()
-    if any(part in lowered for part in FORBIDDEN_PATH_PARTS):
-        raise ValueError(f"Forbidden holdout/10k/pool1000 path is not allowed: {train_sequence_path}")
+    _precheck_input_path(train_sequence_path, "train_sequence_path")
     if any(name in lowered for name in FORBIDDEN_INPUT_NAMES):
         raise ValueError(f"Forbidden non-train input is not allowed: {train_sequence_path}")
     if train_sequence_path.name != "user_sequences.train.jsonl":
@@ -425,6 +485,39 @@ def _resolve_train_sequence_path(clean_manifest: Path, manifest_payload: dict[st
                 return root_candidate
             return (clean_manifest.parent / path).resolve()
     return (clean_manifest.parent / "user_sequences.train.jsonl").resolve()
+
+
+def _resolve_method_dataset_rows(manifest_path: Path) -> tuple[dict[str, Any], Path]:
+    if not manifest_path.is_file():
+        raise FileNotFoundError(manifest_path)
+    payload = read_json(manifest_path)
+    if payload.get("status") != "PASS":
+        raise ValueError("method_dataset_manifest.status must be PASS")
+    if payload.get("schema_version") != "pool500_method_dataset_v1":
+        raise ValueError("method_dataset_manifest.schema_version must be pool500_method_dataset_v1")
+    if payload.get("train_only") is not True:
+        raise ValueError("method_dataset_manifest.train_only must be true")
+    for key, expected in FORBIDDEN_SWITCHES.items():
+        if key in payload and payload.get(key) is not expected:
+            raise ValueError(f"method_dataset_manifest.{key} must be false")
+    if payload.get("source_method") != "usercf_method_dataset":
+        raise ValueError("method_dataset_manifest.source_method must be usercf_method_dataset")
+    outputs = payload.get("outputs") if isinstance(payload.get("outputs"), dict) else {}
+    if outputs.get("dataset_schema") != "eligible_user_sequence_v1":
+        raise ValueError("method_dataset_manifest.outputs.dataset_schema must be eligible_user_sequence_v1")
+    raw_rows_path = outputs.get("dataset_rows_path")
+    if not raw_rows_path:
+        raise ValueError("method_dataset_manifest.outputs.dataset_rows_path is required")
+    rows_path = Path(str(raw_rows_path))
+    if not rows_path.is_absolute():
+        rows_path = (manifest_path.parent / rows_path).resolve()
+    else:
+        rows_path = rows_path.resolve()
+    if rows_path.name != "method_dataset_rows.jsonl":
+        raise ValueError(f"method_dataset rows file must be method_dataset_rows.jsonl, got {rows_path.name}")
+    if not rows_path.is_file():
+        raise FileNotFoundError(rows_path)
+    return payload, rows_path
 
 
 def _resolve_eligible_target_users(
@@ -466,6 +559,63 @@ def _resolve_eligible_target_users(
     if target_user_limit:
         target_user_ids = target_user_ids[:target_user_limit]
     return payload, target_user_ids
+
+
+def _load_method_dataset_user_items(
+    path: Path,
+    max_items_per_user: int,
+    target_user_limit: int = 0,
+) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[str, Any], list[str]]:
+    user_items: dict[str, set[str]] = {}
+    item_users: dict[str, set[str]] = defaultdict(set)
+    rows_scanned = 0
+    rows_with_eligible_sequence = 0
+    raw_eligible_event_count = 0
+    kept_positive_event_count = 0
+    target_user_ids: list[str] = []
+    dropped_reason_counts: Counter[str] = Counter()
+    for row in iter_jsonl(path):
+        rows_scanned += 1
+        user_id = _clean_id(row.get("user_id"))
+        raw_items = row.get("eligible_item_sequence")
+        if not user_id:
+            dropped_reason_counts["missing_user_id"] += 1
+            continue
+        if not isinstance(raw_items, list):
+            dropped_reason_counts["missing_or_invalid_eligible_item_sequence"] += 1
+            continue
+        target_user_ids.append(user_id)
+        rows_with_eligible_sequence += 1
+        raw_eligible_event_count += len(raw_items)
+        items, dropped = _first_unique_items(raw_items, max_items_per_user)
+        dropped_reason_counts.update(dropped)
+        if not items:
+            dropped_reason_counts["empty_eligible_item_sequence"] += 1
+        else:
+            item_set = set(items)
+            user_items[user_id] = item_set
+            kept_positive_event_count += len(item_set)
+            for item_id in item_set:
+                item_users[item_id].add(user_id)
+        if target_user_limit and len(target_user_ids) >= target_user_limit:
+            break
+    return user_items, dict(item_users), {
+        "input_mode": "method_dataset",
+        "method_dataset_rows_path": str(path),
+        "train_rows_scanned": rows_scanned,
+        "rows_with_positive_sequence": rows_with_eligible_sequence,
+        "rows_with_eligible_sequence": rows_with_eligible_sequence,
+        "indexed_user_count": len(user_items),
+        "target_user_limit": target_user_limit,
+        "target_user_count": len(target_user_ids),
+        "target_item_count": 0,
+        "raw_positive_event_count": raw_eligible_event_count,
+        "raw_eligible_event_count": raw_eligible_event_count,
+        "kept_unique_positive_event_count": kept_positive_event_count,
+        "raw_item_count": len(item_users),
+        "empty_history_count": len(target_user_ids) - len(user_items),
+        "dropped_reason_counts": dict(sorted(dropped_reason_counts.items())),
+    }, target_user_ids
 
 
 def _load_train_user_items(
@@ -555,6 +705,31 @@ def _recent_unique_items(raw_items: list[Any], max_items_per_user: int) -> list[
             items.append(item_id)
     items.reverse()
     return items
+
+
+def _first_unique_items(raw_items: list[Any], max_items_per_user: int) -> tuple[list[str], Counter[str]]:
+    items: list[str] = []
+    seen: set[str] = set()
+    dropped: Counter[str] = Counter()
+    for item in raw_items:
+        item_id = _clean_id(item)
+        if not item_id:
+            dropped["empty_or_invalid_item_id"] += 1
+            continue
+        if item_id in seen:
+            dropped["duplicate_item_id"] += 1
+            continue
+        seen.add(item_id)
+        items.append(item_id)
+        if len(items) >= max_items_per_user:
+            break
+    return items, dropped
+
+
+def _clean_id(value: Any) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
 
 
 def _build_usercf_candidates_batched(
@@ -814,12 +989,21 @@ def _source_signature(path: Path) -> dict[str, Any]:
     return signature
 
 
+def _method_dataset_source_signature(manifest_path: Path, rows_path: Path) -> dict[str, Any]:
+    rows_signature = _file_signature(rows_path)
+    rows_signature["manifest_sha256"] = _file_signature(manifest_path)["sha256"]
+    rows_signature["field"] = "eligible_item_sequence"
+    rows_signature["input_mode"] = "method_dataset"
+    return rows_signature
+
+
 def main() -> None:
     args = parse_args()
     build_full_train_usercf_sidecar(
         clean_manifest=Path(args.clean_manifest),
         output_dir=Path(args.output_dir),
         eligible_user_quality_manifest=Path(args.eligible_user_quality_manifest) if args.eligible_user_quality_manifest else None,
+        method_dataset_manifest=Path(args.method_dataset_manifest) if args.method_dataset_manifest else None,
         include_medium_behavior=args.include_medium_behavior,
         max_items_per_user=args.max_items_per_user,
         max_item_user_freq=args.max_item_user_freq,

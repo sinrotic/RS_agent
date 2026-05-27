@@ -2,128 +2,71 @@
 
 ## 方法定位
 
-`semantic_title_category_expansion` 是 pool500 主路中的语义 / 标题 / 类目扩展召回源，基于用户近期 seed item 的 title token 与 category overlap 生成补充候选。当前定位是 `BATCH_SCOPED_DIAGNOSTIC` 证据源：用于证明 direct recall 中可产生稳定候选贡献，但不声明 pool500 READY，不允许替换 ranking input，也不允许进入 pool1000。
+`semantic_title_category_expansion` 是 pool500 的标题 / 类目 / metadata 扩展召回 source，基于用户近期 train-only seed item 的 title token、category 和静态 metadata overlap 生成补充候选。当前定位是 `deferred_evidence_policy` / `TARGET_SLICE_DIAGNOSTIC`：用于产出受控诊断 source artifacts，但不得宣称 READY，不替换 ranking input，不进入 pool1000。
 
-## 当前 readiness
+它不是 canonical `semantic` 的别名，也不能替代 `semantic` source identity。若内部复用相同 metadata 输入，manifest 仍必须保持 `source=semantic_title_category_expansion`、`canonical_source=semantic_title_category_expansion`。
 
-- 状态：`DEFERRED`
-- 本轮 evidence status：`BATCH_SCOPED_DIAGNOSTIC`
-- source manifest：`outputs/recall/full_semantic_title_category_expansion/source_index_manifest.json`
-- index_scope：`FULL_DERIVED_INDEX`
-- no_holdout audit：`outputs/recall/full_semantic_title_category_expansion/no_holdout_audit.json`，状态 `PASS`
-- resource audit：`outputs/recall/full_semantic_title_category_expansion/resource_audit.json`，状态 `PASS`
-- 禁止授权：`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`full_ready_declared=false`
+## 统一配置与 runner
 
-## 输入 artifact
-
-- source manifest builder：`rs_lab/experiments/recall/build_full_semantic_title_category_manifest.py`
-- clean full manifest：`data/processed/amazon_2023_recall_clean_full/manifest.json`
-- full lightweight views manifest：`data/processed/amazon_2023_recall_views_full_lightweight/manifest.json`
-- canonical items：`data/processed/amazon_2023_recall_clean_full/canonical_items.jsonl`
-- semantic recall inputs：`data/processed/amazon_2023_recall_views_full_lightweight/semantic_recall_inputs.jsonl`
-- semantic inverted index：`data/processed/amazon_2023_recall_views_full_lightweight/semantic_inverted_index.jsonl`
-
-Source manifest 记录的规模：
-
-- `canonical_items.row_count=2320263`
-- `semantic_recall_inputs.row_count=2320263`
-- `semantic_inverted_index.row_count=1456251`
-
-上述输入由 source manifest 记录 sha256 与 row_count，且 no-holdout audit 未发现 holdout、valid、test、LOPO、clean_10000 输入。
-
-## Source manifest 生成
+- 配置路径：`configs/recall/full_data_pool500/semantic_title_category_expansion/source_config.yaml`
+- smoke / dry-run / source dispatch 统一入口：`scripts/experiments/recall/pool500/run_pool500_method_source.py`
+- 档位：`smoke`、`dam(diagnostic)`、`最终数据集(local_formal)`
 
 ```bash
-D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m rs_lab.experiments.recall.build_full_semantic_title_category_manifest --overwrite
+D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe scripts/experiments/recall/pool500/run_pool500_method_source.py --source semantic_title_category_expansion --tier smoke --dry-run
 ```
 
-关键结果：
+```bash
+D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe scripts/experiments/recall/pool500/run_pool500_method_source.py --source semantic_title_category_expansion --tier smoke --overwrite
+```
+
+显式 config smoke：
+
+```bash
+D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe scripts/experiments/recall/pool500/run_pool500_method_source.py --source semantic_title_category_expansion --config configs/recall/full_data_pool500/semantic_title_category_expansion/source_config.yaml --tier smoke --dry-run
+```
+
+## 输出契约
+
+必须生成七件套 source artifacts：
+
+- `method_dataset_manifest.json`
+- `source_index_manifest.json`
+- `candidates.jsonl`
+- `coverage_audit.json`
+- `undercoverage_audit.json`
+- `resource_audit.json`
+- `no_holdout_audit.json`
+
+核心 identity / governance 字段：
 
 - `source=semantic_title_category_expansion`
-- `index_scope=FULL_DERIVED_INDEX`
-- `source_index_manifest.json.status=PASS`
-- `resource_audit.json.status=PASS`
-- `no_holdout_audit.json.status=PASS`
+- `canonical_source=semantic_title_category_expansion`
+- `source_status=TARGET_SLICE_DIAGNOSTIC`
 - `candidate_generation_allowed=false`
 - `ranking_input_replacement_allowed=false`
 - `pool1000_allowed=false`
-- `full_ready_declared=false`
+- `promotion_allowed=false`
+- `full_pool500_ready_declared=false`
+- `final_pool500_ready_claimed=false`
 
-## Direct recall probe 证据
+## 输入 artifact
 
-受控 probe 命令：
-
-```bash
-D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m rs_lab.experiments.recall.run_full_data_pool500_recall_only \
-  --output-dir outputs/recall/full_data_pool500_recall_only_semantic_covisit_probe_50x200k \
-  --enable-semantic \
-  --semantic-max-rows 200000 \
-  --limit-users 50 \
-  --overwrite
-```
-
-关键输出：
-
-- `manifest.json.status=STOP`，原因是整体 readiness/underfill gate，符合“不做 READY 晋升”的预期。
-- `pool500_candidates.jsonl` 总行数：6152。
-- `pool500_candidates.jsonl.sources.semantic_title_category_expansion=640`。
-- `source_contribution_audit.sources.semantic_title_category_expansion.row_count=640`。
-- `source_contribution_audit.sources.semantic_title_category_expansion.user_coverage_count=47`，`user_coverage_ratio=0.94`。
-- `source_contribution_audit.sources.semantic_title_category_expansion.marginal_candidate_share=0.104031`。
-- `final_resource_audit.source_row_counts.semantic_title_category_expansion=640`。
-- per-source manifest：`sources/semantic_title_category_expansion/manifest.json.status=BATCH_SCOPED_DIAGNOSTIC`。
-- per-source manifest：`final_sources=[]`，`batch_scoped_evidence_only=true`。
-- `per_source_readiness_contracts.semantic_title_category_expansion.status=BATCH_SCOPED_DIAGNOSTIC`。
-
-## 语义输入覆盖
-
-`outputs/recall/full_data_pool500_recall_only_semantic_covisit_probe_50x200k/semantic_input_manifest.json`：
-
-- `batch_user_count=50`
-- `batch_seed_item_count=92`
-- `semantic_max_rows=200000`
-- `item_universe_count=200092`
-- `item_universe_coverage=92/92=1.0`
-- `title_coverage=200068/200092=0.99988`
-- `category_coverage=200092/200092=1.0`
-- `clean_title_token_coverage=200036/200092=0.99972`
-
-该覆盖率足以支撑 title/category expansion 的小批候选贡献判断。
-
-## `--semantic-max-rows` 建议
-
-- 旧 smoke 口径 `semantic-max-rows=5000` 已出现明显截断：`item_universe_count=5038 = 5000 + seed_count(38)`。
-- 本轮 `semantic-max-rows=200000` 能稳定产出 `semantic_title_category_expansion` 候选贡献，当前作为 pool500 direct recall batch-scoped evidence 已够用。
-- 本轮 50 用户 probe 中仍可见 `item_universe_count=200092 = 200000 + seed_count(92)` 的截断迹象；如后续目标变为更宽覆盖或更大用户批次，可再评估 `500000`，但不建议在本轮直接调高，因为 `1000 users × 200000 rows` 已表现为长时间重资源任务。
+- full clean manifest：`data/processed/amazon_2023_recall_clean_full/manifest.json`
+- full lightweight views manifest：`data/processed/amazon_2023_recall_views_full_lightweight/manifest.json`
+- eligible user manifest：`outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json`
+- train-only user sequences、canonical item metadata、semantic recall inputs、semantic inverted index
 
 ## 治理边界
 
-- 只使用 full clean train-visible / full lightweight semantic outputs。
-- 不使用 holdout、valid、test、LOPO、clean_10000。
-- 不使用 youtube_dnn、pool1000 或 ranking replacement 证据。
-- 当前 evidence 只能证明 batch-scoped candidate contribution，不能证明 full READY。
-- 不设置 `ranking_input_replacement_allowed=true`、`pool1000_allowed=true`、`promotion_allowed=true`。
-- 未完成更强 full-clean-safe readiness contract 前，不得宣称 READY、promotion、ranking input replacement 或 pool1000。
+- 只使用 train-only 用户历史与静态 item metadata。
+- 不使用 holdout、valid、test、LOPO、clean_10000、youtube_dnn、pool1000 证据。
+- 不用评估命中、label、oracle 反向选择 token、category 或 metadata bucket。
+- 不宣称 full pool500 READY；不得宣称 READY。
+- 不替换 ranking input。
+- 不进入 pool1000。
+- 如需晋升或替换 ranking 输入，后续必须另起计划并重新验证 source quality、underfill 改善、overlap 和 ranking gate。
 
-## 专项优化 Agent 调用说明
+## 后续优化方向
 
-后续单独调用 Agent 优化本方法时，应优先围绕 title/category overlap 的覆盖率、去重后边际贡献、underfill 改善与资源边界做诊断。Agent 必须保持 `deferred_evidence_policy`，禁止使用 holdout/valid/test/clean_10000/LOPO 等证据；未形成 full-clean-safe source manifest 与 readiness contract 前，不得宣称 READY、ranking input replacement 或 pool1000。
-
-## P2 method_dataset 数据清洗与筛选方案
-
-- 数据来源：只读取 train-only 用户历史与 train-only/static item metadata；不继承 Popular/Category 的 full-statistics no-input-cap 合同。
-- 筛选单位：`user_seed_item_metadata_buckets`。从用户近期 train-only seed item 出发，受控展开 title/category/token bucket。
-- 适用数据：seed item 必须有可用 `title_clean` 或 `main_category`；metadata 字段限于可审计静态字段。
-- 清洗规则：过滤无 item id、无 metadata universe、标题/类目同时缺失、过短 token、高频泛化 token 和过大类目桶；用户内去重并保持确定性排序。
-- 规模参数：`max_metadata_rows=300000`、`max_target_users=500`、`seed_window=80`、`max_seed_items_per_user=80`、`per_token_item_limit=200`、`max_category_items=5000`。
-
-### 规模档位
-
-| 档位 | max_metadata_rows | max_target_users | seed_window | max_seed_items_per_user | per_token_item_limit | max_category_items |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| smoke | 20000 | 500 | 20 | 20 | 500 | 1000 |
-| diagnostic | 150000 | 500 | 50 | 50 | 1000 | 3000 |
-| local_formal | 300000 | 500 | 80 | 80 | 200 | 5000 |
-
-- 泄漏边界：不读取 valid/test/holdout/LOPO/clean_10000/eval_label/oracle，不用评估命中反向选择 token/category，不声明 READY、promotion、ranking input replacement 或 pool1000。
-- 维护检查：修改 token/category 策略时同步检查 `semantic_seed_metadata_v1`、泛词过滤、类目桶上限和 registry/builder/test 一致性。
+后续应围绕 title/category overlap 的覆盖率、泛词过滤、类目桶上限、去重后边际贡献和资源边界做诊断。修改 token/category 策略时必须同步 config、registry、METHOD、builder manifest 与测试，避免把 batch-scoped diagnostic evidence 包装成 READY。

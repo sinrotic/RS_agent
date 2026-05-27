@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+ORACLE_FIELD_NAMES = {
+    "ground_truth",
+    "holdout",
+    "label",
+    "label_binary",
+    "target_item",
+    "test_item",
+}
 
 
 class StartSessionRequest(BaseModel):
@@ -33,6 +43,34 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     session_id: str
     display: dict[str, Any]
+
+
+class RecommendFromSequenceRequest(BaseModel):
+    user_id: str | None = None
+    user_sequence: dict[str, Any]
+    feedback_text: str | None = None
+    top_k: int = Field(default=5, ge=1, le=50)
+    candidate_pool_size: int | None = Field(default=None, ge=1, le=500)
+    complete_pool500: bool = False
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("user_sequence")
+    @classmethod
+    def reject_oracle_fields(cls, value: dict[str, Any]) -> dict[str, Any]:
+        forbidden = _oracle_fields_in(value)
+        if forbidden:
+            raise ValueError(f"user_sequence contains evaluation-only fields: {sorted(forbidden)}")
+        return value
+
+
+class RecommendFromSequenceResponse(BaseModel):
+    request_id: str
+    display: dict[str, Any]
+    items: list[dict[str, Any]]
+    item_count: int
+    candidate_count: int
+    fallback_used: bool
 
 
 class SessionExportResponse(BaseModel):
@@ -92,3 +130,17 @@ class ErrorDetail(BaseModel):
 
 class ErrorResponse(BaseModel):
     error: ErrorDetail
+
+
+def _oracle_fields_in(value: Any) -> set[str]:
+    if isinstance(value, dict):
+        fields = {str(key) for key in value if str(key) in ORACLE_FIELD_NAMES}
+        for child in value.values():
+            fields.update(_oracle_fields_in(child))
+        return fields
+    if isinstance(value, list):
+        fields: set[str] = set()
+        for child in value:
+            fields.update(_oracle_fields_in(child))
+        return fields
+    return set()

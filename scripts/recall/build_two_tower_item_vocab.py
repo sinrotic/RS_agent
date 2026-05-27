@@ -17,7 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--canonical-items", help="Optional canonical_items metadata jsonl; cannot add item ids")
     parser.add_argument("--output-vocab", required=True, help="Output two_tower_item_vocab.jsonl path")
     parser.add_argument("--output-manifest", required=True, help="Output two_tower_item_vocab_manifest.json path")
-    parser.add_argument("--min-freq", type=int, default=1, help="Minimum train interaction frequency required to keep an item")
+    parser.add_argument("--min-freq", type=int, default=3, help="Minimum train interaction frequency required to keep an item")
     return parser.parse_args()
 
 

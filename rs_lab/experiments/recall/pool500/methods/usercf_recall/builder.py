@@ -20,6 +20,7 @@ if str(ROOT) not in sys.path:
 from rs_core.common.io import iter_jsonl, read_json, write_json
 from rs_core.recsys.candidate_merge import load_usercf_recall_sidecar
 from rs_lab.experiments.recall.build_full_train_usercf_sidecar import build_full_train_usercf_sidecar
+from rs_lab.experiments.recall.build_full_train_usercf_sidecar import _first_unique_items as _method_first_unique_items
 from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir
 from rs_lab.experiments.recall.run_phase1_itemcf_covisit_representative_merge_eval import _file_signature
 
@@ -65,6 +66,7 @@ UNDERCOVERAGE_REASONS = {
 def build_usercf_recall_method_source(
     *,
     clean_manifest_path: Path = DEFAULT_CLEAN_MANIFEST,
+    method_dataset_manifest_path: Path | None = None,
     eligible_user_quality_manifest: Path | None = None,
     output_root: Path | None = None,
     run_id: str | None = None,
@@ -83,6 +85,7 @@ def build_usercf_recall_method_source(
     min_free_memory_bytes: int = 0,
     overwrite: bool = False,
     resume: bool = False,
+    route_ready: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
     started = perf_counter()
@@ -120,36 +123,62 @@ def build_usercf_recall_method_source(
         max_item_user_freq=max_item_user_freq,
         max_rss_mb=max_rss_mb,
     )
-    _precheck_paths(clean_manifest_path, output_dir, eligible_user_quality_manifest, overwrite, resume)
+    method_dataset_manifest_path = _resolve_repo_path(method_dataset_manifest_path).resolve() if method_dataset_manifest_path else None
+    if method_dataset_manifest_path is None:
+        _precheck_paths(clean_manifest_path, output_dir, eligible_user_quality_manifest, overwrite, resume)
+    else:
+        _precheck_method_dataset_paths(method_dataset_manifest_path, output_dir, overwrite, resume)
     if output_dir.exists() and not any(output_dir.iterdir()) and not resume:
         output_dir.rmdir()
 
-    clean_manifest = read_json(clean_manifest_path)
-    train_sequences_path = _resolve_train_sequence_path(clean_manifest_path, clean_manifest)
-    _precheck_train_path(train_sequences_path)
-    target_diagnostics = _build_train_only_target_diagnostics(
-        train_sequences_path,
-        max_items_per_user,
-        max_item_user_freq,
-        target_user_limit=target_user_limit,
-        eligible_user_quality_manifest=eligible_user_quality_manifest,
-    )
-    internal_manifest_path, method_dataset_manifest = _materialize_eligible_manifest(
-        clean_manifest_path=clean_manifest_path,
-        train_sequences_path=train_sequences_path,
-        output_root=output_root,
-        run_id=run_id,
-        target_user_limit=target_user_limit,
-        eligible_user_quality_manifest=eligible_user_quality_manifest,
-        target_diagnostics=target_diagnostics,
-        source_config_path=source_config_path,
-        dataset_policy_path=dataset_policy_path,
-    )
+    if method_dataset_manifest_path is None:
+        clean_manifest = read_json(clean_manifest_path)
+        train_sequences_path = _resolve_train_sequence_path(clean_manifest_path, clean_manifest)
+        _precheck_train_path(train_sequences_path)
+        target_diagnostics = _build_train_only_target_diagnostics(
+            train_sequences_path,
+            max_items_per_user,
+            max_item_user_freq,
+            target_user_limit=target_user_limit,
+            eligible_user_quality_manifest=eligible_user_quality_manifest,
+        )
+        internal_manifest_path, method_dataset_manifest = _materialize_eligible_manifest(
+            clean_manifest_path=clean_manifest_path,
+            train_sequences_path=train_sequences_path,
+            output_root=output_root,
+            run_id=run_id,
+            target_user_limit=target_user_limit,
+            eligible_user_quality_manifest=eligible_user_quality_manifest,
+            target_diagnostics=target_diagnostics,
+            source_config_path=source_config_path,
+            dataset_policy_path=dataset_policy_path,
+        )
+    else:
+        input_method_dataset_manifest, train_sequences_path = _resolve_method_dataset_rows(method_dataset_manifest_path)
+        target_diagnostics = _build_method_dataset_target_diagnostics(
+            train_sequences_path,
+            max_items_per_user,
+            target_user_limit=target_user_limit,
+        )
+        internal_manifest_path, method_dataset_manifest = _materialize_method_dataset_input_manifest(
+            method_dataset_manifest_path=method_dataset_manifest_path,
+            method_dataset_rows_path=train_sequences_path,
+            input_method_dataset_manifest=input_method_dataset_manifest,
+            output_root=output_root,
+            run_id=run_id,
+            target_user_limit=target_user_limit,
+            target_diagnostics=target_diagnostics,
+            source_config_path=source_config_path,
+            dataset_policy_path=dataset_policy_path,
+        )
+    if route_ready:
+        _validate_route_ready_scope(method_dataset_manifest_path, method_dataset_manifest)
 
     core_manifest = build_full_train_usercf_sidecar(
         clean_manifest=clean_manifest_path,
         output_dir=output_dir,
-        eligible_user_quality_manifest=internal_manifest_path,
+        eligible_user_quality_manifest=internal_manifest_path if method_dataset_manifest_path is None else None,
+        method_dataset_manifest=method_dataset_manifest_path,
         include_medium_behavior=False,
         max_items_per_user=max_items_per_user,
         max_item_user_freq=max_item_user_freq,
@@ -199,14 +228,17 @@ def build_usercf_recall_method_source(
         max_item_user_freq=max_item_user_freq,
         max_rss_mb=max_rss_mb,
         runtime_seconds=round(perf_counter() - started, 6),
+        route_ready=route_ready,
     )
-    method_dataset_manifest["source_index_manifest_sha256"] = _canonical_sha256(final_manifest)
+    if route_ready:
+        _validate_route_ready_outputs(output_dir, final_manifest)
     _copy_internal_eligible_manifest(internal_manifest_path, output_dir)
-    write_json(output_dir / "method_dataset_manifest.json", method_dataset_manifest)
     write_json(output_dir / "coverage_audit.json", coverage_audit)
     write_json(output_dir / "undercoverage_audit.json", undercoverage_audit)
     write_json(output_dir / "source_index_manifest.json", final_manifest)
-    _write_readiness_contract(output_dir, final_manifest)
+    method_dataset_manifest["source_index_manifest_sha256"] = _file_signature(output_dir / "source_index_manifest.json")["sha256"]
+    write_json(output_dir / "method_dataset_manifest.json", method_dataset_manifest)
+    _write_readiness_contract(output_dir, final_manifest, route_ready=route_ready)
     load_usercf_recall_sidecar(output_dir / "source_index_manifest.json")
     return {
         **final_manifest,
@@ -219,6 +251,7 @@ def build_usercf_recall_method_source(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build pool500 train-only diagnostic UserCF method-source artifacts.")
     parser.add_argument("--clean-manifest", type=Path, default=DEFAULT_CLEAN_MANIFEST)
+    parser.add_argument("--method-dataset-manifest", type=Path, default=None)
     parser.add_argument("--eligible-user-quality-manifest", type=Path, default=None)
     parser.add_argument("--output-root", type=Path, default=None)
     parser.add_argument("--run-id", default=None)
@@ -231,6 +264,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--target-batch-size", type=int, default=None)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--route-ready", action="store_true")
     return parser.parse_args()
 
 
@@ -238,6 +272,7 @@ def main() -> None:
     args = parse_args()
     manifest = build_usercf_recall_method_source(
         clean_manifest_path=args.clean_manifest,
+        method_dataset_manifest_path=args.method_dataset_manifest,
         eligible_user_quality_manifest=args.eligible_user_quality_manifest,
         output_root=args.output_root,
         run_id=args.run_id,
@@ -250,6 +285,7 @@ def main() -> None:
         target_batch_size=args.target_batch_size,
         overwrite=args.overwrite,
         resume=args.resume,
+        route_ready=args.route_ready,
         enforce_venv=True,
     )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
@@ -296,22 +332,34 @@ def _precheck_paths(clean_manifest_path: Path, output_dir: Path, eligible_manife
     for path in (clean_manifest_path, output_dir, eligible_manifest):
         if path is None:
             continue
-        lowered = str(path).replace("\\", "/").lower()
-        if any(part in lowered for part in FORBIDDEN_PATH_PARTS):
-            raise ValueError(f"Forbidden holdout/10k/pool1000 path is not allowed: {path}")
-        tokens = {token for token in lowered.replace("-", "_").replace(".", "_").split("/") if token}
-        if tokens & FORBIDDEN_PATH_TOKENS:
-            raise ValueError(f"Forbidden holdout/valid/test/LOPO path is not allowed: {path}")
+        _precheck_input_path(path)
     if not clean_manifest_path.is_file():
         raise FileNotFoundError(clean_manifest_path)
     if eligible_manifest is not None and not _resolve_repo_path(eligible_manifest).is_file():
         raise FileNotFoundError(eligible_manifest)
 
 
+def _precheck_method_dataset_paths(method_dataset_manifest_path: Path, output_dir: Path, overwrite: bool, resume: bool) -> None:
+    if overwrite and resume:
+        raise ValueError("--overwrite and --resume cannot be used together")
+    _precheck_input_path(method_dataset_manifest_path)
+    _precheck_input_path(output_dir)
+    if not method_dataset_manifest_path.is_file():
+        raise FileNotFoundError(method_dataset_manifest_path)
+
+
+def _precheck_input_path(path: Path) -> None:
+    lowered = str(path).replace("\\", "/").lower()
+    if any(part in lowered for part in FORBIDDEN_PATH_PARTS):
+        raise ValueError(f"Forbidden holdout/10k/pool1000 path is not allowed: {path}")
+    tokens = {token for token in lowered.replace("-", "_").replace(".", "_").split("/") if token}
+    if tokens & FORBIDDEN_PATH_TOKENS:
+        raise ValueError(f"Forbidden holdout/valid/test/LOPO/oracle/eval path is not allowed: {path}")
+
+
 def _precheck_train_path(train_sequences_path: Path) -> None:
     lowered = str(train_sequences_path).replace("\\", "/").lower()
-    if any(part in lowered for part in FORBIDDEN_PATH_PARTS):
-        raise ValueError(f"Forbidden holdout/10k/pool1000 path is not allowed: {train_sequences_path}")
+    _precheck_input_path(train_sequences_path)
     if any(name in lowered for name in FORBIDDEN_INPUT_NAMES):
         raise ValueError(f"Forbidden non-train input is not allowed: {train_sequences_path}")
     if train_sequences_path.name != "user_sequences.train.jsonl":
@@ -336,6 +384,35 @@ def _resolve_train_sequence_path(clean_manifest_path: Path, manifest_payload: di
                 return root_candidate
             return (clean_manifest_path.parent / path).resolve()
     return (clean_manifest_path.parent / "user_sequences.train.jsonl").resolve()
+
+
+def _resolve_method_dataset_rows(manifest_path: Path) -> tuple[dict[str, Any], Path]:
+    payload = read_json(manifest_path)
+    if payload.get("status") != "PASS":
+        raise ValueError("method_dataset_manifest.status must be PASS")
+    if payload.get("schema_version") != "pool500_method_dataset_v1":
+        raise ValueError("method_dataset_manifest.schema_version must be pool500_method_dataset_v1")
+    if payload.get("train_only") is not True:
+        raise ValueError("method_dataset_manifest.train_only must be true")
+    for key, expected in FORBIDDEN_SWITCHES.items():
+        if key in payload and payload.get(key) is not expected:
+            raise ValueError(f"method_dataset_manifest.{key} must be false")
+    if payload.get("source_method") != "usercf_method_dataset":
+        raise ValueError("method_dataset_manifest.source_method must be usercf_method_dataset")
+    outputs = payload.get("outputs") if isinstance(payload.get("outputs"), dict) else {}
+    if outputs.get("dataset_schema") != "eligible_user_sequence_v1":
+        raise ValueError("method_dataset_manifest.outputs.dataset_schema must be eligible_user_sequence_v1")
+    rows_path_raw = outputs.get("dataset_rows_path")
+    if not rows_path_raw:
+        raise ValueError("method_dataset_manifest.outputs.dataset_rows_path is required")
+    rows_path = Path(str(rows_path_raw))
+    rows_path = rows_path.resolve() if rows_path.is_absolute() else (manifest_path.parent / rows_path).resolve()
+    _precheck_input_path(rows_path)
+    if rows_path.name != "method_dataset_rows.jsonl":
+        raise ValueError(f"method_dataset rows file must be method_dataset_rows.jsonl, got {rows_path.name}")
+    if not rows_path.is_file():
+        raise FileNotFoundError(rows_path)
+    return payload, rows_path
 
 
 def _build_train_only_target_diagnostics(
@@ -400,6 +477,56 @@ def _build_train_only_target_diagnostics(
         "overlap_potential": overlap_potential,
         "raw_user_count": raw_user_count,
         "raw_item_count": raw_item_count,
+    }
+
+
+def _build_method_dataset_target_diagnostics(
+    method_dataset_rows_path: Path,
+    max_items_per_user: int,
+    *,
+    target_user_limit: int,
+) -> dict[str, Any]:
+    users: dict[str, dict[str, Any]] = {}
+    indexed_after_hot: dict[str, list[str]] = {}
+    overlap_potential: dict[str, int] = {}
+    dropped_reason_counts: Counter[str] = Counter()
+    raw_user_count = 0
+    raw_item_count = 0
+    empty_history_count = 0
+    for row in iter_jsonl(method_dataset_rows_path):
+        user_id = str(row.get("user_id") or "").strip()
+        raw_items = row.get("eligible_item_sequence")
+        if not user_id:
+            dropped_reason_counts["missing_user_id"] += 1
+            continue
+        if not isinstance(raw_items, list):
+            dropped_reason_counts["missing_or_invalid_eligible_item_sequence"] += 1
+            continue
+        raw_user_count += 1
+        items, dropped = _method_first_unique_items(raw_items, max_items_per_user)
+        dropped_reason_counts.update(dropped)
+        raw_item_count += len(items)
+        if not items:
+            empty_history_count += 1
+            dropped_reason_counts["empty_eligible_item_sequence"] += 1
+        users[user_id] = {
+            "positive_count": int(row.get("positive_item_count", len(raw_items)) or len(raw_items)),
+            "unique_item_count": len(items),
+            "indexed_items": items,
+        }
+        indexed_after_hot[user_id] = items
+        overlap_potential[user_id] = len(items)
+        if target_user_limit and raw_user_count >= target_user_limit:
+            break
+    return {
+        "users": users,
+        "hot_items": [],
+        "indexed_items_after_hot_drop": indexed_after_hot,
+        "overlap_potential": overlap_potential,
+        "raw_user_count": raw_user_count,
+        "raw_item_count": raw_item_count,
+        "empty_history_count": empty_history_count,
+        "dropped_reason_counts": dict(sorted(dropped_reason_counts.items())),
     }
 
 
@@ -498,6 +625,80 @@ def _materialize_eligible_manifest(
             "uses_pool1000": False,
         },
         "selection_policy": "external_manifest_capped" if source_manifest_path else "train_only_overlap_potential",
+    }
+    return internal_manifest_path, method_dataset_manifest
+
+
+def _materialize_method_dataset_input_manifest(
+    *,
+    method_dataset_manifest_path: Path,
+    method_dataset_rows_path: Path,
+    input_method_dataset_manifest: dict[str, Any],
+    output_root: Path,
+    run_id: str,
+    target_user_limit: int,
+    target_diagnostics: dict[str, Any],
+    source_config_path: Path,
+    dataset_policy_path: Path,
+) -> tuple[Path, dict[str, Any]]:
+    selected_user_ids = list(target_diagnostics["users"])
+    selected_profiles = [_eligible_profile(user_id, target_diagnostics["users"][user_id], target_diagnostics["overlap_potential"].get(user_id, 0)) for user_id in selected_user_ids]
+    internal_dir = output_root / "_internal_usercf_eligible_manifests"
+    internal_dir.mkdir(parents=True, exist_ok=True)
+    internal_manifest_path = internal_dir / f"{run_id}.eligible_user_quality_manifest.json"
+    eligible_manifest = {
+        "schema_version": f"{SCHEMA_VERSION}.eligible_user_quality_manifest",
+        "scope": "method_dataset_target_users",
+        "source": SOURCE,
+        "canonical_source": SOURCE,
+        "source_status": SOURCE_STATUS,
+        "train_only": True,
+        **FORBIDDEN_SWITCHES,
+        "target_user_limit": target_user_limit,
+        "profile_count": len(selected_profiles),
+        "profiles": selected_profiles,
+    }
+    write_json(internal_manifest_path, eligible_manifest)
+    method_dataset_manifest = {
+        "schema_version": f"{SCHEMA_VERSION}.method_dataset_manifest",
+        "status": "PASS",
+        "source": SOURCE,
+        "canonical_source": SOURCE,
+        "source_status": SOURCE_STATUS,
+        "diagnostic_only": True,
+        "index_scope": INDEX_SCOPE,
+        "train_only": True,
+        **FORBIDDEN_SWITCHES,
+        "run_id": run_id,
+        "input_mode": "method_dataset",
+        "method_dataset_manifest_input": str(method_dataset_manifest_path),
+        "method_dataset_rows_path": str(method_dataset_rows_path),
+        "source_config_path": str(_resolve_repo_path(source_config_path)),
+        "dataset_policy_path": str(_resolve_repo_path(dataset_policy_path)),
+        "eligible_user_quality_manifest_input": None,
+        "eligible_user_quality_manifest_effective": str(internal_manifest_path),
+        "method_dataset_input_signature": _file_signature(method_dataset_manifest_path),
+        "method_dataset_rows_signature": _file_signature(method_dataset_rows_path),
+        "eligible_input_signature": None,
+        "eligible_profile_count_raw": int(input_method_dataset_manifest.get("user_count", input_method_dataset_manifest.get("row_count", target_diagnostics["raw_user_count"])) or 0),
+        "target_user_limit": target_user_limit,
+        "selected_target_user_count": len(selected_user_ids),
+        "target_user_count": len(selected_user_ids),
+        "target_user_ids": selected_user_ids,
+        "selected_user_ids_sha256": _sha256_strings(selected_user_ids),
+        "behavior_count_distribution": _behavior_distribution(selected_user_ids, target_diagnostics),
+        "empty_history_count": target_diagnostics.get("empty_history_count", 0),
+        "dropped_reason_counts": target_diagnostics.get("dropped_reason_counts", {}),
+        "no_holdout_evidence": {
+            "read_files": [str(method_dataset_manifest_path), str(method_dataset_rows_path)],
+            "uses_valid": False,
+            "uses_test": False,
+            "uses_holdout": False,
+            "uses_lopo": False,
+            "uses_clean_10000": False,
+            "uses_pool1000": False,
+        },
+        "selection_policy": "method_dataset_target_users",
     }
     return internal_manifest_path, method_dataset_manifest
 
@@ -716,15 +917,17 @@ def _final_source_index_manifest(
     max_item_user_freq: int,
     max_rss_mb: int,
     runtime_seconds: float,
+    route_ready: bool = False,
 ) -> dict[str, Any]:
     outputs = core_manifest.get("outputs", {}) if isinstance(core_manifest.get("outputs"), dict) else {}
+    source_status = "READY" if route_ready else SOURCE_STATUS
     final_manifest = {
         "schema_version": f"{SCHEMA_VERSION}.source_index_manifest",
         "status": "PASS",
         "source": SOURCE,
         "canonical_source": SOURCE,
-        "source_status": SOURCE_STATUS,
-        "diagnostic_only": True,
+        "source_status": source_status,
+        "diagnostic_only": not route_ready,
         "index_scope": INDEX_SCOPE,
         "train_only": True,
         "run_id": run_id,
@@ -773,18 +976,20 @@ def _final_source_index_manifest(
     return final_manifest
 
 
-def _write_readiness_contract(output_dir: Path, final_manifest: dict[str, Any]) -> None:
+def _write_readiness_contract(output_dir: Path, final_manifest: dict[str, Any], *, route_ready: bool = False) -> None:
     manifest_path = output_dir / "source_index_manifest.json"
     signature = _file_signature(manifest_path)
+    source_status = "READY" if route_ready else SOURCE_STATUS
     payload = {
         "schema_version": f"{SCHEMA_VERSION}.readiness_contract",
         "source": SOURCE,
         "canonical_source": SOURCE,
-        "status": SOURCE_STATUS,
-        "source_status": SOURCE_STATUS,
-        "diagnostic_only": True,
+        "status": source_status,
+        "source_status": source_status,
+        "diagnostic_only": not route_ready,
         "index_status": "INDEX_READY",
-        "diagnostic_output_status": "DIAGNOSTIC_OUTPUT_READY",
+        "diagnostic_output_status": "DIAGNOSTIC_OUTPUT_READY" if not route_ready else None,
+        "full_output_status": "FULL_OUTPUT_READY" if route_ready else None,
         "index_scope": INDEX_SCOPE,
         "train_only": True,
         **FORBIDDEN_SWITCHES,
@@ -800,6 +1005,33 @@ def _write_readiness_contract(output_dir: Path, final_manifest: dict[str, Any]) 
     }
     payload["manifest_sha256"] = _canonical_sha256(payload)
     write_json(output_dir / "readiness_contract.json", payload)
+
+
+def _validate_route_ready_scope(method_dataset_manifest_path: Path | None, method_dataset_manifest: dict[str, Any]) -> None:
+    if method_dataset_manifest_path is None:
+        raise ValueError("route-ready UserCF requires method_dataset input")
+    if method_dataset_manifest.get("input_mode") != "method_dataset":
+        raise ValueError("route-ready UserCF requires method_dataset input_mode")
+    if method_dataset_manifest.get("train_only") is not True:
+        raise ValueError("route-ready UserCF requires train_only method dataset")
+    target_count = int(method_dataset_manifest.get("target_user_count") or 0)
+    selected_count = int(method_dataset_manifest.get("selected_target_user_count") or 0)
+    if target_count <= 0 or selected_count != target_count:
+        raise ValueError("route-ready UserCF requires full formal target scope")
+
+
+def _validate_route_ready_outputs(output_dir: Path, final_manifest: dict[str, Any]) -> None:
+    no_holdout_path = output_dir / "no_holdout_audit.json"
+    if not no_holdout_path.is_file():
+        raise FileNotFoundError(no_holdout_path)
+    no_holdout = read_json(no_holdout_path)
+    if no_holdout.get("status") != "PASS":
+        raise ValueError("route-ready UserCF requires PASS no_holdout_audit")
+    shard_paths = final_manifest.get("outputs", {}).get("candidate_shards", [])
+    if not shard_paths or any(not Path(path).is_file() for path in shard_paths):
+        raise ValueError("route-ready UserCF requires loadable candidate shards")
+    if int(final_manifest.get("candidate_row_count") or 0) <= 0:
+        raise ValueError("route-ready UserCF requires non-empty candidates")
 
 
 def _copy_internal_eligible_manifest(internal_manifest_path: Path, output_dir: Path) -> None:

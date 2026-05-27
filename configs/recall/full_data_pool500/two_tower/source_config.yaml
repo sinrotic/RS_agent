@@ -6,7 +6,7 @@ evaluation_mode: train_only
 output_root: outputs/recall/pool500_method_sources/two_tower
 run_id: null
 method_config:
-  artifact_manifest_path: outputs/recall/pool500_full_sources/two_tower/training/runs/full_clean_heavy28_20260519_0001/artifact_manifest.json
+  source_index_manifest_path: outputs/recall/pool500_full_sources/two_tower/source_index_manifest.json
   clean_manifest_path: data/processed/amazon_2023_recall_clean_full/manifest.json
   eligible_user_manifest_path: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
   target_user_limit: 500

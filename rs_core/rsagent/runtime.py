@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 from rs_core.rsagent.reward import build_reward_evidence, compute_turn_reward
-from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.rsagent.schema import INTENT_RECOMMEND_REQUEST, AgentSession, AgentTurn, FeedbackConstraints
 
 
 RUNTIME_TRACE_STEP_ORDER = [
@@ -192,7 +192,7 @@ class AgentRuntime:
         for turn in session.turns:
             shown_item_ids.extend(self._item_ids(turn.recommendation.final_items))
         return {
-            "current_goal": session.conversation_state.last_intent or "recommend_request",
+            "current_goal": session.conversation_state.last_intent or INTENT_RECOMMEND_REQUEST,
             "latest_intent": session.conversation_state.last_intent,
             "pending_clarification": session.conversation_state.pending_clarification,
             "clarification_history": list(session.conversation_state.clarification_history[-5:]),

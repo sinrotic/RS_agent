@@ -24,6 +24,7 @@ RECALL_LAYER_SOURCE_REGISTRY = {
     "itemcf_strong": {"layer": "source_artifact", "upstream_layer": "method_dataset", "legacy_custom_manifest_allowed": True},
     "usercf_recall": {"layer": "source_artifact", "upstream_layer": "method_dataset"},
     "swing_recall": {"layer": "source_artifact", "upstream_layer": "method_dataset"},
+    "semantic": {"layer": "source_artifact", "upstream_layer": "method_dataset"},
     "semantic_title_category_expansion": {"layer": "source_artifact", "upstream_layer": "method_dataset"},
     "co_visit_fallback_repair": {"layer": "source_artifact", "upstream_layer": "method_dataset"},
     "two_tower": {"layer": "source_artifact", "upstream_layer": "method_dataset", "strict_validator": "two_tower_source_index_v1"},

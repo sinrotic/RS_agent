@@ -63,6 +63,56 @@ def load_itemcf_by_source(
     return _load_item_pair_recall(path, source, allowed_src_items)
 
 
+def load_itemcf_source_manifest(
+    manifest_path: str | Path,
+    source: str,
+    allowed_src_items: set[str] | None = None,
+) -> dict[str, list[RecallCandidate]]:
+    manifest_path = Path(manifest_path)
+    manifest = read_json(manifest_path)
+    if manifest.get("source") != source:
+        raise ValueError(f"invalid {source} manifest source: {manifest.get('source')!r}")
+    if manifest.get("train_only") is not True:
+        raise ValueError(f"{source} manifest must be train_only")
+    if manifest.get("source_status") not in (None, "DIAGNOSTIC_ONLY"):
+        raise ValueError(f"{source} manifest must remain DIAGNOSTIC_ONLY")
+    if manifest.get("diagnostic_only") is False:
+        raise ValueError(f"{source} manifest must remain DIAGNOSTIC_ONLY")
+    if manifest.get("candidate_generation_allowed") is True:
+        raise ValueError(f"{source} manifest must not authorize candidate generation")
+    if manifest.get("ranking_input_replacement_allowed") is True:
+        raise ValueError(f"{source} manifest must not authorize ranking input replacement")
+    if manifest.get("promotion_allowed") is True:
+        raise ValueError(f"{source} manifest must not authorize promotion")
+    if manifest.get("pool1000_allowed") is True:
+        raise ValueError(f"{source} manifest must not authorize pool1000")
+
+    outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
+    shard_values = _itemcf_manifest_shard_values(manifest, outputs)
+    if shard_values:
+        shard_count = int(manifest.get("shard_count") or len(shard_values))
+        shard_key = manifest.get("shard_key")
+        if shard_key != "src_item_sha256_mod":
+            raise ValueError(f"unsupported {source} shard_key: {shard_key!r}")
+        selected_shards = shard_values
+        if allowed_src_items:
+            selected_ids = {stable_itemcf_shard_id(item, shard_count) for item in allowed_src_items}
+            selected_shards = [value for shard_id, value in enumerate(shard_values) if shard_id in selected_ids]
+        by_source: dict[str, list[RecallCandidate]] = defaultdict(list)
+        for shard_value in selected_shards:
+            shard_path = _resolve_manifest_path(manifest_path, shard_value)
+            for src_item, rows in _load_item_pair_recall(shard_path, source, allowed_src_items).items():
+                by_source[src_item].extend(rows)
+        for rows in by_source.values():
+            rows.sort(key=lambda item: (-item.score, item.item_id))
+        return by_source
+
+    edges_path = outputs.get("edges_path") or manifest.get("edges_path")
+    if not edges_path:
+        return {}
+    return load_itemcf_by_source(_resolve_manifest_path(manifest_path, edges_path), source, allowed_src_items)
+
+
 def load_item_graph_recall(
     path: str | Path,
     allowed_src_items: set[str] | None = None,
@@ -79,16 +129,24 @@ def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[Reca
         raise ValueError(f"invalid usercf_recall index_scope: {manifest.get('index_scope')!r}")
     if manifest.get("train_only") is not True:
         raise ValueError("usercf_recall manifest must be train_only")
-    if manifest.get("source_status") not in (None, "DIAGNOSTIC_ONLY"):
-        raise ValueError("usercf_recall manifest must remain DIAGNOSTIC_ONLY")
-    if manifest.get("diagnostic_only") is False:
-        raise ValueError("usercf_recall manifest must remain DIAGNOSTIC_ONLY")
+    source_status = manifest.get("source_status")
+    diagnostic_only = manifest.get("diagnostic_only")
+    if source_status not in (None, "DIAGNOSTIC_ONLY", "READY"):
+        raise ValueError(f"invalid usercf_recall source_status: {source_status!r}")
+    if diagnostic_only is False and source_status != "READY":
+        raise ValueError("route-ready usercf_recall manifest must declare source_status READY")
+    if diagnostic_only is not False and source_status == "READY":
+        raise ValueError("READY usercf_recall manifest must set diagnostic_only false")
     if manifest.get("candidate_generation_allowed") is not False:
         raise ValueError("usercf_recall manifest must not authorize candidate generation")
     if manifest.get("ranking_input_replacement_allowed") is not False:
         raise ValueError("usercf_recall manifest must not authorize ranking input replacement")
     if manifest.get("pool1000_allowed") is not False:
         raise ValueError("usercf_recall manifest must not authorize pool1000")
+    if manifest.get("promotion_allowed") is not False:
+        raise ValueError("usercf_recall manifest must not authorize promotion")
+    if manifest.get("final_pool500_ready_claimed") is not False:
+        raise ValueError("usercf_recall manifest must not claim final pool500 ready")
     outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
     shard_paths = outputs.get("candidate_shards") if isinstance(outputs.get("candidate_shards"), list) else []
     candidate_path = outputs.get("candidates")
@@ -267,6 +325,27 @@ def _resolve_manifest_path(manifest_path: Path, value: Any) -> Path:
     if path.is_absolute() or path.exists():
         return path
     return manifest_path.parent / path
+
+
+def _itemcf_manifest_shard_values(manifest: dict[str, Any], outputs: dict[str, Any]) -> list[Any]:
+    shard_values = outputs.get("edges_shards") if isinstance(outputs.get("edges_shards"), list) else manifest.get("edges_shards")
+    if isinstance(shard_values, list) and shard_values:
+        return shard_values
+    shard_stats = outputs.get("edge_shard_stats") if isinstance(outputs.get("edge_shard_stats"), list) else manifest.get("edge_shard_stats")
+    if not isinstance(shard_stats, list):
+        return []
+    values = []
+    for shard in shard_stats:
+        if isinstance(shard, dict) and shard.get("path"):
+            values.append(shard["path"])
+    return values
+
+
+def stable_itemcf_shard_id(src_item: str, shard_count: int) -> int:
+    if shard_count <= 0:
+        raise ValueError("shard_count must be positive")
+    digest = hashlib.sha256(src_item.encode("utf-8")).hexdigest()[:16]
+    return int(digest, 16) % shard_count
 
 
 def _load_item_pair_recall(
@@ -557,11 +636,14 @@ def _two_tower_vector_candidates_for_user(
     limit = int(config.get("two_tower_per_user", 20))
     seed_window = int(config.get("two_tower_seed_window", 10))
     recency_decay = float(config.get("two_tower_recency_decay", 0.85))
-    user_id = str(user_sequence.get("user_id", ""))
-    query_vector = two_tower_index.get_user_vector(user_id)
+    seed_items = _recent_unique_seeds(user_sequence.get("recent_positive_item_sequence", []), seed_window)
+    if not seed_items:
+        return []
+    query_vector = average_vectors([two_tower_index.get_item_vector(item_id) for item_id in seed_items], recency_decay)
+    if query_vector:
+        query_vector = _apply_user_tower_projection(query_vector, two_tower_index)
     if not query_vector:
-        seed_items = _recent_unique_seeds(user_sequence.get("recent_positive_item_sequence", []), seed_window)
-        query_vector = average_vectors([two_tower_index.get_item_vector(item_id) for item_id in seed_items], recency_decay)
+        return []
     rows = []
     for result in two_tower_index.search(query_vector, limit=limit, excluded_items=seen_items):
         metadata = dict(result.metadata)
@@ -578,6 +660,34 @@ def _two_tower_vector_candidates_for_user(
             )
         )
     return rows
+
+
+def _apply_user_tower_projection(query_vector: list[float], index: VectorIndex) -> list[float]:
+    params = index.model_metadata.get("model_parameters", {})
+    if not isinstance(params, dict) or not params:
+        return query_vector
+    w1 = params.get("user_tower.0.weight")
+    b1 = params.get("user_tower.0.bias")
+    w2 = params.get("user_tower.2.weight")
+    b2 = params.get("user_tower.2.bias")
+    if not w1 or not w2:
+        return query_vector
+    try:
+        import numpy as np
+
+        x0 = np.asarray(query_vector, dtype=np.float32)
+        w1_array = np.asarray(w1, dtype=np.float32)
+        b1_array = np.asarray(b1 if b1 is not None else np.zeros(w1_array.shape[0]), dtype=np.float32)
+        w2_array = np.asarray(w2, dtype=np.float32)
+        b2_array = np.asarray(b2 if b2 is not None else np.zeros(w2_array.shape[0]), dtype=np.float32)
+        x1 = np.maximum(w1_array @ x0 + b1_array, 0.0)
+        out = w2_array @ x1 + b2_array + x0
+        norm = float(np.linalg.norm(out))
+        if norm <= 1e-9:
+            return []
+        return (out / norm).astype(float).tolist()
+    except (ImportError, TypeError, ValueError):
+        return query_vector
 
 
 def merge_for_user(

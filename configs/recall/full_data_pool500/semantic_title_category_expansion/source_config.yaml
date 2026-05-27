@@ -2,22 +2,67 @@ schema_version: pool500_method_source_config_v1
 source: semantic_title_category_expansion
 canonical_source: semantic_title_category_expansion
 source_status: TARGET_SLICE_DIAGNOSTIC
-output_root: outputs/recall/pool500_method_sources
-run_id: null
-resource_guard:
-  batch_size: 500
-  checkpoint_enabled: true
-  heavy_job: false
-  seed_window: 20
-  per_user: 80
-  per_seed: 40
-  per_token_item_limit: 2000
-  max_candidate_items: 80000
-input_contract:
-  clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
-  lightweight_views_manifest: data/processed/amazon_2023_recall_views_full_lightweight/manifest.json
-  eligible_user_manifest: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
-  train_only: true
+tier_aliases:
+  dam: diagnostic
+  dam(diagnostic): diagnostic
+  最终数据集: local_formal
+  最终数据集(local_formal): local_formal
+defaults:
+  output_root: outputs/recall/pool500_method_sources
+  run_id: null
+  input_contract:
+    clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
+    lightweight_views_manifest: data/processed/amazon_2023_recall_views_full_lightweight/manifest.json
+    eligible_user_manifest: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
+    train_only: true
+  resource_guard:
+    batch_size: 500
+    checkpoint_enabled: true
+    heavy_job: false
+  method_config:
+    limit_users: 500
+    seed_window: 20
+    per_user: 80
+    per_seed: 40
+    per_token_item_limit: 2000
+    max_candidate_items: 80000
+    selection_mode: title_category_scorer
+tiers:
+  smoke:
+    method_config:
+      limit_users: 20
+      seed_window: 10
+      per_user: 40
+      per_seed: 20
+      per_token_item_limit: 500
+      max_candidate_items: 10000
+    resource_guard:
+      batch_size: 20
+      heavy_job: false
+  diagnostic:
+    alias: dam(diagnostic)
+    method_config:
+      limit_users: 500
+      seed_window: 20
+      per_user: 80
+      per_seed: 40
+      per_token_item_limit: 2000
+      max_candidate_items: 80000
+    resource_guard:
+      batch_size: 500
+      heavy_job: false
+  local_formal:
+    alias: 最终数据集(local_formal)
+    method_config:
+      limit_users: 500
+      seed_window: 30
+      per_user: 120
+      per_seed: 60
+      per_token_item_limit: 5000
+      max_candidate_items: 120000
+    resource_guard:
+      batch_size: 500
+      heavy_job: false
 manifest_contract:
   method_dataset_manifest: method_dataset_manifest.json
   source_index_manifest: source_index_manifest.json
@@ -32,3 +77,4 @@ governance:
   pool1000_allowed: false
   promotion_allowed: false
   full_pool500_ready_declared: false
+  final_pool500_ready_claimed: false

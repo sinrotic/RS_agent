@@ -20,6 +20,8 @@ OUTPUT_WHITELIST = {
     "method_dataset_manifest.json",
     "leakage_audit.json",
 }
+FORMAL_DATASET_DIR = Path("D:/sinrotic_code/python_project/summer/RS_agent/outputs/recall/pool500_method_datasets/two_tower/train_only_v1")
+DIAGNOSTIC_LOOP_DIR = Path("D:/sinrotic_code/python_project/summer/RS_agent/outputs/recall/pool500_two_tower_diagnostic_loop")
 FORBIDDEN_FIELDS = {
     "source_index_manifest_path",
     "artifact_manifest_path",
@@ -28,6 +30,7 @@ FORBIDDEN_FIELDS = {
     "candidates",
     "candidate_path",
 }
+FORBIDDEN_PATH_TOKENS = {"oracle", "label", "valid", "validation", "test", "holdout", "eval"}
 
 
 def test_two_tower_method_dataset_writes_schema_outputs_and_samples(tmp_path: Path) -> None:
@@ -469,6 +472,96 @@ def test_two_tower_method_dataset_has_no_forbidden_imports_or_fields() -> None:
     assert "load_two_tower_index" not in source_text
 
 
+def test_formal_train_only_v1_artifacts_record_guarded_dataset_intent() -> None:
+    manifest_path = FORMAL_DATASET_DIR / "method_dataset_manifest.json"
+    if not manifest_path.is_file():
+        pytest.skip("formal train_only_v1 method dataset artifact is not present")
+
+    manifest = _read_json(manifest_path)
+    assert manifest["schema_version"] == "pool500_two_tower_method_dataset_v1"
+    assert manifest["status"] == "PASS"
+    assert manifest["method"] == "two_tower"
+    assert manifest["dataset_role"] == "train_only_two_tower_method_dataset"
+    assert manifest["train_only"] is True
+    assert manifest["resource_scale_policy"]["scale_tier"] == "local_formal"
+    assert manifest["resource_scale_policy"]["selection_strategy"]["sequence_contract"] == "future_history_items_to_target_item"
+    assert set(manifest["outputs"]) == {"two_tower_train_samples", "negative_item_universe", "training_item_universe", "method_dataset_manifest", "leakage_audit"}
+    assert {path.name for path in FORMAL_DATASET_DIR.iterdir()} == OUTPUT_WHITELIST
+    assert manifest["candidate_generation_allowed"] is False
+    assert manifest["ranking_input_replacement_allowed"] is False
+    assert manifest["pool1000_allowed"] is False
+    assert manifest["promotion_allowed"] is False
+    assert manifest["final_pool500_ready_claimed"] is False
+    boundary = manifest["data_usage_boundary"]
+    assert boundary["diagnostic_only"] is True
+    assert boundary["candidate_generation_allowed"] is False
+    assert boundary["ranking_input_replacement_allowed"] is False
+    assert boundary["promotion_allowed"] is False
+    assert boundary["final_pool500_ready_claimed"] is False
+    assert not _contains_key(manifest, FORBIDDEN_FIELDS)
+    assert "READY" not in json.dumps(manifest, ensure_ascii=False)
+    _assert_no_forbidden_artifact_paths(manifest)
+
+
+def test_formal_train_only_v1_artifacts_audit_two_tower_sample_contracts() -> None:
+    manifest_path = FORMAL_DATASET_DIR / "method_dataset_manifest.json"
+    if not manifest_path.is_file():
+        pytest.skip("formal train_only_v1 method dataset artifact is not present")
+
+    manifest = _read_json(manifest_path)
+    stats = manifest["stats"]
+    assert stats["train_sample_count"] == 751574
+    assert stats["negative_universe_item_count"] == 866802
+    assert stats["training_item_universe_item_count"] == 889431
+    assert stats["negative_item_count_min"] == stats["negative_item_count_max"] == stats["negative_ratio_requested"] == 5
+    assert stats["negative_item_count_under_requested_count"] == 0
+    assert stats["used_negative_distinct_item_count"] > 800000
+    assert stats["used_negative_item_coverage_ratio"] > 0.2
+    assert stats["negative_item_usage_top10_share"] < 0.001
+    assert stats["sample_target_items_missing_training_universe_count"] == 0
+    assert stats["training_item_universe_positive_target_metadata_incomplete_count"] == 0
+    assert stats["training_item_universe_metadata_item_count"] == stats["training_item_universe_item_count"]
+    assert stats["training_item_universe_target_items_missing_p1_quality"] == 0
+    assert stats["training_item_universe_target_items_missing_frequency"] == 0
+
+    sample_rows = _read_first_jsonl(Path(manifest["outputs"]["two_tower_train_samples"]), limit=1000)
+    assert sample_rows
+    for row in sample_rows:
+        assert row["history_items"]
+        assert row["target_item"] == row["positive_item_id"]
+        assert row["target_item_source"] == "train_only_user_sequence"
+        assert row["target_item"] not in row["history_items"]
+        assert row["target_item"] not in row["negative_item_ids"]
+        assert len(row["negative_item_ids"]) == 5
+        assert set(row["negative_item_ids"]).isdisjoint(row["history_items"])
+
+
+def test_diagnostic_loop_and_formal_dataset_keep_separate_intents_and_vocab_bounds() -> None:
+    formal_manifest_path = FORMAL_DATASET_DIR / "method_dataset_manifest.json"
+    diagnostic_manifest_path = DIAGNOSTIC_LOOP_DIR / "diagnostic_manifest.json"
+    if not formal_manifest_path.is_file() or not diagnostic_manifest_path.is_file():
+        pytest.skip("formal dataset or diagnostic loop artifact is not present")
+
+    formal_manifest = _read_json(formal_manifest_path)
+    diagnostic_manifest = _read_json(diagnostic_manifest_path)
+    assert formal_manifest["dataset_role"] == "train_only_two_tower_method_dataset"
+    assert formal_manifest["resource_scale_policy"]["scale_tier"] == "local_formal"
+    assert diagnostic_manifest["schema_version"] == "pool500_two_tower_diagnostic_loop_v1"
+    assert diagnostic_manifest["diagnostic_only"] is True
+    assert diagnostic_manifest["split_scope"] == "train_only"
+    assert diagnostic_manifest["method_dataset_manifest_path"] == str(formal_manifest_path.resolve())
+    assert diagnostic_manifest["training"]["limit_users"] == 200
+    assert diagnostic_manifest["diagnostic_topk_row_count"] == 10000
+    assert diagnostic_manifest["source_index_row_count"] <= diagnostic_manifest["training"]["limit_users"] * 6
+    assert diagnostic_manifest["retrieval_metrics"]["all_target_recall_at_20"] == 0.294359
+    assert diagnostic_manifest["retrieval_metrics"]["all_target_recall_at_50"] == 0.434872
+    assert diagnostic_manifest["candidate_generation_allowed"] is False
+    assert diagnostic_manifest["ranking_input_replacement_allowed"] is False
+    assert diagnostic_manifest["promotion_allowed"] is False
+    assert diagnostic_manifest["final_pool500_ready_claimed"] is False
+    _assert_no_forbidden_artifact_paths(formal_manifest)
+
+
 def test_two_tower_method_dataset_cli(tmp_path: Path) -> None:
     paths = _write_fixture(tmp_path)
     output_dir = tmp_path / "cli_output"
@@ -597,8 +690,23 @@ def _write_fixture(tmp_path: Path) -> dict[str, Path]:
     }
 
 
+def _read_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+
+
+def _read_first_jsonl(path: Path, *, limit: int) -> list[dict[str, Any]]:
+    rows = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            if line.strip():
+                rows.append(json.loads(line))
+            if len(rows) >= limit:
+                break
+    return rows
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, Any]]) -> None:
@@ -611,3 +719,24 @@ def _contains_key(value: Any, keys: set[str]) -> bool:
     if isinstance(value, list):
         return any(_contains_key(nested, keys) for nested in value)
     return False
+
+
+def _assert_no_forbidden_artifact_paths(value: Any) -> None:
+    for text in _walk_strings(value):
+        normalized = text.replace("\\", "/").lower()
+        if "/" not in normalized and not normalized.endswith((".json", ".jsonl")):
+            continue
+        parts = set(Path(normalized).parts)
+        assert parts.isdisjoint(FORBIDDEN_PATH_TOKENS), text
+
+
+def _walk_strings(value: Any):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            yield from _walk_strings(str(key))
+            yield from _walk_strings(item)
+    elif isinstance(value, list):
+        for item in value:
+            yield from _walk_strings(item)

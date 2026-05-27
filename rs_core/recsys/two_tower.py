@@ -5,20 +5,24 @@ import math
 import random
 import re
 import time
+from bisect import bisect_right
 from collections import Counter
+from contextlib import nullcontext
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from rs_core.common.io import read_json, write_json, write_jsonl
 
 DEFAULT_TEXT_FIELDS = ["title_clean", "main_category", "category", "description_text", "features_text", "item_text", "categories_flat"]
 DEFAULT_SEQUENCE_KEYS = ["recent_positive_item_sequence", "recent_strong_positive_item_sequence"]
+ProgressCallback = Callable[[str, dict[str, Any]], None]
 
 
 def train_two_tower_model(
     sequences: list[dict[str, Any]],
     item_records: list[dict[str, Any]],
     config: dict[str, Any] | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     train_config = _normalized_config(config or {})
     item_by_id = _item_records_by_id(item_records)
@@ -26,13 +30,13 @@ def train_two_tower_model(
     if not item_ids:
         raise ValueError("two-tower training requires at least one item record")
 
-    rows = _training_rows(sequences, item_ids, train_config)
+    rows = _training_rows(sequences, item_ids, train_config, progress_callback)
     if not rows:
         raise ValueError("two-tower training requires at least one user with positive item history")
 
     torch_module = _import_torch()
     if torch_module is not None:
-        trained = _train_with_torch(torch_module, sequences, rows, item_by_id, item_ids, train_config)
+        trained = _train_with_torch(torch_module, sequences, rows, item_by_id, item_ids, train_config, progress_callback)
     else:
         trained = _train_python_fallback(sequences, rows, item_by_id, item_ids, train_config)
 
@@ -121,7 +125,11 @@ def _normalized_config(config: dict[str, Any]) -> dict[str, Any]:
         "epochs": int(config.get("epochs", 3)),
         "learning_rate": float(config.get("learning_rate", 0.01)),
         "negative_samples": int(config.get("negative_samples", 5)),
+        "negative_sampling_power": float(config.get("negative_sampling_power", 0.75)),
         "batch_size": int(config.get("batch_size", 512)),
+        "gradient_accumulation_steps": int(config.get("gradient_accumulation_steps", 1)),
+        "mixed_precision": _bool_config(config.get("mixed_precision", False)),
+        "max_samples_per_user": int(config.get("max_samples_per_user", 5)),
         "seed": int(config.get("seed", 20260509)),
         "sequence_keys": [str(item) for item in config.get("sequence_keys", DEFAULT_SEQUENCE_KEYS)],
         "text_fields": [str(item) for item in config.get("text_fields", DEFAULT_TEXT_FIELDS)],
@@ -129,6 +137,12 @@ def _normalized_config(config: dict[str, Any]) -> dict[str, Any]:
         "recency_decay": float(config.get("recency_decay", 0.9)),
         "min_user_positives": int(config.get("min_user_positives", 1)),
     }
+
+
+def _bool_config(value: Any) -> bool:
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
 
 
 def _item_records_by_id(item_records: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -140,14 +154,18 @@ def _item_records_by_id(item_records: Iterable[dict[str, Any]]) -> dict[str, dic
     return rows
 
 
-def _training_rows(sequences: list[dict[str, Any]], item_ids: list[str], config: dict[str, Any]) -> list[dict[str, Any]]:
+def _training_rows(sequences: list[dict[str, Any]], item_ids: list[str], config: dict[str, Any], progress_callback: ProgressCallback | None = None) -> list[dict[str, Any]]:
     item_set = set(item_ids)
     rows = []
-    for sequence in sequences:
+    for scanned, sequence in enumerate(sequences, start=1):
         user_id = str(sequence.get("user_id", ""))
         positives = [item for item in _sequence_items(sequence, config) if item in item_set]
         if user_id and len(positives) >= int(config["min_user_positives"]):
             rows.append({"user_id": user_id, "positive_items": positives})
+        if progress_callback and scanned % 10000 == 0:
+            progress_callback("training_rows", {"scanned_sequences": scanned, "kept_rows": len(rows), "item_count": len(item_ids)})
+    if progress_callback:
+        progress_callback("training_rows_complete", {"scanned_sequences": len(sequences), "kept_rows": len(rows), "item_count": len(item_ids)})
     return rows
 
 
@@ -168,6 +186,7 @@ def _train_with_torch(
     item_by_id: dict[str, dict[str, Any]],
     item_ids: list[str],
     config: dict[str, Any],
+    progress_callback: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     started_at = time.perf_counter()
     torch.manual_seed(int(config["seed"]))
@@ -177,35 +196,111 @@ def _train_with_torch(
         torch.cuda.reset_peak_memory_stats(device)
     rng = random.Random(int(config["seed"]))
     item_to_idx = {item_id: index for index, item_id in enumerate(item_ids)}
+    item_frequencies = _item_frequencies_by_index(rows, item_to_idx)
+    negative_sampler = _negative_sampling_distribution(item_frequencies, len(item_ids), float(config["negative_sampling_power"]))
+    if progress_callback:
+        progress_callback("item_feature_token_df_start", {"item_count": len(item_ids)})
     token_df = _token_document_frequency(item_by_id, config)
-    item_features = torch.tensor([_initial_item_vector(item_by_id[item_id], item_by_id, config, token_df) for item_id in item_ids], dtype=torch.float32, device=device)
-    examples = _torch_examples(rows, item_to_idx)
+    if progress_callback:
+        progress_callback("item_feature_token_df_complete", {"item_count": len(item_ids), "token_count": len(token_df)})
+    feature_rows = []
+    for offset, item_id in enumerate(item_ids, start=1):
+        feature_rows.append(_initial_item_vector(item_by_id[item_id], item_by_id, config, token_df))
+        if progress_callback and offset % 10000 == 0:
+            progress_callback("item_feature_rows", {"built_rows": offset, "item_count": len(item_ids)})
+    if progress_callback:
+        progress_callback("item_feature_rows_complete", {"built_rows": len(feature_rows), "item_count": len(item_ids)})
+    item_features = torch.tensor(feature_rows, dtype=torch.float32, device=device)
+    example_count = _torch_example_count(rows, item_to_idx, int(config["max_samples_per_user"]))
+    if progress_callback:
+        progress_callback("torch_examples_complete", {"example_count": example_count, "row_count": len(rows), "materialized": False, "max_samples_per_user": int(config["max_samples_per_user"])})
     model = _build_torch_model(torch, config, item_features).to(device)
+    if progress_callback:
+        progress_callback("model_constructed", {"model_class": model.__class__.__name__, "parameter_devices": sorted({str(parameter.device) for parameter in model.parameters()})})
     optimizer = torch.optim.Adam(model.parameters(), lr=float(config["learning_rate"]))
     loss_history = []
 
     batch_size = max(1, int(config["batch_size"]))
-    for _ in range(int(config["epochs"])):
-        rng.shuffle(examples)
-        losses = []
-        for batch_start in range(0, len(examples), batch_size):
-            batch = examples[batch_start: batch_start + batch_size]
-            tensors = _torch_batch_tensors(torch, batch, len(item_ids), int(config["negative_samples"]), rng, device)
+    gradient_accumulation_steps = max(1, int(config["gradient_accumulation_steps"]))
+    torch_amp = getattr(torch, "amp", None)
+    cuda_amp = getattr(torch.cuda, "amp", None)
+    mixed_precision_requested = bool(config["mixed_precision"])
+    mixed_precision_enabled = bool(mixed_precision_requested and device.type == "cuda" and (torch_amp is not None or cuda_amp is not None))
+    if mixed_precision_enabled and torch_amp is not None:
+        scaler = torch_amp.GradScaler("cuda", enabled=True)
+        autocast_context = lambda: torch_amp.autocast("cuda")
+    elif mixed_precision_enabled:
+        scaler = cuda_amp.GradScaler(enabled=True)
+        autocast_context = cuda_amp.autocast
+    else:
+        scaler = None
+        autocast_context = nullcontext
+    optimizer_steps = 0
+    first_batch_logged = False
+    for epoch in range(int(config["epochs"])):
+        rng.shuffle(rows)
+        loss_total = 0.0
+        loss_count = 0
+        accumulated_batches = 0
+        optimizer.zero_grad(set_to_none=True)
+        for batch_index, batch in enumerate(_torch_example_batches(rows, item_to_idx, batch_size, int(config["max_samples_per_user"])), start=1):
+            tensors = _torch_batch_tensors(torch, batch, len(item_ids), int(config["negative_samples"]), rng, device, negative_sampler)
             if tensors is None:
                 continue
             history_tensor, history_mask, candidate_tensor, target_tensor = tensors
-            optimizer.zero_grad()
-            logits = model(history_tensor, candidate_tensor, history_mask)
-            loss = torch.nn.functional.cross_entropy(logits, target_tensor)
-            loss.backward()
-            optimizer.step()
-            losses.append(float(loss.detach().cpu().item()))
-        loss_history.append(round(sum(losses) / len(losses), 6) if losses else 0.0)
+            if progress_callback and not first_batch_logged:
+                progress_callback(
+                    "first_batch_devices",
+                    {
+                        "epoch": epoch,
+                        "batch_size": len(batch),
+                        "effective_batch_size": batch_size * gradient_accumulation_steps,
+                        "gradient_accumulation_steps": gradient_accumulation_steps,
+                        "mixed_precision_enabled": mixed_precision_enabled,
+                        "requested_training_device": str(device),
+                        "history_tensor_device": str(history_tensor.device),
+                        "history_mask_device": str(history_mask.device),
+                        "candidate_tensor_device": str(candidate_tensor.device),
+                        "target_tensor_device": str(target_tensor.device),
+                    },
+                )
+                first_batch_logged = True
+            with autocast_context():
+                logits = model(history_tensor, candidate_tensor, history_mask)
+                loss = torch.nn.functional.cross_entropy(logits, target_tensor)
+                scaled_loss = loss / gradient_accumulation_steps
+            if scaler is not None:
+                scaler.scale(scaled_loss).backward()
+            else:
+                scaled_loss.backward()
+            accumulated_batches += 1
+            if accumulated_batches % gradient_accumulation_steps == 0:
+                if scaler is not None:
+                    scaler.step(optimizer)
+                    scaler.update()
+                else:
+                    optimizer.step()
+                optimizer.zero_grad(set_to_none=True)
+                optimizer_steps += 1
+            loss_total += float(loss.detach().cpu().item())
+            loss_count += 1
+            if progress_callback and batch_index % 1000 == 0:
+                progress_callback("torch_training_batches", {"epoch": epoch, "batch_index": batch_index, "batch_size": len(batch), "effective_batch_size": batch_size * gradient_accumulation_steps, "example_count": example_count})
+        if accumulated_batches % gradient_accumulation_steps:
+            if scaler is not None:
+                scaler.step(optimizer)
+                scaler.update()
+            else:
+                optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+            optimizer_steps += 1
+        loss_history.append(round(loss_total / loss_count, 6) if loss_count else 0.0)
 
     item_embeddings = _torch_item_embeddings(torch, model, item_ids, device)
-    user_embeddings = _torch_user_embeddings(torch, model, sequences, item_to_idx, config, device)
+    user_embeddings = _torch_user_embeddings(torch, model, sequences, item_to_idx, config, device, progress_callback)
     elapsed_seconds = time.perf_counter() - started_at
     peak_memory_mb = round(torch.cuda.max_memory_allocated(device) / (1024 * 1024), 3) if device.type == "cuda" else 0.0
+    cuda_device_name = _cuda_device_name(torch, device)
     return {
         "item_embeddings": item_embeddings,
         "user_embeddings": user_embeddings,
@@ -215,9 +310,22 @@ def _train_with_torch(
             "torch_version": str(torch.__version__),
             "device": str(device),
             "cuda_available": bool(torch.cuda.is_available()),
-            "cuda_device_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "",
+            "cuda_device_name": cuda_device_name,
             "model_class": model.__class__.__name__,
             "batch_training": True,
+            "example_materialization": "streamed_batches",
+            "training_examples": example_count,
+            "gradient_accumulation_steps": gradient_accumulation_steps,
+            "effective_batch_size": batch_size * gradient_accumulation_steps,
+            "mixed_precision_requested": mixed_precision_requested,
+            "mixed_precision_enabled": mixed_precision_enabled,
+            "optimizer_steps": optimizer_steps,
+            "max_samples_per_user": int(config["max_samples_per_user"]),
+            "negative_sampling": {
+                "strategy": "popularity_power",
+                "power": float(config["negative_sampling_power"]),
+                "item_frequency_count": len(item_frequencies),
+            },
             "training_seconds": round(elapsed_seconds, 3),
             "peak_cuda_memory_mb": peak_memory_mb,
         },
@@ -228,6 +336,17 @@ def _train_with_torch(
     }
 
 
+def _cuda_device_name(torch: Any, device: Any) -> str:
+    if getattr(device, "type", "") != "cuda":
+        return ""
+    try:
+        index = device.index if device.index is not None else torch.cuda.current_device()
+        return str(torch.cuda.get_device_name(index))
+    except (AssertionError, RuntimeError, ValueError):
+        return ""
+
+
+
 def _build_torch_model(torch: Any, config: dict[str, Any], item_features: Any) -> Any:
     if config["variant"] == "youtube_dnn":
         return _TorchYouTubeDNN(torch, item_features, int(config["embedding_dim"]), int(config["hidden_dim"]))
@@ -236,22 +355,85 @@ def _build_torch_model(torch: Any, config: dict[str, Any], item_features: Any) -
     raise ValueError(f"Unsupported two-tower variant: {config['variant']}")
 
 
-def _torch_examples(rows: list[dict[str, Any]], item_to_idx: dict[str, int]) -> list[tuple[list[int], int, set[int]]]:
-    examples = []
+def _torch_example_count(rows: list[dict[str, Any]], item_to_idx: dict[str, int], max_samples_per_user: int = 5) -> int:
+    return sum(len(_torch_user_examples(row, item_to_idx, max_samples_per_user)) for row in rows)
+
+
+def _torch_example_batches(
+    rows: list[dict[str, Any]],
+    item_to_idx: dict[str, int],
+    batch_size: int,
+    max_samples_per_user: int = 5,
+) -> Iterable[list[tuple[list[int], int, set[int]]]]:
+    batch: list[tuple[list[int], int, set[int]]] = []
     for row in rows:
-        positives = [item_to_idx[item] for item in row["positive_items"] if item in item_to_idx]
-        positive_set = set(positives)
-        for offset, positive_index in enumerate(positives):
-            history = positives[:offset] or positives
-            examples.append((history, positive_index, positive_set))
-    return examples
+        batch.extend(_torch_user_examples(row, item_to_idx, max_samples_per_user))
+        while len(batch) >= batch_size:
+            yield batch[:batch_size]
+            batch = batch[batch_size:]
+    if batch:
+        yield batch
 
 
-def _negative_indices(item_count: int, positives: set[int], count: int, rng: random.Random) -> list[int]:
-    candidates = [index for index in range(item_count) if index not in positives]
-    if not candidates:
+def _torch_user_examples(row: dict[str, Any], item_to_idx: dict[str, int], max_samples_per_user: int) -> list[tuple[list[int], int, set[int]]]:
+    positives = [item_to_idx[item] for item in row["positive_items"] if item in item_to_idx]
+    if len(positives) < 2:
         return []
-    return [candidates[rng.randrange(len(candidates))] for _ in range(max(0, count))]
+    positive_set = set(positives)
+    samples = [(positives[:offset], positive_index, positive_set) for offset, positive_index in enumerate(positives) if offset > 0]
+    limit = max(1, int(max_samples_per_user))
+    return samples[-limit:]
+
+
+def _item_frequencies_by_index(rows: list[dict[str, Any]], item_to_idx: dict[str, int]) -> Counter[int]:
+    return Counter(item_to_idx[item] for row in rows for item in row["positive_items"] if item in item_to_idx)
+
+
+def _negative_sampling_distribution(item_frequencies: Counter[int], item_count: int, power: float) -> tuple[list[float], float] | None:
+    cumulative = []
+    total = 0.0
+    for index in range(item_count):
+        weight = float(item_frequencies.get(index, 0)) ** power
+        total += weight
+        cumulative.append(total)
+    if total <= 0.0:
+        return None
+    return cumulative, total
+
+
+def _negative_indices(
+    item_count: int,
+    positives: set[int],
+    count: int,
+    rng: random.Random,
+    sampling_distribution: tuple[list[float], float] | None = None,
+) -> list[int]:
+    if item_count <= len(positives):
+        return []
+    negatives = []
+    for _ in range(max(0, count)):
+        index = _sample_negative_index(item_count, positives, rng, sampling_distribution)
+        if index is not None:
+            negatives.append(index)
+    return negatives
+
+
+def _sample_negative_index(
+    item_count: int,
+    positives: set[int],
+    rng: random.Random,
+    sampling_distribution: tuple[list[float], float] | None,
+) -> int | None:
+    if sampling_distribution is not None:
+        cumulative, total = sampling_distribution
+        for _ in range(100):
+            index = bisect_right(cumulative, rng.random() * total)
+            if index < item_count and index not in positives:
+                return index
+    index = rng.randrange(item_count)
+    while index in positives:
+        index = rng.randrange(item_count)
+    return index
 
 
 def _torch_batch_tensors(
@@ -261,10 +443,11 @@ def _torch_batch_tensors(
     negative_samples: int,
     rng: random.Random,
     device: Any,
+    sampling_distribution: tuple[list[float], float] | None = None,
 ) -> tuple[Any, Any, Any, Any] | None:
     rows = []
     for history_indices, positive_index, positive_set in batch:
-        negative_indices = _negative_indices(item_count, positive_set, negative_samples, rng)
+        negative_indices = _negative_indices(item_count, positive_set, negative_samples, rng, sampling_distribution)
         candidate_indices = [positive_index, *negative_indices]
         if history_indices and candidate_indices:
             rows.append((history_indices, candidate_indices))
@@ -296,16 +479,53 @@ def _torch_item_embeddings(torch: Any, model: Any, item_ids: list[str], device: 
     return {item_id: normalize_vector(vector) for item_id, vector in zip(item_ids, vectors)}
 
 
-def _torch_user_embeddings(torch: Any, model: Any, sequences: list[dict[str, Any]], item_to_idx: dict[str, int], config: dict[str, Any], device: Any) -> dict[str, list[float]]:
+def _torch_user_embeddings(
+    torch: Any,
+    model: Any,
+    sequences: list[dict[str, Any]],
+    item_to_idx: dict[str, int],
+    config: dict[str, Any],
+    device: Any,
+    progress_callback: ProgressCallback | None = None,
+) -> dict[str, list[float]]:
     rows = {}
+    batch_size = max(1, int(config.get("user_embedding_batch_size", config["batch_size"])))
+    pending: list[tuple[str, list[int]]] = []
+
+    def flush() -> None:
+        if not pending:
+            return
+        max_history = max(len(history) for _, history in pending)
+        history_rows = []
+        mask_rows = []
+        user_ids = []
+        for user_id, history in pending:
+            padding = [history[0]] * (max_history - len(history))
+            history_rows.append([*history, *padding])
+            mask_rows.append([1.0] * len(history) + [0.0] * len(padding))
+            user_ids.append(user_id)
+        vectors = model.encode_user(
+            torch.tensor(history_rows, dtype=torch.long, device=device),
+            torch.tensor(mask_rows, dtype=torch.float32, device=device),
+        ).detach().cpu().tolist()
+        for user_id, vector in zip(user_ids, vectors):
+            rows[user_id] = normalize_vector(vector)
+        pending.clear()
+        if progress_callback and len(rows) % (batch_size * 10) == 0:
+            progress_callback("user_embedding_batches", {"user_embedding_count": len(rows), "batch_size": batch_size})
+
     with torch.no_grad():
         for sequence in sequences:
             user_id = str(sequence.get("user_id", ""))
             history = [item_to_idx[item] for item in _sequence_items(sequence, config) if item in item_to_idx]
             if not user_id or not history:
                 continue
-            vector = model.encode_user(torch.tensor(history, dtype=torch.long, device=device)).detach().cpu().tolist()
-            rows[user_id] = normalize_vector(vector)
+            pending.append((user_id, history))
+            if len(pending) >= batch_size:
+                flush()
+        flush()
+    if progress_callback:
+        progress_callback("user_embeddings_complete", {"user_embedding_count": len(rows), "batch_size": batch_size})
     return rows
 
 
@@ -409,36 +629,63 @@ def _train_python_fallback(
     token_df = _token_document_frequency(item_by_id, config)
     item_embeddings = {item_id: _initial_item_vector(item_by_id[item_id], item_by_id, config, token_df) for item_id in item_ids}
     rng = random.Random(int(config["seed"]))
+    item_frequencies = Counter(item for row in rows for item in row["positive_items"] if item in item_embeddings)
+    negative_sampler = _negative_item_sampling_distribution(item_ids, item_frequencies, float(config["negative_sampling_power"]))
     if config["variant"] == "youtube_dnn":
-        _train_youtube_dnn_fallback(item_embeddings, rows, config, rng)
+        _train_youtube_dnn_fallback(item_embeddings, rows, config, rng, negative_sampler)
     elif config["variant"] == "dssm":
-        _train_dssm_fallback(item_embeddings, rows, item_by_id, config, rng)
+        _train_dssm_fallback(item_embeddings, rows, item_by_id, config, rng, negative_sampler)
     else:
         raise ValueError(f"Unsupported two-tower variant: {config['variant']}")
     return {
         "item_embeddings": item_embeddings,
         "user_embeddings": _user_embeddings(sequences, item_embeddings, config),
-        "training_backend": {"name": "python_fallback_vector_updates", "torch_available": False},
+        "training_backend": {
+            "name": "python_fallback_vector_updates",
+            "torch_available": False,
+            "gradient_accumulation_steps": max(1, int(config["gradient_accumulation_steps"])),
+            "effective_batch_size": max(1, int(config["batch_size"])) * max(1, int(config["gradient_accumulation_steps"])),
+            "mixed_precision_requested": bool(config["mixed_precision"]),
+            "mixed_precision_enabled": False,
+            "negative_sampling": {
+                "strategy": "popularity_power",
+                "power": float(config["negative_sampling_power"]),
+                "item_frequency_count": len(item_frequencies),
+            },
+        },
         "loss_history": [],
         "model_parameters": {},
     }
 
 
-def _train_youtube_dnn_fallback(item_embeddings: dict[str, list[float]], rows: list[dict[str, Any]], config: dict[str, Any], rng: random.Random) -> None:
+def _train_youtube_dnn_fallback(
+    item_embeddings: dict[str, list[float]],
+    rows: list[dict[str, Any]],
+    config: dict[str, Any],
+    rng: random.Random,
+    negative_sampler: tuple[list[str], list[float], float] | None = None,
+) -> None:
     item_ids = sorted(item_embeddings)
     for _ in range(int(config["epochs"])):
         shuffled = list(rows)
         rng.shuffle(shuffled)
         for row in shuffled:
             positives = row["positive_items"]
-            context = _weighted_average([item_embeddings[item] for item in positives[:-1] or positives], float(config["recency_decay"]))
-            for positive in positives:
+            for history, positive, positive_set in _string_user_examples(positives, int(config["max_samples_per_user"])):
+                context = _weighted_average([item_embeddings[item] for item in history], float(config["recency_decay"]))
                 _update_pair(item_embeddings[positive], context, float(config["learning_rate"]))
-                for negative in _negative_items(item_ids, set(positives), int(config["negative_samples"]), rng):
+                for negative in _negative_items(item_ids, positive_set, int(config["negative_samples"]), rng, negative_sampler):
                     _update_pair(item_embeddings[negative], context, -float(config["learning_rate"]))
 
 
-def _train_dssm_fallback(item_embeddings: dict[str, list[float]], rows: list[dict[str, Any]], item_by_id: dict[str, dict[str, Any]], config: dict[str, Any], rng: random.Random) -> None:
+def _train_dssm_fallback(
+    item_embeddings: dict[str, list[float]],
+    rows: list[dict[str, Any]],
+    item_by_id: dict[str, dict[str, Any]],
+    config: dict[str, Any],
+    rng: random.Random,
+    negative_sampler: tuple[list[str], list[float], float] | None = None,
+) -> None:
     item_ids = sorted(item_embeddings)
     category_items: dict[str, set[str]] = {}
     for item_id, record in item_by_id.items():
@@ -457,7 +704,7 @@ def _train_dssm_fallback(item_embeddings: dict[str, list[float]], rows: list[dic
                 hard_negative_pool.update(category_items.get(category, set()) - set(positives))
             negatives = list(hard_negative_pool)
             rng.shuffle(negatives)
-            negatives = negatives[: int(config["negative_samples"])] or _negative_items(item_ids, set(positives), int(config["negative_samples"]), rng)
+            negatives = negatives[: int(config["negative_samples"])] or _negative_items(item_ids, set(positives), int(config["negative_samples"]), rng, negative_sampler)
             for positive in positives:
                 _update_pair(item_embeddings[positive], user_vector, float(config["learning_rate"]))
             for negative in negatives:
@@ -499,7 +746,13 @@ def _training_metrics(
         "embedding_dim": int(config["embedding_dim"]),
         "epochs": int(config["epochs"]),
         "negative_samples": int(config["negative_samples"]),
+        "negative_sampling_power": float(config["negative_sampling_power"]),
         "batch_size": int(config["batch_size"]),
+        "gradient_accumulation_steps": max(1, int(config["gradient_accumulation_steps"])),
+        "effective_batch_size": int(config["batch_size"]) * max(1, int(config["gradient_accumulation_steps"])),
+        "mixed_precision": bool(config["mixed_precision"]),
+        "max_samples_per_user": int(config["max_samples_per_user"]),
+        "min_user_positives": int(config["min_user_positives"]),
         "loss_history": loss_history,
         "training_seconds": training_backend.get("training_seconds", 0.0),
         "peak_cuda_memory_mb": training_backend.get("peak_cuda_memory_mb", 0.0),
@@ -517,6 +770,12 @@ def _model_payload(config: dict[str, Any], item_by_id: dict[str, dict[str, Any]]
         "source_name": config["source_name"],
         "text_fields": config["text_fields"],
         "sequence_keys": config["sequence_keys"],
+        "max_samples_per_user": int(config["max_samples_per_user"]),
+        "gradient_accumulation_steps": max(1, int(config["gradient_accumulation_steps"])),
+        "effective_batch_size": int(config["batch_size"]) * max(1, int(config["gradient_accumulation_steps"])),
+        "mixed_precision": bool(config["mixed_precision"]),
+        "negative_sampling_power": float(config["negative_sampling_power"]),
+        "min_user_positives": int(config["min_user_positives"]),
         "item_count": len(item_by_id),
         "training_backend": training_backend,
         "model_parameters": model_parameters,
@@ -556,11 +815,49 @@ def _id_map(rows: list[dict[str, Any]], id_field: str) -> dict[str, Any]:
     return {"ids": [row[id_field] for row in rows], "count": len(rows)}
 
 
-def _negative_items(item_ids: list[str], positives: set[str], count: int, rng: random.Random) -> list[str]:
+def _string_user_examples(positives: list[str], max_samples_per_user: int) -> list[tuple[list[str], str, set[str]]]:
+    if len(positives) < 2:
+        return []
+    positive_set = set(positives)
+    samples = [(positives[:offset], positive, positive_set) for offset, positive in enumerate(positives) if offset > 0]
+    return samples[-max(1, int(max_samples_per_user)) :]
+
+
+def _negative_item_sampling_distribution(item_ids: list[str], item_frequencies: Counter[str], power: float) -> tuple[list[str], list[float], float] | None:
+    cumulative = []
+    total = 0.0
+    for item_id in item_ids:
+        total += float(item_frequencies.get(item_id, 0)) ** power
+        cumulative.append(total)
+    if total <= 0.0:
+        return None
+    return item_ids, cumulative, total
+
+
+def _negative_items(
+    item_ids: list[str],
+    positives: set[str],
+    count: int,
+    rng: random.Random,
+    sampling_distribution: tuple[list[str], list[float], float] | None = None,
+) -> list[str]:
     candidates = [item for item in item_ids if item not in positives]
     if not candidates:
         return []
-    return [candidates[rng.randrange(len(candidates))] for _ in range(max(0, count))]
+    rows = []
+    for _ in range(max(0, count)):
+        if sampling_distribution is not None:
+            weighted_items, cumulative, total = sampling_distribution
+            for _attempt in range(100):
+                item = weighted_items[bisect_right(cumulative, rng.random() * total)]
+                if item not in positives:
+                    rows.append(item)
+                    break
+            else:
+                rows.append(candidates[rng.randrange(len(candidates))])
+        else:
+            rows.append(candidates[rng.randrange(len(candidates))])
+    return rows
 
 
 def _update_pair(item_vector: list[float], context_vector: list[float], learning_rate: float) -> None:

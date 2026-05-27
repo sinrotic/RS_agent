@@ -9,6 +9,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from rs_core.recsys.candidate_merge import load_usercf_recall_sidecar
+from rs_lab.experiments.recall.build_full_train_usercf_sidecar import build_full_train_usercf_sidecar
 from rs_lab.experiments.recall.pool500.methods.usercf_recall.builder import build_usercf_recall_method_source
 
 
@@ -56,6 +57,13 @@ def read_json(path: Path) -> dict:
 def read_jsonl(path: Path) -> list[dict]:
     with path.open("r", encoding="utf-8") as handle:
         return [json.loads(line) for line in handle if line.strip()]
+
+
+def collect_shard_rows(manifest: dict) -> list[dict]:
+    rows = []
+    for shard_path in manifest["outputs"]["candidate_shards"]:
+        rows.extend(read_jsonl(Path(shard_path)))
+    return rows
 
 
 def sha256_file(path: Path) -> str:
@@ -154,6 +162,32 @@ def make_eligible_manifest(tmp_path: Path, user_ids: list[str]) -> Path:
         },
     )
     return path
+
+
+def make_method_dataset_manifest(tmp_path: Path, rows: list[dict], manifest_patch: dict | None = None, rows_dir_name: str = "method_dataset") -> Path:
+    dataset_dir = tmp_path / rows_dir_name
+    rows_path = dataset_dir / "method_dataset_rows.jsonl"
+    write_jsonl(rows_path, rows)
+    manifest = {
+        "schema_version": "pool500_method_dataset_v1",
+        "layer": "method_dataset",
+        "source_method": "usercf_method_dataset",
+        "status": "PASS",
+        "train_only": True,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "pool1000_allowed": False,
+        "promotion_allowed": False,
+        "final_pool500_ready_claimed": False,
+        "row_count": len(rows),
+        "user_count": len({str(row.get("user_id") or "") for row in rows if row.get("user_id")} ),
+        "outputs": {"dataset_rows_path": str(rows_path), "dataset_schema": "eligible_user_sequence_v1"},
+    }
+    if manifest_patch:
+        manifest.update(manifest_patch)
+    manifest_path = dataset_dir / "method_dataset_manifest.json"
+    write_json(manifest_path, manifest)
+    return manifest_path
 
 
 def build_method_source(tmp_path: Path, *, rows: list[dict] | None = None, eligible: Path | None = None, run_id: str = "tiny_run", target_user_limit: int | None = None) -> tuple[dict, Path]:
@@ -321,6 +355,214 @@ def test_usercf_method_source_accepts_diagnostic_limited_train_user_manifest(tmp
     assert manifest["target_user_count"] == 2
 
 
+@pytest.mark.parametrize(
+    ("manifest_patch", "match"),
+    [
+        ({"status": "BLOCKED"}, "status"),
+        ({"train_only": False}, "train_only"),
+        ({"schema_version": "unexpected_schema"}, "schema_version"),
+        ({"source_method": "itemcf_weak"}, "source_method"),
+        ({"outputs": {"dataset_rows_path": "method_dataset_rows.jsonl", "dataset_schema": "itemcf_edge_features_v1"}}, "dataset_schema"),
+        ({"candidate_generation_allowed": True}, "candidate_generation_allowed"),
+    ],
+)
+def test_usercf_method_dataset_input_rejects_invalid_manifest_contract(tmp_path: Path, manifest_patch: dict, match: str) -> None:
+    method_dataset = make_method_dataset_manifest(
+        tmp_path,
+        [{"user_id": "u1", "eligible_item_sequence": ["a", "b"], "positive_item_count": 2}],
+        manifest_patch=manifest_patch,
+    )
+
+    with pytest.raises(ValueError, match=match):
+        build_usercf_recall_method_source(
+            clean_manifest_path=make_clean_manifest(tmp_path / "clean", []),
+            method_dataset_manifest_path=method_dataset,
+            output_root=tmp_path / "method_sources",
+            run_id="bad_contract",
+            source_config_path=make_source_config(tmp_path, tmp_path / "method_sources"),
+            dataset_policy_path=make_dataset_policy(tmp_path),
+            min_free_bytes=0,
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+
+def test_usercf_sidecar_method_dataset_adapter_counts_dropped_rows_and_preserves_first_unique_items(tmp_path: Path) -> None:
+    method_dataset = make_method_dataset_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "eligible_item_sequence": ["a", "", "b", "a", None, "c"], "positive_item_count": 6},
+            {"user_id": "u2", "eligible_item_sequence": [], "positive_item_count": 0},
+            {"user_id": "", "eligible_item_sequence": ["x"], "positive_item_count": 1},
+            {"user_id": "u3", "eligible_item_sequence": "bad", "positive_item_count": 1},
+            {"user_id": "u4", "eligible_item_sequence": ["a", "d"], "positive_item_count": 2},
+        ],
+    )
+
+    manifest = build_full_train_usercf_sidecar(
+        clean_manifest=make_clean_manifest(tmp_path / "clean", []),
+        method_dataset_manifest=method_dataset,
+        eligible_user_quality_manifest=None,
+        output_dir=tmp_path / "sidecar",
+        max_items_per_user=3,
+        max_item_user_freq=10,
+        similar_users_top_k=2,
+        candidate_top_k_per_user=3,
+        shard_count=2,
+        target_batch_size=2,
+        min_free_bytes=0,
+        max_rss_mb=4096,
+        enforce_venv=False,
+    )
+
+    resource = read_json(tmp_path / "sidecar" / "resource_audit.json")
+    rows_by_user = {row["user_id"]: row for row in collect_shard_rows(manifest)}
+    assert resource["input_mode"] == "method_dataset"
+    assert resource["train_rows_scanned"] == 5
+    assert resource["rows_with_eligible_sequence"] == 3
+    assert resource["target_user_count"] == 3
+    assert resource["indexed_user_count"] == 2
+    assert resource["empty_history_count"] == 1
+    assert resource["dropped_reason_counts"] == {
+        "duplicate_item_id": 1,
+        "empty_eligible_item_sequence": 1,
+        "empty_or_invalid_item_id": 2,
+        "missing_or_invalid_eligible_item_sequence": 1,
+        "missing_user_id": 1,
+    }
+    assert rows_by_user["u1"]["candidates"] == [{"item_id": "d", "score": 0.408248, "rank": 1, "source": "usercf_recall"}]
+    assert [candidate["item_id"] for candidate in rows_by_user["u4"]["candidates"]] == ["b", "c"]
+
+
+def test_usercf_method_source_method_dataset_input_writes_non_promoted_loadable_shards(tmp_path: Path) -> None:
+    output_root = tmp_path / "method_sources"
+    method_dataset = make_method_dataset_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "eligible_item_sequence": ["a", "b"], "positive_item_count": 2},
+            {"user_id": "u2", "eligible_item_sequence": ["a", "c"], "positive_item_count": 2},
+            {"user_id": "u3", "eligible_item_sequence": ["b", "d"], "positive_item_count": 2},
+        ],
+    )
+
+    manifest = build_usercf_recall_method_source(
+        clean_manifest_path=make_clean_manifest(tmp_path / "clean", []),
+        method_dataset_manifest_path=method_dataset,
+        output_root=output_root,
+        run_id="method_dataset_run",
+        source_config_path=make_source_config(tmp_path, output_root),
+        dataset_policy_path=make_dataset_policy(tmp_path),
+        target_user_limit=3,
+        candidate_top_k_per_user=2,
+        generation_usercf_per_user=2,
+        similar_users_top_k=2,
+        target_batch_size=2,
+        shard_count=2,
+        max_items_per_user=10,
+        max_item_user_freq=10,
+        min_free_bytes=0,
+        max_rss_mb=4096,
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    output_dir = output_root / "usercf_recall" / "method_dataset_run"
+    method_dataset_output = read_json(output_dir / "method_dataset_manifest.json")
+    readiness = read_json(output_dir / "readiness_contract.json")
+    resource = read_json(output_dir / "resource_audit.json")
+    usercf = load_usercf_recall_sidecar(output_dir / "source_index_manifest.json")
+    serialized_contracts = json.dumps([manifest, method_dataset_output, readiness, resource], ensure_ascii=False)
+    assert manifest["target_user_count"] == 3
+    assert manifest["candidate_user_count"] == 3
+    assert method_dataset_output["input_mode"] == "method_dataset"
+    assert method_dataset_output["selection_policy"] == "method_dataset_target_users"
+    assert method_dataset_output["target_user_ids"] == ["u1", "u2", "u3"]
+    assert resource["input_mode"] == "method_dataset"
+    assert set(usercf) == {"u1", "u2", "u3"}
+    assert [candidate.item_id for candidate in usercf["u1"]] == ["c", "d"]
+    assert all(manifest[key] is False for key in FORBIDDEN_SWITCHES)
+    assert all(method_dataset_output[key] is False for key in FORBIDDEN_SWITCHES)
+    assert all(readiness[key] is False for key in FORBIDDEN_SWITCHES)
+    assert "FULL_POOL500_READY" not in serialized_contracts
+    assert all(Path(path).is_file() for path in manifest["outputs"]["candidate_shards"])
+
+
+def test_usercf_method_source_route_ready_method_dataset_is_loadable_without_ranking_promotion(tmp_path: Path) -> None:
+    output_root = tmp_path / "method_sources"
+    method_dataset = make_method_dataset_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "eligible_item_sequence": ["a", "b"], "positive_item_count": 2},
+            {"user_id": "u2", "eligible_item_sequence": ["a", "c"], "positive_item_count": 2},
+            {"user_id": "u3", "eligible_item_sequence": ["b", "d"], "positive_item_count": 2},
+        ],
+    )
+
+    manifest = build_usercf_recall_method_source(
+        clean_manifest_path=make_clean_manifest(tmp_path / "clean", []),
+        method_dataset_manifest_path=method_dataset,
+        output_root=output_root,
+        run_id="route_ready",
+        source_config_path=make_source_config(tmp_path, output_root),
+        dataset_policy_path=make_dataset_policy(tmp_path),
+        target_user_limit=3,
+        candidate_top_k_per_user=2,
+        generation_usercf_per_user=2,
+        similar_users_top_k=2,
+        target_batch_size=2,
+        shard_count=2,
+        max_items_per_user=10,
+        max_item_user_freq=10,
+        min_free_bytes=0,
+        max_rss_mb=4096,
+        overwrite=True,
+        route_ready=True,
+        enforce_venv=False,
+    )
+
+    output_dir = output_root / "usercf_recall" / "route_ready"
+    readiness = read_json(output_dir / "readiness_contract.json")
+    usercf = load_usercf_recall_sidecar(output_dir / "source_index_manifest.json")
+
+    assert manifest["source_status"] == "READY"
+    assert manifest["diagnostic_only"] is False
+    assert readiness["status"] == "READY"
+    assert readiness["source_status"] == "READY"
+    assert readiness["full_output_status"] == "FULL_OUTPUT_READY"
+    assert readiness["diagnostic_only"] is False
+    assert set(usercf) == {"u1", "u2", "u3"}
+    assert all(manifest[key] is False for key in FORBIDDEN_SWITCHES)
+    assert all(readiness[key] is False for key in FORBIDDEN_SWITCHES)
+
+    unsafe_manifest = dict(manifest)
+    unsafe_manifest["ranking_input_replacement_allowed"] = True
+    unsafe_path = output_dir / "unsafe_source_index_manifest.json"
+    write_json(unsafe_path, unsafe_manifest)
+    with pytest.raises(ValueError, match="ranking input replacement"):
+        load_usercf_recall_sidecar(unsafe_path)
+
+
+def test_usercf_method_dataset_input_rejects_forbidden_scope_paths(tmp_path: Path) -> None:
+    method_dataset = make_method_dataset_manifest(
+        tmp_path,
+        [{"user_id": "u1", "eligible_item_sequence": ["a", "b"], "positive_item_count": 2}],
+        rows_dir_name="pool1000",
+    )
+
+    with pytest.raises(ValueError, match="Forbidden holdout/10k/pool1000 path"):
+        build_usercf_recall_method_source(
+            clean_manifest_path=make_clean_manifest(tmp_path / "clean", []),
+            method_dataset_manifest_path=method_dataset,
+            output_root=tmp_path / "method_sources",
+            run_id="forbidden_scope",
+            source_config_path=make_source_config(tmp_path, tmp_path / "method_sources"),
+            dataset_policy_path=make_dataset_policy(tmp_path),
+            min_free_bytes=0,
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+
 def test_usercf_method_source_rejects_forbidden_paths_before_build(tmp_path: Path) -> None:
     clean_dir = tmp_path / "amazon_2023_recall_clean_full"
     bad_train_path = clean_dir / "user_sequences.valid.jsonl"
@@ -366,11 +608,13 @@ def test_usercf_method_source_readiness_signature_matches_final_manifest(tmp_pat
     readiness = read_json(readiness_path)
     source_manifest_path = output_dir / "source_index_manifest.json"
     source_manifest = read_json(source_manifest_path)
+    method_dataset_manifest = read_json(output_dir / "method_dataset_manifest.json")
 
     assert_governance(readiness)
     assert readiness["index_manifest_path"] == str(source_manifest_path)
     assert readiness["index_manifest_sha256"] == sha256_file(source_manifest_path)
     assert readiness["index_manifest_signature"]["sha256"] == sha256_file(source_manifest_path)
+    assert method_dataset_manifest["source_index_manifest_sha256"] == sha256_file(source_manifest_path)
     assert readiness["candidate_row_count"] == source_manifest["candidate_row_count"]
     assert readiness["candidate_total_count"] == source_manifest["candidate_total_count"]
     assert readiness["candidate_user_count"] == source_manifest["candidate_user_count"]

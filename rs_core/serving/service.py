@@ -7,7 +7,9 @@ from uuid import uuid4
 
 from rs_core.display import build_display_record, build_public_timeline
 from rs_core.rsagent.schema import AgentSession
+from rs_core.serving.schema import RecommendFromSequenceRequest
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
+from rs_core.workflow.online_recommendation import OnlinePool500Recommender
 
 DEFAULT_CONFIG = "configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml"
 FEEDBACK_PROMPTS = {
@@ -46,6 +48,7 @@ class RecommendationService:
         config_overrides: dict[str, Any] | None = None,
     ) -> None:
         self.env = HybridRecommendationEnvironment.from_config(config, limit_users=limit_users, config_overrides=config_overrides)
+        self.online_recommender = OnlinePool500Recommender.from_environment(self.env)
         self.sessions: dict[str, AgentSession] = {}
         self.session_events: dict[str, list[dict[str, Any]]] = {}
 
@@ -76,6 +79,24 @@ class RecommendationService:
 
     def get_agent_session(self, session_id: str) -> AgentSession:
         return self._session(session_id)
+
+    def recommend_from_sequence(self, request: RecommendFromSequenceRequest) -> dict[str, Any]:
+        result = self.online_recommender.recommend(
+            request.user_sequence,
+            user_id=request.user_id,
+            feedback_text=request.feedback_text,
+            top_k=request.top_k,
+            candidate_pool_size=request.candidate_pool_size,
+            complete_pool500=request.complete_pool500,
+        )
+        return {
+            "request_id": result.request_id,
+            "display": result.display,
+            "items": result.items,
+            "item_count": len(result.items),
+            "candidate_count": result.candidate_count,
+            "fallback_used": result.fallback_used,
+        }
 
     def export_session(self, session_id: str) -> dict[str, Any]:
         session = self._session(session_id)

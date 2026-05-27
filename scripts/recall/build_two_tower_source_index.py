@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import iter_jsonl, read_json, write_json
-from rs_core.recsys.two_tower_source_manifest import EXPECTED_FIELDS, SCHEMA_VERSION, validate_two_tower_source_index_manifest
+from rs_core.recsys.two_tower_source_manifest import GOVERNANCE_FIELDS, SOURCE_STATUS, EXPECTED_FIELDS, SCHEMA_VERSION, validate_two_tower_source_index_manifest
 
 
 def build_two_tower_source_index(
@@ -22,12 +22,21 @@ def build_two_tower_source_index(
     item_vocab_manifest: str | Path,
     output_dir: str | Path,
     output_source_manifest: str | Path,
+    config: str | Path | None = None,
+    clean_manifest: str | Path | None = None,
+    train_sequence: str | Path | None = None,
     overwrite: bool = False,
 ) -> dict[str, Any]:
     training_run_dir = _resolve_path(training_run_dir)
     item_vocab_manifest_path = _resolve_path(item_vocab_manifest)
     output_dir = _resolve_path(output_dir)
     output_source_manifest = _resolve_path(output_source_manifest)
+    config_path = _resolve_path(config) if config else None
+    clean_manifest_path = _resolve_path(clean_manifest) if clean_manifest else None
+    train_sequence_path = _resolve_path(train_sequence) if train_sequence else None
+    for optional_path in (config_path, clean_manifest_path, train_sequence_path):
+        if optional_path is not None and not optional_path.is_file():
+            raise FileNotFoundError(str(optional_path))
     if output_source_manifest.exists() and not overwrite:
         raise FileExistsError(f"output source manifest already exists: {output_source_manifest}")
     artifact_manifest_path = training_run_dir / "artifact_manifest.json"
@@ -56,15 +65,28 @@ def build_two_tower_source_index(
         "schema_version": SCHEMA_VERSION,
         "created_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         **EXPECTED_FIELDS,
+        "source_status": SOURCE_STATUS,
+        **GOVERNANCE_FIELDS,
         "embedding_path": str(embedding_path),
         "index_path": str(index_path),
         "item_vocab_manifest": str(item_vocab_manifest_path),
         "row_count": row_count,
         "embedding_row_count": embedding_row_count,
         "index_row_count": index_row_count,
+        "item_embedding_row_count": embedding_row_count,
+        "recall_index_row_count": index_row_count,
+        "model_parameters": model.get("model_parameters", {}),
         "artifact_size_gib": round((embedding_path.stat().st_size + index_path.stat().st_size) / 1024**3, 9),
         "content_hash": _content_hash([embedding_path, index_path, item_vocab_manifest_path]),
     }
+    if config_path is not None:
+        manifest["model_config_sha256"] = _sha256_file(config_path)
+    if clean_manifest_path is not None:
+        manifest["clean_manifest_sha256"] = _sha256_file(clean_manifest_path)
+    if train_sequence_path is not None:
+        manifest["train_sequence_sha256"] = _sha256_file(train_sequence_path)
+    if item_vocab_manifest_path is not None:
+        manifest["item_universe_sha256"] = _sha256_file(item_vocab_manifest_path)
     if user_embedding_path is not None:
         manifest["user_embedding_path"] = str(user_embedding_path)
         manifest["user_embedding_row_count"] = _jsonl_row_count(user_embedding_path)
@@ -116,12 +138,23 @@ def _content_hash(paths: list[Path]) -> str:
     return "sha256:" + digest.hexdigest()
 
 
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return "sha256:" + digest.hexdigest()
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build guarded two_tower source_index_manifest.json")
     parser.add_argument("--training-run-dir", required=True)
     parser.add_argument("--item-vocab-manifest", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--output-source-manifest", required=True)
+    parser.add_argument("--config")
+    parser.add_argument("--clean-manifest")
+    parser.add_argument("--train-sequence")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
@@ -133,6 +166,9 @@ def main() -> None:
         item_vocab_manifest=args.item_vocab_manifest,
         output_dir=args.output_dir,
         output_source_manifest=args.output_source_manifest,
+        config=args.config,
+        clean_manifest=args.clean_manifest,
+        train_sequence=args.train_sequence,
         overwrite=args.overwrite,
     )
     print(json.dumps({"source_index_manifest": args.output_source_manifest, "row_count": manifest["row_count"]}, ensure_ascii=False))

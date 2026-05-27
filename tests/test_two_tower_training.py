@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -52,7 +53,12 @@ def _write_training_workflow_fixture(tmp_path: Path) -> dict[str, Path]:
         {
             "clean_dir": str(clean_dir),
             "evaluation_mode": "train_only",
-            "two_tower_training": {"variant": "youtube_dnn", "source_name": "two_tower_youtube_dnn", "item_vocab_manifest": str(vocab_manifest_path)},
+            "two_tower_training": {
+                "variant": "youtube_dnn",
+                "source_name": "two_tower_youtube_dnn",
+                "item_vocab_manifest": str(vocab_manifest_path),
+                "min_user_positives": 2,
+            },
         },
     )
     user_quality_path = tmp_path / "eligible_user_quality_manifest.json"
@@ -163,6 +169,122 @@ def test_train_two_tower_cli_blocks_default_and_explicit_all(monkeypatch, tmp_pa
         train_two_tower_cli_main()
 
 
+def test_compact_inputs_emit_progress_and_keep_train_only_contract(tmp_path: Path):
+    paths = _write_training_workflow_fixture(tmp_path)
+    events = []
+
+    result = train_two_tower_recall(
+        paths["config"],
+        output_dir=tmp_path / "artifacts",
+        variant="youtube_dnn",
+        config_overrides={"two_tower_training": {"embedding_dim": 8, "epochs": 1, "negative_samples": 1}},
+        compact_inputs=True,
+        progress_callback=lambda event, payload: events.append((event, payload)),
+    )
+
+    manifest = read_json(result["artifact_manifest_path"])
+    assert manifest["metrics"]["compact_inputs"] is True
+    assert manifest["metrics"]["split_scope"] == "train_only"
+    assert manifest["metrics"]["leakage_checks"] == {"train_inputs_only": True, "eval_paths_rejected": True}
+    event_names = [event for event, _ in events]
+    assert "load_item_records_complete" in event_names
+    assert "load_training_sequences_complete" in event_names
+    assert "training_rows_complete" in event_names
+    assert "item_feature_rows_complete" in event_names
+    assert "first_batch_devices" in event_names
+
+
+def test_torch_example_batches_stream_without_materializing_full_examples():
+    rows = [
+        {"user_id": "u1", "positive_items": ["i1", "i2", "i3"]},
+        {"user_id": "u2", "positive_items": ["i2", "missing", "i4"]},
+    ]
+    item_to_idx = {"i1": 0, "i2": 1, "i3": 2, "i4": 3}
+
+    batches = list(two_tower._torch_example_batches(rows, item_to_idx, 2))
+
+    assert two_tower._torch_example_count(rows, item_to_idx) == 3
+    assert [len(batch) for batch in batches] == [2, 1]
+    assert batches[0][0] == ([0], 1, {0, 1, 2})
+    assert batches[0][1] == ([0, 1], 2, {0, 1, 2})
+    assert batches[1][0] == ([1], 3, {1, 3})
+    assert all(len(batch) <= 2 for batch in batches)
+
+
+def test_torch_example_batches_caps_per_user_and_keeps_temporal_history():
+    rows = [{"user_id": "u1", "positive_items": ["i1", "i2", "i3", "i4", "i5"]}]
+    item_to_idx = {"i1": 0, "i2": 1, "i3": 2, "i4": 3, "i5": 4}
+
+    batches = list(two_tower._torch_example_batches(rows, item_to_idx, batch_size=10, max_samples_per_user=2))
+
+    assert two_tower._torch_example_count(rows, item_to_idx, max_samples_per_user=2) == 2
+    assert batches == [[([0, 1, 2], 3, {0, 1, 2, 3, 4}), ([0, 1, 2, 3], 4, {0, 1, 2, 3, 4})]]
+
+
+def test_negative_indices_use_popularity_power_distribution():
+    item_frequencies = Counter({0: 100, 1: 1, 2: 1})
+    sampler = two_tower._negative_sampling_distribution(item_frequencies, item_count=3, power=0.75)
+
+    negatives = two_tower._negative_indices(3, positives={1}, count=50, rng=two_tower.random.Random(20260509), sampling_distribution=sampler)
+
+    assert set(negatives) <= {0, 2}
+    assert negatives.count(0) > negatives.count(2)
+
+
+def test_training_records_accumulation_and_mixed_precision_contract():
+    result = train_two_tower_model(
+        _sequences(),
+        _items(),
+        {
+            "variant": "youtube_dnn",
+            "source_name": "two_tower_youtube_dnn",
+            "embedding_dim": 8,
+            "epochs": 1,
+            "negative_samples": 1,
+            "batch_size": 2,
+            "gradient_accumulation_steps": 3,
+            "mixed_precision": True,
+        },
+    )
+
+    metrics = result["train_metrics"]
+    backend = metrics["training_backend"]
+    assert metrics["gradient_accumulation_steps"] == 3
+    assert metrics["effective_batch_size"] == 6
+    assert metrics["mixed_precision"] is True
+    assert backend["gradient_accumulation_steps"] == 3
+    assert backend["effective_batch_size"] == 6
+    assert backend["mixed_precision_requested"] is True
+    assert result["model"]["gradient_accumulation_steps"] == 3
+    assert result["model"]["effective_batch_size"] == 6
+    if two_tower._import_torch() is not None:
+        assert "optimizer_steps" in backend
+    else:
+        assert backend["mixed_precision_enabled"] is False
+
+
+
+def test_cuda_device_name_handles_invalid_visible_device():
+    class FakeCuda:
+        @staticmethod
+        def current_device() -> int:
+            return 0
+
+        @staticmethod
+        def get_device_name(index: int) -> str:
+            raise AssertionError("Invalid device id")
+
+    class FakeTorch:
+        cuda = FakeCuda()
+
+    class FakeDevice:
+        type = "cuda"
+        index = None
+
+    assert two_tower._cuda_device_name(FakeTorch(), FakeDevice()) == ""
+
+
+
 def test_two_tower_artifacts_write_complete_default_off_contract(tmp_path: Path):
     result = train_two_tower_model(
         _sequences(),
@@ -209,7 +331,9 @@ def test_two_tower_artifacts_write_complete_default_off_contract(tmp_path: Path)
         assert "peak_cuda_memory_mb" in metrics
         assert metrics["loss_history"]
     else:
-        assert metrics["training_backend"] == {"name": "python_fallback_vector_updates", "torch_available": False}
+        assert metrics["training_backend"]["name"] == "python_fallback_vector_updates"
+        assert metrics["training_backend"]["torch_available"] is False
+        assert metrics["training_backend"]["negative_sampling"] == {"strategy": "popularity_power", "power": 0.75, "item_frequency_count": 4}
         assert metrics["loss_history"] == []
     assert metrics["users_with_training_rows"] == 2
     assert len(recall_rows) == 4
@@ -263,7 +387,9 @@ def test_backend_config_cannot_bypass_torch_when_torch_is_available():
         assert backend["name"] == "pytorch"
         assert backend["torch_available"] is True
     else:
-        assert backend == {"name": "python_fallback_vector_updates", "torch_available": False}
+        assert backend["name"] == "python_fallback_vector_updates"
+        assert backend["torch_available"] is False
+        assert backend["negative_sampling"] == {"strategy": "popularity_power", "power": 0.75, "item_frequency_count": 4}
     assert result["model"]["training_backend"] == backend
 
 
@@ -277,7 +403,9 @@ def test_python_backend_is_labeled_as_no_torch_fallback(monkeypatch):
     )
 
     backend = result["train_metrics"]["training_backend"]
-    assert backend == {"name": "python_fallback_vector_updates", "torch_available": False}
+    assert backend["name"] == "python_fallback_vector_updates"
+    assert backend["torch_available"] is False
+    assert backend["negative_sampling"] == {"strategy": "popularity_power", "power": 0.75, "item_frequency_count": 4}
     assert result["model"]["training_backend"] == backend
 
 
@@ -289,17 +417,34 @@ def test_saved_two_tower_manifest_loads_as_vector_index_with_model_metadata(tmp_
         {"variant": "youtube_dnn", "source_name": "two_tower_youtube_dnn", "embedding_dim": 8, "epochs": 1, "negative_samples": 1},
     )
     contract = save_two_tower_artifacts(result, tmp_path)
+    model = read_json(contract["model"])
+    zero_matrix = [[0.0] * 8 for _ in range(8)]
+    model["model_parameters"] = {
+        "user_tower.0.weight": zero_matrix,
+        "user_tower.0.bias": [0.0] * 8,
+        "user_tower.2.weight": zero_matrix,
+        "user_tower.2.bias": [0.0] * 8,
+    }
+    write_json(contract["model"], model)
+    recall_rows = read_jsonl(contract["recall_index"])
+    audio_seed_row = next(row for row in recall_rows if row["parent_asin"] == "audio_seed")
+    audio_neighbor_row = dict(audio_seed_row)
+    audio_neighbor_row["parent_asin"] = "audio_neighbor"
+    audio_neighbor_row["item_id"] = "audio_neighbor"
+    write_jsonl(contract["recall_index"], recall_rows + [audio_neighbor_row])
 
     index = load_two_tower_index(contract["artifact_manifest"])
     assert isinstance(index, VectorIndex)
     assert index.source_name == "two_tower_youtube_dnn"
     assert index.model_metadata["variant"] == "youtube_dnn"
     assert index.model_metadata["model_type"] == "youtube_dnn_two_tower_v1"
+    assert index.model_metadata["model_parameters"]["user_tower.0.weight"] == zero_matrix
 
     sequence = {"user_id": "u1", "recent_item_sequence": ["audio_seed"], "recent_positive_item_sequence": ["audio_seed"]}
     candidates = two_tower_candidates_for_user(sequence, index, {"two_tower_enabled": True, "two_tower_per_user": 3})
 
     assert candidates
+    assert candidates[0].item_id == "audio_neighbor"
     assert "audio_seed" not in {candidate.item_id for candidate in candidates}
     assert {candidate.metadata["two_tower_source_name"] for candidate in candidates} == {"two_tower_youtube_dnn"}
     assert {candidate.metadata["two_tower_model_type"] for candidate in candidates} == {"youtube_dnn_two_tower_v1"}

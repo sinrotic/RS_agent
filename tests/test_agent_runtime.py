@@ -11,8 +11,8 @@ pytestmark = [pytest.mark.unit, pytest.mark.serving]
 from rs_core.common.io import write_jsonl
 from rs_core.recsys.types import AgentDecision
 from rs_core.rsagent.reward import build_reward_evidence
-from rs_core.rsagent.runtime import RUNTIME_TRACE_STEP_ORDER
-from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.rsagent.runtime import RUNTIME_TRACE_STEP_ORDER, AgentRuntime
+from rs_core.rsagent.schema import INTENT_RECOMMEND_REQUEST, AgentSession, AgentTurn, FeedbackConstraints
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 
 
@@ -32,6 +32,14 @@ def test_converse_attaches_ordered_runtime_trace_and_summary(tmp_path: Path):
     assert "speaker_1" in session.session_summary["shown_item_ids"]
     assert session.session_summary["preferred_categories"] == {"Audio": 1.0}
     assert session.session_summary["recent_action"] == "revise_recommendation"
+
+
+def test_runtime_summary_default_current_goal_uses_dialogue_contract():
+    session = AgentSession(session_id="s1", user_id="u1")
+
+    summary = AgentRuntime()._compact_session(session)
+
+    assert summary["current_goal"] == INTENT_RECOMMEND_REQUEST
 
 
 def test_memory_prefetch_changes_after_prior_turn_and_feedback(tmp_path: Path):

@@ -21,6 +21,14 @@ from rs_core.workflow.hybrid_demo import (
     recommend_for_user,
 )
 from rs_core.common.io import read_jsonl
+from rs_core.display.builder import item_to_display_card
+from rs_core.recsys.rag import (
+    HybridCandidateRetriever,
+    InMemoryCandidateCardRetriever,
+    RagPolicy,
+    SQLiteBM25CandidateRetriever,
+    build_rag_context_for_ranked_candidates,
+)
 from rs_core.rsagent.dialogue import apply_dialogue_plan, plan_dialogue_turn
 from rs_core.rsagent.inference_policy import RerankPolicyClient
 from rs_core.rsagent.policy import merge_feedback, normalize_feedback_input, parse_feedback
@@ -171,6 +179,10 @@ class HybridRecommendationEnvironment:
             turn_index=len(session.turns) + 1,
         )
         candidates = [asdict(candidate) for candidate in result.candidates]
+        rag_context = _build_turn_rag_context(self.config, user_input, result.ranking.items, result.decision.final_items)
+        diagnostics = dict(result.diagnostics)
+        if rag_context is not None:
+            diagnostics["rag"] = _rag_diagnostics(rag_context)
         turn = AgentTurn(
             turn_index=len(session.turns) + 1,
             user_input=user_input,
@@ -179,7 +191,8 @@ class HybridRecommendationEnvironment:
             candidates=candidates,
             ranking=result.ranking.items,
             fallback_used=result.fallback_used,
-            diagnostics=result.diagnostics,
+            diagnostics=diagnostics,
+            rag_context=rag_context,
             assistant_response=assistant_response or result.decision.agent_explanation,
         )
         session.turns.append(turn)
@@ -209,6 +222,88 @@ class HybridRecommendationEnvironment:
         )
         session.turns.append(turn)
         return turn
+
+
+def _build_turn_rag_context(
+    config: dict[str, Any],
+    query: str,
+    ranked_items: list[dict[str, Any]],
+    final_items: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    rag_config = config.get("rag") if isinstance(config.get("rag"), dict) else {}
+    mode = str(rag_config.get("evidence_mode", "off"))
+    if mode not in {"shadow", "explain"}:
+        return None
+    max_evidence_per_item = int(rag_config.get("max_evidence_per_item", 3) or 3)
+    fields = list(rag_config.get("fields", ["title", "category", "description", "summary"]))
+    item_cards = _display_safe_item_cards([*ranked_items, *final_items])
+    candidate_item_ids = [item_id for item_id in _ranked_item_ids(ranked_items) if item_id in item_cards]
+    retriever_name = "in_memory_candidate_card"
+    retriever = InMemoryCandidateCardRetriever(item_cards, fields=fields)
+    retriever_config = str(rag_config.get("retriever", "")).strip().lower()
+    index_path = _rag_index_path(rag_config)
+    if index_path is not None and index_path.exists() and retriever_config == "hybrid":
+        hybrid_config = rag_config.get("hybrid") if isinstance(rag_config.get("hybrid"), dict) else {}
+        retriever = HybridCandidateRetriever(
+            index_path,
+            bm25_weight=float(hybrid_config.get("bm25_weight", 0.65)),
+            vector_weight=float(hybrid_config.get("vector_weight", 0.35)),
+            vector_dim=int(hybrid_config.get("vector_dim", 256)),
+            vector_top_k_multiplier=int(hybrid_config.get("vector_top_k_multiplier", 4)),
+        )
+        retriever_name = "hybrid"
+    elif index_path is not None and index_path.exists() and retriever_config != "in_memory_candidate_card":
+        retriever = SQLiteBM25CandidateRetriever(index_path)
+        retriever_name = "sqlite_bm25"
+    context = build_rag_context_for_ranked_candidates(
+        query=query,
+        candidate_item_ids=candidate_item_ids,
+        retriever=retriever,
+        policy=RagPolicy(mode=mode, max_evidence_per_item=max_evidence_per_item, allowed_fields=fields),
+        metadata={"evidence_mode": mode, "retriever": retriever_name},
+    )
+    return context.to_dict()
+
+
+def _rag_index_path(rag_config: dict[str, Any]) -> Path | None:
+    value = rag_config.get("index_path") or rag_config.get("bm25_index_path")
+    if not value:
+        return None
+    return _resolve_path(value)
+
+
+def _display_safe_item_cards(items: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    cards: dict[str, dict[str, Any]] = {}
+    for item in items:
+        card = item_to_display_card(item)
+        if card:
+            cards[card.parent_asin] = card.to_dict()
+    return cards
+
+
+
+def _ranked_item_ids(items: list[dict[str, Any]]) -> list[str]:
+    item_ids: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        item_id = str(item.get("parent_asin") or item.get("item_id") or "")
+        if item_id and item_id not in seen:
+            seen.add(item_id)
+            item_ids.append(item_id)
+    return item_ids
+
+
+
+def _rag_diagnostics(rag_context: dict[str, Any]) -> dict[str, Any]:
+    metadata = rag_context.get("metadata") if isinstance(rag_context.get("metadata"), dict) else {}
+    diagnostics = metadata.get("rag_diagnostics") if isinstance(metadata.get("rag_diagnostics"), dict) else {}
+    return {
+        "evidence_mode": metadata.get("evidence_mode"),
+        "kept_evidence_count": diagnostics.get("kept_evidence_count", 0),
+        "dropped_non_candidate_evidence_count": diagnostics.get("dropped_non_candidate_evidence_count", 0),
+        "dropped_policy_violation_count": diagnostics.get("dropped_policy_violation_count", 0),
+    }
+
 
 
 def _resolve_path(value: str | Path) -> Path:

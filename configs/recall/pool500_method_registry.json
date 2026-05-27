@@ -41,7 +41,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Scan full train-only unified statistics and metadata for lightweight coverage; no method-specific custom dataset and no input size cap are required. Output volume and per-user share remain controlled downstream.",
         "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical category source identity, and artifact gate evidence.",
@@ -120,7 +121,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Scan full train-only unified statistics and metadata for lightweight coverage; no method-specific custom dataset and no input size cap are required. Output volume and per-user share remain controlled downstream.",
         "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical popular source identity, and artifact gate evidence.",
@@ -200,7 +202,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Use READY swing sidecar or train-only behavior graph under stoploss and budget guards; method-specific custom dataset is optional, not mandatory. P2 method dataset must use governance_train_only inputs with local_formal_default resource boundaries before any downstream source artifact step.",
         "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical swing_recall source identity, artifact gate evidence, and guard compliance.",
@@ -261,13 +264,13 @@
       }
     },
     "usercf_recall": {
-      "status": "DIAGNOSTIC_ONLY",
+      "status": "READY",
       "method_doc": "dic/recall_methods/usercf_recall/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/source_index_manifest.json",
-      "latest_readiness_contract": "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/readiness_contract.json",
-      "latest_row_count": 21251,
-      "latest_candidate_total_count": 24056,
-      "latest_peak_rss_mb": 2394,
+      "latest_artifact": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json",
+      "latest_readiness_contract": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/readiness_contract.json",
+      "latest_row_count": 17509,
+      "latest_candidate_total_count": 17509,
+      "latest_peak_rss_mb": 56,
       "eligible_user_policy": "heavy_cf_eligible",
       "role": "heavy_user_neighbor_recall",
       "dataset_contract": {
@@ -290,10 +293,11 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
-        "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible users with guarded batching and memory management. P2 method dataset must use governance_train_only inputs with local_formal_default resource boundaries before any downstream source artifact step.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical usercf_recall source identity, artifact gate evidence, and resource guard evidence.",
+        "generation_dataset_scope": "Use P2 method dataset formal train-only UserCF input mode artifact for heavy collaborative users as a pool500 recall-only READY source; it still cannot replace ranking input.",
+        "readiness_evaluation_scope": "Evaluate as recall-only main-route source contribution in the pool500 route; no promotion, ranking replacement, larger-pool expansion, or final ready claim is authorized.",
         "eligible_user_policy": "heavy_cf_eligible",
         "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
         "promotion_policy": {
@@ -302,11 +306,15 @@
           "pool1000_allowed": false
         },
         "readiness_artifacts": [
-          "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/source_index_manifest.json",
-          "outputs/recall/pool500_sidecar_fix/usercf_recall_target500_guarded/readiness_contract.json"
+          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json",
+          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/readiness_contract.json",
+          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/method_dataset_manifest.json",
+          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/no_holdout_audit.json",
+          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/coverage_audit.json",
+          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/resource_audit.json"
         ],
-        "status": "DIAGNOSTIC_ONLY",
-        "notes": "Heavy CF method remains diagnostic-only; custom dataset and resource guard evidence do not permit ranking replacement. P2 resource boundary metadata is dataset-scale governance only and remains dataset-contract-only.",
+        "status": "READY",
+        "notes": "Formal method_dataset sidecar is connected to the recall-only main route as a READY source. Boundary/loadability evidence does not imply recall lift, ranking replacement, or final pool500 ready claim.",
         "method_specific_resource_boundary": {
           "input_scope": "governance_train_only",
           "scale_tier": "local_formal_default",
@@ -380,7 +388,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible_or_medium_behavior users with guarded batching and memory management. P2 method dataset must use governance_train_only inputs with local_formal_default resource boundaries before any downstream source artifact step.",
         "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_weak source identity, artifact gate evidence, and resource guard evidence.",
@@ -452,10 +461,10 @@
     "itemcf_strong": {
       "status": "DIAGNOSTIC_ONLY",
       "method_doc": "dic/recall_methods/itemcf_strong/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/source_index_manifest.json",
-      "latest_row_count": 330,
+      "latest_artifact": "outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json",
+      "latest_row_count": 1536320,
       "latest_peak_rss_mb": 37,
-      "eligible_user_policy": "heavy_cf_eligible",
+      "eligible_user_policy": "sequence_sufficient_or_collaborative_rich_for_relaxed_strong_itemcf",
       "role": "high_confidence_item_neighbor_recall",
       "dataset_contract": {
         "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
@@ -477,11 +486,12 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
-        "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible users with guarded batching and memory management. P2 method dataset must use governance_train_only inputs with local_formal_default resource boundaries before any downstream source artifact step.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_strong source identity, artifact gate evidence, and resource guard evidence.",
-        "eligible_user_policy": "heavy_cf_eligible",
+        "generation_dataset_scope": "Use independently rebuilt train-only relaxed seed-src v3 method datasets for sequence_sufficient/collaborative_rich users with guarded batching and memory management. P2 method dataset must use governance_train_only inputs and recompute pair support, weighted cooc, itemcf score, and per-seed topK per scale tier before any downstream source artifact step.",
+        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_strong source identity, formal sharded source artifact evidence, and resource guard evidence.",
+        "eligible_user_policy": "sequence_sufficient_or_collaborative_rich_for_relaxed_strong_itemcf",
         "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
         "promotion_policy": {
           "auto_promotion_allowed": false,
@@ -489,28 +499,44 @@
           "pool1000_allowed": false
         },
         "readiness_artifacts": [
-          "outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/source_index_manifest.json"
+          "outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_smoke_v3_real/itemcf_strong/method_dataset_manifest.json",
+          "outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_diagnostic_v3/itemcf_strong/method_dataset_manifest.json",
+          "outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_local_formal_v3/itemcf_strong/method_dataset_manifest.json",
+          "outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json"
         ],
         "status": "DIAGNOSTIC_ONLY",
-        "notes": "Heavy resource item-CF method remains diagnostic-only; custom dataset and guard evidence do not permit ranking replacement. P2 resource boundary metadata is dataset-scale governance only and remains dataset-contract-only.",
+        "notes": "Heavy resource item-CF method remains diagnostic-only; relaxed seed-src v3 formal sharded evidence does not permit READY promotion or ranking replacement. P2 resource boundary metadata is dataset-scale governance only and remains dataset-contract-only.",
         "method_specific_resource_boundary": {
           "input_scope": "governance_train_only",
           "scale_tier": "local_formal_default",
           "selection_policy_version": "p2_method_dataset_policy_v1",
           "selection_strategy": {
-            "policy_name": "itemcf_strong_edges_v1",
+            "policy_name": "itemcf_strong_relaxed_edges_v1",
             "sampling_unit": "user_positive_sequence_to_item_pairs",
             "eligible_user_buckets": [
+              "sequence_sufficient",
               "collaborative_rich"
             ],
-            "eligible_item_bucket": "cf_ready",
-            "over_hot_control": "strict_cap",
-            "pair_window_control": "strong_support_window"
+            "eligible_item_buckets": [
+              "cf_ready",
+              "embedding_ready"
+            ],
+            "eligible_src_item_buckets": [
+              "cf_ready",
+              "embedding_ready"
+            ],
+            "eligible_dst_item_buckets": [
+              "cf_ready",
+              "embedding_ready"
+            ],
+            "over_hot_control": "allow_hot_src_seed_but_exclude_hot_dst_item",
+            "pair_window_control": "strong_seed_to_positive_sequence_window",
+            "directed_seed_to_dst_only": true
           },
-          "max_output_users": 200000,
-          "max_items_per_user": 50,
-          "max_item_user_freq": 3000,
-          "min_pair_support": 2,
+          "max_output_users": 160000,
+          "max_items_per_user": 60,
+          "max_item_user_freq": 8000,
+          "min_pair_support": 1,
           "score_policy": "weighted_cooc_cosine_normalized_v1",
           "active_user_penalty_policy": "round(1 / log1p(filtered_sequence_len), 6)",
           "itemcf_score_formula": "round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)",
@@ -519,29 +545,29 @@
           "default_tier": "local_formal",
           "scale_tiers": {
             "smoke": {
-              "max_output_users": 1000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 3000,
-              "min_pair_support": 2,
-              "top_k_per_seed": 100
+              "max_output_users": 5000,
+              "max_items_per_user": 60,
+              "max_item_user_freq": 8000,
+              "min_pair_support": 1,
+              "top_k_per_seed": 150
             },
             "diagnostic": {
               "max_output_users": 80000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 3000,
-              "min_pair_support": 2,
-              "top_k_per_seed": 100
+              "max_items_per_user": 60,
+              "max_item_user_freq": 8000,
+              "min_pair_support": 1,
+              "top_k_per_seed": 150
             },
             "local_formal": {
-              "max_output_users": 200000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 3000,
-              "min_pair_support": 2,
-              "top_k_per_seed": 100
+              "max_output_users": 160000,
+              "max_items_per_user": 60,
+              "max_item_user_freq": 8000,
+              "min_pair_support": 1,
+              "top_k_per_seed": 150
             }
           },
           "itemcf_feature_schema": "itemcf_edge_features_v1",
-          "top_k_per_seed": 100
+          "top_k_per_seed": 150
         }
       }
     },
@@ -570,7 +596,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Deferred until train-only semantic artifacts exist; no READY generation dataset is claimed. Future P2 dataset must use bounded semantic_seed_metadata_v1 inputs with max_metadata_rows, seed_window, and per_token_item_limit; it is not a lightweight full-statistics route.",
         "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical semantic source identity, and artifact gate evidence.",
@@ -663,7 +690,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Deferred until train-only title/category semantic expansion artifacts exist; no READY generation dataset is claimed. Future P2 dataset must use bounded semantic_seed_metadata_v1 inputs with max_metadata_rows, seed_window, and per_token_item_limit; it is not a lightweight full-statistics route.",
         "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical semantic_title_category_expansion source identity, and artifact gate evidence.",
@@ -756,7 +784,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Deferred until train-only co-visit repair artifacts exist; no READY generation dataset is claimed. Future P2 dataset must use bounded co_visit_fallback_repair_v1 inputs with seed_window, candidate_per_seed, per_user, and max_bucket_candidates; it is not a lightweight full-statistics route.",
         "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical co_visit_fallback_repair source identity, and artifact gate evidence.",
@@ -862,7 +891,8 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn"
+          "youtube_dnn",
+          "pool1000"
         ],
         "generation_dataset_scope": "Deferred until train-only two-tower embedding and ANN artifacts exist; no READY generation dataset is claimed.",
         "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical two_tower source identity, and artifact gate evidence.",

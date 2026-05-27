@@ -781,7 +781,7 @@ def validate_two_tower_full_clean_artifact(
     missing_fields = sorted(field for field in REQUIRED_TWO_TOWER_FULL_CLEAN_FIELDS if not combined.get(field))
     if missing_fields:
         blockers.append(_blocker("TWO_TOWER_FULL_CLEAN_FIELD_MISSING", {"fields": missing_fields}))
-    if combined.get("source_name") != "two_tower" or combined.get("canonical_source") != "two_tower":
+    if str(combined.get("source_name") or "") not in {"two_tower", "two_tower_youtube_dnn"} or combined.get("canonical_source") != "two_tower":
         blockers.append(_blocker("TWO_TOWER_CANONICAL_SOURCE_REQUIRED", {"source_name": combined.get("source_name"), "canonical_source": combined.get("canonical_source")}))
     if combined.get("index_scope") != "FULL_DERIVED_INDEX":
         blockers.append(_blocker("TWO_TOWER_FULL_INDEX_SCOPE_REQUIRED", {"index_scope": combined.get("index_scope")}))
@@ -792,7 +792,12 @@ def validate_two_tower_full_clean_artifact(
         blockers.append(_blocker("TWO_TOWER_ROW_COUNT_REQUIRED", {"field": "user_embedding_row_count", "value": combined.get("user_embedding_row_count")}))
     if not combined.get("user_embedding_row_count") and not combined.get("user_embedding_row_count_note"):
         diagnostics.append(_diagnostic("TWO_TOWER_USER_EMBEDDING_ROW_COUNT_UNSPECIFIED", {}))
-    forbidden_values = [value for payload in payloads for _, value in _walk_manifest(payload) if _is_forbidden_two_tower_artifact_value(value)]
+    forbidden_values = [
+        value
+        for payload in payloads
+        for key, value in _walk_manifest(payload)
+        if _is_forbidden_two_tower_artifact_value(value) and not _is_allowed_two_tower_artifact_label(key, value)
+    ]
     if forbidden_values:
         blockers.append(_blocker("TWO_TOWER_FORBIDDEN_ARTIFACT_SCOPE", {"values": sorted(map(str, forbidden_values))}))
     leakage_audit = no_holdout_leakage_audit(_collect_manifest_inputs(combined), LEAKAGE_SENSITIVE_OPERATIONS)
@@ -964,6 +969,18 @@ def _positive_int(value: Any) -> bool:
 def _is_forbidden_two_tower_artifact_value(value: Any) -> bool:
     normalized = str(value).replace("\\", "/").lower()
     return any(token in normalized for token in FORBIDDEN_TWO_TOWER_ARTIFACT_TOKENS)
+
+
+def _is_allowed_two_tower_artifact_label(key: str, value: Any) -> bool:
+    if not isinstance(value, str) or _looks_like_path_value(value):
+        return False
+    leaf_key = key.rsplit(".", 1)[-1].lower()
+    normalized = value.strip().lower().replace("-", "_")
+    return leaf_key in {"source_name", "variant", "model_type"} and normalized in {
+        "two_tower_youtube_dnn",
+        "youtube_dnn",
+        "youtube_dnn_two_tower_v1",
+    }
 
 
 

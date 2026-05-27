@@ -50,6 +50,7 @@ FORBIDDEN_EVIDENCE_TOKENS = {
     "clean_10000",
     "lopo",
     "youtube_dnn",
+    "pool1000",
 }
 
 SCOPE_FIELDS_FORBIDDEN_FROM_EVIDENCE = {
@@ -106,6 +107,25 @@ def test_pool500_registry_dataset_contract_policy_classification(sources: dict[s
         assert dataset_contract["custom_dataset_required"] is expected_custom_dataset_required, source_name
 
 
+def test_usercf_registry_points_to_route_ready_formal_artifact_without_ranking_promotion(sources: dict[str, dict[str, Any]]) -> None:
+    usercf = sources["usercf_recall"]
+    contract = usercf["dataset_contract"]
+    expected_base = "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready"
+
+    assert usercf["status"] == "READY"
+    assert usercf["latest_artifact"] == f"{expected_base}/source_index_manifest.json"
+    assert usercf["latest_readiness_contract"] == f"{expected_base}/readiness_contract.json"
+    assert usercf["latest_row_count"] == 17509
+    assert usercf["latest_candidate_total_count"] == 17509
+    assert contract["status"] == "READY"
+    assert f"{expected_base}/source_index_manifest.json" in contract["readiness_artifacts"]
+    assert f"{expected_base}/readiness_contract.json" in contract["readiness_artifacts"]
+    assert f"{expected_base}/no_holdout_audit.json" in contract["readiness_artifacts"]
+    assert contract["promotion_policy"]["auto_promotion_allowed"] is False
+    assert contract["promotion_policy"]["ranking_input_replacement_allowed"] is False
+    assert contract["promotion_policy"]["pool1000_allowed"] is False
+
+
 def test_pool500_registry_dataset_contract_forbidden_evidence_boundary(sources: dict[str, dict[str, Any]]) -> None:
     for source_name, source_config in sources.items():
         dataset_contract = source_config["dataset_contract"]
@@ -155,7 +175,7 @@ def test_pool500_registry_light_methods_allow_full_train_only_statistics_scan(so
 def test_pool500_registry_heavy_methods_define_method_specific_resource_boundaries(sources: dict[str, dict[str, Any]]) -> None:
     expected = {
         "itemcf_weak": ("max_output_users", 300_000),
-        "itemcf_strong": ("max_output_users", 200_000),
+        "itemcf_strong": ("max_output_users", 160_000),
         "usercf_recall": ("similar_users_top_k", 200),
         "swing_recall": ("max_graph_users", 120_000),
     }
@@ -181,7 +201,7 @@ def test_pool500_registry_heavy_methods_define_method_specific_resource_boundari
 def test_pool500_registry_itemcf_edge_feature_smoke_contract_is_fixed(sources: dict[str, dict[str, Any]]) -> None:
     expected_smoke_limits = {
         "itemcf_weak": {"max_item_user_freq": 5_000, "min_pair_support": 1, "top_k_per_seed": 100},
-        "itemcf_strong": {"max_item_user_freq": 3_000, "min_pair_support": 2, "top_k_per_seed": 100},
+        "itemcf_strong": {"max_item_user_freq": 8_000, "min_pair_support": 1, "top_k_per_seed": 150},
     }
 
     for source_name, expected_limits in expected_smoke_limits.items():
@@ -189,15 +209,18 @@ def test_pool500_registry_itemcf_edge_feature_smoke_contract_is_fixed(sources: d
         smoke = boundary["scale_tiers"]["smoke"]
 
         assert boundary["itemcf_feature_schema"] == "itemcf_edge_features_v1", source_name
-        assert boundary["top_k_per_seed"] == 100, source_name
+        expected_top_k = 150 if source_name == "itemcf_strong" else 100
+        assert boundary["top_k_per_seed"] == expected_top_k, source_name
         assert boundary["score_policy"] == ITEMCF_SCORE_POLICY, source_name
         assert boundary["itemcf_score_formula"] == ITEMCF_SCORE_FORMULA, source_name
         assert boundary["active_user_penalty_policy"] == ITEMCF_ACTIVE_USER_PENALTY_POLICY, source_name
         assert boundary["weighted_cooc_feature"] == "weighted_cooc", source_name
         for key, expected_value in expected_limits.items():
             assert smoke[key] == expected_value, source_name
-        assert smoke["max_output_users"] == 1_000, source_name
-        assert smoke["max_items_per_user"] == 50, source_name
+        expected_smoke_users = 5_000 if source_name == "itemcf_strong" else 1_000
+        expected_smoke_items = 60 if source_name == "itemcf_strong" else 50
+        assert smoke["max_output_users"] == expected_smoke_users, source_name
+        assert smoke["max_items_per_user"] == expected_smoke_items, source_name
 
 
 def test_pool500_registry_deferred_methods_have_bounded_method_specific_data_definitions(sources: dict[str, dict[str, Any]]) -> None:
@@ -270,8 +293,8 @@ def test_pool500_registry_readiness_groups_are_fixed(sources: dict[str, dict[str
         grouped[source_config["status"]].add(source_name)
 
     assert grouped == {
-        "READY": {"category", "popular", "swing_recall"},
-        "DIAGNOSTIC_ONLY": {"usercf_recall", "itemcf_weak", "itemcf_strong"},
+        "READY": {"category", "popular", "swing_recall", "usercf_recall"},
+        "DIAGNOSTIC_ONLY": {"itemcf_weak", "itemcf_strong"},
         "DEFERRED": {"semantic", "semantic_title_category_expansion", "co_visit_fallback_repair", "two_tower"},
     }
 

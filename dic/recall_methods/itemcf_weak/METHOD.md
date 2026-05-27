@@ -86,12 +86,15 @@
 - 泄漏边界：不读取 valid/test/holdout/LOPO/eval_label/oracle，不用诊断命中结果反向筛边，不声明 READY、promotion、ranking input replacement 或 pool1000。
 - 维护检查：weak 的 `min_pair_support` 与 `max_item_user_freq` 应宽于 strong；修改后同步检查 registry、builder manifest、测试中的 `itemcf_weak_edges_v1`。
 
-## P2 smoke method_dataset 构建验证（2026-05-25）
+## P2 smoke / diagnostic / formal method_dataset 构建验证（2026-05-25）
 
-- 构建命令：`.venv/Scripts/python.exe -m rs_lab.experiments.recall.build_pool500_method_dataset --governance-manifest outputs/recall/data_governance/train_only_v1_smoke/manifest.json --source-method itemcf_weak --scale-tier smoke --output-root outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1 --overwrite`
-- 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1/itemcf_weak/`
-- manifest：`method_dataset_manifest.json`，`status=PASS`，`schema_name=itemcf_edge_features_v1`，上游 governance 为 `train_only_v1_smoke`。
-- 规模统计：`row_count=0`、`user_count=0`、`item_count=0`、`unique_pair_count=0`、`edge_count=0`、`directed_edge_count_after_topk=0`。
-- dropped reason：`user_bucket_not_allowed=18103318`、`insufficient_pair_items=66`、`pair_below_min_support=0`、`item_over_hot=1461`、`item_not_cf_ready=2317958`。
-- 特征摘要：`weighted_cooc`、`supporting_user_count` 已进入 builder；`score_formula=round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)`；排序策略为 `source_method + src_item_id` 内按 `itemcf_score desc, cooc_cnt desc, dst_item_id asc`；`top_k_per_seed=100`。
-- 验证说明：audit validator 已改为读取 method manifest 的 `upstream_governance_manifest_path`，不再硬编码 default `train_only_v1`；当前 weighted smoke 仍为空，不能据此声明召回覆盖提升或下游晋升。
+- smoke 构建命令：`.venv/Scripts/python.exe -m rs_lab.experiments.recall.build_pool500_method_dataset --governance-manifest outputs/recall/data_governance/train_only_v1_smoke/manifest.json --source-method itemcf_weak --scale-tier smoke --output-root outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1 --overwrite`
+- smoke 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1/itemcf_weak/`；`status=PASS`，但 `row_count=0`、`unique_pair_count=0`，只能证明链路和 audit 边界，不能证明覆盖提升。
+- strict diagnostic 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_diagnostic_v1/itemcf_weak/`；`row_count=94`、`unique_pair_count=47`、`edge_count=94`、`user_count=32`、`item_count=69`，audit PASS。
+- strict local_formal 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_formal_v1/itemcf_weak/`；`row_count=53540`、`unique_pair_count=26770`、`edge_count=53540`、`user_count=15535`、`item_count=33493`、`weighted_cooc_sum_after_topk=41082.97339`，audit PASS。
+- strict local_formal 按三级规模体系执行，但由于 `cf_ready + non-over_hot + max_item_user_freq=5000` 过滤较重，边数只有约 5.35 万；主要 drop 包括 `user_bucket_not_allowed=17629532`、`insufficient_pair_items=458317`、`item_over_hot=866844`、`item_not_cf_ready=1208170`。
+- coverage formal 另存为 `outputs/recall/pool500_method_datasets/itemcf_weighted_coverage_formal_v1/itemcf_weak/`，不是替换 strict 口径；显式使用 `weak_coverage` profile：`max_output_users=120000`、`max_items_per_user=80`、`max_item_user_freq=20000`、`top_k_per_seed=200`、用户桶扩到 `medium_behavior/sequence_sufficient/collaborative_rich`、item 桶扩到 `cf_ready/embedding_ready`，over-hot 只在 user frequency cap 下放行。
+- coverage formal 规模：`row_count=5640872`、`unique_pair_count=3091726`、`directed_edge_count_after_topk=5640872`、`edge_seed_count=239995`、`user_count=120000`、`item_count=239995`、`max_edges_per_seed_after_topk=200`、`weighted_cooc_sum_after_topk=2153105.673601`、`score_mismatch_count=0`、`missing_field_counts={}`。
+- dropped reason：coverage formal 仍保留 train-only 与质量边界，主要为 `user_bucket_not_allowed=14350420`、`max_output_users_exceeded=3632226`、`insufficient_pair_items=738`、`item_quality_bucket_not_allowed=1208170`、`item_user_freq_over_cap=32`。
+- 特征摘要：`weighted_cooc`、`supporting_user_count`、`score_policy=weighted_cooc_cosine_normalized_v1`、`active_user_penalty_policy=round(1 / log1p(filtered_sequence_len), 6)` 已进入 builder；`itemcf_score = round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)`；排序策略为 `source_method + src_item_id` 内按 `itemcf_score desc, cooc_cnt desc, dst_item_id asc`。
+- 边界说明：这些输出仍是 `method_dataset` / diagnostic evidence，不是 source index、candidate、ranking input、promotion 或 final pool500 ready；audit validator 使用 method manifest 的 `upstream_governance_manifest_path`，不硬编码 default governance。

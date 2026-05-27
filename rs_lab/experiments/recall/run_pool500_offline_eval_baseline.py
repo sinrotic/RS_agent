@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[3]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.common.io import iter_jsonl, read_json, write_json
+from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
 from rs_core.workflow.full_data_pool500_route_gate import canonical_user_set_hash
 from rs_lab.experiments.recall.run_full_data_pool500_recall_only import (
@@ -94,20 +94,26 @@ def run_pool500_offline_eval_baseline(
     target_manifest_path = output_dir / "candidate_generation_target_users_manifest.json"
     write_json(target_manifest_path, _candidate_generation_target_manifest(eval_manifest, eval_manifest_path, eval_user_ids, eval_user_set_hash))
 
+    base_clean_manifest_path = clean_manifest_path or _clean_manifest_from_eval(eval_manifest)
+    runner_kwargs = {
+        "clean_manifest_path": base_clean_manifest_path,
+        "lightweight_views_manifest_path": lightweight_views_manifest_path,
+        "output_dir": output_dir,
+        "limit_users": len(eval_user_ids),
+        "full_run": False,
+        "enable_semantic": enable_semantic,
+        "semantic_max_rows": semantic_max_rows,
+        "overwrite": True,
+        "enforce_venv": False,
+        "source_manifest_paths": source_manifest_paths,
+    }
+    if candidate_runner is run_full_data_pool500_recall_only:
+        runner_kwargs["clean_manifest_path"] = _write_eval_user_sequence_clean_manifest(base_clean_manifest_path, output_dir, eval_user_ids, target_manifest_path)
+    else:
+        runner_kwargs["target_user_manifest_path"] = target_manifest_path
+
     generation_started = perf_counter()
-    generation_manifest = candidate_runner(
-        clean_manifest_path=clean_manifest_path or _clean_manifest_from_eval(eval_manifest),
-        lightweight_views_manifest_path=lightweight_views_manifest_path,
-        output_dir=output_dir,
-        target_user_manifest_path=target_manifest_path,
-        limit_users=len(eval_user_ids),
-        full_run=False,
-        enable_semantic=enable_semantic,
-        semantic_max_rows=semantic_max_rows,
-        overwrite=True,
-        enforce_venv=False,
-        source_manifest_paths=source_manifest_paths,
-    )
+    generation_manifest = candidate_runner(**runner_kwargs)
     generation_elapsed_seconds = round(perf_counter() - generation_started, 6)
     candidate_path = output_dir / "pool500_candidates.jsonl"
     if not candidate_path.is_file():
@@ -563,6 +569,44 @@ def _aggregate_metrics(user_ids: list[str], user_scores: dict[str, dict[str, flo
         for metric_name in (f"Recall@{k}", f"HitRate@{k}"):
             payload[metric_name] = round(sum(user_scores[user_id][metric_name] for user_id in user_ids) / len(user_ids), 6) if user_ids else 0.0
     return payload
+
+
+def _write_eval_user_sequence_clean_manifest(base_clean_manifest_path: Path, output_dir: Path, eval_user_ids: list[str], target_manifest_path: Path) -> Path:
+    clean_manifest = read_json(base_clean_manifest_path)
+    sequence_path = _resolve_repo_path(clean_manifest["train_user_sequences_path"])
+    target_user_set = set(eval_user_ids)
+    selected_sequences: dict[str, dict[str, Any]] = {}
+    for sequence in iter_jsonl(sequence_path):
+        user_id = str(sequence.get("user_id") or "")
+        if user_id in target_user_set:
+            selected_sequences[user_id] = sequence
+            if len(selected_sequences) == len(target_user_set):
+                break
+    missing_user_ids = [user_id for user_id in eval_user_ids if user_id not in selected_sequences]
+    if missing_user_ids:
+        raise ValueError(f"fixed eval users missing train-only sequences: {missing_user_ids[:5]}")
+
+    sequence_view_path = output_dir / "candidate_generation_train_user_sequences.jsonl"
+    write_jsonl(sequence_view_path, [selected_sequences[user_id] for user_id in eval_user_ids])
+    clean_manifest_view = dict(clean_manifest)
+    clean_manifest_view["train_user_sequences_path"] = str(sequence_view_path)
+    clean_manifest_view["eval_user_sequence_view"] = {
+        "schema_version": "pool500_offline_eval_train_sequence_view_v1",
+        "source_train_user_sequences_path": str(sequence_path),
+        "source_eval_target_manifest_path": str(target_manifest_path),
+        "user_count": len(eval_user_ids),
+        "user_set_hash": canonical_user_set_hash(eval_user_ids),
+        "label_inputs_role": "evaluation_only_not_recall_generation_inputs",
+        "candidate_generation_allowed": False,
+    }
+    clean_manifest_view_path = output_dir / "candidate_generation_clean_manifest.json"
+    write_json(clean_manifest_view_path, clean_manifest_view)
+    return clean_manifest_view_path
+
+
+def _resolve_repo_path(value: Any) -> Path:
+    path = Path(str(value))
+    return path if path.is_absolute() else ROOT / path
 
 
 def _candidate_generation_target_manifest(eval_manifest: dict[str, Any], eval_manifest_path: Path, user_ids: list[str], user_set_hash: str) -> dict[str, Any]:

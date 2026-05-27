@@ -4,9 +4,10 @@ import hashlib
 from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 FORBIDDEN_TRAIN_INPUT_MARKERS = ("valid", "test", "holdout", "eval_label", "eval-label", "10000")
+ProgressCallback = Callable[[str, dict[str, Any]], None]
 
 from rs_core.common.config import load_config
 from rs_core.common.io import iter_jsonl, read_json, read_jsonl, write_json, write_jsonl
@@ -24,6 +25,8 @@ def train_two_tower_recall(
     user_quality_manifest: str | Path | None = None,
     user_quality_bucket: str | None = None,
     item_vocab_manifest: str | Path | None = None,
+    compact_inputs: bool = False,
+    progress_callback: ProgressCallback | None = None,
 ) -> dict[str, Any]:
     config = load_config(config_path)
     if config_overrides:
@@ -34,6 +37,11 @@ def train_two_tower_recall(
         training_config["variant"] = variant
     training_config.setdefault("variant", "dssm")
     training_config.setdefault("source_name", f"two_tower_{training_config['variant']}")
+    training_config.setdefault("min_user_positives", 3)
+    training_config.setdefault("max_samples_per_user", 5)
+    training_config.setdefault("negative_sampling_power", 0.75)
+    training_config.setdefault("gradient_accumulation_steps", 1)
+    training_config.setdefault("mixed_precision", False)
 
     clean_dir = _resolve_path(config.get("clean_dir", "data/processed/amazon_2023_recall_clean_smoke_e2e"))
     output_path = _resolve_path(output_dir or training_config.get("output_dir", f"outputs/training/two_tower/two_tower_training/{training_config['variant']}"))
@@ -43,8 +51,9 @@ def train_two_tower_recall(
     _ensure_inputs(paths)
 
     selected_user_ids = _user_quality_user_ids(user_quality_manifest, user_quality_bucket) if user_quality_manifest else None
-    sequences = _load_training_sequences(paths["sequences"], limit_users, selected_user_ids)
-    split_stats: dict[str, Any] = {"training_input_users": len(sequences)}
+    item_records = _load_item_records(paths["item_vocab_manifest"], training_config, compact_inputs, progress_callback)
+    sequences = _load_training_sequences(paths["sequences"], limit_users, selected_user_ids, training_config, compact_inputs, progress_callback)
+    split_stats: dict[str, Any] = {"training_input_users": len(sequences), "compact_inputs": compact_inputs}
     if user_quality_manifest:
         split_stats.update(
             {
@@ -58,17 +67,17 @@ def train_two_tower_recall(
         sequences, _, lopo_stats = _leave_one_positive_out_sequences(sequences)
         split_stats.update(lopo_stats)
 
-    item_records = _load_item_records(paths["item_vocab_manifest"])
     split_stats.update(
         {
             "item_vocab_manifest_path": str(paths["item_vocab_manifest"]),
             "item_vocab_path": str(paths["item_vocab"]),
             "item_vocab_size": len(item_records),
+            "item_vocab_min_frequency": read_json(paths["item_vocab_manifest"]).get("min_frequency", 1),
             "split_scope": "train_only",
             "leakage_checks": {"train_inputs_only": True, "eval_paths_rejected": True},
         }
     )
-    result = train_two_tower_model(sequences, item_records, training_config)
+    result = train_two_tower_model(sequences, item_records, training_config, progress_callback=progress_callback)
     result["train_metrics"].update(split_stats)
     contract = save_two_tower_artifacts(result, output_path)
     return {
@@ -245,24 +254,52 @@ def _two_tower_required_paths(clean_dir: Path, item_vocab_manifest_path: Path) -
     }
 
 
-def _load_training_sequences(sequence_path: Path, limit_users: int | None, selected_user_ids: set[str] | None) -> list[dict[str, Any]]:
-    if selected_user_ids is None:
+def _load_training_sequences(
+    sequence_path: Path,
+    limit_users: int | None,
+    selected_user_ids: set[str] | None,
+    training_config: dict[str, Any] | None = None,
+    compact_inputs: bool = False,
+    progress_callback: ProgressCallback | None = None,
+) -> list[dict[str, Any]]:
+    if not compact_inputs and progress_callback is None and selected_user_ids is None:
         sequences = read_jsonl(sequence_path)
         return sequences[:limit_users] if limit_users is not None else sequences
 
     sequences = []
     matched_user_ids: set[str] = set()
+    scanned = 0
     for row in iter_jsonl(sequence_path):
+        scanned += 1
         user_id = str(row.get("user_id") or "")
-        if user_id not in selected_user_ids:
+        if selected_user_ids is not None and user_id not in selected_user_ids:
             continue
-        sequences.append(row)
-        matched_user_ids.add(user_id)
+        sequences.append(_compact_training_sequence(row, training_config) if compact_inputs else row)
+        if selected_user_ids is not None:
+            matched_user_ids.add(user_id)
+        if progress_callback and len(sequences) % 10000 == 0:
+            progress_callback("load_training_sequences", {"scanned_rows": scanned, "kept_rows": len(sequences), "limit_users": limit_users})
         if limit_users is not None and len(sequences) >= limit_users:
             break
-        if len(matched_user_ids) == len(selected_user_ids):
+        if selected_user_ids is not None and len(matched_user_ids) == len(selected_user_ids):
             break
+    if progress_callback:
+        progress_callback("load_training_sequences_complete", {"scanned_rows": scanned, "kept_rows": len(sequences), "limit_users": limit_users})
     return sequences
+
+
+def _compact_training_sequence(row: dict[str, Any], training_config: dict[str, Any] | None) -> dict[str, Any]:
+    config = training_config or {}
+    keys = [str(item) for item in config.get("sequence_keys", ["recent_positive_item_sequence", "recent_strong_positive_item_sequence"])]
+    if "recent_item_sequence" not in keys:
+        keys.append("recent_item_sequence")
+    window = int(config.get("user_history_window", 20))
+    compact = {"user_id": str(row.get("user_id") or "")}
+    for key in keys:
+        values = row.get(key, [])
+        if isinstance(values, list):
+            compact[key] = [str(item) for item in values[-window:] if item]
+    return compact
 
 
 def _user_quality_user_ids(user_quality_manifest: str | Path, bucket: str | None) -> set[str]:
@@ -308,22 +345,40 @@ def _load_item_vocab_manifest(item_vocab_manifest_path: Path) -> dict[str, Any]:
     vocab_path = _resolve_path(manifest.get("item_vocab_path", ""))
     if not vocab_path.exists():
         raise ValueError(f"missing two_tower item vocab: {vocab_path}")
-    if manifest.get("item_count") != len(read_jsonl(vocab_path)):
+    row_count = sum(1 for _ in iter_jsonl(vocab_path))
+    if manifest.get("item_count") != row_count:
         raise ValueError("item_vocab manifest item_count does not match vocab rows")
     return manifest
 
 
-def _load_item_records(item_vocab_manifest_path: Path) -> list[dict[str, Any]]:
+def _load_item_records(
+    item_vocab_manifest_path: Path,
+    training_config: dict[str, Any] | None = None,
+    compact_inputs: bool = False,
+    progress_callback: ProgressCallback | None = None,
+) -> list[dict[str, Any]]:
     manifest = _load_item_vocab_manifest(item_vocab_manifest_path)
     item_vocab_path = _resolve_path(manifest["item_vocab_path"])
+    text_fields = [str(item) for item in (training_config or {}).get("text_fields", ["title_clean", "main_category", "category", "description_text", "features_text", "item_text", "categories_flat"])]
     by_id: dict[str, dict[str, Any]] = {}
-    for row in read_jsonl(item_vocab_path):
+    scanned = 0
+    for row in iter_jsonl(item_vocab_path):
+        scanned += 1
         item_id = str(row.get("parent_asin") or row.get("item_id") or "")
         if not item_id:
             continue
-        by_id[item_id] = dict(row) | {"parent_asin": item_id}
+        if compact_inputs:
+            record = {field: row[field] for field in text_fields if field in row}
+            record.update({"parent_asin": item_id, "item_id": item_id})
+        else:
+            record = dict(row) | {"parent_asin": item_id}
+        by_id[item_id] = record
+        if progress_callback and len(by_id) % 10000 == 0:
+            progress_callback("load_item_records", {"scanned_rows": scanned, "kept_rows": len(by_id), "manifest_item_count": manifest.get("item_count")})
     if len(by_id) != manifest.get("item_count"):
         raise ValueError("item_vocab contains empty or duplicate item ids")
+    if progress_callback:
+        progress_callback("load_item_records_complete", {"scanned_rows": scanned, "kept_rows": len(by_id), "manifest_item_count": manifest.get("item_count")})
     return list(by_id.values())
 
 

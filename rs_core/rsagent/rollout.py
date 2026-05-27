@@ -36,19 +36,26 @@ def turn_to_rollout_record(turn: AgentTurn, session: AgentSession, user_sequence
         "reward_evidence": reward_evidence,
         "reward": reward,
         "training_samples": _training_samples(turn, prompt_context, policy_type, reward, reward_evidence),
-        "metadata": {
-            "model_route": MODEL_ROUTE,
-            "training_deferred": True,
-            "inference_policy_enabled": bool(inference_policy.get("enabled", False)),
-            "inference_policy_fallback_used": bool(inference_policy.get("fallback_used", False)),
-            "inference_policy_route": inference_policy.get("route", "disabled"),
-            "model_id": inference_policy.get("model_id"),
-        },
+        "metadata": _record_metadata(turn, inference_policy),
     }
 
 
 def session_to_rollout_records(session: AgentSession, user_sequence: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     return [turn_to_rollout_record(turn, session, user_sequence) for turn in session.turns]
+
+
+def _record_metadata(turn: AgentTurn, inference_policy: dict[str, Any]) -> dict[str, Any]:
+    metadata = {
+        "model_route": MODEL_ROUTE,
+        "training_deferred": True,
+        "inference_policy_enabled": bool(inference_policy.get("enabled", False)),
+        "inference_policy_fallback_used": bool(inference_policy.get("fallback_used", False)),
+        "inference_policy_route": inference_policy.get("route", "disabled"),
+        "model_id": inference_policy.get("model_id"),
+    }
+    if turn.rag_context is not None:
+        metadata["rag_context"] = turn.rag_context
+    return metadata
 
 
 def _training_samples(

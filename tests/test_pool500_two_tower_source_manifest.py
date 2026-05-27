@@ -36,6 +36,14 @@ def test_build_pool500_two_tower_source_manifest_success(tmp_path: Path) -> None
     assert saved["variant"] == "youtube_dnn"
     assert saved["model_type"] == "youtube_dnn_two_tower_v1"
     assert saved["index_scope"] == "FULL_DERIVED_INDEX"
+    assert saved["source_status"] == "FULL_DERIVED_INDEX_DIAGNOSTIC"
+    assert saved["train_only"] is True
+    assert saved["candidate_generation_allowed"] is False
+    assert saved["ranking_input_replacement_allowed"] is False
+    assert saved["ranking_replacement_allowed"] is False
+    assert saved["pool1000_allowed"] is False
+    assert saved["promotion_allowed"] is False
+    assert saved["final_pool500_ready_claimed"] is False
     assert saved["embedding_path"] == str(paths["item_embeddings"].resolve())
     assert saved["index_path"] == str(paths["recall_index"].resolve())
     assert saved["item_vocab_manifest"] == str(paths["item_vocab_manifest"].resolve())

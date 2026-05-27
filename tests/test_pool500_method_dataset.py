@@ -147,6 +147,178 @@ def test_selection_uses_user_bucket_v2_and_item_cf_ready_non_over_hot(tmp_path: 
     assert weak["dropped_reason_counts"]["item_not_cf_ready"] == 1
 
 
+def test_itemcf_weak_coverage_profile_broadens_users_and_items_without_changing_layer(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path)
+
+    manifest = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "weak_coverage",
+        source_method="itemcf_weak",
+        itemcf_coverage_profile="weak_coverage",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    rows = _read_jsonl(Path(manifest["outputs"]["dataset_rows_path"]))
+    policy = manifest["resource_scale_policy"]
+    assert manifest["status"] == "PASS"
+    assert manifest["outputs"]["dataset_schema"] == "itemcf_edge_features_v1"
+    assert manifest["candidate_generation_allowed"] is False
+    assert manifest["ranking_input_replacement_allowed"] is False
+    assert policy["coverage_profile"] == "weak_coverage"
+    assert policy["max_output_users"] == 120_000
+    assert policy["max_items_per_user"] == 80
+    assert policy["max_item_user_freq"] == 20_000
+    assert policy["top_k_per_seed"] == 200
+    assert policy["item_quality_buckets"] == ["cf_ready", "embedding_ready"]
+    assert policy["allow_over_hot"] is True
+    assert manifest["selection_policy"]["eligible_user_buckets"] == ["medium_behavior", "sequence_sufficient", "collaborative_rich"]
+    assert "embedding_ready" in manifest["effective_item_bucket_policy"]
+    assert manifest["unique_pair_count"] == 6
+    assert manifest["directed_edge_count_after_topk"] == 12
+    assert {row["src_item_id"] for row in rows} >= {"cf_a", "cf_b", "cf_mid", "too_hot"}
+    assert {row["dst_item_id"] for row in rows} >= {"cf_a", "cf_b", "cf_mid", "too_hot"}
+    assert all(row["top_k_per_seed"] == 200 for row in rows)
+    assert manifest["dropped_reason_counts"]["item_quality_bucket_not_allowed"] == 1
+    assert "item_over_hot" not in manifest["dropped_reason_counts"]
+
+
+def test_itemcf_relaxed_strong_profile_broadens_strong_without_matching_weak_coverage(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path, include_sequence_user=True)
+
+    strict = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "strong_strict",
+        source_method="itemcf_strong",
+        overwrite=True,
+        enforce_venv=False,
+    )
+    relaxed = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "strong_relaxed",
+        source_method="itemcf_strong",
+        itemcf_coverage_profile="relaxed_strong",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    rows = _read_jsonl(Path(relaxed["outputs"]["dataset_rows_path"]))
+    policy = relaxed["resource_scale_policy"]
+    assert relaxed["status"] == "PASS"
+    assert relaxed["outputs"]["dataset_schema"] == "itemcf_edge_features_v1"
+    assert relaxed["candidate_generation_allowed"] is False
+    assert relaxed["ranking_input_replacement_allowed"] is False
+    assert relaxed["promotion_allowed"] is False
+    assert relaxed["final_pool500_ready_claimed"] is False
+    assert policy["coverage_profile"] == "relaxed_strong"
+    assert policy["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_local_formal_v3"
+    assert policy["selection_strategy"]["policy_name"] == "itemcf_strong_relaxed_edges_v1"
+    assert policy["selection_strategy"]["eligible_user_buckets"] == ["sequence_sufficient", "collaborative_rich"]
+    assert policy["item_quality_buckets"] == ["cf_ready", "embedding_ready"]
+    assert policy["src_item_quality_buckets"] == ["cf_ready", "embedding_ready"]
+    assert policy["dst_item_quality_buckets"] == ["cf_ready", "embedding_ready"]
+    assert policy["allow_over_hot"] is False
+    assert policy["src_allow_over_hot"] is True
+    assert policy["relaxed_scale_tiers"]["smoke"]["max_output_users"] == 5_000
+    assert policy["relaxed_scale_tiers"]["diagnostic"]["max_output_users"] == 80_000
+    assert policy["relaxed_scale_tiers"]["local_formal"]["max_output_users"] == 160_000
+    assert policy["max_output_users"] == 160_000
+    assert policy["max_items_per_user"] == 60
+    assert policy["max_item_user_freq"] == 8_000
+    assert policy["min_pair_support"] == 1
+    assert policy["top_k_per_seed"] == 150
+    assert policy["src_sequence_key"] == "recent_strong_positive_item_sequence"
+    assert policy["dst_sequence_key"] == "recent_positive_item_sequence"
+    assert policy["directed_seed_to_candidate_only"] is True
+    assert relaxed["selection_policy"]["eligible_user_buckets"] == ["sequence_sufficient", "collaborative_rich"]
+    assert relaxed["selection_policy"]["eligible_user_policy"] == "sequence_sufficient_or_collaborative_rich_for_relaxed_strong_itemcf"
+    assert "hot allowed" in relaxed["effective_item_bucket_policy"]
+    assert "dst candidate items in {cf_ready, embedding_ready} and non-hot" in relaxed["effective_item_bucket_policy"]
+    assert relaxed["edge_count"] > strict["edge_count"]
+    assert relaxed["unique_pair_count"] == 16
+    assert relaxed["edge_count"] == 16
+    assert {(row["src_item_id"], row["dst_item_id"], row["pair_support"]) for row in rows} == {
+        ("cf_a", "cf_b", 2),
+        ("cf_b", "cf_a", 2),
+        ("cf_a", "cf_mid", 2),
+        ("cf_mid", "cf_a", 2),
+        ("cf_b", "cf_mid", 1),
+        ("cf_mid", "cf_b", 1),
+        ("embed_seed", "cf_a", 1),
+        ("embed_seed", "cf_mid", 1),
+        ("cf_a", "embed_seed", 1),
+        ("cf_mid", "embed_seed", 1),
+        ("too_hot", "cf_a", 1),
+        ("too_hot", "cf_b", 1),
+        ("too_hot", "cf_mid", 1),
+        ("cf_hot", "cf_a", 1),
+        ("cf_hot", "cf_mid", 1),
+        ("cf_hot", "embed_seed", 1),
+    }
+    assert {row["src_item_id"] for row in rows} == {"cf_a", "cf_b", "cf_mid", "embed_seed", "too_hot", "cf_hot"}
+    assert {row["dst_item_id"] for row in rows} == {"cf_a", "cf_b", "cf_mid", "embed_seed"}
+    assert "too_hot" not in {row["dst_item_id"] for row in rows}
+    assert "cf_hot" not in {row["dst_item_id"] for row in rows}
+    assert relaxed["dropped_reason_counts"]["user_bucket_not_allowed"] == 2
+    assert relaxed["dropped_reason_counts"]["pair_below_min_support"] == 0
+    assert relaxed["dropped_reason_counts"]["item_over_hot"] == 2
+
+
+def test_itemcf_relaxed_strong_scale_tiers_have_distinct_caps(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path, include_sequence_user=True)
+
+    smoke = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "strong_relaxed_smoke",
+        source_method="itemcf_strong",
+        scale_tier="smoke",
+        itemcf_coverage_profile="relaxed_strong",
+        overwrite=True,
+        enforce_venv=False,
+    )
+    diagnostic = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "strong_relaxed_diagnostic",
+        source_method="itemcf_strong",
+        scale_tier="diagnostic",
+        itemcf_coverage_profile="relaxed_strong",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    assert smoke["resource_scale_policy"]["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_smoke_v3"
+    assert smoke["resource_scale_policy"]["max_output_users"] == 5_000
+    assert diagnostic["resource_scale_policy"]["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_diagnostic_v3"
+    assert diagnostic["resource_scale_policy"]["max_output_users"] == 80_000
+    assert smoke["resource_scale_policy"]["max_items_per_user"] == diagnostic["resource_scale_policy"]["max_items_per_user"] == 60
+    assert smoke["candidate_generation_allowed"] is False
+    assert diagnostic["candidate_generation_allowed"] is False
+
+
+def test_itemcf_coverage_profiles_are_source_specific(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path)
+
+    with pytest.raises(ValueError, match="weak_coverage profile is only supported for itemcf_weak"):
+        build_pool500_method_dataset(
+            governance_manifest_path=governance_manifest,
+            output_dir=tmp_path / "bad_weak_profile",
+            source_method="itemcf_strong",
+            itemcf_coverage_profile="weak_coverage",
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+    with pytest.raises(ValueError, match="relaxed_strong profile is only supported for itemcf_strong"):
+        build_pool500_method_dataset(
+            governance_manifest_path=governance_manifest,
+            output_dir=tmp_path / "bad_strong_profile",
+            source_method="itemcf_weak",
+            itemcf_coverage_profile="relaxed_strong",
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+
 def test_itemcf_edge_features_score_rank_and_topk_are_method_dataset_features(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     governance_manifest = _write_governance_fixture(tmp_path)
     capped_policy = json.loads(json.dumps(method_dataset_builder.RESOURCE_SCALE_POLICIES["itemcf_weak"]))
@@ -433,7 +605,7 @@ def test_no_candidate_or_source_artifact_files_are_generated(tmp_path: Path) -> 
     assert "FULL_POOL500_READY" not in serialized
 
 
-def _write_governance_fixture(tmp_path: Path, *, include_user_v2: bool = True) -> Path:
+def _write_governance_fixture(tmp_path: Path, *, include_user_v2: bool = True, include_sequence_user: bool = False) -> Path:
     root = tmp_path / "governance"
     root.mkdir()
     user_rows = [
@@ -442,36 +614,40 @@ def _write_governance_fixture(tmp_path: Path, *, include_user_v2: bool = True) -
         _user("u_medium", "medium_behavior", include_user_v2),
         _user("u_fallback", "fallback_only", include_user_v2),
     ]
+    if include_sequence_user:
+        user_rows.append(_user("u_sequence", "two_tower_train_eligible", include_user_v2))
     _write_jsonl(root / "user_quality_profile.jsonl", user_rows)
-    _write_jsonl(
-        root / "item_quality_profile.jsonl",
-        [
-            _item("cf_a", cf_ready=True, hotness_bucket="mid", quality_bucket_v2="cf_ready"),
-            _item("cf_b", cf_ready=True, hotness_bucket="mid", quality_bucket_v2="cf_ready"),
-            _item("cf_mid", cf_ready=True, hotness_bucket="mid", quality_bucket_v2="cf_ready"),
-            _item("too_hot", cf_ready=True, hotness_bucket="hot", quality_bucket_v2="embedding_ready"),
-            _item("cold", cf_ready=False, hotness_bucket="long_tail", quality_bucket_v2="low_frequency"),
-        ],
-    )
-    _write_jsonl(
-        root / "item_frequency_train.jsonl",
-        [
-            {"parent_asin": "cf_a", "frequency": 3, "user_count": 3},
-            {"parent_asin": "cf_b", "frequency": 3, "user_count": 3},
-            {"parent_asin": "cf_mid", "frequency": 2, "user_count": 2},
-            {"parent_asin": "too_hot", "frequency": 9, "user_count": 3},
-            {"parent_asin": "cold", "frequency": 1, "user_count": 1},
-        ],
-    )
-    _write_jsonl(
-        root / "user_sequences.train.jsonl",
-        [
-            {"user_id": "u_heavy", "recent_positive_item_sequence": ["cf_a", "cf_b", "cf_mid", "too_hot", "cold"]},
-            {"user_id": "u_heavy_2", "recent_positive_item_sequence": ["cf_a", "cf_b"]},
-            {"user_id": "u_medium", "recent_positive_item_sequence": ["cf_a", "cf_mid", "too_hot"]},
-            {"user_id": "u_fallback", "recent_positive_item_sequence": ["cf_a", "cf_b"]},
-        ],
-    )
+    item_rows = [
+        _item("cf_a", cf_ready=True, hotness_bucket="mid", quality_bucket_v2="cf_ready"),
+        _item("cf_b", cf_ready=True, hotness_bucket="mid", quality_bucket_v2="cf_ready"),
+        _item("cf_mid", cf_ready=True, hotness_bucket="mid", quality_bucket_v2="cf_ready"),
+        _item("too_hot", cf_ready=True, hotness_bucket="hot", quality_bucket_v2="embedding_ready"),
+        _item("cold", cf_ready=False, hotness_bucket="long_tail", quality_bucket_v2="low_frequency"),
+    ]
+    if include_sequence_user:
+        item_rows.append(_item("cf_hot", cf_ready=True, hotness_bucket="hot", quality_bucket_v2="cf_ready"))
+        item_rows.append(_item("embed_seed", cf_ready=False, hotness_bucket="mid", quality_bucket_v2="embedding_ready"))
+    _write_jsonl(root / "item_quality_profile.jsonl", item_rows)
+    item_frequency_rows = [
+        {"parent_asin": "cf_a", "frequency": 3, "user_count": 3},
+        {"parent_asin": "cf_b", "frequency": 3, "user_count": 3},
+        {"parent_asin": "cf_mid", "frequency": 2, "user_count": 2},
+        {"parent_asin": "too_hot", "frequency": 9, "user_count": 3},
+        {"parent_asin": "cold", "frequency": 1, "user_count": 1},
+    ]
+    if include_sequence_user:
+        item_frequency_rows.append({"parent_asin": "cf_hot", "frequency": 2, "user_count": 1})
+        item_frequency_rows.append({"parent_asin": "embed_seed", "frequency": 1, "user_count": 1})
+    _write_jsonl(root / "item_frequency_train.jsonl", item_frequency_rows)
+    sequence_rows = [
+        _sequence("u_heavy", ["cf_a", "cf_b", "cf_mid", "too_hot", "cold"]),
+        _sequence("u_heavy_2", ["cf_a", "cf_b"]),
+        _sequence("u_medium", ["cf_a", "cf_mid", "too_hot"]),
+        _sequence("u_fallback", ["cf_a", "cf_b"]),
+    ]
+    if include_sequence_user:
+        sequence_rows.append(_sequence("u_sequence", ["embed_seed", "cf_a", "cf_mid", "cf_hot"]))
+    _write_jsonl(root / "user_sequences.train.jsonl", sequence_rows)
     manifest = {
         "schema_version": GOVERNANCE_SCHEMA_VERSION,
         "status": "PASS",
@@ -513,6 +689,14 @@ def _item(parent_asin: str, *, cf_ready: bool, hotness_bucket: str, quality_buck
         "hotness_bucket": hotness_bucket,
         "quality_bucket_v2": quality_bucket_v2,
         "train_only": True,
+    }
+
+
+def _sequence(user_id: str, items: list[str]) -> dict[str, object]:
+    return {
+        "user_id": user_id,
+        "recent_positive_item_sequence": items,
+        "recent_strong_positive_item_sequence": items,
     }
 
 

@@ -108,6 +108,29 @@ def test_zero_history_user_fills_from_global_popular_and_audits_high_risk() -> N
     assert validation["valid"] is True
 
 
+def test_global_popular_backfills_after_diversity_prefix_overlaps_existing_candidates() -> None:
+    config = Pool500FallbackCompletionConfig()
+    sequence = {"user_id": "warm", "recent_item_sequence": [], "recent_positive_item_sequence": []}
+    context = FallbackCompletionContext(
+        seed_meta_by_item={},
+        seed_keys_by_user={"warm": {"brand": set(), "store": set(), "category": set(), "main_category": set(), "categories_flat": set()}},
+        category_recall_index={},
+        category_top_index={},
+        metadata_neighbor_index={},
+        semantic_token_index={},
+        global_popular_items=_popular_rows("global", 700, categories=1),
+        resource_audit={"heavy_job": False},
+    )
+    existing = [MergedCandidate(f"global_{idx}", ["two_tower"], {"two_tower": 1.0}) for idx in range(120)]
+
+    result = complete_pool500_for_user(sequence=sequence, existing_candidates=existing, context=context, config=config)
+
+    assert len(result.candidates) == 500
+    assert [candidate.item_id for candidate in result.candidates[:3]] == ["global_0", "global_1", "global_2"]
+    assert result.audit_input["source_mix"]["fallback_global_diversity_popular"] == 380
+    assert len({candidate.item_id for candidate in result.candidates}) == 500
+
+
 def test_existing_candidates_are_preserved_first_and_capped_at_500() -> None:
     config = Pool500FallbackCompletionConfig()
     sequence = {"user_id": "u1", "recent_item_sequence": ["seed"], "recent_positive_item_sequence": ["seed"]}

@@ -166,6 +166,7 @@ def load_vector_index_artifact(path: str | Path) -> VectorIndex:
             "variant": manifest.get("variant") or model_metadata.get("variant", ""),
             "model_type": model_metadata.get("model_type", ""),
             "source_name": source_name,
+            "model_parameters": model_metadata.get("model_parameters", {}),
         },
     )
 
@@ -184,6 +185,7 @@ def _load_two_tower_source_index(manifest_path: Path) -> VectorIndex:
             "variant": manifest["variant"],
             "model_type": manifest["model_type"],
             "source_name": source_name,
+            "model_parameters": manifest.get("model_parameters", {}),
         },
     )
 

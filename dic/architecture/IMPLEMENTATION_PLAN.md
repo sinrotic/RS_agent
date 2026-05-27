@@ -190,17 +190,22 @@
 
 下一步应把 Web Demo 和 Simulation 轨迹整理为可校验训练样本，而不是继续扩张展示功能。
 
-### Phase 4：Agent RAG 增强，规划中
+### Phase 4：Agent RAG 候选内证据选择器，已完成第一版
 
-这一阶段用于把当前 deterministic conversational Agent 从“基于候选和规则解释”推进到“基于候选、商品知识和可追溯证据解释”：
+这一阶段把 RAG 收敛为可用的候选内证据层，用于解释和约束澄清：
 
-- **知识库构建**：以 `parent_asin` 为主键，把商品标题、类目、描述、卖点、价格、评分和展示字段整理成可检索 item knowledge card。
-- **检索入口**：先做轻量 text / metadata retrieval，复用当前 semantic title、item metadata 和 display card contract；当规模或召回质量需要时，再接入 FAISS 或本地向量索引。
-- **Agent 工具边界**：新增 RAG retrieval tool 只返回候选相关证据和商品上下文，不直接越过当前候选池生成新商品，不替代 ranking tool。
-- **Prompt / Context 注入**：将检索到的商品证据注入推荐解释、why 问答、澄清追问和 show different 场景，要求解释引用真实字段而不是编造卖点。
-- **评估与门禁**：增加 grounded explanation ratio、候选池内推荐比例、无根据卖点比例、RAG latency 和 context 长度预算；未通过门禁时保持 default-off 侧路。
+- `rag.evidence_mode` 支持 `off` / `shadow` / `explain`
+- `off` 不构建 `rag_context`，保持旧链路
+- `shadow` 构建并记录 `rag_context`，但解释输出不变
+- `explain` 让解释链路消费 display-safe 的候选证据
+- `rag.max_evidence_per_item` 作为可选证据上限
+- provenance gate 会剔除 label / holdout / oracle / ground_truth / test_truth / diagnostic_label / eval_label / target / future-like 证据
+- RAG 不修改 `candidates`、`ranking`、`final_items` 或 `scores`
+- 已新增 SQLite FTS5/BM25 轻量检索第一版：`build_sqlite_bm25_index()` 负责商品字段 chunk 入库，`rag.index_path` / `rag.bm25_index_path` 存在时 Agent 解释链路使用 `SQLiteBM25CandidateRetriever`
+- 已新增 Hybrid 检索第一版：`rag.retriever=hybrid` 时使用 `HybridCandidateRetriever`，融合 BM25 分数和 deterministic hashed text vector cosine 分数
+- BM25 / Hybrid 检索仍限定在已排序候选 item id 内，只选择解释证据，不作为新的召回源
 
-当前边界是：RAG 是 Agent 的知识增强和幻觉控制能力，不是新的主召回路线；它可以服务推荐解释、约束澄清和多轮对话，但推荐结果仍应来自受治理的候选池与排序链路。
+当前结论是：RAG 已具备候选内 BM25 + 轻量 Hybrid 证据检索闭环。下一步如果继续扩展，应优先补真实 embedding 替换接口、item_knowledge 数据质量和离线证据质量评估，而不是先改主路候选治理。
 
 ---
 

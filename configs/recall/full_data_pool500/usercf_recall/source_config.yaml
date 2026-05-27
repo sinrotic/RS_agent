@@ -1,26 +1,32 @@
 schema_version: pool500_method_source_config_v1
 source: usercf_recall
-output_root: outputs/recall/pool500_method_sources
-run_id: null
-target_user_limit: 500
+output_root: outputs/recall/pool500_usercf_method_train
+run_id: usercf_v1_formal_route_ready
+source_index_manifest: outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json
+readiness_contract: outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/readiness_contract.json
+input_mode: method_dataset
+method_dataset_manifest: outputs/recall/pool500_method_datasets/usercf_v1_local_formal/usercf_method_dataset/method_dataset_manifest.json
+target_user_limit: 90686
 candidate_top_k_per_user: 500
 generation_config_overrides:
   usercf_per_user: 500
 similar_users_top_k: 200
-target_batch_size: 50
+target_batch_size: 2000
 shard_count: 16
 max_items_per_user: 80
 max_item_user_freq: 5000
 max_rss_mb: 4096
 resource_guard:
-  batch_size: 50
+  batch_size: 2000
   checkpoint_enabled: true
   heavy_job: true
 manifest_contract:
   source_index_manifest: source_index_manifest.json
   method_dataset_manifest: method_dataset_manifest.json
+  readiness_contract: readiness_contract.json
   candidates: candidates.jsonl
 governance:
+  source_status: READY
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false

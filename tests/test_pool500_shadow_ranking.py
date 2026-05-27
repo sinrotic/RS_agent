@@ -823,7 +823,15 @@ def test_fixed_ranking_comparison_configs_are_bounded_and_keep_itemcf_as_group_k
     assert all(config["top_k"] == 20 for config in configs.values())
     assert "topk_source_minimums" not in configs["B0"]
     assert configs["D1"]["topk_source_minimums"] == {"itemcf": 1}
-    assert configs["D2"]["topk_source_minimums"] == {"itemcf": 1, "semantic": 1, "category": 1}
+    assert configs["D2"]["topk_source_minimums"] == {
+        "itemcf": 1,
+        "semantic": 1,
+        "semantic_title_category_expansion": 1,
+        "two_tower": 1,
+        "usercf_recall": 1,
+        "swing_recall": 1,
+        "category": 1,
+    }
     assert configs["A1"]["normalized_additive_ranking"]["weights"]["source_signal"] == 0.2
     assert configs["A2"]["normalized_additive_ranking"]["weights"]["source_signal"] == 0.4
     assert configs["R1"]["fallback_heavy_topk_cap"] == {"enabled": True, "max_topk_ratio": 0.5}

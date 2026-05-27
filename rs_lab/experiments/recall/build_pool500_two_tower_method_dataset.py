@@ -633,12 +633,13 @@ def _write_train_samples(
                     targets_outside_negative_universe += 1
                 history_items = positives[:target_index]
                 excluded_items = known_items | set(history_items) | {target_item}
-                eligible_negatives = [item_id for item_id in negative_items if item_id not in excluded_items]
                 negatives = _deterministic_rotated_negatives(
-                    eligible_negatives,
+                    negative_items,
+                    excluded_items=excluded_items,
                     user_id=user_id,
                     target_item=target_item,
                     target_index=target_index,
+                    sample_index=sample_count,
                     negative_ratio=negative_ratio,
                 )
                 if not negatives:
@@ -739,13 +740,28 @@ def _sample_stats(
     }
 
 
-def _deterministic_rotated_negatives(eligible_negatives: list[str], *, user_id: str, target_item: str, target_index: int, negative_ratio: int) -> list[str]:
-    if not eligible_negatives:
+def _deterministic_rotated_negatives(
+    negative_items: list[str],
+    *,
+    excluded_items: set[str],
+    user_id: str,
+    target_item: str,
+    target_index: int,
+    sample_index: int,
+    negative_ratio: int,
+) -> list[str]:
+    if not negative_items:
         return []
-    digest = hashlib.sha256(f"{user_id}␟{target_item}␟{target_index}".encode("utf-8")).digest()
-    offset = int.from_bytes(digest[:8], "big") % len(eligible_negatives)
-    rotated = eligible_negatives[offset:] + eligible_negatives[:offset]
-    return rotated[:negative_ratio]
+    offset = (sample_index + target_index) % len(negative_items)
+    negatives = []
+    for index in range(len(negative_items)):
+        item_id = negative_items[(offset + index) % len(negative_items)]
+        if item_id in excluded_items:
+            continue
+        negatives.append(item_id)
+        if len(negatives) >= negative_ratio:
+            break
+    return negatives
 
 
 def _write_training_item_universe(
@@ -821,7 +837,7 @@ def _training_universe_row(item_id: str, row: dict[str, Any], roles: list[str], 
         "global_pop_rank": int(row.get("global_pop_rank", 0) or 0),
         "item_roles": roles,
         "sample_target_count": int(sample_target_count),
-        "title_clean": _metadata_text(metadata, "title_clean", "title"),
+        "title_clean": _metadata_text(metadata, "title_clean", "title", "description_text", "description", "features_text", "features", "categories_path", "main_category", "category"),
         "main_category": _metadata_text(metadata, "main_category", "category"),
         "category": _metadata_text(metadata, "category", "main_category"),
         "description_text": _metadata_text(metadata, "description_text", "description"),

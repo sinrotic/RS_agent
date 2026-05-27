@@ -20,6 +20,7 @@ from rs_core.common.runtime import enforce_project_venv
 from rs_core.recsys.candidate_merge import (
     load_category_candidates,
     load_itemcf_by_source,
+    load_itemcf_source_manifest,
     load_popular_candidates,
     load_swing_recall_sidecar,
     load_two_tower_index,
@@ -31,7 +32,7 @@ from rs_core.recsys.candidate_merge import (
 )
 from rs_core.recsys.types import RecallCandidate
 from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
-from rs_core.recsys.vector_index import VectorIndex, average_vectors
+from rs_core.recsys.vector_index import VectorIndex
 from rs_core.workflow.full_data_pool500_route_gate import (
     CANONICAL_SOURCES,
     DIAGNOSTIC_ONLY_PARTIAL,
@@ -60,42 +61,51 @@ DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_
 DEFAULT_OUTPUT_DIR = ROOT / "outputs" / "recall" / "full_data_pool500_recall_only"
 DEFAULT_SOURCE_MANIFESTS = {
     "itemcf_weak": ROOT / "outputs" / "recall" / "pool500_method_sources" / "itemcf_weak" / "target500_train_weak_edges_v1" / "source_index_manifest.json",
-    "itemcf_strong": ROOT / "outputs" / "recall" / "pool500_method_sources" / "itemcf_strong" / "itemcf_strong_20260519T0945Z" / "source_index_manifest.json",
-    "usercf_recall": ROOT / "outputs" / "recall" / "pool500_method_sources" / "usercf_recall" / "usercf_recall_pool500_heavy_probe_train_only_20260520" / "source_index_manifest.json",
-    "swing_recall": ROOT / "outputs" / "recall" / "pool500_method_sources" / "swing_recall" / "target_slice_diagnostic_v1" / "source_index_manifest.json",
-    "semantic_title_category_expansion": ROOT / "outputs" / "recall" / "pool500_method_sources" / "semantic_title_category_expansion" / "target500_semantic_title_category_v1" / "source_index_manifest.json",
-    "co_visit_fallback_repair": ROOT / "outputs" / "recall" / "pool500_method_sources" / "co_visit_fallback_repair" / "target_slice_20260519_0001" / "source_index_manifest.json",
-    "two_tower": ROOT / "outputs" / "recall" / "pool500_full_sources" / "two_tower_target500_slice_expanded" / "source_index_manifest.json",
+    "itemcf_strong": ROOT / "outputs" / "recall" / "pool500_method_sources" / "itemcf_strong_relaxed_seedsrc_v3_from_method_dataset" / "itemcf_strong" / "formal_sharded" / "source_index_manifest.json",
+    "usercf_recall": ROOT / "outputs" / "recall" / "pool500_usercf_method_train" / "usercf_recall" / "usercf_v1_formal_route_ready" / "source_index_manifest.json",
+    "swing_recall": ROOT / "outputs" / "recall" / "pool500_method_sources" / "swing_recall" / "local_formal_swing_recall_20260525" / "source_index_manifest.json",
+    "semantic": ROOT / "outputs" / "recall" / "pool500_method_sources" / "semantic" / "local_formal_semantic_20260525" / "source_index_manifest.json",
+    "semantic_title_category_expansion": ROOT / "outputs" / "recall" / "pool500_method_sources" / "semantic_title_category_expansion" / "local_formal_semantic_title_category_20260525" / "source_index_manifest.json",
+    "co_visit_fallback_repair": ROOT / "outputs" / "recall" / "pool500_method_sources" / "co_visit_fallback_repair" / "local_formal_co_visit_repair_20260525" / "source_index_manifest.json",
+    "two_tower": ROOT / "outputs" / "recall" / "pool500_full_sources" / "two_tower" / "index" / "source_index_manifest.json",
 }
 DEFAULT_USERCF_SIDECAR_MANIFEST = DEFAULT_SOURCE_MANIFESTS["usercf_recall"]
 DEFAULT_SMOKE_LIMIT_USERS = 1000
 FILL_ORDER = [
-    "semantic_title_category_expansion",
     "two_tower",
-    "co_visit_fallback_repair",
-    "usercf_recall",
+    "itemcf_strong",
     "swing_recall",
-    "itemcf",
+    "usercf_recall",
+    "co_visit_fallback_repair",
+    "itemcf_weak",
+    "semantic_title_category_expansion",
+    "semantic",
     "category",
     "popular",
 ]
 MAIN_ROUTE_SOURCE_MINIMUMS = {
-    "semantic_title_category_expansion": 40,
-    "two_tower": 10,
-    "co_visit_fallback_repair": 20,
-    "usercf_recall": 10,
-    "swing_recall": 10,
+    "two_tower": 80,
+    "itemcf_strong": 45,
+    "itemcf_weak": 15,
+    "swing_recall": 40,
+    "co_visit_fallback_repair": 40,
+    "semantic_title_category_expansion": 30,
 }
-MAIN_ROUTE_SOURCE_MAXIMUMS = {"popular": 40}
+MAIN_ROUTE_SOURCE_MAXIMUMS = {
+    "category": 150,
+    "popular": 80,
+    "usercf_recall": 10,
+}
 SOURCE_ALIASES = {
     "metadata_neighbor_recall": "co_visit_fallback_repair",
     "category_recall_items": "category",
     "category_top_items": "category",
     "category_long_tail_recall": "category",
 }
-READY_STOPLOSS_SOURCES = ("category", "popular", "swing_recall")
-DIAGNOSTIC_CONTRIBUTION_SOURCES = ("usercf_recall", "itemcf_weak", "itemcf_strong")
+READY_STOPLOSS_SOURCES = ("category", "popular", "swing_recall", "usercf_recall")
+DIAGNOSTIC_CONTRIBUTION_SOURCES = ("itemcf_weak", "itemcf_strong")
 BATCH_SCOPED_DEFERRED_SOURCES = {"semantic", "semantic_title_category_expansion", "co_visit_fallback_repair"}
+PREGENERATED_RECALL_SOURCES = {"semantic", "semantic_title_category_expansion", "co_visit_fallback_repair"}
 GENERATION_SOURCE_CONFIG = {
     "candidate_pool_size": 500,
     "candidate_pool_strategy": "balanced_source_budget",
@@ -196,23 +206,6 @@ def run_full_data_pool500_recall_only(
 
     available_artifacts = _available_source_artifacts(view_outputs) | {source: artifact["path"].is_file() for source, artifact in source_artifacts.items()}
     batch_sequences = _load_batch_sequences(sequence_path, limit_users)
-    popular = load_popular_candidates(view_outputs["popular_recall"], limit=10000)
-    category_top = load_category_candidates(view_outputs["category_top_items"])
-    item_category = _load_item_category(view_outputs["category_recall_items"])
-    itemcf_weak = _load_source_itemcf(source_artifacts.get("itemcf_weak"), view_outputs.get("itemcf_recall_weak"), "itemcf_weak")
-    itemcf_strong = _load_source_itemcf(source_artifacts.get("itemcf_strong"), view_outputs.get("itemcf_recall_strong"), "itemcf_strong")
-    semantic_artifact = source_artifacts.get("semantic_title_category_expansion")
-    semantic_source_path = _artifact_data_path(semantic_artifact, "semantic_recall_inputs_path") if semantic_artifact else None
-    semantic_source_path = semantic_source_path or view_outputs["semantic_recall_inputs"]
-    semantic_index = _load_batch_semantic_index(semantic_source_path, batch_sequences, semantic_max_rows) if enable_semantic else {}
-    semantic_input_manifest = _semantic_input_manifest(semantic_source_path, semantic_index, batch_sequences, semantic_max_rows, enable_semantic)
-    usercf_recall = _load_optional_usercf(source_artifacts.get("usercf_recall", {}).get("path"))
-    swing_recall = _load_optional_swing(source_artifacts.get("swing_recall", {}).get("path"))
-    pregenerated_recall = _load_pregenerated_recall_sources(
-        source_artifacts,
-        {"semantic_title_category_expansion", "co_visit_fallback_repair"},
-    )
-    two_tower_index = _load_optional_two_tower(source_artifacts.get("two_tower"))
     generation_config = dict(GENERATION_SOURCE_CONFIG)
     if not enable_semantic:
         generation_config.update({
@@ -221,6 +214,30 @@ def run_full_data_pool500_recall_only(
             "semantic_title_category_expansion": {"enabled": False},
         })
     _apply_source_generation_overrides(generation_config, source_artifacts)
+    popular = load_popular_candidates(view_outputs["popular_recall"], limit=10000)
+    category_top = load_category_candidates(view_outputs["category_top_items"])
+    item_category = _load_item_category(view_outputs["category_recall_items"])
+    itemcf_weak_seeds = _batch_itemcf_seed_items(
+        batch_sequences,
+        "recent_positive_item_sequence",
+        int(generation_config.get("itemcf_recent_positive_window", 20)),
+    )
+    itemcf_strong_seeds = _batch_itemcf_seed_items(
+        batch_sequences,
+        "recent_strong_positive_item_sequence",
+        int(generation_config.get("itemcf_recent_strong_window", 20)),
+    )
+    itemcf_weak = _load_source_itemcf(source_artifacts.get("itemcf_weak"), view_outputs.get("itemcf_recall_weak"), "itemcf_weak", itemcf_weak_seeds)
+    itemcf_strong = _load_source_itemcf(source_artifacts.get("itemcf_strong"), view_outputs.get("itemcf_recall_strong"), "itemcf_strong", itemcf_strong_seeds)
+    semantic_artifact = source_artifacts.get("semantic_title_category_expansion")
+    semantic_source_path = _artifact_data_path(semantic_artifact, "semantic_recall_inputs_path") if semantic_artifact else None
+    semantic_source_path = semantic_source_path or view_outputs["semantic_recall_inputs"]
+    semantic_index = _load_batch_semantic_index(semantic_source_path, batch_sequences, semantic_max_rows) if enable_semantic else {}
+    semantic_input_manifest = _semantic_input_manifest(semantic_source_path, semantic_index, batch_sequences, semantic_max_rows, enable_semantic)
+    usercf_recall = _load_optional_usercf(source_artifacts.get("usercf_recall", {}).get("path"))
+    swing_recall = _load_optional_swing(source_artifacts.get("swing_recall", {}).get("path"))
+    pregenerated_recall = _load_pregenerated_recall_sources(source_artifacts, PREGENERATED_RECALL_SOURCES)
+    two_tower_index = _load_optional_two_tower(source_artifacts.get("two_tower"))
     two_tower_recall = _precompute_two_tower_recall(batch_sequences, two_tower_index, generation_config)
     fallback_config = Pool500FallbackCompletionConfig()
     fallback_context = build_fallback_completion_context(
@@ -288,7 +305,7 @@ def run_full_data_pool500_recall_only(
             context=fallback_context,
             config=fallback_config,
         )
-        candidates = _enforce_popular_category_cap(completion.candidates)
+        candidates = completion.candidates
         fallback_audit_inputs.append(_fallback_audit_with_final_candidates(completion.audit_input, candidates))
         if enable_semantic:
             semantic_candidate_diagnostics[user_id] = _semantic_candidate_diagnostic_for_user(
@@ -325,8 +342,6 @@ def run_full_data_pool500_recall_only(
             rows.append(row)
             for source in canonical_sources:
                 source_rows[source].append(row)
-        if popular_category_count > 175:
-            popular_category_cap_violations += 1
 
     fallback_completion_audit, fallback_completion_validation = build_completion_audit_bundle(fallback_audit_inputs, fallback_config)
     fallback_completion_audit_path = output_dir / "fallback_completion_audit.json"
@@ -462,6 +477,8 @@ def run_full_data_pool500_recall_only(
         },
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
         "pool1000_allowed": False,
         "fallback_completion": {
             "enabled": True,
@@ -683,12 +700,16 @@ def _load_batch_semantic_index(path: Path, sequences: list[dict[str, Any]], max_
 
 
 def _batch_seed_items(sequences: list[dict[str, Any]], window: int = 20) -> set[str]:
+    return _batch_itemcf_seed_items(sequences, "recent_positive_item_sequence", window)
+
+
+def _batch_itemcf_seed_items(sequences: list[dict[str, Any]], sequence_key: str, window: int = 20) -> set[str]:
     seed_items = set()
     for sequence in sequences:
-        recent_positive = sequence.get("recent_positive_item_sequence", [])
-        if not isinstance(recent_positive, list):
+        items = sequence.get(sequence_key, [])
+        if not isinstance(items, list):
             continue
-        seed_items.update(str(item) for item in recent_positive[-window:] if item)
+        seed_items.update(str(item) for item in items[-window:] if item)
     return seed_items
 
 
@@ -727,11 +748,19 @@ def _available_source_artifacts(view_outputs: dict[str, Path]) -> dict[str, bool
     return {name: path.is_file() for name, path in sorted(view_outputs.items())}
 
 
-def _load_source_itemcf(artifact: dict[str, Any] | None, fallback_path: Path | None, source: str) -> dict[str, list[Any]]:
+def _load_source_itemcf(
+    artifact: dict[str, Any] | None,
+    fallback_path: Path | None,
+    source: str,
+    allowed_src_items: set[str] | None = None,
+) -> dict[str, list[Any]]:
+    manifest = artifact.get("manifest") if artifact else None
+    if isinstance(manifest, dict) and (manifest.get("edges_shards") or (isinstance(manifest.get("outputs"), dict) and manifest["outputs"].get("edges_shards"))):
+        return load_itemcf_source_manifest(artifact["path"], source, allowed_src_items)
     path = _artifact_data_path(artifact, "edges_path") if artifact else fallback_path
     if path is None or not path.is_file():
         return {}
-    return load_itemcf_by_source(path, source)
+    return load_itemcf_by_source(path, source, allowed_src_items)
 
 
 def _load_optional_usercf(path: Path | None) -> dict[str, list[Any]]:
@@ -823,45 +852,10 @@ def _precompute_two_tower_recall(sequences: list[dict[str, Any]], two_tower_inde
         return {}
     if not isinstance(two_tower_index, VectorIndex):
         return {str(sequence.get("user_id") or ""): two_tower_candidates_for_user(sequence, two_tower_index, config) for sequence in sequences if sequence.get("user_id")}
-    limit = int(config.get("two_tower_per_user", 20))
-    seed_window = int(config.get("two_tower_seed_window", 10))
-    recency_decay = float(config.get("two_tower_recency_decay", 0.85))
-    query_vectors = {}
-    excluded_items = {}
-    metadata_by_user = {}
-    for sequence in sequences:
-        user_id = str(sequence.get("user_id") or "")
-        if not user_id:
-            continue
-        seen_items = set(sequence.get("recent_item_sequence", []))
-        query_vector = two_tower_index.get_user_vector(user_id)
-        if not query_vector:
-            seed_items = list(dict.fromkeys(reversed(sequence.get("recent_positive_item_sequence", [])[-seed_window:])))
-            query_vector = average_vectors([two_tower_index.get_item_vector(item_id) for item_id in seed_items], recency_decay)
-        if query_vector:
-            query_vectors[user_id] = query_vector
-            excluded_items[user_id] = seen_items
-            metadata_by_user[user_id] = {"two_tower_manifest_batch_mode": "batch_vector_search"}
-    query_batch_size = max(1, int(config.get("two_tower_query_batch_size", 25)))
-    search_results = {}
-    query_user_ids = list(query_vectors)
-    for start in range(0, len(query_user_ids), query_batch_size):
-        batch_user_ids = query_user_ids[start : start + query_batch_size]
-        batch_query_vectors = {user_id: query_vectors[user_id] for user_id in batch_user_ids}
-        batch_excluded_items = {user_id: excluded_items[user_id] for user_id in batch_user_ids}
-        search_results.update(two_tower_index.search_many(batch_query_vectors, limit=limit, excluded_items=batch_excluded_items))
     return {
-        user_id: [
-            RecallCandidate(
-                item_id=result.item_id,
-                source="two_tower",
-                score=result.score,
-                category=str(result.metadata.get("main_category") or result.metadata.get("category", "")),
-                metadata=dict(result.metadata) | metadata_by_user.get(user_id, {}),
-            )
-            for result in results
-        ]
-        for user_id, results in search_results.items()
+        str(sequence.get("user_id") or ""): two_tower_candidates_for_user(sequence, two_tower_index, config)
+        for sequence in sequences
+        if sequence.get("user_id")
     }
 
 
@@ -1221,7 +1215,8 @@ def _source_budget_contract(
         "candidate_pool_size": int(generation_config.get("candidate_pool_size", 500)),
         "budget_frozen": True,
         "train_only": True,
-        "popular_category_combined_cap": 175,
+        "pre_fallback_popular_category_combined_cap": 175,
+        "fallback_completion_may_exceed_popular_category_cap_to_meet_target": True,
         "candidate_source_minimums": generation_config.get("candidate_source_minimums", {}),
         "candidate_source_maximums": generation_config.get("candidate_source_maximums", {}),
         "candidate_fill_order": generation_config.get("candidate_fill_order", FILL_ORDER),
@@ -1294,6 +1289,14 @@ def _artifact_readiness_fields(source: str, artifact: dict[str, Any], readiness_
         "user_embedding_row_count",
         "user_embedding_row_count_note",
         "index_scope",
+        "source_status",
+        "candidate_generation_allowed",
+        "ranking_input_replacement_allowed",
+        "ranking_replacement_allowed",
+        "pool1000_allowed",
+        "promotion_allowed",
+        "algorithm_scope",
+        "complete_co_visit_graph_claimed",
     ):
         if readiness_contract.get(key) is not None or manifest.get(key) is not None:
             fields[key] = readiness_contract.get(key) if readiness_contract.get(key) is not None else manifest.get(key)
@@ -1323,15 +1326,20 @@ def _full_derived_index_manifests(
             _artifact_data_path(artifact, "edges_path")
             or _artifact_data_path(artifact, "semantic_recall_inputs_path")
             or _artifact_data_path(artifact, "semantic_inverted_index_path")
+            or _artifact_data_path(artifact, "index_path")
             or _artifact_data_path(artifact, "recall_index_path")
             or _artifact_data_path(artifact, "recall_index")
             or artifact["path"]
         )
+        index_available = bool(index_path and Path(index_path).is_file())
+        status = READY if index_available else "DEFERRED"
+        if source in BATCH_SCOPED_DEFERRED_SOURCES and index_available:
+            status = "BATCH_SCOPED_DIAGNOSTIC"
         manifests[source] = {
             "source": source,
             "canonical_source": manifest.get("canonical_source") or source,
-            "status": READY if index_path and Path(index_path).is_file() else "DEFERRED",
-            "index_status": readiness_contract.get("index_status") or ("INDEX_READY" if index_path and Path(index_path).is_file() else "DEFERRED"),
+            "status": status,
+            "index_status": readiness_contract.get("index_status") or manifest.get("index_status") or ("INDEX_READY" if index_available else "DEFERRED"),
             "index_scope": manifest.get("index_scope", "FULL_DERIVED_INDEX"),
             "index_path": str(index_path) if index_path else None,
             "manifest_sha256": readiness_contract.get("index_manifest_sha256") or manifest.get("index_manifest_sha256") or manifest.get("manifest_sha256") or canonical_manifest_sha256(manifest),
@@ -1347,6 +1355,14 @@ def _full_derived_index_manifests(
             "recall_index_row_count",
             "user_embedding_row_count",
             "user_embedding_row_count_note",
+            "source_status",
+            "candidate_generation_allowed",
+            "ranking_input_replacement_allowed",
+            "ranking_replacement_allowed",
+            "pool1000_allowed",
+            "promotion_allowed",
+            "algorithm_scope",
+            "complete_co_visit_graph_claimed",
         ):
             if readiness_contract.get(key) is not None or manifest.get(key) is not None:
                 manifests[source][key] = readiness_contract.get(key) if readiness_contract.get(key) is not None else manifest.get(key)

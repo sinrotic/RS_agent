@@ -10,6 +10,7 @@ POOL500_METHOD_SOURCES = (
     "itemcf_weak",
     "itemcf_strong",
     "two_tower",
+    "semantic",
     "semantic_title_category_expansion",
     "co_visit_fallback_repair",
 )
@@ -29,7 +30,10 @@ FORBIDDEN_EVIDENCE_SCOPES = (
     "valid",
     "test",
     "LOPO",
+    "lopo",
     "clean_10000",
+    "youtube_dnn",
+    "pool1000",
 )
 
 def method_output_dir(output_root: Path, source: str, run_id: str) -> Path:

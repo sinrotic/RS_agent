@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -8,8 +9,34 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from rs_core.common.io import write_jsonl
+from rs_core.rsagent.dialogue import plan_dialogue_turn
 from rs_core.rsagent.rollout import session_to_rollout_records
+from rs_core.rsagent.schema import AgentSession, DIALOGUE_PLAN_ACTIONS, DIALOGUE_PLAN_INTENTS
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
+
+
+@pytest.mark.parametrize("user_input", [
+    "",
+    "For commute, prefer bluetooth and Audio",
+    "why?",
+    "I want headphones",
+    "make it match my living room vibe",
+])
+def test_dialogue_plan_outputs_are_allowlisted(user_input: str):
+    plan = plan_dialogue_turn(user_input, AgentSession(session_id="s1", user_id="u1"))
+
+    assert plan.intent in DIALOGUE_PLAN_INTENTS
+    assert plan.action in DIALOGUE_PLAN_ACTIONS
+
+
+def test_clarification_dialogue_plan_output_is_allowlisted():
+    session = AgentSession(session_id="s1", user_id="u1")
+    session.conversation_state.pending_clarification = "Do you care more about commute use?"
+
+    plan = plan_dialogue_turn("For commute, prefer bluetooth and Audio", session)
+
+    assert plan.intent in DIALOGUE_PLAN_INTENTS
+    assert plan.action in DIALOGUE_PLAN_ACTIONS
 
 
 def test_vague_request_triggers_clarification_without_recommendation(tmp_path: Path):
@@ -107,6 +134,72 @@ def test_show_different_filters_prior_turn_items(tmp_path: Path):
     assert not first_items & {item["parent_asin"] for item in turn.ranking}
 
 
+def test_rag_off_preserves_prior_explanation_output(tmp_path: Path):
+    base_env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path / "base")), limit_users=1)
+    base_session = base_env.start_session()
+    base_env.converse(base_session, "For commute, prefer bluetooth and Audio")
+    base_turn = base_env.converse(base_session, "why? item_id=speaker_1")
+
+    off_env = HybridRecommendationEnvironment.from_config(
+        str(_write_rag_dialogue_fixture(tmp_path / "off", {"evidence_mode": "off"})),
+        limit_users=1,
+    )
+    off_session = off_env.start_session()
+    recommendation_turn = off_env.converse(off_session, "For commute, prefer bluetooth and Audio")
+    off_turn = off_env.converse(off_session, "why? item_id=speaker_1")
+
+    assert recommendation_turn.rag_context is None
+    assert off_turn.assistant_response == base_turn.assistant_response
+
+
+def test_rag_shadow_builds_context_without_changing_explanation(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(
+        str(_write_rag_dialogue_fixture(tmp_path, {"evidence_mode": "shadow", "max_evidence_per_item": 2})),
+        limit_users=1,
+    )
+    session = env.start_session()
+    recommendation_turn = env.converse(session, "For commute, prefer bluetooth and Audio")
+
+    turn = env.converse(session, "why? item_id=speaker_1")
+
+    assert recommendation_turn.rag_context is not None
+    assert recommendation_turn.rag_context["metadata"]["evidence_mode"] == "shadow"
+    records = session_to_rollout_records(session, env.sequences_by_user[session.user_id])
+    assert recommendation_turn.diagnostics["rag"]["kept_evidence_count"] > 0
+    assert records[0]["metadata"]["rag_context"] == recommendation_turn.rag_context
+    assert "rag_context" not in records[0]["display_response"]
+    assert "商品信息显示" not in turn.assistant_response
+    assert "consumed_by_explanation" not in recommendation_turn.rag_context["metadata"]
+
+
+def test_rag_explain_uses_evidence_without_mutating_recommendation_payload(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(
+        str(_write_rag_dialogue_fixture(tmp_path, {"evidence_mode": "explain", "max_evidence_per_item": 2})),
+        limit_users=1,
+    )
+    session = env.start_session()
+    recommendation_turn = env.converse(session, "For commute, prefer bluetooth and Audio")
+    before = deepcopy(
+        {
+            "candidates": recommendation_turn.candidates,
+            "ranking": recommendation_turn.ranking,
+            "final_items": recommendation_turn.recommendation.final_items,
+        }
+    )
+
+    turn = env.converse(session, "why? item_id=speaker_1")
+
+    assert "商品信息显示" in turn.assistant_response
+    assert "Audio" in turn.assistant_response
+    assert recommendation_turn.rag_context["metadata"]["consumed_by_explanation"] is True
+    assert recommendation_turn.diagnostics["rag"]["consumed_by_explanation"] is True
+    assert before == {
+        "candidates": recommendation_turn.candidates,
+        "ranking": recommendation_turn.ranking,
+        "final_items": recommendation_turn.recommendation.final_items,
+    }
+
+
 def test_unsupported_free_text_is_preserved_across_turns_and_rollout(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
     session = env.start_session()
@@ -119,7 +212,16 @@ def test_unsupported_free_text_is_preserved_across_turns_and_rollout(tmp_path: P
     assert "make it match my living room vibe" in records[-1]["prompt_context"]["feedback_constraints"]["unsupported_free_text"]
 
 
+def _write_rag_dialogue_fixture(root: Path, rag: dict[str, object]) -> Path:
+    config = _write_dialogue_fixture(root)
+    payload = json.loads(config.read_text(encoding="utf-8"))
+    payload["rag"] = rag
+    config.write_text(json.dumps(payload), encoding="utf-8")
+    return config
+
+
 def _write_dialogue_fixture(root: Path) -> Path:
+    root.mkdir(parents=True, exist_ok=True)
     clean = root / "clean"
     views = root / "views"
     clean.mkdir()
