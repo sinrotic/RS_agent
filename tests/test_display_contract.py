@@ -22,6 +22,12 @@ BLOCKED_DISPLAY_KEYS = {
     "score_trace",
     "rank_movement",
     "diagnostics",
+    "feedback_source",
+    "deepfm_score",
+    "deepfm_shadow_score",
+    "feature_contract",
+    "model_path",
+    "ranking_replacement_allowed",
     "reward_evidence",
     "training_samples",
 }
@@ -29,20 +35,22 @@ BLOCKED_DISPLAY_TERMS = {
     "agent_boost",
     "base_score",
     "coarse_score",
+    "deepfm_score",
+    "deepfm_shadow_score",
     "diagnostic",
+    "feature_contract",
     "feedback_source",
     "fine_score",
     "final_score",
     "itemcf",
+    "model_path",
     "ranking",
+    "ranking_replacement_allowed",
     "rank_movement",
     "recall source",
     "rerank_score",
     "score_trace",
-    "reward",
     "reward_evidence",
-    "source",
-    "training",
     "training_samples",
 }
 
@@ -115,11 +123,43 @@ def test_public_timeline_uses_public_event_id_and_sanitizes_events():
     [
         ("trace_ref", "abc"),
         ("agent_runtime_trace", []),
+        ("agent_tool_trace", []),
+        ("agent_tool_events", []),
+        ("agent_tool_summary", {}),
         ("diagnostics_path", "outputs/diagnostics.json"),
         ("raw_export_trace_path", "outputs/export_trace.json"),
         ("ranking_evidence_path", "outputs/ranking_evidence.json"),
         ("diagnostics", {}),
+        ("deepfm_score", 1.0),
+        ("deepfm_shadow_score", {"raw_score": 1.0}),
+        ("feature_contract", {}),
+        ("model_path", "outputs/model.json"),
+        ("ranking_replacement_allowed", False),
+        ("context_bundle", {}),
+        ("context_budget", {}),
+        ("session_summary", {}),
+        ("user_profile", {}),
+        ("archived_turn_summaries", []),
+        ("memory_snapshot", {}),
+        ("memory_entries", []),
+        ("memory_recall", {}),
+        ("private_memory_recall", {}),
+        ("typed_memory_entries", []),
+        ("typed_memory_recall", {}),
+        ("rag_context", {}),
+        ("rag_evidence", []),
+        ("feedback_source", "itemcf_weak"),
+        ("recall-source", "itemcf_weak"),
+        ("recall_source", "itemcf_weak"),
+        ("reward", {}),
         ("reward_evidence", {}),
+        ("score", 1.0),
+        ("internal", "debug"),
+        ("tool", "retrieve_candidates"),
+        ("rag", "context"),
+        ("source", "internal"),
+        ("sources", ["itemcf_weak"]),
+        ("training", {}),
         ("training_samples", []),
     ],
 )
@@ -132,14 +172,166 @@ def test_public_display_validator_rejects_internal_fields(field: str, value):
         validate_public_display_payload(display)
 
 
-@pytest.mark.parametrize("term", ["raw export trace", "ranking evidence", "diagnostics", "reward", "training", "source"])
+@pytest.mark.parametrize(
+    "term",
+    [
+        "agent_tool_trace",
+        "agentic_recall_candidates",
+        "catalog_constraint_search",
+        "deepfm_rank_candidates",
+        "deepfm_score",
+        "deepfm_shadow_score",
+        "feature_contract",
+        "model_path",
+        "ranking_replacement_allowed",
+        "match_specific_need_in_pool",
+        "memory entry",
+        "memory recall",
+        "memory snapshot",
+        "raw export trace",
+        "rag context",
+        "rag evidence",
+        "raw evidence",
+        "raw snippet",
+        "supporting_snippets",
+        "supporting snippets",
+        "snippet",
+        "ranking evidence",
+        "rerank_for_browsing",
+        "context bundle",
+        "session summary",
+        "user_profile",
+        "diagnostics",
+        "reward_evidence",
+        "training_samples",
+        "typed memory",
+        "feedback_source",
+        "recall source",
+        "rag output",
+        "rag result",
+        "rag value",
+        "tool output",
+        "tool result",
+        "tool value",
+    ],
+)
 def test_public_display_validator_rejects_internal_terms(term: str):
     session, turn = _session_with_turn()
     display = build_display_record(turn, session)
-    display["assistant_message"] = f"Internal {term} is available."
+    display["assistant_message"] = f"Public payload mentions {term}."
 
     with pytest.raises(ValueError):
         validate_public_display_payload(display)
+
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("schema_version", {"raw_snippet": "unredacted"}),
+        ("session_id", ["internal"]),
+        ("user_id", {"safe": "no"}),
+        ("turn_index", {"score_trace": 1.0}),
+        ("assistant_message", {"raw_snippet": "unredacted"}),
+    ],
+)
+def test_public_display_validator_rejects_nested_values_in_scalar_fields(field: str, value):
+    session, turn = _session_with_turn()
+    display = build_display_record(turn, session)
+    display[field] = value
+
+    with pytest.raises(ValueError):
+        validate_public_display_payload(display)
+
+
+def test_public_display_validator_allows_public_text_with_generic_terms():
+    session, turn = _session_with_turn()
+    display = build_display_record(turn, session)
+    display["assistant_message"] = "This reward-themed training item comes from a public source collection."
+    display["items"][0]["title"] = "Public Source Training Reward Set"
+    display["items"][0]["category"] = "Training Supplies"
+    display["items"][0]["store"] = "Public Goods"
+    display["items"][0]["features"] = ["source-safe", "training-friendly", "reward-themed"]
+    display["items"][0]["description"] = "A public source themed training kit with reward cards."
+    display["items"][0]["summary"] = "Training and reward set from public source text."
+
+    assert validate_public_display_payload(display) == display
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("public_event_id", {"raw_snippet": "unredacted"}),
+        ("event_type", ["chat"]),
+        ("turn_index", {"score_trace": 1.0}),
+        ("user_message", {"raw_snippet": "user text is still a scalar"}),
+        ("assistant_message", {"raw_snippet": "unredacted"}),
+        ("display_response_index", [0]),
+    ],
+)
+def test_public_timeline_validator_rejects_nested_values_in_event_scalar_fields(field: str, value):
+    session, _turn = _session_with_turn()
+    timeline = build_public_timeline(session)
+    timeline["events"][0][field] = value
+
+    with pytest.raises(ValueError):
+        validate_public_timeline_payload(timeline)
+
+
+def test_public_timeline_validator_allows_public_assistant_text_with_generic_terms():
+    session, _turn = _session_with_turn()
+    timeline = build_public_timeline(session)
+    timeline["events"][0]["assistant_message"] = "This reward-themed training item comes from a public source collection."
+
+    assert validate_public_timeline_payload(timeline) == timeline
+
+
+@pytest.mark.parametrize(
+    "term",
+    [
+        "long_memory",
+        "raw score_trace",
+        "agent_tool_trace",
+        "memory recall",
+        "RAG tool score",
+        "itemcf",
+        "feedback_source",
+        "recall source",
+        "final_score",
+    ],
+)
+def test_public_display_validator_rejects_internal_terms_inside_catalog_text(term: str):
+    session, turn = _session_with_turn()
+    display = build_display_record(turn, session)
+    display["items"][0]["summary"] = f"Public payload mentions {term}."
+
+    with pytest.raises(ValueError):
+        validate_public_display_payload(display)
+
+
+@pytest.mark.parametrize(
+    "mutator",
+    [
+        lambda display: display["ui_state"].update({"feedback_source": "itemcf_weak"}),
+        lambda display: display["ui_state"].update({"recall-source": "itemcf_weak"}),
+        lambda display: display["ui_state"].update({"agentToolTrace": "hidden"}),
+        lambda display: display["ui_state"].update({"supportingSnippets": "hidden"}),
+        lambda display: display["ui_state"].update({"imageFallbackEnabled": True}),
+        lambda display: display["ui_state"].update({"safe": {"source": "itemcf_weak"}}),
+        lambda display: display["feedback_actions"][0].update({"source": "internal"}),
+        lambda display: display["items"][0]["features"].append({"source": "itemcf_weak"}),
+        lambda display: display["items"][0]["badges"].append({"trace_ref": "internal"}),
+        lambda display: display["items"][0].update({"price": {"score": 1.0}}),
+    ],
+)
+def test_public_display_validator_rejects_nested_internal_fields_and_non_public_shapes(mutator):
+    session, turn = _session_with_turn()
+    display = build_display_record(turn, session)
+    mutator(display)
+
+    with pytest.raises(ValueError):
+        validate_public_display_payload(display)
+
 
 
 def test_public_timeline_validator_rejects_trace_ref_and_requires_allowlist():

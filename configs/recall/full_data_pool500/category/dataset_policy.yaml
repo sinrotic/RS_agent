@@ -1,25 +1,50 @@
-schema_version: pool500_method_dataset_policy_v1
+schema_version: pool500_method_dataset_policy_v2_recent2y
 source: category
-source_status: READY
-role: category coverage and diversity source
-dataset_policy: lightweight_category_bucket_policy
+canonical_source: category
+source_status: READY_RECENT2Y_TRAIN_ONLY_CATEGORY_SOURCE
+role: category preference and category-popularity fallback source
+dataset_policy: recent2y_train_only_category_profile_dataset
 train_only: true
-forbidden_data_sources:
-  - holdout
-  - valid
-  - test
-  - LOPO
-  - clean_10000
-outputs_required:
-  - method_dataset_manifest.json
-  - source_index_manifest.json
-  - candidates.jsonl
-  - coverage_audit.json
-  - undercoverage_audit.json
-  - resource_audit.json
-  - no_holdout_audit.json
+dataset_root: data/processed/amazon_2023_recall_recent_2y_1m_3m
+governance_manifest_path: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+allowed_input_scopes: ["canonical_items", "user_sequences_train", "train_only_user_quality_profile", "train_only_item_frequency", "train_only_category_top_items", "train_only_category_recall_items"]
+forbidden_data_sources: ["holdout", "valid", "test", "LOPO", "clean_10000", "oracle", "eval_label", "pool1000", "full_data_derived_method_dataset"]
+smoke_contract:
+  purpose: program_and_schema_validation_only
+  limit_users: 500
+  promotion_allowed: false
+  ranking_input_replacement_allowed: false
+  required_checks: ["schema_valid", "train_only_input_paths", "nonzero_candidates", "no_forbidden_input_path"]
+formal_contract:
+  purpose: official_method_logic_dataset_under_recent_2y_train_only_governance_local_formal_slice
+  limit_users: 50000
+  candidate_materialization: full
+  quantity_policy: local_formal_50k_slice_for_eval_only_recall_evidence
+  required_checks: ["manifest_lineage_and_hashes_recorded", "category_profile_built_from_train_sequences_only", "category_top_items_built_from_train_popularity_only", "user_bucket_coverage_reported", "category_diversity_reported", "no_eval_label_or_oracle_in_candidate_generation"]
+all_eligible_formal_contract:
+  purpose: route_formal_index_artifact_under_recent_2y_train_only_governance
+  limit_users: all
+  candidate_materialization: "none"
+  execution_policy: remote_server
+  quantity_policy: all_recent2y_category_eligible_users_as_index_not_materialized_user_item_candidates
+  required_checks: ["manifest_lineage_and_hashes_recorded", "eligible_users_written", "category_profile_built_from_train_sequences_only", "category_top_items_index_written", "no_candidates_jsonl_required", "no_eval_label_or_oracle_in_candidate_generation", "local_manifest_audit_revalidated"]
+category_policy:
+  profile_seed_window: 20
+  max_profile_buckets: 6
+  category_bucket_cap_per_user: 20
+  category_min_item_count: 5
+  sparse_profile_fallback: train_only_global_main_category_buckets
+outputs_required: ["method_dataset_manifest.json", "source_index_manifest.json", "eligible_users.jsonl", "user_category_profile.jsonl", "category_top_items_index.jsonl", "coverage_audit.json", "undercoverage_audit.json", "resource_audit.json", "no_holdout_audit.json"]
+materialized_eval_outputs_required: ["candidates.jsonl", "evaluation_report.json"]
+latest_artifacts:
+  smoke_source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_smoke_v1/source_index_manifest.json
+  formal_50k_source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_formal_50k_v1/source_index_manifest.json
+  formal_50k_evaluation_report: outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_formal_50k_v1/evaluation_report.json
+  all_eligible_source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/source_index_manifest.json
+  all_eligible_remote_manifest_dir: server:/home/luo/RS_agent_remote/outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1
 governance:
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
+  final_pool500_ready_claimed: false

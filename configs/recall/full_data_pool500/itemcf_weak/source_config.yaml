@@ -1,33 +1,276 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v2_recent_2y
 source: itemcf_weak
 canonical_source: itemcf_weak
-source_status: DIAGNOSTIC_ONLY
-output_root: outputs/recall/pool500_method_sources
-run_id: null
-clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
-builder_entrypoint: scripts/experiments/recall/pool500/build_itemcf_weak_method_source.py
+source_status: READY_GUARDED_SOURCE_ADAPTER_READY
+readiness_reason: selected_src3_dst3_user2_keep_hot_cosine_source_adapter_built_from_train_only_rows_and_attached_as_default_itemcf_weak_manifest
+output_root: outputs/recall/pool500_method_sources/recent_2y
+run_id: src3_dst3_user2_keep_hot_cosine_v1
+clean_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+governance_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_weak_cold_filtered_valgrid_20260606c/cold_u2_i3_cosine_seed200/itemcf_weak/method_dataset_manifest.json
+smoke_method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/collab_v1_smoke/itemcf_weak/method_dataset_manifest.json
+source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json
+smoke_source_index_manifest: null
+matrix_manifest: null
+evaluation_report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/src_dst_onepass_screen_20260606a/screen_report.json
+builder_entrypoint: rs_lab/experiments/recall/pool500/method_dataset_to_itemcf_source.py
+scale_tiers:
+  smoke:
+    purpose: program_and_schema_validation_only
+    quantity_policy: small_bounded_smoke
+    promotion_allowed: false
+  formal:
+    purpose: not_required_current_method_uses_runtime_filter_before_build_matrix
+    profile: filter_before_build_compact_matrix
+    quantity_policy: no_formal_flat_method_dataset_rows
+    promotion_allowed: false
 resource_guard:
-  batch_size: 50
-  checkpoint_enabled: true
+  batch_size: null
+  checkpoint_enabled: false
   heavy_job: false
-  min_free_bytes: 0
+  shard_count: 8
+  server_preferred_for_coverage_profile: true
 itemcf_weak:
-  target_user_limit: 500
-  max_items_per_user: 50
-  max_item_user_freq: 5000
-  top_k_per_seed: 100
-  per_user_candidate_limit: 500
+  profile: src3_dst3_user2_keep_hot_cosine
+  formal_flat_method_dataset_required: true
+  smoke_dataset_role: program_schema_gate_validation_only
+  matrix_artifact_ready: false
+  source_artifact_ready: true
+  readiness_semantics: READY_GUARDED_SOURCE_ADAPTER_READY_DEFAULT_MANIFEST_ATTACHED
+  matrix_manifest: null
+  source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json
+  artifact_type: sharded_item_pair_source_index_from_train_only_method_dataset
+  eligible_user_policy: user_after_item_filter_min_items_2
+  eligible_item_policy: train_only_positive_user_count_src_ge3_dst_ge3_keep_hot
+  src_min_positive_user_count: 3
+  dst_min_positive_user_count: 3
+  allow_hot_dst: true
+  top_k_per_seed: 200
+  score_policy: weighted_cooc_cosine_normalized_v1
+  itemcf_score_formula: round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)
+  active_user_penalty_policy: round(1 / log1p(filtered_sequence_len), 6)
+  source_stats:
+    row_count: 16454229
+    edge_count: 16454229
+    shard_count: 64
+    item_count: 327509
+    user_count: 1450098
+    row_count_audit_status: PASS
+  selected_valid_evidence:
+    report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/src_dst_onepass_screen_20260606a/screen_report.json
+    evaluation_only: true
+    best_variant: src3_dst3_u2_screen
+    raw_recall_at_500: 0.034482
+    candidate_user_rate: 0.951935
+    label_usage: valid_month_posthoc_only_not_candidate_generation
+  historical_matrix_cleanup:
+    status: deleted_as_non_selected_artifact
+    cleanup_record: dic/recall_methods/itemcf_weak/CLEANUP_RECORD_2026_06_07.md
+    prior_matrix_manifest: outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_keep_hot_src2_dst3_filter_before_build_traditional_matrix_v1/matrix_manifest.json
+    prior_matrix_size_bytes: 1200540496
+    prior_src_item_count: 421365
+    prior_edge_count: 17141611
+    prior_max_neighbors_per_src: 200
+    prior_shard_count: 64
+    users_scanned: 6826801
+    users_used_for_pairs: 1496171
+    eligible_src_item_count: 448282
+    eligible_dst_item_count: 335032
+    unique_directed_pair_count_before_topk: 27618586
+  eval_summary:
+    report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/quick_dst_user_pruning_valid_eval_20260606/evaluation_report.json
+    evaluation_only: true
+    candidate_user_rate: 0.963519
+    raw_recall_at_500: 0.034512
+    best_variant: src2_dst3_user2
+  weak_coverage_diagnostic:
+    report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/weak_coverage_eval_from_method_dataset_v1/evaluation_report.json
+    source_artifact_complete: false
+    evaluation_only: true
+    method_dataset_manifest: outputs/recall/pool500_itemcf_new_dataset/method_datasets_smoke/itemcf_weak/method_dataset_manifest.json
+    method_dataset_row_count: 4445902
+    method_dataset_item_count: 185326
+    candidate_user_rate: 0.83305
+    in_universe_label_ratio: 0.6837
+    raw_recall_at_500: 0.01478
+    in_universe_recall_at_500: 0.021617
+    candidate_count_p90: 219
+    candidate_count_max: 4569
+    conclusion: coverage_profile_effective_but_requires_full_source_overlap_and_noise_gate
+  weak_denoised_diagnostic:
+    report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/weak_coverage_denoising_grid_v2/evaluation_report.json
+    source_artifact_complete: false
+    evaluation_only: true
+    remote_execution: server:/home/luo/RS_agent_remote
+    temp_remote_rows_path: /tmp/itemcf_weak_diagnostics/method_dataset_rows.jsonl
+    best_raw_recall_variant: baseline_support1_no_cap
+    recommended_repair_variant: support1_existing_seed200_user500
+    recommended_profile: weak_denoised
+    recommended_score_policy: weighted_cooc_cosine_normalized_v1
+    recommended_min_pair_support: 1
+    recommended_top_k_per_seed: 200
+    recommended_per_user_candidate_cap: 500
+    candidate_user_rate: 0.83305
+    raw_recall_at_500: 0.01478
+    in_universe_recall_at_500: 0.021617
+    candidate_count_p90: 202
+    candidate_count_max_after_user_cap: 500
+    rejected_variants:
+      support2_raw_recall_at_500: 0.005789
+      bm25idf_hotdst_nonhot_raw_recall_at_500: 0.000051
+    conclusion: keep_support1_for_recall_control_fanout_with_seed_topk200_and_route_user_cap
+  augcf_lite_historical_cleanup:
+    status: historical_diagnostic_results_deleted
+    result_artifacts_retained: false
+    deleted_local_result_dirs:
+      - outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/augcf_lite_eval_seed200_user500_v1
+      - outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/augcf_lite_v2_grid_seed_cap_score_v1
+      - outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/augcf_lite_v3_sparse_sideinfo_v1
+    best_historical_raw_recall_at_500: 0.024707
+    best_historical_sparse_hit_user_rate_at_500: 0.018064
+    decision: abandoned_as_current_itemcf_weak_mainline_replaced_by_rpa_lite
+
+  rpa_lite_local_10gb_diagnostic:
+    report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_local_10gb_v1/evaluation_report.json
+    source_artifact_complete: false
+    evaluation_only: true
+    local_execution: true
+    experiment: rpa_lite_local_10gb_v1
+    paper_basis: Zhang_Pu_2007_recursive_prediction_algorithm_for_collaborative_filtering
+    algorithm_family: Recursive_CF_RPA_lite
+    implementation_level: bounded_train_only_user_user_iuf_sparse_medium_pseudo_candidate_diagnostic
+    full_scope_formal: false
+    scope_note: local_constrained_train_only_hash_sample_directional_not_full_formal_replacement_evidence
+    memory_limit_gb: 10.0
+    peak_observed_rss_gb: 7.3
+    runtime_seconds_total: 498.061114
+    candidate_generation_allowed: false
+    promotion_allowed: false
+    candidate_artifact_written: false
+    label_usage: valid_test_loaded_only_after_train_only_candidate_scores_built_for_posthoc_eval
+    best_variant: rpa_iuf_sparse_medium_p100_user500_local10gb
+    target_buckets:
+      - sparse_seq_len_lt2
+      - medium_like_seq_len_2_4
+    pseudo_items_per_user: 100
+    candidate_user_rate: 0.930422
+    raw_recall_at_500: 0.02713
+    in_universe_recall_at_500: 0.048733
+    raw_hit_user_rate_at_500: 0.034789
+    sparse_hit_user_rate_at_500: 0.029073
+    medium_hit_user_rate_at_500: 0.048662
+    candidate_count_p50: 100
+    candidate_count_p90: 100
+    candidate_count_max_after_user_cap: 100
+    augcf_lite_v3_best_raw_recall_at_500: 0.024707
+    augcf_lite_v3_sparse_hit_user_rate_at_500: 0.018064
+    raw_recall_lift_vs_augcf_lite_v3: 0.002423
+    sparse_hit_lift_vs_augcf_lite_v3: 0.011009
+    decision: make_rpa_lite_next_itemcf_weak_diagnostic_mainline_augcf_lite_retained_as_historical_ablation
+  rpa_lite_sharded_remote_10gb_diagnostic:
+    report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_local_10gb_sharded_remote_v1/evaluation_report.json
+    source_artifact_complete: false
+    evaluation_only: true
+    remote_execution: server:/home/luo/RS_agent_remote
+    remote_output_dir: /tmp/rpa_lite_local_10gb_sharded_remote_v1
+    remote_logs_dir: /tmp/rpa_lite_remote_logs
+    experiment: rpa_lite_local_10gb_sharded_remote_v1
+    paper_basis: Zhang_Pu_2007_recursive_prediction_algorithm_for_collaborative_filtering
+    algorithm_family: Recursive_CF_RPA_lite
+    implementation_level: bounded_train_only_user_user_iuf_sparse_medium_pseudo_candidate_sharded_diagnostic
+    full_scope_formal: false
+    scope_note: remote_20_shard_train_only_sparse_medium_target_eval_only_diagnostic_not_ready_source_artifact
+    shard_mod: 20
+    completed_shards: 20
+    memory_limit_gb_per_shard: 10.0
+    peak_observed_rss_gb_max: 6.8637
+    runtime_seconds_total_sum: 13863.520166
+    candidate_generation_allowed: false
+    promotion_allowed: false
+    candidate_artifact_written: false
+    label_usage: valid_test_loaded_only_after_train_only_candidate_scores_built_for_posthoc_eval
+    best_variant: rpa_iuf_sparse_medium_p100_user500_sharded10gb
+    target_buckets:
+      - sparse_seq_len_lt2
+      - medium_like_seq_len_2_4
+    pseudo_items_per_user: 100
+    train_only_target_users_total: 5147753
+    evaluated_target_users_with_labels_total: 41605
+    candidate_user_rate: 0.928158
+    raw_recall_at_500: 0.026407
+    in_universe_recall_at_500: 0.050346
+    raw_hit_user_rate_at_500: 0.032857
+    sparse_hit_user_rate_at_500: 0.02473
+    medium_hit_user_rate_at_500: 0.053875
+    candidate_count_p50: 100
+    candidate_count_p90: 100
+    candidate_count_max_after_user_cap: 100
+    augcf_lite_v3_best_raw_recall_at_500: 0.024707
+    augcf_lite_v3_sparse_hit_user_rate_at_500: 0.018064
+    raw_recall_lift_vs_augcf_lite_v3: 0.0017
+    sparse_hit_lift_vs_augcf_lite_v3: 0.006666
+    decision: make_rpa_lite_current_itemcf_weak_diagnostic_mainline_augcf_lite_results_deleted
+
+  rpa_lite_diagnostic_replay_v1:
+    manifest: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/rpa_lite_replay_manifest.json
+    posthoc_eval_report: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/posthoc_eval/evaluation_report.json
+    no_eval_label_selection_audit: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/no_eval_label_selection_audit.json
+    governance_audit: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/governance_audit.json
+    resource_audit: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/resource_audit.json
+    coverage_audit: outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/coverage_audit.json
+    source_artifact_complete: true
+    ready_source_artifact: false
+    artifact_type: diagnostic_replay_artifact
+    evaluation_only: true
+    diagnostic_only: true
+    candidate_artifact_written: false
+    candidate_generation_allowed: false
+    ranking_input_replacement_allowed: false
+    pool1000_allowed: false
+    promotion_allowed: false
+    final_pool500_ready_claimed: false
+    scoring_rule_selection_policy: predeclared_config_only_no_eval_label_selection
+    observed_best_status: diagnostic_observed_best_not_promotion_rule
+    raw_recall_at_500: 0.026407
+    in_universe_recall_at_500: 0.050346
+    raw_hit_user_rate_at_500: 0.032857
+    sparse_hit_user_rate_at_500: 0.02473
+    medium_hit_user_rate_at_500: 0.053875
+    decision: diagnostic_replay_artifact_only_not_ready_source
+
 manifest_contract:
   method_dataset_manifest: method_dataset_manifest.json
   source_index_manifest: source_index_manifest.json
-  candidates: candidates.jsonl
-  coverage_audit: coverage_audit.json
-  undercoverage_audit: undercoverage_audit.json
-  resource_audit: resource_audit.json
-  no_holdout_audit: no_holdout_audit.json
+  evaluation_report: evaluation_report.json
+  diagnostic_replay_manifest: rpa_lite_replay_manifest.json
+  edges_shards: edges_shards/*.jsonl
+  no_holdout_audit: forbidden_scope_audit_in_method_dataset_manifest
 governance:
+  train_only: true
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
   final_pool500_ready_claimed: false
+  old_full_data_artifacts_current: false
+  eval_labels_used_for_candidate_generation: false
+route_smoke_evidence:
+  output_dir: outputs/recall/full_data_pool500_recall_only/itemcf_weak_src3_dst3_user2_keep_hot_cosine_smoke1000_v2
+  mode: diagnostic_limited
+  processed_users: 1000
+  candidate_rows: 500000
+  itemcf_weak_row_count: 19540
+  itemcf_weak_user_coverage_count: 643
+  itemcf_weak_user_coverage_ratio: 0.643
+  itemcf_weak_marginal_candidate_share: 0.03908
+  loader_contract_sample: PASS
+  decision: STOP
+  stop_reason: unrelated_ready_source_stoploss_triggered_because_isolated_smoke_disabled_swing_and_usercf
+  itemcf_source_loadable: true
+blockers:
+  - global_route_gate_not_final_promotion
+  - ranking_input_replacement_forbidden
+  - pool1000_forbidden
+next_steps:
+  - run_full_route_gate_with_all_ready_source_manifests_after_fixing_unrelated_swing_and_two_tower_manifest_contracts
+  - keep_candidate_generation_and_promotion_closed_until_global_route_gate_overlap_and_marginal_recall_pass

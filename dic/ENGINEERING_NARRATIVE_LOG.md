@@ -12,6 +12,386 @@
 - 不记录无意义的中间尝试，不堆 raw log。
 - 简单机械修改不需要单独记录。
 
+### 2026-06-16 - Recommendation Agent 工具规划提示词强化
+
+**任务：**
+完善 Recommendation Agent 的系统提示词和工具边界，让 RAG 可以在召回前用于概念补全与 query planning，同时保持工具集合凝练，不把澄清、改写、诊断等流程节点拆成新工具。
+
+**遇到的问题：**
+原提示词只笼统说明 `query_rag` 可在 `retrieve_candidates` 前做 query planning，缺少“概念补全、属性扩展、场景/同义词/品类知识、query rewrite support”的明确边界； deterministic dialogue 对 `I want headphones` 这类带具体商品词的请求仍会前置澄清，导致 RAG 前置和召回链路无法触发。
+
+**定位方式：**
+沿 `rs_core/rsagent/tools.py` 检查 `QUERY_RAG_BOUNDARY_PROMPT`、`AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`、`AGENT_TOOL_MANIFEST`，结合 `rs_core/rsagent/dialogue.py` 的 `_recommendation_tool_calls()` 和 `tests/test_agent_tools.py` / `tests/test_agent_dialogue.py` / `tests/test_serving_smoke.py` 的既有契约，确认应复用现有 `query_rag`、`retrieve_candidates`、`rank_candidates`、`get_item_evidence`、`build_recommendation_slate` 等高层隐藏工具，而不是新增流程工具。
+
+**解决方式：**
+强化 `query_rag` 边界为 internal pre-retrieval catalog-knowledge helper，明确 compact hints 只服务 `retrieve_candidates.query` 和澄清判断；为 `get_item_evidence` 增加排序后 grounding 边界，禁止新增候选或改排序；全局 prompt 明确“只有阻断候选召回时才前置澄清，否则先用上下文、可选 RAG、召回、排序和证据工具服务，再做后置高价值澄清”。同时在带具体 query 的默认工具链中插入 `query_rag`，让 `semantic_live` 能消费其 `semantic_query_hint`；移除 `QueryRagOutput` 中容易混淆 raw evidence 边界的 `supporting_snippets` 字段；并补强 public display / recall facade 的 denylist、ui_state allowlist 和 retrieval_summary allowlist，避免 snippet、camelCase trace 或下游诊断字段透传。
+
+**验证结果：**
+使用项目默认 `.venv` 运行：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_tools.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_dialogue.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runtime.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_capability_manifest.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_display_contract.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_smoke.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_facades.py -q`，结果 `247 passed in 1.82s`。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 的工具层产品化和 prompt contract 收口”：LLM 不直接面对底层召回/排序方法，而是在系统提示词约束下使用少量隐藏业务工具；RAG 前置只做 query planning 和概念补全，排序后 evidence 只做解释 grounding，候选生成、排序和 public display 仍由推荐 backbone 与 display validator 控制。
+
+### 2026-06-16 - Recommendation Agent 用户/session 隔离与冷启动收口
+
+**任务：**
+审查并修复 Recommendation Agent 工具调用链中的用户信息注入和召回隔离边界，确保每个用户/session 有独立身份，匿名用户和未知显式用户不会复用其他用户历史序列，同时保持 `get_user_context`、`retrieve_candidates` 和 long memory 的契约稳定。
+
+**遇到的问题：**
+Serving 层虽然以 `session_id` 存储会话，但匿名 `start_session()` 原先可能落到环境层默认第一个训练用户；初版修复只在 facade 层生成 guest id，后续 code review 进一步发现 direct `HybridRecommendationEnvironment.start_session()` 匿名路径仍会复用 `u1` 和其 `recent_item_sequence`。这会让匿名用户或新用户在召回种子上继承其他用户行为，违反推荐独立性。
+
+**定位方式：**
+沿 `rs_core/serving/facades.py`、`rs_core/workflow/hybrid_environment.py`、`rs_core/rsagent/context.py` 和 `rs_core/workflow/online_recommendation.py` 检查身份传递、上下文 bundle、候选召回和 long memory hydrate/persist 调用链。通过 code-reviewer 做两轮只读复核，第一轮指出冷启动复制首个已知用户序列，第二轮指出 env 层匿名路径仍保留旧默认用户语义。
+
+**解决方式：**
+在 `FeedbackSessionFacade.start_session()` 中将空白 user_id 归一为 `guest-{session_id}`；在 `HybridRecommendationEnvironment.start_session()` 中统一生成唯一 `session_id`，匿名路径直接绑定 `guest-{session_id}`，未知显式用户和 guest 都写入空冷启动序列，不再复制任意训练用户历史。显式测试用例改为显式传入 `u1`，避免把 demo 用户语义和匿名用户语义混在一起。补充 service/env 匿名 session 独立、未知显式 user 冷启动、long memory 匿名不串记忆等回归测试。
+
+**验证结果：**
+使用项目默认 `.venv` 运行重点回归：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_tools.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_dialogue.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runtime.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_capability_manifest.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_display_contract.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_smoke.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_long_memory.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_facades.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_hybrid_demo_optional_strong.py -q`，结果 `256 passed in 2.08s`。最终 code-reviewer 复核无 HIGH/MEDIUM 问题，建议 `APPROVE`。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 的用户隔离和冷启动治理”：不仅给前台会话分配 `session_id`，还把长期用户画像、当前对话状态和召回历史序列拆开处理；匿名用户走独立 guest 身份和空冷启动，显式用户才共享长期 memory，从而避免推荐系统中常见的用户历史串用和隐式数据泄漏。
+
+### 2026-06-14 - P2 Agent/RAG workflow facade seam 落地
+
+**任务：**
+在 P0/P1 serving facade 之后，继续落地 `AgentOrchestrationFacade` 和 `EvidenceRAGFacade`，把 `HybridRecommendationEnvironment` 中的 Agent turn 编排和 turn-level RAG evidence 构建先拆成模块化单体内部 seam。
+
+**遇到的问题：**
+`HybridRecommendationEnvironment` 同时承担对话 runtime、工具执行、推荐 turn 构建和 RAG context 构建，继续直接堆叠会让 Agent/RAG 边界变厚；但 P2 也不能重写 AgentRuntime、改变 trace 顺序、改 FastAPI route，或让 RAG 变成候选生成、ranking replacement、promotion 入口。
+
+**定位方式：**
+沿 `rs_core/workflow/hybrid_environment.py` 梳理 `converse()`、`AgentRuntime.run_turn(...)`、`_recommendation_step()` 和原 `_build_turn_rag_context(...)` 调用链，确认最小可落地 seam 是：Agent 编排只包装既有 runtime host 协议，RAG facade 只迁移原 turn-level evidence context 构建逻辑。测试侧用 `tests/test_agent_runtime.py` 固化 runtime delegation 和 trace 行为，用 `tests/test_rag_core.py` 固化 `evidence_mode=off/shadow/explain` 语义和 public payload 边界。
+
+**解决方式：**
+新增 `rs_core/workflow/facades.py`，实现 `AgentOrchestrationFacade.run_turn(...)` 委托既有 `AgentRuntime.run_turn(host, session, user_input, explanation_item_id)`；实现 `EvidenceRAGFacade.build_turn_rag_context(...)` 承接原候选内 RAG context 构建逻辑。`HybridRecommendationEnvironment.__init__` 初始化两个 facade，`converse()` 保持输入 normalize 后委托 Agent facade，`_recommendation_step()` 通过 Evidence RAG facade 构建 `turn.rag_context`，并继续用 `_rag_diagnostics(...)` 写内部 diagnostics。整个改动不拆微服务、不改 route、不放宽 `ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+复核时 code-reviewer 发现旧的 `query_rag -> retrieve_candidates` hint 应用路径会让 RAG 影响候选生成输入，已移除该 rewrite helper 和对应测试，确保 `query_rag` 只保留 planning/diagnostic 上下文，不参与 candidate generation。使用项目默认 `.venv` 复跑 P2 targeted suite：`.venv/Scripts/python -m pytest tests/test_agent_runtime.py tests/test_agent_dialogue.py tests/test_rag_core.py tests/test_serving_facades.py tests/test_display_contract.py tests/test_agent_tools.py tests/test_agent_capability_manifest.py -q`，结果 `212 passed in 2.39s`。新增/强化测试覆盖 Agent facade 委托、`HybridRecommendationEnvironment.converse()` 走 facade、RAG off mode 返回 `None`、shadow/explain 保持候选 scope 和 retriever metadata，以及 `AgentTurn.to_dict()` 默认不公开 `rag_context`。
+
+**面试可讲点：**
+这段可以讲成“用 seam-first modular monolith 拆薄 Agent/RAG 厚对象”：没有贸然微服务化或重写 runtime，而是先把 Agent 编排和证据 RAG 各自切成可测试 facade；推荐候选、排序、展示和治理边界保持不变，后续如果要替换 runtime 或升级 RAG 检索器，也能在稳定 contract 下渐进演进。
+
+### 2026-06-13 - Online Serving Artifact Governance 合同 fail-closed 收口
+
+**任务：**
+在“离线系统 + 在线服务系统 + 传统推荐 + Agent 编排”的架构拆分中，固化 `current_online_service_route` 与 `configs/serving/online_service.yaml` 的 pool500 artifact path 一致性，避免服务配置和治理注册表漂移。
+
+**遇到的问题：**
+初版 path consistency gate 只在 `current_online_service_route` 存在且字段形状正常时检查路径一致；如果 route 被删除、字段缺失/类型错误，或加入 `dual_path_governance*` 旁路字段，存在 fail-open 风险。这样会让 stale artifact path 或双路径语义绕过治理合同。
+
+**定位方式：**
+通过 code review 针对 `rs_core/common/engineering_contracts.py` 的 `_online_service_route_violations(...)` 做对抗性检查，重点验证 required route、`required_output_paths`、`config_paths`、`online_route.pool500_candidates_path` 和 `dual_path_governance*` 字段。回归测试集中放在 `tests/test_engineering_contracts.py`。
+
+**解决方式：**
+将 `current_online_service_route` 加入 `_REQUIRED_ROUTE_KEYS`；在 online serving route 检查中对 `dual_path_governance`、`dual_path_governance_allowed`、`explicit_dual_path_governance` 显式 fail-closed；要求 `required_output_paths` 和 `config_paths` 都必须是精确单路径字符串列表；要求 serving config 的 `online_route.pool500_candidates_path` 是非空字符串并与 registry 一致。同步补齐 missing route、dual-path、path mismatch 和 shape 类回归测试。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `.venv/Scripts/python -m py_compile rs_core/common/engineering_contracts.py tests/test_engineering_contracts.py` 通过；运行 `.venv/Scripts/python -m pytest tests/test_engineering_contracts.py`，结果 `48 passed in 0.53s`；运行 `.venv/Scripts/python -m pytest tests/test_engineering_contracts.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py`，结果 `91 passed in 1.93s`。最终 code-reviewer 复核结论为 `APPROVE`。
+
+**面试可讲点：**
+这段可以讲成“在线服务配置与治理注册表的 artifact contract 防漂移”：不是只把接口跑通，而是把 serving readiness 与 route governance 分离，用 fail-closed 工程合同保证 online service 只能读取治理认可的 pool500 artifact，并防止实验性双路径或 malformed registry 悄悄绕过上线边界。
+
+### 2026-06-12 - 系统架构三入口一底座收口
+
+**任务：**
+在保留原有推荐流程和现有 Agent 工具编排服务的前提下，整理系统总架构，明确 `/recall`、`/recommend`、`/chat` 三类入口与共享推荐底座的关系。
+
+**遇到的问题：**
+项目已经具备离线召回、在线召回封装、传统推荐展示、Agent 工具编排、RAG、feedback 和 simulation 等能力，但如果只按功能堆叠来讲，容易让人误以为要用 Agent 替代传统推荐，或误把 `/recall` 理解成生产级独立微服务。
+
+**定位方式：**
+对齐现有 serving API、`OnlinePool500Recommender`、`RecommendationService`、Agent tool runtime、display contract 和 governance 约束，确认当前最清晰的架构叙事是 Traditional Recommendation Backbone + Agent Orchestration：原有流程保留为稳定 backbone，Agent 作为上层编排和交互增强。
+
+**解决方式：**
+新增 `dic/architecture/SYSTEM_ARCHITECTURE.md`，用“三入口一底座”组织系统：`/recall` 负责纯候选召回，`/recommend` 保留传统推荐完整链路，`/chat` 承载 Agent 多轮工具编排；三者共享召回、排序、RAG、display 和 governance 底座。同步更新 `dic/README.md` 阅读顺序，把系统总架构文档作为第一入口。
+
+**验证结果：**
+文档口径保持三点一致：原有推荐流程不被删除或迁移到 Agent；现有工具编排服务继续保留为上层增强入口；`/recall` 只表示轻量服务化候选接口，不声明 ranking replacement、pool1000、promotion 或生产级独立微服务。
+
+**面试可讲点：**
+这段可以讲成“传统推荐底座 + Agent 编排服务”的架构设计：大厂推荐系统常见的召回、排序、展示链路作为稳定底座，Agent 通过工具调用这些能力来完成自然语言交互、解释和反馈响应；系统通过不同 API 入口和 governance 边界避免能力混淆。
+
+### 2026-06-12 - Recall Serving Layer 轻量在线服务封装
+
+**任务：**
+把已经完成离线构建的 pool500 artifact 与 source-index lookup，补成服务层可直接调用的纯召回接口，让项目叙事从“离线产物被内部读取”升级为“离线召回产物可通过在线服务层提供候选”。
+
+**遇到的问题：**
+原有 `/recommend` 会进入排序和 display 输出，Agent 的 `retrieve_candidates` 又是内部工具入口；如果直接把它们称为召回在线服务，容易混淆“候选召回”和“完整推荐展示”。同时现有治理仍明确禁止 ranking input replacement、pool1000 和 promotion，不能把 pool500 readiness 误写成主路晋升或生产级独立微服务。
+
+**定位方式：**
+沿 `rs_core/serving/app.py`、`rs_core/serving/service.py`、`rs_core/serving/schema.py` 和 `rs_core/workflow/online_recommendation.py` 梳理调用链，确认最适合作为纯召回复用点的是 `OnlinePool500Recommender.tool_retrieve_candidates(...)`，而不是会进入排序展示的 `recommend_from_sequence()` / `recommend()`。测试侧复用 `tests/test_serving_recommend_from_sequence.py` 中的临时 serving fixture、pool500 artifact 和 source-index fixture。
+
+**解决方式：**
+新增 `POST /recall`，配套 `RecallRequest` / `RecallResponse` 和 `RecommendationService.recall()`：服务复制并合并用户序列，调用 `tool_retrieve_candidates()` 读取 pool500 artifact / source indexes，返回 `candidate_item_ids`、`candidate_count` 和 compact `retrieval_summary`。响应不暴露 display、ranking、diagnostics、score、source lineage 或 oracle 字段。文档中补充 Recall Serving Layer 边界，明确当前仍是 single-process demo 内的轻量服务封装。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py -q`，结果 `42 passed in 1.27s`；运行 `./.venv/Scripts/python.exe -m ruff check rs_core/serving/app.py rs_core/serving/schema.py rs_core/serving/service.py tests/test_serving_recommend_from_sequence.py`，结果 `All checks passed!`。新增测试覆盖 `/recall` 基础契约、oracle / nested oracle 拒绝、source-index 召回、pool500 allowed_sources、candidate_pool_size 和 seen item 过滤。
+
+**面试可讲点：**
+这段可以讲成“离线召回产物到在线召回服务层的轻量服务化封装”：离线训练和索引构建完成后，我没有直接把实验 artifact 说成生产服务，而是先补了一个进程内 Recall Serving Layer，用清晰 API 区分纯召回、完整推荐和 Agent 对话，同时用 schema、测试和文档固化 no ranking replacement、no pool1000、no promotion 的治理边界。
+
+### 2026-06-11 - 全用户 source-index 线上召回与 Agent planner contract 收口
+
+**任务：**
+把 pool500 主路召回从“部分用户 artifact-backed”推进到可服务全用户的线上 source-index/semantic_live 路线，并让 Agent 侧通过高层 `retrieve_candidates` 工具和 planner system prompt 使用该能力。
+
+**遇到的问题：**
+线上服务面向所有用户，不能把 500-user `pool500_candidates.jsonl` 当作完整服务底座；同时 ItemCF 真实 source-index 可能包含大分片，若每次在线请求扫描会造成明显延迟和资源风险。`co_visit_fallback_repair` 仍是 guarded artifact-backed 证据，不能伪装成完整在线图；public `/ready` 和 `/recommend` 还需要避免泄漏 manifest path、source lineage、score、diagnostics、label/oracle 或 tool trace。
+
+**定位方式：**
+沿 `rs_core/workflow/online_recommendation.py`、`configs/serving/online_service.yaml`、`rs_core/serving/service.py` 和 Agent tool manifest 检查 complete_pool500、source-index、public payload 和 planner prompt 调用链。code review 进一步定位到两个边界问题：source-index 返回真实候选时 `fallback_used` 可能被 base fallback 误报；`co_visit_fallback_repair` 的候选 cap 复用了 `usercf_per_user`，会让两个 source 的服务配置耦合。
+
+**解决方式：**
+`complete_pool500` 改为 artifact 与 `online_route.source_indexes` 双路径：无 pool500 artifact 但有可用 source-index 时仍可服务；ItemCF 大分片默认 `allow_heavy_scan=false` 并在 readiness 标为 `blocked_heavy_scan`；UserCF、two-tower 走 source-index lookup；co_visit 只作为 `artifact_backed_guarded` 候选补充，不声明 full online graph。public `/ready` 改为粗粒度计数，不暴露 source 名和本地路径。Agent 侧新增 planner prompt contract，把 `semantic_live` 全用户 query/history/hybrid 能力和行为召回后台门控写入系统边界。最后修复 `fallback_used` 误报，并让 co_visit 使用独立 `co_visit_per_user` cap。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_agent_tools.py -q`，结果 `73 passed in 1.40s`；运行 `./.venv/Scripts/python.exe -m ruff check rs_core/workflow/online_recommendation.py rs_core/serving/service.py rs_core/rsagent/tools.py rs_core/workflow/hybrid_environment.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_agent_tools.py`，结果 `All checks passed!`。新增测试覆盖：无 pool500 artifact 时 source-index-backed `complete_pool500` 可返回候选且 `fallback_used=false`，public `/ready` 不泄漏内部路径/source，ItemCF 大分片被阻断，co_visit 使用独立候选 cap。
+
+**面试可讲点：**
+这段可以讲成“推荐召回从离线 artifact 到在线服务的治理升级”：全用户服务用 `semantic_live` 覆盖所有用户，并把 UserCF/two-tower/ItemCF/co_visit 作为后台有门控的 source-index 或 guarded source；Agent 前台仍只看到自然对话和高层工具，底层 source、score、诊断和治理状态都被服务端隐藏。实现上同时处理了延迟风险、fallback 监控准确性、public payload 安全和 planner prompt contract，体现了推荐系统服务化时算法能力与工程治理同步推进。
+
+### 2026-06-11 - Agent 双路径 RAG 工具化与 public payload 边界收口
+
+**任务：**
+将原本偏排序后解释的候选内 RAG，扩展为 Agent 可按需调用的召回前 `query_rag` planning 工具，同时保留排序后 `get_item_evidence` 证据 grounding，并收口 public display 对 RAG/tool/source/training/reward 等字段和文本的泄漏边界。
+
+**遇到的问题：**
+原 RAG 主要依赖候选池，适合解释已推荐商品，但 Agent 在用户需求进入、生成语义召回 query 前也需要商品知识和属性扩展；如果直接把 RAG 固定进 pipeline，又会削弱“Agent 自主选择工具”的设计。同时 public payload validator 原先按字符串全局扫描 `source` / `training` / `reward`，会误杀正常商品文案；放开这些词后又需要防止内部 source、score、tool、RAG diagnostics 通过字段或嵌套结构泄漏。
+
+**定位方式：**
+沿 `rs_core/rsagent/tools.py`、`rs_core/workflow/hybrid_environment.py`、`rs_core/recsys/rag/` 检查工具契约、runtime 调用链和 RAG evidence policy，确认需要新增非 candidate-scoped 检索路径和单 turn `tool_context`。安全侧通过 code-reviewer 两轮静态审查定位：解释函数不能拼接 raw RAG evidence；`AgentTurn.to_dict()` 默认不应序列化隐藏 `rag_context`；public validator 要区分普通 public free text 与内部 key/value/嵌套结构。
+
+**解决方式：**
+新增隐藏工具 `query_rag`，作为 `query_planning` 阶段的 read-only、non-public 工具，只输出 compact query hints，不返回候选、不替代 `retrieve_candidates` / `rank_candidates`。新增 `SQLiteBM25QueryPlanningRetriever` 和 `build_query_rag_context_for_planning()`，复用 allowed fields、provenance gate、budget 和文本截断，但不做 candidate gate。runtime 引入单 turn `tool_context`，让 `query_rag` 的 semantic hint 可在同一 pre phase 被 `retrieve_candidates` 消费。后置 `get_item_evidence` 继续保持候选内解释边界。public display 侧改为 path/key/schema-aware 校验：允许 `source` / `training` / `reward` 作为助手或商品自然文本出现，但禁止它们作为内部字段，并拒绝 `rag_context`、`reward_evidence`、`training_samples`、`feedback_source`、`score_trace`、`rag output`、`tool value` 等内部信号；`features`/`badges`/`feedback_actions`/`ui_state` 增加结构校验，防止嵌套夹带内部 dict。
+
+**验证结果：**
+首次回归发现 3 个问题：planning RAG 测试样本里两条 evidence 都被截断导致期望不准；两个 runtime 单测直接调用 `_execute_agent_tool_call()` 时缺少新增 `tool_context` 参数。随后调整测试样本并让 `_execute_agent_tool_call()` 对旧调用签名提供默认空 context。定向回归：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_rag_core.py::test_query_planning_rag_context_filters_policy_and_keeps_non_candidate_evidence tests/test_agent_runtime.py::test_rank_candidates_execution_skips_explicit_pool_mismatch tests/test_agent_runtime.py::test_rank_candidates_execution_does_not_reuse_prior_turn_pool -q`，结果 `3 passed in 0.30s`。最终总回归：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_agent_tools.py tests/test_rag_core.py tests/test_agent_runtime.py tests/test_agent_capability_manifest.py tests/test_agent_dialogue.py tests/test_display_contract.py tests/test_serving_smoke.py -q`，结果 `227 passed in 3.44s`。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 的双路径 RAG 治理”：召回前 `query_rag` 帮 Agent 做需求理解、属性扩展和语义 query planning；排序后 `get_item_evidence` 只做候选内解释 grounding。LLM 负责决定是否调用工具，推荐系统负责候选、排序和安全展示。实现上用工具 manifest、RAG policy、transient tool_context 和 public payload validator 把能力边界固化，既提升 Agent 对复杂需求的理解能力，又避免 RAG evidence、score、source lineage 和诊断信息泄漏到用户侧。
+
+### 2026-06-09 - Agent 召回工具属性与系统边界收口
+
+**任务：**
+根据全用户线上推荐服务的新口径，定义 Agent 可调用的高层召回工具属性，并在系统提示词层面明确工具调用边界。
+
+**遇到的问题：**
+全用户服务不能依赖“500 用户 × pool500 候选”的巨型预生成 artifact；同时 `semantic_live` 不应被历史 item 数门控，它既可以理解当前 query，也可以基于用户历史构造语义画像。行为召回如 UserCF/co-visit/two-tower/ItemCF 则需要按历史行为和在线索引可用性后台门控，不能作为前台底层工具暴露给用户。
+
+**定位方式：**
+沿 Agent 工具 manifest、dialogue planner 和 semantic_live serving runtime 检查调用链，确认 `retrieve_candidates` 是候选获取的统一高层入口；测试侧用 `tests/test_agent_tools.py` 固化工具属性、边界 prompt 和 planner 参数传递，用 `tests/test_serving_smoke.py` 固化 semantic mode diagnostics 与 public display 防泄漏。
+
+**解决方式：**
+在 `rs_core/rsagent/tools.py` 为 `AgentToolSpec` 增加 `routing_attributes` / `boundary_prompt`，将 `retrieve_candidates` 定义为 all-user `semantic_live` + backend-gated behavioral recall 的高层工具，并新增 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`。在 `rs_core/rsagent/dialogue.py` 让推荐规划传入 `semantic_mode`、`use_history_profile`、`use_behavioral_recall`；在 `rs_core/workflow/hybrid_environment.py` 支持 `query_intent`、`history_profile`、`hybrid_query_history` 三种 semantic_live 查询构造。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_agent_tools.py tests/test_agent_capability_manifest.py tests/test_serving_smoke.py -q`，结果 `50 passed in 1.20s`；运行 `./.venv/Scripts/python.exe -m ruff check rs_core/rsagent/tools.py rs_core/rsagent/dialogue.py rs_core/workflow/hybrid_environment.py rs_core/workflow/online_recommendation.py tests/test_agent_tools.py tests/test_serving_smoke.py`，结果 `All checks passed!`。独立 code-reviewer 复核后无 CRITICAL/HIGH，唯一 MEDIUM 备注是 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT` 当前主要是 contract 常量，后续接真实 LLM planner 时需显式注入 prompt assembly。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 工具抽象与召回治理边界”：前台只保留自然对话和高层候选获取工具，后台按 query、历史画像和行为门控调度多路召回；既提升全用户可服务性，又避免把底层 source、score、诊断和训练/评估痕迹泄漏到用户响应。
+
+### 2026-06-09 - COLD/DeepFM 诊断模型接入在线排序链路
+
+**任务：**
+把已训练的 COLD/DeepFM 排序产物接入 pool500/Agent 在线排序链路，但保持 diagnostic/shadow/no-promotion 边界，不把当前低覆盖评估结果误升格为生产排序替换。
+
+**遇到的问题：**
+真实 valid/test frozen eval 的候选覆盖门禁未通过，不能直接用 DeepFM 替换排序；同时在线候选不一定具备训练期 6 个 train-only history features，如果默认用空特征或读取 label/valid/test metadata，会引入效果误判或治理风险。回归过程中还发现 `online_recommendation.py` 已调用 source-index readiness/merge helper，但当前类里缺少对应实现，serving 测试会在 `/ready` 或 complete_pool500 路径报错。
+
+**定位方式：**
+检查 `rs_core/recsys/ranking.py` 的 `rerank_candidates` 链路，确认 COLD/DeepFM 最安全的接入点是 LTR 之后的可配置 rerank/shadow stage；结合 `rs_core/recsys/cold_deepfm.py::score_deepfm_model` 复用已有模型 forward，不重新训练。独立 verifier 首轮指出 `feature_metadata_keys` 可被配置绕过读取 forbidden metadata，随后增加 poisoned metadata 测试锁定 label/valid/test/source/candidate_rank 等字段不得进入 DeepFM features。最终使用 serving 回归定位并补齐 `OnlinePool500Recommender` 的 artifact/source-index 占位 helper。
+
+**解决方式：**
+在 `rs_core/recsys/ranking.py` 增加 `deepfm_model` / `deepfm_shadow` 配置入口，支持 inline model、`model_path`、feature contract、offline report 与治理 gate；默认只从 `cold_deepfm_features`、`deepfm_features`、`ranking_features` 读取数值特征，并过滤 `label/target/holdout/valid/test/future/candidate_rank/source_` 等 forbidden feature name。`shadow` 模式只记录 raw score，不改最终排序；`rerank` 模式只有在配置和 offline report 均允许时才可产生 delta。`configs/serving/online_service.yaml` 保留正式 neg4 模型路径为 disabled diagnostic block，同时启用本地已有 smoke 模型的 zero-safe shadow 配置用于链路打通，不声明 production-ready。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_recsys_core.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py -q`，结果 `54 passed in 1.07s`。新增测试覆盖：默认关闭不改变排序、rerank 模式可改变排序、shadow 模式不改变排序、模型可从 config path 加载、缺失必需特征跳过、forbidden metadata/feature name 不被读取、三种 allowlisted feature metadata key 可用、默认 serving config 仍保持 diagnostic/no-promotion。
+
+**面试可讲点：**
+这段可以讲成“排序模型上线前的影子接入治理”：模型已经训练完，但由于召回覆盖不足不能宣称整体排序收益，因此先把 DeepFM 接成可观测 shadow/rerank stage，用 feature 白名单、offline report gate 和 no-promotion 配置保证不会泄漏 valid/test 或误替换主排序；体现了推荐系统从离线模型到在线链路时，模型能力、数据口径和工程治理必须同时满足。
+
+### 2026-06-09 - usercf/co_visit artifact-backed 在线召回开放
+
+**任务：**
+把 `usercf_recall` 和 `co_visit_fallback_repair` 从“解释为暂不可在线”推进到可被线上服务读取的召回能力，同时不误开 true source-index generation、ranking replacement、pool1000 或 final-ready。
+
+**遇到的问题：**
+两者当前治理语义不同：`usercf_recall` 仍是 `DIAGNOSTIC_ONLY`，但已有可合入 pool500 的候选证据；`co_visit_fallback_repair` 仍是 guarded fallback/task source，不能把 target-slice/batch-scoped 证据伪装成完整在线 source index。直接改成 candidate-generating 会越过治理边界。
+
+**定位方式：**
+核对 `rs_core/workflow/online_recommendation.py` 与 `rs_core/recsys/pool500_artifacts.py`，确认 serving 已支持 `pool500_candidates.jsonl` + `online_route.allowed_sources` 的 artifact-backed 读取。检查候选 artifact 后选用 `outputs/recall/pool500_main_route_direct_recall_cold_start_fallback_v5/pool500_candidates.jsonl`，该 artifact 500 用户 / 250000 行，loader 统计 `usercf_recall=50980`、`co_visit_fallback_repair=9127`，且治理字段仍保持 ranking/pool1000/final 关闭。
+
+**解决方式：**
+将 `configs/serving/online_service.yaml` 的 pool500 路径切到包含两者的 artifact，allowlist 增加 `usercf_recall` / `co_visit_fallback_repair`，并补充保守 rank weight 与 `artifact_backed_pool500_only` 暴露口径。registry 中新增 `online_exposure`，明确这是 serving artifact-backed 读取，不是 runtime candidate generation。`pool500_artifacts.py` 进一步拒绝候选 metadata 中的 internal 字段（如 diagnostics/source_trace/tool_calls），避免 public display 泄露。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 targeted 回归：`tests/test_pool500_online_artifacts.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_recall_source_registry.py tests/test_agent_capability_manifest.py -q`，结果 `48 passed`；public display/leakage 回归 `tests/test_display_contract.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py -q`，结果 `87 passed`；co_visit governance 回归 `tests/test_pool500_co_visit_fallback_repair_source.py tests/test_pool500_co_visit_fallback_repair_task_gate.py -q`，结果 `7 passed`；ruff 检查通过。额外脚本验证 serving config 当前 artifact 可加载并包含两者 source counts。
+
+**面试可讲点：**
+这段可以讲成“召回服务化的灰度治理”：先利用统一 artifact route 把 UserCF 和 co-visit 作为可控 supplemental source 接入线上服务，同时用 `artifact_backed_pool500_only` 明确边界，避免把诊断/兜底任务证据误升格为完整在线索引或排序输入，体现了推荐系统上线时对能力开放和治理边界的分层设计。
+
+### 2026-06-09 - pool500 在线召回 source 注册口径收口
+
+**任务：**
+把已准备好的主路召回方法收口到线上服务可调用口径：取消 `semantic_title_category_expansion` 的独立在线注册，开放 `itemcf_weak` / `two_tower` 的 artifact-backed 在线读取，并解释 `usercf_recall` / `co_visit_fallback_repair` 为什么暂不能在线。
+
+**遇到的问题：**
+`semantic_title_category_expansion` 已被语义实时召回覆盖，如果继续作为独立 source 注册，会造成语义能力重复和主路口径混乱；同时 `itemcf_weak` / `two_tower` 虽可在线读取，但不能被误解为 promotion、ranking replacement、pool1000 或 final-ready；`usercf_recall` / `co_visit_fallback_repair` 有诊断或批任务属性，不能伪装成实时在线 ready。
+
+**定位方式：**
+核对 `configs/serving/online_service.yaml` 的 `online_route.allowed_sources`、`rs_core/recsys/pool500_artifacts.py` 的 allowed source 硬过滤、pool500 per-source 产物状态，以及 `configs/recall/pool500_method_registry.json` / `rs_core/recsys/recall_sources/registry.py` 中的 readiness 和治理字段。证据显示 `itemcf_weak` / `two_tower` 在当前 pool500 package 中有候选行可读；`usercf_recall` 当前是 `DIAGNOSTIC_ONLY` 且 `candidate_generation_allowed=false`；`co_visit_fallback_repair` 仍是 `DEFERRED` 的 guarded fallback repair，不是完整在线 source。
+
+**解决方式：**
+将 `configs/serving/online_service.yaml` 的 allowlist 扩展为包含 `itemcf_weak` 和 `two_tower`，但不加入 `semantic_title_category_expansion`、`usercf_recall`、`co_visit_fallback_repair` 或 `semantic_live`。在 core registry 和 JSON registry 中把 `semantic_title_category_expansion` 标为 `merged_into_semantic_live_not_independent_online_source`，保留历史 provenance 但取消独立在线 source 语义。测试侧增加 artifact allowlist、serving ready/recommend、registry blocker 断言，确保 legacy semantic title source 被过滤，`itemcf_weak` / `two_tower` 能进入在线候选读取。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_pool500_online_artifacts.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_recall_source_registry.py tests/test_agent_capability_manifest.py -q`，结果 `46 passed in 3.38s`；运行 `./.venv/Scripts/python.exe -m ruff check rs_core tests/test_pool500_online_artifacts.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_recall_source_registry.py`，结果 `All checks passed!`。
+
+**面试可讲点：**
+这段可以讲成“离线召回方法服务化时的 route governance”：不是把所有产物简单暴露给 Agent，而是通过 allowlist、registry readiness 和测试门禁明确哪些 source 能在线读取、哪些只能保留诊断/历史证据；同时保持 Agent 前台工具不暴露底层方法细节，把复杂路由隐藏在服务端。
+
+### 2026-06-09 - DeepFM/COLD history-feature 对齐与排序评估输入阻塞
+
+**任务：**
+把 COLD 粗排 / DeepFM 精排从 smoke 产物推进到可训练、可诊断的排序链路，并解决 train/eval feature space 不一致问题。
+
+**遇到的问题：**
+早期 DeepFM formal run 虽然能训练，但训练 rows 的 `features` 为空，模型实际只学到 `bias`；修复 train-only history features 后，远程 neg4 训练集 gate 通过、DeepFM 不再是 bias-only，但 eval 侧仍只有 `candidate_rank_inverse/source_*`，导致 train/eval 特征空间不一致。进一步给 frozen eval candidate rows 补齐 history features 时，严格审计发现当前 `pool500_label_artifact_cold_start_fallback_v5_valid` 的 7 个 positive 缺少 `label_event_time`。
+
+**定位方式：**
+先通过本地测试和 code review 收口 eval history feature gate：候选行禁止 label/time alias，history feature 审计覆盖全部 positive eval labels，且 `feature_cutoff_time` 不得晚于 positive label time。远程构建 `outputs/ranking/deepfm_remote_formal_20260609_eval_history_aligned/frozen_eval` 时，6 个 train-only history features 已补齐，但 gate 因 7 个 positive 缺失 label time STOP。随后定向扫描 canonical interactions，发现这 7 个 positive 均能追溯到 `data/processed/amazon_2023_recall_recent_2y_1m_3m/canonical_interactions.jsonl` 的 `split=train`，而 canonical valid/test 对当前 500 candidate users 的 positive users/pairs 均为 0。
+
+**解决方式：**
+代码侧保持严格 gate，不用 synthetic label time 绕过：`build_pool500_frozen_candidate_eval_dataset.py` 要求启用 history features 时 positive eval labels 必须有可解析时间，并禁止 candidate rows 携带 `event_time/timestamp/unix_timestamp/review_time/unixReviewTime` 等 label-time alias。排序评估侧停止使用当前 v5 valid label artifact 声明 DeepFM/COLD 效果，把问题上移为召回/数据侧评估输入重建：需要真正面向 valid/test 用户生成 frozen candidate pool 和 evaluation-only label artifact。
+
+**验证结果：**
+本地使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_cold_deepfm_ranking.py tests/test_pool500_ranking_adapter.py -q`，结果 `47 passed`；`py_compile` 通过；独立 code-reviewer 最终确认无 CRITICAL/HIGH/MEDIUM。远程证据：history-aligned frozen eval 的 `history_feature_audit.observed_feature_names` 已包含 6 个 train-only history features，但 manifest `status=STOP`，blocker 为 `EVAL_HISTORY_FEATURE_GATE_NOT_PASS`；candidate pool 为 500 用户 / 250000 rows，canonical valid/test 对这些用户均无正例命中。
+
+**面试可讲点：**
+这段可以讲成“排序模型训练解阻不等于排序效果可声明”：先修复 DeepFM 训练数据从 bias-only 到 train-only history features，再把 eval 侧特征对齐；最后通过严格时序和 label-source gate 发现所谓 valid label 实际落在 train split，从而主动停止效果宣称。体现了推荐排序实验中比模型训练更关键的是 train/eval 口径、时序边界和 no-oracle 治理。
+
+### 2026-06-09 - 真实 valid/test frozen eval 重建与 COLD/DeepFM 诊断
+
+**任务：**
+在旧 v5 valid label artifact 被确认混入 train split 后，重建真正基于 valid/test 用户的 pool500 frozen eval，并复用已有 train-only neg4 COLD/DeepFM 模型做排序诊断。
+
+**遇到的问题：**
+旧评估输入不能用于排序效果宣称；新建 valid/test 小批时，还遇到远程 source manifest 内残留 Windows shard path 导致 itemcf strong 加载失败，以及 recall readiness 仍为 `STOP`。即使 frozen eval 构建成功，候选覆盖也明显不足：1000 个 valid/test positive 用户、1678 条 positive label 中，pool500 候选只命中 11 个用户、14 个正例。
+
+**定位方式：**
+远程生成 `outputs/ranking/deepfm_remote_formal_20260609_valid_test_eval_users/eval_user_batch_summary.json`，确认 `selected_user_count=1000`、`label_rows=1678`、`missing_label_event_time_rows=0`，且 valid/test 未用于训练或特征统计。随后通过 `frozen_eval/coverage_gate.json` 定位 coverage gate：`in_candidate_positive_users=11`、`in_candidate_positives=14`，低于 `user_gate_threshold=100` 和 `positive_gate_threshold=500`。本地用 `.venv` 跑 `tests/test_full_data_pool500_recall_only.py tests/test_cold_deepfm_ranking.py tests/test_pool500_ranking_adapter.py -q`，结果 `72 passed`。
+
+**解决方式：**
+在 `rs_core/recsys/candidate_merge.py` 中补充跨平台 manifest path 解析：当远程 manifest shard path 带有旧 Windows 绝对路径片段时，按当前 manifest 目录重定位 shard。随后重跑远程 valid/test batch：生成 1000 用户 allowlist、1678 条带真实 `label_event_time` 的 eval labels、pool500 recall candidates、history-feature 对齐 frozen eval。COLD/DeepFM 侧不重新用 valid/test 训练，只复用 `outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4` 的 train-only 模型进行 evaluation-only scoring。
+
+**验证结果：**
+`frozen_eval/dataset_audit.json` 的 `status=PASS`，`history_feature_audit.status=PASS`，但 `ranking_effect_conclusion_allowed=false`，因为 coverage gate 为 `STOP_FOR_RANKING_EFFECT`。在 frozen-candidate-only 范围内，candidate-rank baseline top20 为 `1/14` positive hit、`hit_user_rate_at_k=0.090909`、`in_candidate_positive_recall_at_k=0.071429`；direct DeepFM 和 COLD→DeepFM 均为 `2/14` positive hit、`hit_user_rate_at_k=0.181818`、`in_candidate_positive_recall_at_k=0.142857`，相对 baseline 增量为 `+0.071428` recall、`+0.090909` hit-user-rate。但由于覆盖门禁未过，这只能说明模型在极小 in-candidate 子集上有机械诊断提升，不能声明整体排序效果。
+
+**面试可讲点：**
+这段可以讲成“排序评估输入治理”：先发现旧 valid artifact 实际不满足时序/label-source 约束，再重建真实 valid/test frozen eval；最终即使模型在候选内有正向信号，也因为召回覆盖不足主动拒绝效果宣称，体现了推荐系统中模型指标必须服从数据口径、候选覆盖和 no-oracle gate。
+
+### 2026-06-08 - two_tower_DSSM 动态负采样 v3 诊断
+
+**任务：**
+根据 DSSM 论文/Datawhale sampled negative 思路，把 `two_tower_DSSM` 的负样本从 method dataset 阶段固定 `negative_item_ids` 推进到训练期动态抽样，并在 recent_2y fixed 500 评估集上验证效果。
+
+**遇到的问题：**
+固定 hard negative v1/v2 虽然把 `Recall@500` 提到 `0.031792`，但多 epoch final checkpoint 退化，说明固定负样本反复训练存在过窄/过拟合风险。第一版 dynamic sampler 每个 example 都展开完整同类目候选池，远程训练长时间停在 first batch 后无产物，暴露出 per-example category pool materialization 的性能瓶颈。
+
+**定位方式：**
+检查远程 progress log，确认已完成 `item_feature_rows_complete`、`torch_examples_complete`、`model_constructed` 和 `first_batch_devices`，但 9 小时后仍没有 `artifact_manifest.json`；结合 `example_count=1957136`、`item_count=340080` 和 `negative_samples=31`，定位为动态负采样在每个 example 上构造大候选列表导致训练主循环不可接受。
+
+**解决方式：**
+在 `rs_core/recsys/two_tower.py` 中改为训练期动态采样：按 target item 类目从 same-category popular、same-category tail 和 global random 三路采样，排除 target/history/positives，并记录组件计数；随后把同类目抽样改为随机 offset 小窗口扫描，避免完整展开候选池。CLI `scripts/training/two_tower_DSSM/train_two_tower_dssm.py` 增加 dynamic sampling 参数。保持 valid/test 只用于 direct eval label，不参与训练、负采样、item universe 或 source index。
+
+**验证结果：**
+本地 `.venv/Scripts/python.exe -m pytest tests/test_two_tower_training.py -q` 通过，结果 `58 passed`；DSSM 聚焦回归 `tests/test_pool500_two_tower_method_dataset.py tests/test_two_tower_dssm_source_manifest.py tests/test_two_tower_dssm_source_index.py tests/test_pool500_two_tower_dssm_direct_eval.py -q` 为 `38 passed, 3 skipped`。远程优化版 run `pilot_20k_dynamic_neg_v3_opt_e1_20260608a` 成功产出 artifact/source/eval：动态负样本总数 `60671216`，组件计数 same-category popular `29357040`、tail `15657088`、global `15657088`，`explicit_negative_used_count=0`。fixed 500 direct eval 结果为 `Recall@500=0.011561`、`HitRate@500=0.016`、命中 `8/692`，显著低于 fixed hardneg v1/v2 的 `Recall@500=0.031792`、`HitRate@500=0.044`、命中 `22/692`。
+
+**面试可讲点：**
+这段可以讲成“算法机制正确性与工程效果不等价”的负采样实验：先按论文精神把负采样从固定样本推进到训练期动态采样，再通过日志定位动态采样实现中的性能瓶颈并改成小窗口随机扫描；最终用同一 fixed 500 direct eval 证明 dynamic v3 虽然更符合 sampled negative 机制，但在当前数据和配置下效果不如固定 hard negative，体现了推荐系统实验需要同时验证机制、性能和指标，而不是只按理论直觉替换主路。
+
+### 2026-06-09 - two_tower_DSSM hard negative 权重网格诊断
+
+**任务：**
+在 dynamic negative v3 低于 fixed hard negative 后，回到当前最优的 `two_tower_DSSM` fixed hard negative 路线，验证 `explicit_negative_weight` 从 `0.5` 调到 `0.3/0.7/1.0` 是否能继续提升 fixed 500 direct eval。
+
+**遇到的问题：**
+第一轮远程网格命令误带 `--limit-users 20000`，训练样本虽然仍是 20k pilot，但导出的 `user_embeddings.jsonl` 只有约 1.9 万用户，direct eval 对 500 个评估用户退回到 projected seed query，结果统一回落到旧 baseline 口径（`Recall@500=0.021676`、命中 `15/692`），不能与之前 full-user artifact 口径的 hardneg best 直接比较。
+
+**定位方式：**
+检查 direct eval manifest 中 `query_source_counts`，发现第一轮为 `recent_positive_item_sequence_average_vectors` / `recent_item_sequence_average_vectors`，而不是 best 实验中的 `artifact_user_embedding=478`；进一步检查 source manifest 的 `user_embedding_row_count`，第一轮只有约 `19000`，best hardneg 和 dynamic v3 均为 `6485503`，因此定位为评估口径不一致。
+
+**解决方式：**
+重新运行 full-user 口径网格：训练仍使用 `pilot_20k_hardneg_v1_20260607a` / `pilot_20k_hardneg_mix_v2_20260607a` 的 train-only method dataset，但去掉训练 CLI 的 `--limit-users`，确保导出全量 train sequence user embeddings；资源上继续限定远程 `CUDA_VISIBLE_DEVICES=2`、`OMP_NUM_THREADS=4`、`MKL_NUM_THREADS=4`，并串行跑 6 组 `explicit_negative_weight=0.3/0.7/1.0`。
+
+**验证结果：**
+修正后所有 run 的 `source_user_embedding_row_count=6485503`，direct eval `query_source_counts.artifact_user_embedding=478`、`projected_seed_query_count=0`，valid/test 仍只作为 `label_paths` 后验评估。结果：`hardneg_v1 w0.3/w0.7` 与 `hardneg_mix_v2 w0.3/w0.7/w1.0` 均为 `Recall@500=0.030347`、`HitRate@500=0.042`、命中 `21/692`；`hardneg_v1 w1.0` 为 `Recall@500=0.028902`、命中 `20/692`。均低于原 `w0.5` baseline 的 `Recall@500=0.031792`、`HitRate@500=0.044`、命中 `22/692`。证据已记录到 `configs/recall/full_data_pool500/two_tower_DSSM/source_config.yaml`，结论保持：`w0.5` 的 fixed hardneg v1 / mix v2 e1 仍是 DSSM 当前最佳诊断点，不能晋升 pool500 ready 或 ranking input。
+
+**面试可讲点：**
+这段可以讲成“推荐实验口径治理”的案例：一次网格实验看似跑完，但通过 query source 和 user embedding row count 发现评估退回到 seed projection，主动废弃不可比结果并重跑 full-user 口径；最终证明 hard negative 强度不是越大越好，`w0.5` 在当前 DSSM 表达能力下更平衡，体现了调参不只是看指标，还要先保证训练、候选生成和评估输入口径一致。
+
+### 2026-06-09 - two_tower_DSSM 隐藏为证据保留源
+
+**任务：**
+在 DSSM dynamic negative、hard negative weight grid 均未带来足够召回提升后，将 `two_tower_DSSM` 从活跃路线中隐藏，避免后续被误当作 pool500 主力召回或 ranking input。
+
+**遇到的问题：**
+当前最佳 DSSM 仍只有 `Recall@500=0.031792`、`HitRate@500=0.044`、命中 `22/692`；继续调 `explicit_negative_weight=0.3/0.7/1.0` 最高也只有 `Recall@500=0.030347`、命中 `21/692`。该能力不足以作为 active route source，但历史实验仍有负采样、口径治理和 user/item 双塔局限性的复盘价值。
+
+**定位方式：**
+对比 `configs/recall/full_data_pool500/two_tower_DSSM/source_config.yaml` 中 full-user fixed 500 direct eval 证据，确认所有新网格均未超过 `w0.5` baseline；同时 verifier 已确认 6 个 manifest 与 YAML 一致、`artifact_user_embedding=478`、`projected_seed_query_count=0`。
+
+**解决方式：**
+在 `two_tower_DSSM` 的 source、dataset policy 和实验配置中增加 `route_visibility: HIDDEN_FROM_ACTIVE_ROUTE` / `hidden_from_active_route: true`，保持 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`、`promotion_allowed=false`，只保留 artifact 和配置作为 diagnostic reference。
+
+**验证结果：**
+本地 YAML/JSON 解析通过，`source_config.yaml` 明确记录 `PARKED_HIDDEN_DIAGNOSTIC_ONLY`，不会打开 pool500 ready、pool1000 或 ranking input replacement 边界。
+
+**面试可讲点：**
+这段可以讲成“实验止损与路线治理”：不是所有实现完整的模型都要进入主路，DSSM 在 user 侧信息弱、单源召回低的条件下被主动隐藏，只保留为诊断证据，体现了推荐系统工程中对实验结论、主路稳定性和资源投入的取舍。
+
+### 2026-06-08 - semantic description retrieval 模块化与等效提速
+
+**任务：**
+把 `diagnose_semantic_description_recall.py` 中的描述式语义召回逻辑抽成正式模块，并在不改变 strict 召回效果的前提下优化速度。
+
+**遇到的问题：**
+当前 diagnostic JSONL 版需要扫描 large inverted index 与 semantic inputs，并在每个 query/candidate 上重复做 fixture terms、record text、field token counter 和 intent phrase 判断；12 个 strict query 实测 `102.187s`，不适合作为 Agent 场景下的实时描述检索入口。
+
+**定位方式：**
+审计 `diagnose_semantic_description_recall.py` 后，将 parity surface 固定为 `tokens`、`fixture_query_terms`、`evaluate_intent`、`score_record`、candidate ordered unique、`(-score, item_id)` 排序和 strict summary 指标；用 `tests/test_semantic_description_scoring.py` 与 `tests/test_semantic_description_retrieval_parity.py` 覆盖 tokenizer、intent、score、候选顺序和 tie-break。
+
+**解决方式：**
+新增 `rs_core/recsys/semantic_description/` 正式模块，把 scoring、retrieval、engine 分层；脚本层保留为 thin wrapper。优化点集中在 `PreparedFixture` / `PreparedRecord` 预处理缓存、跨 query 共享 prepared records、流式 ordered-unique candidate collector，避免改变 scorer、field weight、negative penalty 或 category prior。随后把 optimized live retrieval 接入 Agent/serving 主路：`semantic_description_live.enabled=true` 时在 `HybridRecommendationEnvironment` 初始化单例 `SemanticDescriptionRecallEngine`/SQLite store，`retrieve_candidates` 工具用用户自然语言 query 生成 `semantic_live` 候选，再作为 `extra_candidates` 合并进正常候选池与排序链路；public display 仍只输出安全展示卡片，不暴露 source/diagnostic/tool 字段。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_pool500_semantic_description_diagnostic.py tests/test_semantic_description_scoring.py tests/test_semantic_description_retrieval_parity.py -q`，结果 `11 passed in 0.10s`。重跑 strict probe：`outputs/diagnostics/semantic_description_recall_strict_optimized_check2_20260608/semantic_description_recall_strict_report.json`，summary 与优化前一致（`avg_strict_precision_at_10=0.483`、`avg_bad_intent_rate_at_10=0.267`、`queries_with_strict_hit_top5=8`），总耗时降至 `43.291s`。进一步构建 SQLite postings+records index 后，`outputs/diagnostics/semantic_description_recall_strict_sqlite_check_20260608/semantic_description_recall_strict_report.json` 与 baseline 在 summary、query stats、top10 item/score/details 上完全一致，总耗时降至 `31.044s`；单条 live query CLI 在 5k candidate 配置下耗时 `0.927s`。追加 prepared-record SQLite index 后，`outputs/diagnostics/semantic_description_recall_strict_prepared_sqlite_check_20260608/semantic_description_recall_strict_report.json` 相对旧 SQLite report 继续保持 strict parity；live CLI 改为直接调用 retrieval API，不再生成诊断 report，binder query 在 `candidate_limit=5000` 下检索耗时约 `662ms`、CLI wall time `0.894s`，在 `candidate_limit=2000` 下约 `265ms` 且该 probe top10 与 5000 一致。继续加入 trusted local `prepared_columnar_pickle` cache、query token weight 预计算和 padded phrase text 缓存后，`outputs/diagnostics/semantic_description_recall_strict_pickle_sqlite_check_20260608/semantic_description_recall_strict_report.json` 相对 prepared SQLite report 仍保持 strict parity；binder query in-process warm latency 进一步降到 `candidate_limit=2000` 约 `180ms`、`candidate_limit=5000` 约 `466ms`，CLI 分别约 `0.467s` / `0.688s` wall。汇总证据：`outputs/diagnostics/semantic_live_latency_prepared_sqlite_20260608/summary.json`。随后按默认 `candidate_limit=1000` 做 8 个 train-visible 随机商品 prompt probe，输出 `outputs/diagnostics/semantic_random_prompt_default1000_20260608/report.json`：`source_top10_count=2/8`、`avg_strict_precision_at_10=0.562`、`avg_required_precision_at_10=0.738`、`avg_bad_intent_rate_at_10=0.212`、batch 平均约 `171ms/query`；结论是明确商品词能稳定召回同类商品，但防水连接器、GoPro 型号配件、车型适配和电视附件排除仍需要 Agent query rewrite 与 1000→2000/5000 质量门禁 fallback。主路接入后补充回归 `./.venv/Scripts/python.exe -m pytest tests/test_serving_smoke.py tests/test_agent_tools.py tests/test_semantic_description_index_store.py -q`，结果 `46 passed in 0.93s`；新增 serving smoke 证明 `semantic_description_live` 可以把 `semantic_live` 候选喂入推荐候选池，同时 public display 不泄露内部 source/diagnostic/tool 字段。
+
+**面试可讲点：**
+这段可以讲成“效果等价约束下的检索链路工程化”：先用 parity tests 锁住推荐召回效果，再把实验脚本沉淀为正式可复用模块，通过缓存预处理、候选流式去重、SQLite postings/records 和 prepared-record cache，把性能瓶颈从重复 Python 计算与 JSONL 扫描压到可控的索引查询；同时坚持 train-visible 输入和 no-oracle 边界，避免用评估标签调参。
+
+### 2026-06-08 - semantic guarded 主路接入与 co_visit 任务型兜底门禁
+
+**任务：**
+把已经通过描述式检索验证的 `semantic` 并入 pool500 主路候选生成，同时重新定义 `co_visit_fallback_repair` 的验收口径：不再追单方法 HitRate/Recall，而是验证它是否完成 underfill / fallback repair 任务。
+
+**遇到的问题：**
+语义召回在 valid purchase Recall 上几乎无命中，但用户目标实际是“自然语言描述 → 同类商品召回”；同时 `co_visit_fallback_repair` 本质是兜底补洞，不适合用单方法命中率判断。此前 highcap semantic materialization 还在远程长时间运行未完成，证明不能靠暴力放大全局候选池解决。
+
+**定位方式：**
+用 `diagnose_semantic_description_recall.py` 建立 description-based 诊断，区分 random6 guarded evidence 与 strict stress fixture：random6 达到 `avg_strict_precision_at_10=0.9`、`avg_bad_intent_rate_at_10=0.1`，strict stress 暴露弱词 query 噪声。对 co_visit 则审计 `fallback_completion_audit.json`、`fallback_completion_validation.json`、`underfill_audit.json` 和 source contribution/overlap，而不是把 Recall@K 当主验收。
+
+**解决方式：**
+新增 `audit_semantic_description_evidence_gate.py`，将 description diagnostic 转成 `PASS_GUARDED_CANDIDATE` / `DIAGNOSTIC_ONLY` / `STOP` 门禁；把 `semantic` 在 registry 和配置中推进为 `READY_CANDIDATE` guarded candidate source，但保持 promotion、pool1000、ranking input replacement 和 final ready 全 false。新增 `audit_co_visit_fallback_repair_task.py`，把 `fallback_seed_metadata_neighbor` 映射为 canonical `co_visit_fallback_repair`，按 underfill completion、去重、贡献、no-holdout 和治理字段判断是否可作为兜底修复 source。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_pool500_semantic_description_gate.py tests/test_pool500_co_visit_fallback_repair_task_gate.py tests/test_recall_source_registry.py tests/test_full_data_pool500_recall_only.py -q`，结果 `33 passed in 0.91s`。已生成 `outputs/diagnostics/semantic_description_random6_20260608/semantic_description_evidence_gate.json`，decision=`PASS_GUARDED_CANDIDATE`；strict stress gate 位于 `outputs/diagnostics/semantic_description_recall_strict_v2_20260608/semantic_description_evidence_gate.json`，decision=`DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“推荐召回方法的目标口径重定义与治理式接入”：不是看到 valid Recall 低就盲目扩大候选池，而是回到业务目标，把语义召回定义成 Agent/RAG 场景下的描述式商品发现；同时把 co_visit 定义成低供给用户的补洞工具，用 task gate 而非单源命中率评估。最终做到可接入主路但不越权宣称 READY，体现推荐系统实验指标、业务目标和工程治理之间的平衡。
+
 ### 2026-05-26 - 推荐 Agent 内部工具 schema 与灵活查库能力
 
 **任务：**
@@ -755,6 +1135,226 @@ strict full run 使用 `limit_users=null` 后，进程在 `model_constructed` �
 **面试可讲点：**
 这段可以讲成“把方法层数据集接入主路前先做 schema adapter 与贡献门禁”：不是把 P2 method_dataset 直接宣称为召回产物，而是通过流式转换、manifest hash、loader 测试、主路 source contribution 和后验 label diagnostic 逐级验收；当受控 smoke 没有 ItemCF 贡献时及时停止，避免把无效 source 包装成 promotion 或 final-ready。
 
+### 2026-06-06 - 传统 ItemCF 数据集保留与矩阵落地
+
+**任务：**
+按用户要求，在舍弃 RPA/生成增强路线后，从当前已有 ItemCF 数据口径中选择最适合继续保留的传统 ItemCF 数据集，并在其上建立 item-to-item 相似度矩阵。
+
+**遇到的问题：**
+RPA-index 虽然有更高 eval-only 召回，但用户已明确舍弃该方向；`itemcf_strong` 更偏强信号补充，raw purchase recall 很弱，不适合作为当前传统 ItemCF 主矩阵。需要在不使用 valid/test/holdout/oracle/eval label 参与构建或 variant 晋升的前提下，选择一个可解释、可控、能继续承载传统共现矩阵的口径。
+
+**定位方式：**
+对比 `itemcf_weak` strict formal、`weak_coverage/weak_denoised` 和 `itemcf_strong` relaxed strong 的 method dataset / eval-only 诊断证据。strict formal 的 `raw_recall@500=0.0`、`candidate_user_rate=0.004268`；`weak_denoised` 保持 `raw_recall@500=0.01478`、`in_universe_recall@500=0.021617`、`candidate_user_rate=0.83305`，并通过 `top_k_per_seed=200` 与 per-user cap 控制候选量。
+
+**解决方式：**
+保留 `outputs/recall/pool500_method_datasets/recent_2y/itemcf_weak_weak_denoised_v1/itemcf_weak/method_dataset_manifest.json` 作为当前传统 ItemCF 主数据集，在其 `method_dataset_rows.jsonl` 上构建 compact grouped matrix，输出到 `outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_weak_denoised_traditional_matrix_v1/matrix_manifest.json`。矩阵采用 `sha256(src_item_id) % 64` 分片，每行存一个 src item 的 top neighbors，避免保留 source-adapter metadata-heavy 形式。
+
+**验证结果：**
+矩阵 manifest 显示 `status=PASS`、`src_item_count=382093`、`edge_count=16714845`、`shard_count=64`、`matrix_size_bytes=1169842484`，治理字段继续保持 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`pool1000_allowed=false`、`final_pool500_ready_claimed=false`。此前 source-adapter 产生的约 19.36GB duplicate edge source 已删除，审计记录为 `outputs/cleanup_records/itemcf_weak_metadata_heavy_source_adapter_cleanup_20260606.json`。
+
+**面试可讲点：**
+这段可以讲成“从复杂增强路线回切到可解释传统 ItemCF 的工程取舍”：不是保留指标最高但不可晋升的 RPA 诊断，而是在明确业务/路线边界后选择 train-only、宽覆盖、可控 topK 的传统共现数据集，并把 16.7M 条相似边压成可加载、可审计的分片矩阵，为后续 route gate 和主路接入留下清晰边界。
+
+### 2026-06-06 - valid 一个月验证冷 item 剪枝策略
+
+**任务：**
+按用户要求，把 recent-2y 数据集中间的 valid 一个月作为效果验证集，对传统 `itemcf_weak` 矩阵做“保留热门、剪掉冷 item”的数据口径对比，判断哪些剪枝阈值更好。
+
+**遇到的问题：**
+直觉上热门 item 数量不多，可能不该硬砍；但如果冷 item 过多进入 ItemCF，又会制造大量低支撑弱边。需要用 valid 一个月做 post-hoc evaluation，验证“砍冷不砍热”是否优于“砍热门”或更强冷剪枝，同时保持 valid label 不参与构建、过滤规则训练、候选生成或晋升。
+
+**定位方式：**
+基于已构建的 compact traditional ItemCF matrix `outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_weak_denoised_traditional_matrix_v1/matrix_manifest.json`，只用 train-only `item_quality_profile.jsonl` 的 item 正反馈用户数派生过滤变体；评价只读取 `canonical_interactions.valid.jsonl`，范围为 `valid_label_rows=154867`、`valid_users_with_labels=127171`、`evaluated_users_with_train_sequence=24862`。
+
+**解决方式：**
+构造 `src>=2,dst>=2` baseline、`dst>=3/5/10`、`src/dst>=3/5/10` 以及 `cut_hot_dst` 控制组，统一保留 per-seed top200 与 per-user cap500。输出诊断报告 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/cold_item_pruning_valid_eval_20260606/evaluation_report.json` 和 `variant_summary.csv`。
+
+**验证结果：**
+`keep_hot_src2_dst3` 在 valid 一个月上最好：`valid_raw_recall@500=0.030373`、`valid_hit_user_rate@500=0.037246`、`candidate_user_rate=0.951573`、候选 `p50/p90/max=172/392/500`，相比 baseline `src2/dst2` 的 `Recall@500=0.030251` 略升且候选量下降。继续加大冷剪枝到 `dst>=10` 会降到 `Recall@500=0.029034`；硬砍 hot dst 的控制组只有 `Recall@500=0.000517`，说明当前治理里的 hot bucket 不能被当成少量可删除热门，硬砍会摧毁 ItemCF 共现桥接。
+
+**面试可讲点：**
+这段可以讲成“用验证集做数据口径归因，而不是凭直觉砍热门”：通过同一 train-only 矩阵派生多个冷剪枝阈值，并用 valid 一个月只做后验验证，证明当前更合理的是保留热门/中高频桥接、轻剪极冷 dst，而不是把 hot item 作为噪声整体删除。
+
+### 2026-06-06 - src2_dst3 新矩阵落地与旧筛选产物清理
+
+**任务：**
+按用户要求，删除此前筛选出来的旧 ItemCF 数据集/矩阵产物，只保留记录和审计，并正式使用 valid 一个月验证最优的 `keep_hot_src2_dst3` 方式作为当前传统 ItemCF 筛选口径。
+
+**遇到的问题：**
+旧 `weak_denoised` method dataset 原始 rows 约 19GB，旧 compact matrix 约 1.17GB，同时还有 strict collab smoke/formal 与早期 weak coverage method dataset。继续保留这些产物会让“当前使用哪个数据集方式”变得不清晰，也占用较多本地空间；但清理前必须先生成新口径矩阵，并保留 valid 诊断报告和清理审计，避免丢失路线证据。
+
+**定位方式：**
+先统计待清理目录体积：`itemcf_weak_weak_denoised_v1` 约 `19,006,095,245` bytes，旧 compact matrix 约 `1,169,874,188` bytes，早期 weak coverage method dataset 约 `3,371,058,508` bytes。再基于旧 compact matrix 和 train-only `item_quality_profile.jsonl` 派生 `src>=2,dst>=3,allow_hot_dst=true` 的新 grouped matrix。
+
+**解决方式：**
+新矩阵输出到 `outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_keep_hot_src2_dst3_traditional_matrix_v1/matrix_manifest.json`，schema 仍为 `itemcf_grouped_similarity_matrix_v1`，64 shard，每个 src item 最多 200 neighbors。随后删除旧 `weak_denoised` method dataset、旧 compact matrix、strict collab smoke/formal 和早期 weak coverage method dataset，并写出清理审计 `outputs/cleanup_records/itemcf_weak_old_filtered_datasets_cleanup_20260606.json`。
+
+**验证结果：**
+新矩阵 manifest 显示 `status=PASS`、`selected_dataset=itemcf_weak_keep_hot_src2_dst3_valid_best_v1`、`src_item_count=381899`、`edge_count=16053304`、`max_neighbors_per_src=200`、`matrix_size_bytes=1123878920`，治理字段继续保持 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`pool1000_allowed=false`、`final_pool500_ready_claimed=false`。清理审计显示 5 个旧目录均 `exists_after=false`，未删除源码、配置、train-only 原始/governance 数据、valid 诊断报告和清理记录。
+
+**面试可讲点：**
+这段可以讲成“实验产物治理和路线收敛”：不是把所有历史矩阵都留在本地造成口径混乱，而是在 valid 诊断确定 `src2_dst3` 后，先生成新矩阵和审计，再清理旧筛选产物，把当前 ItemCF 主线收敛到一个可解释、可追溯、空间更可控的矩阵版本。
+
+### 2026-06-06 - ItemCF filter-before-build 口径纠正与联合剪枝验证
+
+**任务：**
+在用户指出旧 `src2_dst3` 矩阵是“先构建矩阵再筛选”后，纠正为“先筛 item、再筛 user、再构建共现矩阵”的正式传统 ItemCF 口径，并验证是否需要取消 dst 或加严 user。
+
+**遇到的问题：**
+post-filter 矩阵只能作为快速验证/过渡产物，不能代表严格的数据筛选口径；同时仅凭直觉无法判断 `dst>=3` 是否多余，或 user 筛选是否应该从筛后 `>=2` 加严到 `>=3`。
+
+**定位方式：**
+按用户要求把重任务迁移到远程 `server:/home/luo/RS_agent_remote`，先运行 quick eval-only 联合剪枝实验：用 train-only sequence 和 item quality profile 构建共现，valid 一个月只做 post-hoc evaluation。对比 `src2_dst3_user2`、`src2_dst2_user2`、`src2_dst1_user2` 以及对应 `user3` 变体。
+
+**解决方式：**
+最终选择 `src>=2,dst>=3,user_after_item_filter>=2,keep_hot`。随后在远程构建正式 filter-before-build compact matrix：先按 item 正反馈用户数筛 src/dst，再对用户 positive sequence 过滤 eligible item，筛后至少 2 个 item 的用户才参与共现；每个 src 保留 top200 neighbors，不生成 19GB flat rows。
+
+**验证结果：**
+联合剪枝报告 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/quick_dst_user_pruning_valid_eval_20260606/evaluation_report.json` 显示 `src2_dst3_user2` 最好：`valid Recall@500=0.034512`，优于 `src2_dst2_user2=0.033873`、`src2_dst1_user2=0.033082`、`src2_dst3_user3=0.030769`。正式矩阵 manifest `outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_keep_hot_src2_dst3_filter_before_build_traditional_matrix_v1/matrix_manifest.json` 显示 `status=PASS`、`src_item_count=421365`、`edge_count=17141611`、`max_neighbors_per_src=200`、`matrix_size_bytes=1200540496`、`users_used_for_pairs=1496171`；所有 candidate generation / promotion / final ready 开关仍为 false。
+
+**面试可讲点：**
+这段可以讲成“把推荐算法数据口径从后处理纠正为构建前治理”：不仅验证了 dst 候选侧质量门槛和 user 有效共现门槛的作用，还把用户质疑转化为可复现实验和正式 artifact，体现了推荐系统中 seed 侧、candidate 侧、user 共现证据三类过滤边界的工程判断。
+
+### 2026-06-07 - 三方法 guarded 诊断实验与范围验证
+
+**任务：**
+只针对 `semantic`、`semantic_title_category_expansion`、`co_visit_fallback_repair` 三种尚未完善的 pool500 召回方法，在远程服务器执行 guarded/target-slice 诊断实验，验证 method-source artifact、候选覆盖、no-holdout 治理和三方法内部互补性；`itemcf` 仅作为筛选口径参考，不作为本轮 baseline。
+
+**遇到的问题：**
+三种方法的目标切片不同：`semantic` 是 10k diagnostic artifact，`semantic_title_category_expansion` 是 guarded2k，`co_visit_fallback_repair` 是 guarded5k，raw Recall 不能直接横向排名。早期计划还容易误用 full route recall-only runner 或引入非三方法 baseline；`semantic_title` 的 resource audit schema 没有统一 `status=PASS` 字段，需要方法感知审计。
+
+**定位方式：**
+先用远程 dry-run gate 确认 method-source runner、显式 `--tier guarded2k/guarded5k`、guarded config、run-id 和 output-root；随后分别审计三方法 source manifest、七件套 artifact、`candidates.jsonl`、`no_holdout_audit.json`、`resource_audit.json` 和 governance deny fields。最终用三方法-only report 校验 eval sanity、common-slice top500 candidate overlap，以及 overlap-only diagnostic 报告，确保 common-slice 比较只读 candidates、不读 label。
+
+**解决方式：**
+远程目录固定为 `/home/luo/RS_agent_remote`，Python 固定 `.venv/bin/python`，重任务用线程限流与 `nice -n 10`。`semantic` 只做只读 10k artifact audit；`semantic_title_category_expansion` 重跑 guarded2k method-source build 并做独立审计；`co_visit_fallback_repair` 重跑 guarded5k build/audit。报告阶段只允许三方法 `source_index_manifest.json` 输入，禁止 full route、itemcf/category/popular/two_tower/swing/usercf baseline、oracle/holdout 注入和 READY/promotion claim。
+
+**验证结果：**
+`semantic` artifact：`candidate_row_count=800000`、`user_coverage_count=10000`、每用户 80，七件套齐全，`no_holdout=PASS`，resource audit PASS。`semantic_title_category_expansion` guarded2k：`candidate_row_count=160000`、`user_coverage_count=2000`、每用户 80，七件套齐全，`no_holdout=PASS`，resource audit 可解释且无 READY claim。`co_visit_fallback_repair` guarded5k：`candidate_row_count=389514`，`candidates.jsonl` 约 2.4GB，七件套齐全，`no_holdout=PASS`，`resource_audit.status=PASS`。三方法报告输出到 `/home/luo/RS_agent_remote/outputs/recall/pool500_three_method_reports_20260607/`：raw Recall@500 仅 sanity，分别约 `0.000004/0.000004/0.000006`；common-slice `common_user_count=168`，three-way overlap=8，three-way jaccard=0.000203，`unique_vs_other_two_ratio` 分别约 0.9318、0.9331、0.9915。最终 evidence verification 为 PASS，blocker=0，但结论保持 diagnostic，不建议直接 50k formal 或 promotion。
+
+**面试可讲点：**
+这段可以讲成“推荐召回方法补强前的受控实验治理”：不是把三种弱方法直接塞进主路，也不是用 raw Recall 误排行，而是先用 method-source artifact、no-holdout 审计、候选互补性和 common-slice candidates-only 比较建立证据链；当目标切片不同、指标很弱时，仍能通过范围隔离、资源门控和独立验证给出下一步 guarded 小批扩档或配置修正方向。
+
+### 2026-06-07 - two_tower_DSSM 远程 smoke/pilot 诊断实验
+
+**任务：**
+在 recent_2y train-only 数据基础上，按独立 `two_tower_DSSM` 目录链路把 DSSM 双塔从代码落位推进到远程 smoke/pilot 真实实验，验证 method dataset、训练 artifact、source index 和 direct eval 是否可闭环。
+
+**遇到的问题：**
+本地代码和测试已证明核心 contract 可用，但远程数据里治理 manifest 带有 Windows 绝对路径，Linux 端会把 `D:\...` 当作相对路径拼到治理目录下，导致 method dataset 构建失败。首次小样本评估还显示训练 loss 接近随机负采样基线，5k 扩档和更高学习率多 epoch 并没有带来 Recall 改善。
+
+**定位方式：**
+远程固定使用 `/home/luo/RS_agent_remote/.venv/bin/python`，先做 `py_compile`、CUDA 检查和 recent_2y 输入检查；构建失败时根据 `FileNotFoundError` 中的 `train_only_governance/D:\...item_frequency_train.jsonl` 定位到路径解析问题。随后按 smoke、pilot_5k、pilot_20k、dim64、多 epoch、recency 网格、更多 per-user samples、更多负样本、batch-shared sampled softmax/logQ、score temperature 和 item text 去重的 artifact loss、direct eval manifest、candidate_generation_inputs 做效果对比，确认 valid/test 只出现在 direct eval label_paths，不参与训练、负采样、item universe 或 source index。
+
+**解决方式：**
+在 method dataset builder 的 `_resolve_repo_path` 中兼容反斜杠路径，并从 `data/`、`outputs/`、`configs/` marker 截取 repo-relative 路径，避免远程复用本地 Windows manifest 时路径失效。远程分阶段执行：`smoke` method dataset PASS 后训练 1 epoch；构建 `source_index_manifest.json` 后跑 500 用户 direct eval；再扩到 `pilot_5k` 和 `pilot_20k`，并额外尝试 `lr=0.001, epochs=5`、`dim64/e3/lr3e-4`、query `seed_window/recency_decay` 网格、基于最佳 recency 的再训练、`max_samples_per_user=10 + negative_samples=7`，以及 `batch_shared + logQ + 127` 负样本的 sampled softmax 训练。后续结合 DSSM 论文机制补充 `score_temperature` 训练参数，并新增去除 `item_text` 重复计权的 text-dedup 配置进行受控 smoke/pilot。所有 source 仍保持 DSSM diagnostic-only，不晋升 pool500 主路、pool1000 或 ranking input。
+
+**验证结果：**
+远程 `smoke` method dataset：`status=PASS`、`train_sample_count=1999`、`negative_universe_item_count=335024`、`training_item_universe_item_count=335144`、`leakage_audit.status=PASS`。`smoke_1k_e1_lr1e-4` direct eval：500 用户中 `query_user_count=478`、`queryless_user_count=22`、`Recall@500=0.020231`、`HitRate@500=0.028`、unique positive hits=14。`pilot_5k_e1_lr1e-4` 扩到 `train_sample_count=19708` 后指标仍为 `Recall@500=0.020231`、`HitRate@500=0.028`；继续扩到 `pilot_20k_e1_lr1e-4`（`train_sample_count=79579`、`item_count=340080`）后默认配置仍为 `Recall@500=0.020231`、`HitRate@500=0.028`。query 侧网格发现 `pilot_20k_e1_dim32 + seed_window=10 + recency_decay=0.7` 可小幅提升到 `Recall@500=0.021676`、`HitRate@500=0.030`、unique hits=15，但 Top20 下降到 `Recall@20=0.002890`。`pilot_5k_e5_lr1e-3` loss 从 `1.379904` 降到 `1.348898`，但 `Recall@500` 下降到 `0.013006`；`pilot_20k_dim64_e3_lr3e-4` 的 Top20/Top100 有小幅改善（`Recall@20=0.007225`、`Recall@100=0.011561`），但 `Recall@500=0.018786` 仍低于 32 维 baseline；按 recency=0.7 重新训练后 `Recall@500` 回到 `0.020231`，没有超过 eval-only query 调参。进一步增加每用户样本和普通负样本的 `pilot_20k_ms10_neg7_e1` 达到 `Recall@500=0.021676`、`HitRate@500=0.030`、unique hits=15；切到 `batch_shared + logQ + 127` 后，`pilot_20k_ms10_bs127_logq_e1` 提升到 `Recall@500=0.023121`、`HitRate@500=0.032`、unique hits=16，`pilot_20k_ms10_bs127_logq_e3` loss 为 `[5.974038, 5.966438, 5.962911]`，Top20 提升到 `Recall@20=0.005780`，Top500 保持 `Recall@500=0.023121`、`HitRate@500=0.032`。说明 batch-shared sampled softmax/logQ 是当前最有效的训练目标改动，但增益仍小且只在 500 用户诊断切片验证，暂不具备晋升证据。新增 `score_temperature=0.1` 与 text-dedup 后，smoke 能跑通并在 train metrics/model payload 中记录 `score_temperature=0.1`、`logit_scale=10.0`、`score_mode=cosine`、`embedding_normalization=l2`；但 `pilot_20k_temp010_originaltext_20260607a` 只有 `Recall@500=0.021676`、`HitRate@500=0.030`、unique hits=15，`pilot_20k_temp010_textdedup_20260607a` 下降到 `Recall@500=0.020231`、`HitRate@500=0.028`、unique hits=14，均未超过当前 `batch_shared + logQ` 最优。
+
+**面试可讲点：**
+这段可以讲成“把 item-rich/user-sparse 的 DSSM 召回做成可治理诊断实验”：先用独立目录和 manifest contract 防止和 YouTubeDNN 混淆，再用远程 GPU 分阶段跑 smoke/pilot，并用 direct eval 证明链路闭环。更重要的是，当单纯扩样、升维和多 epoch 没有稳定提升时，继续从 query 构造、每用户样本量、负采样组织、logQ 校正、temperature 和 item 字段组织定位训练目标瓶颈；最终确认 batch-shared sampled softmax/logQ 有小幅有效增益，而 temperature/text-dedup 未超过当前最优。同时明确停止 promotion，把结论收敛为“可用诊断链路 + 当前特征/训练策略仍不足”，为后续 user 侧语义 token、hard negative 和更稳的评估切片留下迭代方向。
+
+### 2026-06-07 - two_tower_DSSM train-only hard negative v1 诊断提升
+
+**任务：**
+在 `two_tower_DSSM` 已跑通 smoke/pilot 且 `temperature/text-dedup` 未超过 baseline 后，继续按 DSSM 原始 clicked vs competing docs 思路，引入 train-only 同类目热门 hard negatives，验证是否比当前 `batch_shared + logQ` 最优配置更适合 item-rich/user-sparse 数据。
+
+**遇到的问题：**
+当前 user 侧没有画像或文本，只能用 train-only 行为序列聚合；如果负样本仍主要来自普通热门/随机分布，模型容易学到“是否像热门 item”而不是“同类目竞争商品中更偏好哪个”。同时 hard negative 不能使用 valid/test/holdout/oracle/eval label，也不能把 DSSM 直接晋升为 pool500 主路或 ranking input。
+
+**定位方式：**
+先复核 `build_pool500_two_tower_method_dataset.py`、`two_tower_training.py` 和 `two_tower.py`：训练样本已支持 `negative_item_ids` 挂载，DSSM CLI 已支持 `--use-explicit-negative-item-ids` 与 `--explicit-negative-weight`；但 `batch_shared + logQ` 与 explicit negative mixture 不兼容，因此 hardneg v1 需要走 `per_example + explicit_negative_item_ids + sampled_softmax_correction=none`。远程构建后读取 `method_dataset_manifest.json`、训练 `train_metrics.json` 和 direct eval manifest，确认 candidate generation inputs 只包含 train sequences、index、user embeddings，valid/test 只出现在后验 `label_paths`。
+
+**解决方式：**
+为 method dataset builder 增加 opt-in `--hard-negative-policy same_category_popular_train_only`，默认仍为 `none`，不影响旧数据集。hard negative index 从 `canonical_items.jsonl` 的类目字段和 train-only negative universe 的 popularity order 构造，同类目候选按热门排序，并在每个样本排除 target、本用户已知历史和当前 history item；manifest/leakage audit 显式记录 `hard_negative_enabled`、`hard_negative_sources` 和 forbidden sources。远程构建 `pilot_20k_hardneg_v1_20260607a` 后，用 `negative_samples=31`、`explicit_negative_weight=0.5`、`unique_negatives_per_example=true`、`per_example` sampled softmax 训练 1 epoch，再构建 source index 并用固定 500 用户、`seed_window=10`、`recency_decay=0.7` direct eval。
+
+**验证结果：**
+本地 focused 测试 `.venv/Scripts/python.exe -m pytest tests/test_pool500_two_tower_method_dataset.py -q` 通过 `17 passed, 3 skipped`。远程 hardneg method dataset：`train_sample_count=79579`、`negative_ratio_requested=31`、`hard_negative_sample_match_count=79579`、`hard_negative_sample_fallback_count=0`、`hard_negative_used_distinct_item_count=274991`、`negative_item_count_under_requested_count=0`。训练侧 `loss_history=[3.411925]`，`explicit_negative_used_count=1113856`、`rows_with_explicit_negative_items=19351`，模型记录 `score_mode=cosine`、`embedding_normalization=l2`。direct eval 结果：500 用户中 `query_user_count=478`、`queryless_user_count=22`、`positive_denominator_at_500=692`，`Recall@20=0.004335`、`HitRate@20=0.006`、`Recall@100=0.015896`、`HitRate@100=0.022`、`Recall@500=0.031792`、`HitRate@500=0.044`、unique hits=22；相比此前 DSSM 最优 `batch_shared+logQ` 的 `Recall@500=0.023121`、`HitRate@500=0.032`、unique hits=16 有明显提升。但该证据仍只来自 500 用户诊断切片，保持 diagnostic-only，不声明 pool500 ready、promotion、pool1000 或 ranking input replacement。
+
+**面试可讲点：**
+这段可以讲成“在 user-sparse、item-rich 推荐场景中，训练目标比盲目加模型更关键”：没有伪造用户画像，也没有用 valid/test label 注入候选，而是把 DSSM 论文里的竞争文档思想落成 train-only 同类目 hard negatives，并用 manifest、leakage audit、训练指标和 direct eval 逐层证明边界与效果。亮点是先解释为什么 temperature/text-dedup 不够，再把负采样从普通热门改成同类目竞争样本，使召回 Top500 从 16 个命中提升到 22 个命中，同时保留后续重复验证/扩大评估后再晋升的工程门禁。
+
+### 2026-06-08 - two_tower_DSSM epoch sweep 与 hard negative mixture v2 诊断
+
+**任务：**
+在 hard negative v1 已超过此前 DSSM baseline 后，验证“训练 epoch 是否太小”的假设，并在不排除冷门商品的前提下实现 train-only hard negative mixture v2。
+
+**遇到的问题：**
+e1 hard negative 有明显提升，但直接增加 epoch 可能让模型过度贴合同类目热门负样本。由于 user 侧没有画像，只能依赖行为序列聚合，若负样本结构过单一，loss 下降未必转化为 direct eval 召回提升。另一方面，DSSM 不应按 popularity 一刀切排除冷门 item，需要通过负样本结构吸收长尾信号，而不是删除长尾。
+
+**定位方式：**
+先复用同一个 train-only `pilot_20k_hardneg_v1_20260607a` method dataset，分别训练 e2/e3 full-user embedding 版本，保证 fixed 500 用户 direct eval 的 query 来源仍为 `artifact_user_embedding=478`，避免和只生成 20k user embeddings 的不可比结果混淆。随后读取训练 `loss_history`、source index 的 `user_embedding_row_count` 和 direct eval manifest，确认 candidate generation inputs 仍只包含 train sequences、recall index、user embeddings，valid/test 只作为 `label_paths` 后验评估。
+
+**解决方式：**
+保留当前 item universe，不按冷门过滤；新增 opt-in hard negative policy：`same_category_popular_tail_global_train_only`。v2 负样本按同类目热门、同类目长尾和 train-only 全局 rotated negatives 混合构造，并继续在每个样本排除 target、本用户已知历史和当前 history item。训练仍先使用 e1、`negative_samples=31`、`explicit_negative_weight=0.5`、`per_example` sampled softmax 和 `sampled_softmax_correction=none`，避免在 e2/e3 已退化时继续盲目加到 e5。
+
+**验证结果：**
+本地 focused 测试 `.venv/Scripts/python.exe -m pytest tests/test_pool500_two_tower_method_dataset.py -q` 通过 `18 passed, 3 skipped`，builder `py_compile` 通过。epoch sweep 中，e2 fullusers 的 `loss_history=[3.411925, 3.402076]`，但 fixed 500 direct eval 降到 `Recall@500=0.028902`、`HitRate@500=0.040`、unique hits=20；e3 fullusers 的 `loss_history=[3.411925, 3.402076, 3.396220]`，进一步降到 `Recall@500=0.023121`、`HitRate@500=0.032`、unique hits=16。说明当前 hardneg v1 的 e1 是更好的 early stopping 点，loss 继续下降不代表召回提升。mixture v2 method dataset 构建 PASS：`train_sample_count=79579`、`hard_negative_sample_match_count=79579`、`hard_negative_sample_fallback_count=0`、`hard_negative_used_distinct_item_count=309139`，component counts 为 `same_category_popular=1193685`、`same_category_tail=557053`、`global_rotated=716211`。mixture v2 e1 direct eval 为 `Recall@500=0.031792`、`HitRate@500=0.044`、unique hits=22，Top500 与 hardneg v1 e1 持平，未形成新的指标突破，但负样本多样性更高，并验证了“不删冷门、通过负样本混合吸收长尾”的路线可运行。
+
+**面试可讲点：**
+这段可以讲成“推荐模型优化不能只看训练 loss”：在 e2/e3 loss 下降但召回下降时，没有继续堆 epoch，而是识别出单一同类目热门 hard negative 可能过拟合；随后把冷门 item 保留下来，用同类目热门、同类目长尾和全局负样本混合提升训练分布多样性。最终 v2 没有超过 e1 best，但证明了负样本结构可控、train-only 边界清晰，并为后续 checkpoint/early stopping、larger eval 和更细比例网格留下证据基础。
+
+### 2026-06-07 - two_tower sparse-aware epoch5 稳定配置沉淀
+
+**任务：**
+将 sparse-aware formal YouTubeDNN / two_tower 的串行 checkpoint sweep 结果沉淀为当前稳定诊断配置，更新方法文档、source config、dataset policy 和训练配置补充段，同时保持 no-READY / no-promotion 治理边界。
+
+**遇到的问题：**
+早期 method-source eval 出现 `Recall@500=0.000466` 的假低结果，容易被误判为模型退化；根因是只给 480 个目标用户生成候选，却按全量 valid label users 作为分母。另一方面，旧 formal/queryv2 artifact 依赖历史临时路径且用户已明确旧结果可抛弃，因此不能继续把旧 baseline 作为主线结论。
+
+**定位方式：**
+对比 method-source eval 与 raw direct eval 的分母口径，确认前者的 `candidate_user_count=480` 被 `eval_label_user_count=95412` 稀释；随后用固定 valid target users 对 epoch1/3/5/8/10 做 checkpoint sweep，并把 epoch5 扩大到 5000、10000 valid users 做稳定性复验。
+
+**解决方式：**
+选择 sparse-aware epoch5 作为当前稳定 diagnostic checkpoint：训练配置为 `embedding_dim=64`、`negative_samples=512`、`max_samples_per_user=20`、`min_user_positives=2`、`user_history_window=80`、`batch_shared + logQ`，串行训练到 epoch10 并保存 `[1,3,5,8,10]` checkpoint。文档中明确 valid 只用于选 epoch 和后验评估，不进入训练、负采样、item vocab、source index 或候选生成；所有 promotion/ranking/pool1000/final-ready flag 继续关闭。
+
+**验证结果：**
+500-user valid-only sweep 中 epoch5 最优：`Recall@500=0.083861`、`HitRate@500=0.102`、unique hits=53。扩大验证后，5000 valid users 为 `Recall@500=0.068280`、`HitRate@500=0.0842`，10000 valid users 为 `Recall@500=0.067054`、`HitRate@500=0.0846`、`query_user_count=9712`、`queryless_user_count=288`、`positive_denominator_at_500=13258`、unique hits=889。配置与证据已沉淀到 `dic/recall_methods/two_tower/METHOD.md`、`configs/recall/full_data_pool500/two_tower/source_config.yaml`、`configs/recall/full_data_pool500/two_tower/dataset_policy.yaml` 和 `configs/recall/full_data_pool500/two_tower_recent_2y_sciomc_safe.yaml`。
+
+**面试可讲点：**
+这段可以讲成“推荐召回模型调参前先校准评估口径”：不是看到极低 Recall 就否定模型，而是定位分母稀释问题，用 valid-only checkpoint sweep 和更大 valid 样本验证稳定性，再把训练配置、评估证据和治理边界一起固化，体现离线推荐实验的可复现性、数据隔离和晋升门禁意识。
+
+### 2026-06-07 - two_tower sparse-aware epoch5 默认诊断源接入与安全清理
+
+**任务：**
+按“只保留当前最佳配置并并入主路”的要求，将 sparse-aware formal epoch5 作为 pool500 recall-only 默认 `two_tower` diagnostic source，同时清理确认无引用的本地临时验证产物。
+
+**遇到的问题：**
+最佳 epoch5 产物在远端，且 `user_embeddings.jsonl` 约 6GB；如果只做远端绝对路径 wrapper，本地主路会依赖 `/mnt/data`。同时，一批 rejected challenger 目录虽然不是当前最佳配置，但仍被方法文档和工程叙事引用，不能直接删除。
+
+**定位方式：**
+先检查远端 `source_index_manifest.json` 的 schema、row count 和治理开关，确认 `row_count=448282` 且 `candidate_generation_allowed/ranking_input_replacement_allowed/ranking_replacement_allowed/pool1000_allowed/promotion_allowed/final_pool500_ready_claimed` 全为 false；再检查本地 loader 与 manifest guard，确认主路会读取 `source_index_manifest.json` 并校验 `embedding_path/index_path/item_vocab_manifest`。
+
+**解决方式：**
+创建本地 canonical mirror：`outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json`，复制 source manifest、artifact manifest、valid10000 summary、recall index、item embeddings、user embeddings 和 item vocab，并把 manifest 引用改为相对路径。随后更新 `run_full_data_pool500_recall_only.py`、`recall_sources/registry.py`、`pool500_method_registry.json`、two_tower source/dataset config、safe config 和 METHOD 文档，使默认 `two_tower` 指针指向 sparse-aware epoch5；清理仅限 `verify_twotower_accel_*` 和 Python/cache 类产物，保留被文档引用的 rejected diagnostic evidence。
+
+**验证结果：**
+本地 mirror 通过 `validate_two_tower_source_index_manifest`，`row_count=448282`；配置解析、默认路径检查、registry 检查、治理开关检查和 py_compile 均通过。目标测试中 `tests/test_full_data_pool500_recall_only.py` 21 passed；two_tower/governance/route gate 相关测试 41 passed、3 skipped 和 76 passed。`tests/test_recall_source_registry.py tests/test_pool500_method_registry_drift.py` 组合中 registry 基础用例通过，但 drift 测试仍有 3 个失败，失败点集中在 category / semantic_title_category_expansion / co_visit_fallback_repair 等既有 registry policy drift，与本次 two_tower 默认指针切换无关，需要后续单独收口。
+
+**面试可讲点：**
+这段可以讲成“把模型实验最优 checkpoint 工程化接入但不越权晋升”：先把远端最佳产物镜像成本地可复现 artifact，再通过 registry、配置、测试和 audit 固化默认路径；同时区分 diagnostic source 接入和 READY/promotion，避免因为一次 valid-only 最优就直接替代主路或 ranking 输入，体现推荐系统离线实验到工程主路之间的治理门禁。
+
+### 2026-06-08 - DeepFM 远程训练解阻与 pool500 frozen eval adapter 审计补强
+
+**任务：**
+按“直接用远程训练”的要求，在授权远程服务器 `/home/luo/RS_agent_remote` 上继续 DeepFM/COLD→DeepFM 离线训练，并解决 pool500 v5 候选 artifact 进入 frozen eval 时的 adapter 阻塞。
+
+**遇到的问题：**
+第一次远程流水线中，训练数据构建已通过，但 `build_pool500_frozen_candidate_eval_dataset.py` 因候选行缺 `score`、以及 `cold_start_category_sibling` 等 cold-start repair source 不在默认 canonical source 集中而 `STOP`，导致 offline train/eval 把 DeepFM 训练安全阻断为 `deepfm_model.json={"status":"STOP"}`。同时 relaxed adapter 不能变成默认行为，也不能使用 valid/test label 修候选。
+
+**定位方式：**
+读取远程 `frozen_eval/manifest.json`、`dataset_audit.json` 和本地 `pool500_candidates.jsonl` 结构后确认：候选共 250000 行，repair source 属于诊断补足来源；651 行缺顶层 `score` 但存在 `source_scores`。复核 `pool500_ranking_adapter.py` 默认必需字段和 source 校验，确认问题是 adapter 与 v5 diagnostic repair artifact 的兼容边界，而不是远程资源或训练脚本失败。
+
+**解决方式：**
+保留 adapter 默认严格语义：缺 `score` 默认仍 `STOP`，非 canonical source 默认仍 `STOP`。仅在 frozen eval builder 内显式启用 `POOL500_DIAGNOSTIC_EXTRA_SOURCES` 和 `allow_score_fallback=True`，score fallback 只从候选自身的 `source_scores` 或 rank 反比中恢复，不读取 eval label；并在 `dataset_audit` 中新增 `adapter_diagnostic_summary`，记录 fallback reason/source counts、sample rows 和 diagnostic extra source counts。同步修改到远程后重跑 frozen eval 与 offline train/eval。
+
+**验证结果：**
+本地 focused 验证：`.venv/Scripts/python.exe -m pytest tests/test_pool500_ranking_adapter.py tests/test_cold_deepfm_ranking.py -q` 结果 `38 passed`；`py_compile` 通过。实际 pool500 候选本地预检显示 frozen eval adapter `status=PASS`、`blocker_count=0`、`score_fallback_counts_by_reason={"source_scores":651}`。远程最终 artifact 已拉回 `outputs/ranking/deepfm_remote_formal_20260608_adapter_retry/`：训练 manifest `status=PASS`、`rows=3212772`、`positive_rows=803193`；frozen eval `status=PASS`、adapter `blocker_count=0`；offline eval `status=PASS`，`ranking_strategy=cold_then_deepfm`；DeepFM `training.status=trained`、训练行 `3212496`、正样本 `803069`、正样本用户 `657891`、`epochs=5`、`updates=16062480`。但 coverage gate 仍为 `STOP_FOR_RANKING_EFFECT`（只有 7 个 eval positive pairs），`ranking_effect_conclusion_allowed=false`；当前模型只可作为 diagnostic/shadow artifact，不可声明排序效果提升或替换主排序路。独立 code-reviewer 复查 PASS，无 HIGH/CRITICAL blocker。
+
+**面试可讲点：**
+这段可以讲成“远程训练失败时先分清资源问题、schema 问题和治理问题”：训练本身可以远程跑通，真正阻塞来自候选 artifact 与评估 adapter 的契约不一致。解决时没有放宽全局校验，也没有用 eval label 修候选，而是把 relaxed 逻辑局部化到 frozen eval、补足可审计证据，再用远程 artifact 和本地测试证明 DeepFM 训练闭环已跑通，同时保留 coverage gate 对效果声明的约束，体现推荐系统离线训练中的数据隔离和晋升门禁意识。
+
 ## 条目模板
 
 ### 2026-05-21 - aligned smoke010 pool500 oracle candidate 诊断产物
@@ -816,6 +1416,106 @@ strict full run 使用 `limit_users=null` 后，进程在 `model_constructed` �
 
 **面试可讲点：**
 这段可以讲成“把推荐排序实验从规则诊断升级为可治理的三阶段排序链路”：不仅实现 coarse/fine/rerank 方法细节，还把 LightGBM 依赖、fallback 降级、label 合法性、frozen pool 不变性和 promotion gate 都做成工程合同；在证据不足时主动输出 NO_PROMOTE，体现离线推荐实验治理和上线边界意识。
+
+### 2026-06-06 - Swing Datawhale 标准公式与冷用户过滤验证
+
+**任务：**
+按用户要求参考 Datawhale Swing 公式，优化 `swing_recall` 的评分实现，并在远程服务器上验证“只筛掉冷启动/交互太少用户，保留低行为协同信号”的策略是否合理。
+
+**遇到的问题：**
+本地原实现是轻量近似 `legacy_approx`，不是 Datawhale 页面中的共同用户对公式；同时已有 `max_item_user_freq=100` hard drop 会切断大量 hot seed。需要在不读取 valid/test/holdout/oracle label 构图、不直接晋升主路的前提下，对比 legacy、Datawhale 标准公式和更严格低交互过滤。
+
+**定位方式：**
+审计 `rs_lab/experiments/recall/build_full_train_swing_sidecar.py`，确认原评分没有 `w_u*w_v/(alpha+|I_u∩I_v|)`；用本地单测锁定公式、manifest metadata 容忍、no-holdout audit、`min_user_items` 参数和单共同用户不产 0 分边。远程实验固定 `max_item_user_freq=1000`、`min_pair_support=2`，比较 A/B/C 三组 formal source。
+
+**解决方式：**
+新增 `--score-mode {legacy_approx,datawhale_standard}`、`--alpha`、`--min-user-items`，默认保持 legacy 兼容；`datawhale_standard` 使用 retained item set 的 `1/sqrt(|I_u|)` 用户权重和 `distinct_unordered` 共同用户对，并把 `score_mode`、`user_weight_mode`、`common_user_pair_mode`、低交互过滤统计和 source signatures 写入 manifest/audit。远程顺序跑 A：legacy min2、B：Datawhale min2、C：Datawhale min3，并只拉回 JSON evidence。
+
+**验证结果：**
+本地 focused 测试 `tests/test_full_train_swing_sidecar.py` 为 `38 passed in 0.55s`，Swing 回归为 `44 passed in 0.66s`；远程 `py_compile` 通过。远程 formal evidence 已拉回 `outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal_20260606_datawhale/`，汇总为 `swing_datawhale_standard_ab_summary_20260606.json`。B 相比 A 在相同 `edge_count=457372`、`seed_count=65693` 下提升 top20：valid `HitRate@20` `0.005815→0.006372`，test `HitRate@20` `0.001601→0.001771`，test `Recall@500` `0.001860→0.001890`；C 将 `min_user_items` 提到 3 后 retained users 从 `1558964` 降到 `687556`，test `HitRate@500` 降到 `0.002025`。所有 audit 保持 train-only、no-holdout、no-promotion、no-ranking-input-replacement、no-pool1000。
+
+**面试可讲点：**
+这段可以讲成“把算法公式对齐和数据过滤边界分开验证”：不是简单砍掉所有低行为用户，而是证明 `<2` 行为用户无法贡献 Swing item-pair，2~4 行为用户仍有价值；同时把论文/教程公式工程化为可切换 scoring mode、可审计 manifest 和远程 formal A/B 实验，最终用 evidence 选择 `datawhale_standard + min_user_items=2` 作为 guarded improved source，而不是直接宣称主路晋升。
+
+### 2026-06-06 - UserCF item-first train-only 筛选诊断
+
+**任务：**
+按用户指定口径重做 `usercf_recall` 数据筛选：不先生成 formal flat dataset，而是在 clean train sequence 上先筛 item、再筛 user，并运行轻量 smoke 与 evaluation-only 验证。
+
+**遇到的问题：**
+旧 strict formal UserCF 虽然 train-only，但过滤后大量用户只剩 1 个 eligible item，formal source 覆盖只有 `2081/15884=13.10%`，p50 候选数为 1。继续依赖 formal method dataset 会把 UserCF 稀疏问题固化在数据入口，且 hot item 硬砍会削弱协同桥接。
+
+**定位方式：**
+参考 Datawhale UserCF 对共享正反馈、cosine/IUF 和热门 item 影响的说明，复核 `dataset_policy.yaml`、`source_config.yaml`、`build_full_train_usercf_sidecar.py` 与旧 formal/relaxed IUF 产物，确认应把筛选顺序改为 `train-only item positive user count → src/dst item universe → src-filtered user graph → dst-only candidate expansion`。
+
+**解决方式：**
+在 `rs_lab/experiments/recall/build_full_train_usercf_sidecar.py`、`pool500/methods/usercf_recall/builder.py` 和统一 runner 中接入 `src_min_positive_user_count=2`、`dst_min_positive_user_count=3`、`min_src_filtered_items_per_user=2`、`keep_hot=true` 与 `scoring_policy=iuf_cosine`。item 正反馈用户数只从完整 train-only positive sequence 去重统计；用户图只使用 src eligible item；候选只从 dst eligible item 扩展并排除用户完整已看 item。配置和策略文档同步保持 `DIAGNOSTIC_ONLY`，不允许 ranking replacement、pool1000、promotion 或 final ready claim。
+
+**验证结果：**
+本地 `py_compile` 通过，UserCF focused pytest `tests/test_full_train_usercf_sidecar.py tests/test_pool500_usercf_method_source.py -k usercf -q` 为 `38 passed`。smoke source `outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_keep_hot_smoke_diagnostic_v1/source_index_manifest.json` 为 `PASS`：`target_user_count=5000`、`candidate_user_count=5000`、`candidate_total_count=499994`、候选数 `p50=100`，显著高于旧 strict formal 覆盖；`resource_audit.json` 显示 `src_eligible_item_count=446326`、`dst_eligible_item_count=332996`、`keep_hot=true`、`dropped_hot_item_count=0`、`peak_rss_mb=4034`。`no_holdout_audit.json` 只读取 `user_sequences.train.jsonl` 和内部 eligible manifest，`uses_valid/test/holdout=false`。evaluation-only 报告为 `PASS`，valid/test 仅用于后验打分，整体 `Recall@500=0.000003`、`HitRate@500=0.000017`；独立 verifier 复核结论为 `APPROVE`。追加 3k 消融显示：`src>=2,dst>=3,user2`、`src>=1,dst>=3,user2`、`src>=1,dst>=3,user3` 在 valid candidate-only `Recall@100=0.006689`、`HitRate@100=0.029412` 持平；不筛 item 的 `src>=1,dst>=1,user2` 到 `@100` 才持平但 `@50` 更弱，test split 均无命中。因此当前按 valid/test 选择仍保留 `src>=2,dst>=3,user2,keep_hot,iuf_cosine`，但提示后续应收紧未使用的 `--route-ready` 入口。
+
+**面试可讲点：**
+这段可以讲成“按 UserCF 方法特性重构数据筛选顺序”：不是把稀疏 formal dataset 继续包装成正式召回，而是把 train-only item 支撑度、src/dst 不同阈值、hot item IUF 降权和 user 有效共现门槛做成可审计构建口径；结果证明候选覆盖从 13% 提升到 smoke 100%，但 eval-only 命中仍很低，因此保持诊断态，体现了覆盖治理与效果晋升分离。
+
+### 2026-06-06 - Swing src/dst item 过滤与筛后用户过滤实验
+
+**任务：**
+按用户反馈进一步验证 Swing 的数据筛选策略：先基于 train-only positive user count 筛 item，再在筛后 item universe 上筛 user，并区分历史 seed 入口 `src_item` 与推荐目标 `dst_item` 的最低正反馈用户数。
+
+**遇到的问题：**
+上一轮只验证了 Datawhale 标准公式和用户低交互过滤，但没有回答“item count 分桶怎么筛”以及“dst item 作为被推荐目标也应有 train-only positive user count 要求”。如果把 src/dst 混成一个 item 过滤阈值，会掩盖方向差异；如果过滤后不重筛 user，又会保留已经无法贡献有效 item pair 的序列。
+
+**定位方式：**
+审计 `rs_lab/experiments/recall/build_full_train_swing_sidecar.py` 的构图流程，将 train-only item distinct positive user count 作为唯一过滤统计源；新增本地单测覆盖 dst 过滤、src/dst 方向性、item filter 后 user audit 和非法阈值。远程固定 `datawhale_standard + max_item_user_freq=1000 + min_user_items=2`，跑 D0-D5 六组 `src_min/dst_min` sweep，并拉回 JSON evidence。
+
+**解决方式：**
+新增 `--min-src-item-positive-user-count` 与 `--min-dst-item-positive-user-count`；构图前先按 hot drop 和 src/dst eligible union 清洗用户序列，再按 `min_user_items` 重筛 user；写边时只允许 `left_item in src_eligible_items` 且 `right_item in dst_eligible_items`。audit 记录 src/dst eligible counts、筛后用户分桶和 filter-before-build 标志，同时剥离巨大的 eligible item 列表，避免写入公开 resource audit。
+
+**验证结果：**
+本地 focused 测试 `tests/test_full_train_swing_sidecar.py` 为 `43 passed in 0.67s`，Swing 回归为 `49 passed in 0.76s`。远程 `.venv/bin/python -m py_compile` 通过；pytest 因远程缺少 pytest 未执行。远程 D0-D5 evidence 拉回 `outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal_20260606_datawhale_item_filter/`，汇总为 `swing_datawhale_item_filter_summary_20260606.json`，基线对比为 `swing_datawhale_item_filter_baseline_comparison_20260606.json`。结果显示所有 filter-before-build 变体均低于上一轮 B baseline：B test `HitRate@500=0.002156`、`Recall@500=0.001890`；过滤组最佳 D4 test `HitRate@500=0.001832`、`Recall@500=0.001578`。D0 retained users 从 B 的 `1558964` 降到 `1328466`，说明筛后 user 过滤降低了覆盖；因此不晋升 D0-D5，仍保留 B 作为当前 guarded improved source。
+
+**面试可讲点：**
+这段可以讲成“用受控实验验证数据清洗直觉，而不是凭经验上线”：把 item 过滤拆成 src/dst 两个方向，并通过 train-only audit 和远程 sweep 证明更严格的筛后用户过滤会牺牲覆盖和指标；最终保留过滤能力作为诊断工具，但拒绝把指标更差的变体晋升，体现推荐召回优化中的数据口径、方向性建模和 no-promote 工程治理。
+
+### 2026-06-06 - Swing pre-user-first item 过滤顺序验证
+
+**任务：**
+在 D0-D5 证明“先筛 item、再筛后重筛 user”效果变差后，按用户提出的假设验证另一种顺序：先筛原始冷用户，再在 active-user universe 上统计并筛 src/dst cold item，并用并行远程实验加速 E/F 两组对照。
+
+**遇到的问题：**
+单行为用户不能贡献 Swing item pair，却会污染 item positive user count 和 hot/cold 判定；但如果 item 过滤后再硬删用户，又会明显损失覆盖。需要把“原始真冷用户过滤”“cold item count 过滤”“post item user hard filter”拆开验证，避免把不同阶段的覆盖损失混在一起。
+
+**定位方式：**
+在 `rs_lab/experiments/recall/build_full_train_swing_sidecar.py` 增加 `--pre-filter-users-before-item-count` 和 `--disable-post-item-user-filter` 两个开关，并用本地单测覆盖 pre-user 过滤会影响 item count、关闭 post-user hard filter 仍记录 audit。远程用 `PARALLEL_JOBS=3` 并行跑 E0-E4（post filter on）与 F0-F4（post filter off），所有构图输入仍限定为 train-only sequence。
+
+**解决方式：**
+先通过 `_filter_sequences_by_user_item_count` 将 retained unique items `<2` 的用户排除在 item count universe 之外；再计算 src/dst eligible item；构图写边仍保持方向过滤。E 组保留 post item user hard filter，F 组只记录筛后 `<2` 统计但不硬删非空序列，用于观察覆盖和指标差异。远程只拉回 JSON evidence，不拉大型 edge JSONL。
+
+**验证结果：**
+本地 focused `tests/test_full_train_swing_sidecar.py` 为 `45 passed in 0.63s`，Swing 回归为 `51 passed in 0.82s`；远程 `.venv/bin/python -m py_compile` 通过，E/F 并行 sweep 完成。evidence 拉回 `outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal_20260606_datawhale_preuser_item_filter/`，汇总为 `swing_datawhale_preuser_item_filter_summary_20260606.json`，基线对比为 `swing_datawhale_preuser_item_filter_baseline_comparison_20260606.json`。结果显示该顺序修复了 D 组覆盖坍塌：E0/F0 与 B baseline edge/seed 和 valid/test 指标完全一致；E1/F1/F2 的 test `HitRate@500` 从 B 的 `0.002156` 微升到 `0.002163`，test `Recall@500` 从 `0.001890` 微升到 `0.001892`，但 valid `HitRate@500` 从 `0.008055` 微降到 `0.008044` 或 `0.007921`。因此 E1/F1/F2 只作为 challenger，不自动 promotion。
+
+**面试可讲点：**
+这段可以讲成“把数据筛选顺序当作推荐算法变量做实验”：先证明 item-first 会伤覆盖，再按用户假设改成 user-first，并通过 E/F 组拆分 post-user hard filter 的影响；最终发现 user-first 能避免覆盖坍塌并带来极小 test lift，但 valid 未同步提升，所以保持 guarded challenger 而非直接晋升，体现了离线推荐优化中口径拆解、并行实验和保守门禁。
+
+### 2026-06-06 - Swing F1 固定为当前主路 artifact
+
+**任务：**
+按用户选择，将 F1（`datawhale_standard + pre-user-first + src>=2 + dst>=2 + disable_post_item_user_filter`）固定为当前 Swing 默认 artifact，并接入 pool500 recall-only 主路默认 source manifest。
+
+**遇到的问题：**
+F1 相比 B baseline 在 test 上有极小提升，但 valid 有极小回落；如果直接把 artifact-level `candidate_generation_allowed` 或 `promotion_allowed` 打开，会把单 source raw eval 误写成全局主路晋升，破坏 route gate 边界。
+
+**定位方式：**
+复核 F1 evidence：`outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal_20260606_datawhale_preuser_item_filter/F1_source_index_manifest.json` 与 `F1_raw_eval.json` 显示 `edge_count=457372`、`seed_count=65693`、`retained_user_count=1538933`，test `HitRate@500=0.002163` / `Recall@500=0.001892`；`F1_funnel_diagnostic.json` 显示 test `generated_candidate_user_count=8283`、`target_exists_as_any_dst_rate=0.637642`，且 valid/test label 仅用于 evaluation-only。
+
+**解决方式：**
+将远程 F1 artifact 拉回并落到 `outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/`；更新 `configs/recall/full_data_pool500/swing_recall/source_config.yaml`、`dataset_policy.yaml`、`configs/recall/pool500_method_registry.json`、`rs_core/recsys/recall_sources/registry.py` 和 `run_full_data_pool500_recall_only.py` 的默认 Swing manifest 指向。保留 artifact 内 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`，主路使用必须通过显式默认 manifest 和后续 route-level 审计。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_full_train_swing_sidecar.py tests/test_pool500_method_source_runner.py tests/test_full_data_pool500_recall_only.py -q`，结果 `86 passed in 1.69s`；同时直接调用 `load_swing_recall_sidecar()` 读取新 F1 manifest，返回 `seed_count=65693`。补充尝试运行更宽的 registry drift/recall source registry 测试时出现 5 个既有 registry 全局一致性失败，集中在 category/custom dataset、历史 local_formal token 和 itemcf_weak 状态不一致，不属于本次 Swing F1 artifact 接入本身。
+
+**面试可讲点：**
+这段可以讲成“把实验赢家接入主路但不越过上线门禁”：用户明确选择 F1 后，工程上把默认 artifact 固定下来，同时保持 no-holdout、no-oracle 和 promotion flag 关闭，把“默认使用哪个 Swing artifact”和“是否全局晋升为可自动生成/替换排序输入”拆成两个层级，体现推荐系统迭代中的证据治理。
 
 ### 2026-05-21 - pool500 三阶段离线排序链路 contract 收口
 
@@ -1225,6 +1925,26 @@ focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/
 
 **面试可讲点：**
 这段可以讲成“把实验召回链路中的稳定能力抽成 core，但用验证防止实验语义倒灌”：用静态依赖扫描和 focused regression 同时证明核心层无 `rs_lab` 反向依赖、无 pool500 artifact 语义，调用方行为仍由原治理测试锁住。
+
+### 2026-06-06 - RPA 置信度局部重排最终效果诊断
+
+**任务：**
+在 Zhang & Pu 2007 Recursive CF / RPA 已证明 rating prediction MAE 有收益后，继续验证它能否转化为 pool500 最终候选排序效果，即 Recall@K / HitRate@K，而不是只看 MSE/MAE。
+
+**遇到的问题：**
+纯 RPA score 全局重排在 1000-user pool500 候选上严重伤害前排指标，且旧诊断显示 `empty_denominator_count=500000`，说明多数候选没有真实邻居分母，RPA 分数退化成 fallback。直接按 raw rating prediction 重排不适合当前 Amazon 稀疏候选池，尤其 1000-user baseline 切片偏 cold-ish，用户历史短、Pearson overlap 很难形成有效支持。
+
+**定位方式：**
+先读取既有 `outputs/eval/rpa_rerank_diagnostic_1000_k20_phi2_20260606a/manifest.json` 与 `metrics.json`，确认纯 RPA rerank 从 baseline `Recall@20/50/100=0.010610/0.017255/0.019679` 降到 `0/0/0.0042`，且 `empty_denominator_count=500000`。随后新增 per-user train-only 局部诊断脚本 `rs_lab/experiments/recall/run_rpa_pool500_candidate_rerank_per_user_diagnostic.py`，在每个用户的 train history + candidate item 局部邻居内计算 supported residual 与覆盖率，并在 manifest 中记录 `train_index_scope`、`eval_label_role`、`supported_candidate_ratio`。
+
+**解决方式：**
+把策略从“全量按 RPA raw score 排序”改成“有证据才局部微调”：脚本只用 `ranked_interactions.row_num <= train_end_row` 构造 per-user 邻居/打分索引，labels 只在最终 `_evaluate_rows` 和 coverage 统计中使用。为稀疏单历史用户增加诊断性的 one-overlap sparse similarity fallback，并只测试 conservative bucket 内 residual 调整；所有输出保持 `diagnostic_only=true`、`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+`py_compile` 通过；1000-user 诊断输出到 `outputs/eval/rpa_per_user_fast_residual_1000_20260606a/`，运行耗时约 59.35s。manifest 显示 `candidate_count=500000`、`supported_candidate_count=5635`、`supported_candidate_ratio=0.01127`、`supported_positive_candidate_count=3/37`；metrics 显示 conservative `bucket10/20/50_conf_alpha1/2/5` 相对 original 的 Recall/HitRate delta 全为 0，`pure_supported_residual` 反而下降（例如 `Recall@20 -0.009316`、`Recall@50 -0.009317`）。随后按 segment 重排 fixed eval users，分别生成 `outputs/eval/rpa_rerank_baseline_hot1000_20260606a/` 与 `outputs/eval/rpa_rerank_baseline_warm1000_20260606a/`：hot1000 的 `supported_candidate_ratio=0.090606`、`supported_positive_candidate_ratio=0.365385`，但 bucket 策略全部无 Recall/HitRate 提升；warm1000 的 `supported_candidate_ratio=0.01856`，`bucket50_conf_alpha5` 仅有 `Recall@20 +0.001333`、`HitRate@20 +0.002` 的极小改善，@50/@100/@500 不提升。独立 verifier 复核结论为 PASS：无明显 label backflow，当前只能报告“未观察到稳定最终 Recall/HitRate 提升”，不能晋升或替换主排序输入。
+
+**面试可讲点：**
+这段可以讲成“把论文算法收益和业务最终指标拆开验证”：RPA 在评分预测任务上能降 MAE，但在稀疏、冷启动、候选池已冻结的 top-N 任务中，邻居覆盖不足会让分数退化甚至伤害前排。工程上没有把论文指标直接包装成推荐效果，而是通过 per-user confidence coverage、bucket local rerank 和 no-label-backflow 审计证明当前方法只适合作为诊断/弱特征候选，下一步应优先提升热/温用户切片和候选 item 的 train-only 协同证据覆盖。
 
 ### YYYY-MM-DD - 任务标题
 
@@ -2697,6 +3417,26 @@ pool500 已进入全量候选池治理阶段，但轻量方法、重资源方法
 
 **验证结果：**
 运行关键词检查确认核心文档中不再出现 `当前仅预留`、`后期规划会补商品展示卡`、`商品展示卡 contract 与轻量前端 demo` 等过期表述；运行 `./.venv/Scripts/python.exe - <<'PY' ... PY` 校验 5 个核心 Markdown 文件均可用 UTF-8 读取、非空，且不含关键过期口径，输出 `validated 5 markdown files`。
+
+### 2026-06-14 - GPT SFT API 调用链路落地
+
+**任务：**
+在不改动现有 qwen_local 在线 rerank 路径的前提下，新增 GPT SFT 的 OpenAI-compatible API dry-run / execute 链路、配置、脚本和单测。
+
+**遇到的问题：**
+训练样本生成需要接入外部 API，但必须默认离线安全：API key 只能从环境变量读取；错误响应、运行结果和生成 metadata 不能泄露 key；GPT 输出也不能通过伪造候选池污染 SFT 样本。
+
+**定位方式：**
+复用 `rs_core/training/data_contracts.py` 的 `validate_sft_sample(s)` 确认样本 contract，复用 `rs_core/common/io.py` 读写 JSONL；对照 OpenAI-compatible `/v1/chat/completions` 的 `model/messages/response_format` 请求与 `choices[0].message.content` 响应结构，确认最小 API client 边界；再用 reviewer 复查候选池约束、dry-run/execute 闸门和 API key 泄露路径。
+
+**解决方式：**
+新增 `rs_core/common/openai_compatible_client.py` 作为底层 client；新增 `rs_core/training/gpt_sft_config.py`、`gpt_sft_generator.py`、`gpt_sft_runner.py` 串起配置、prompt 构造、生成和输出；新增 `scripts/training/run_gpt_sft_api.py` / `generate_gpt_sft.py` 和 `configs/training/gpt_sft_api_smoke.yaml`。默认 dry-run 只输出 message 摘要；真实调用要求 `--execute`、`dry_run=false` 和 `gpt_sft.enabled=true` 三者同时满足；API base 默认要求 HTTPS；GPT 生成结果会回绑 seed 的 `candidate_summary`、`allowed_item_ids` 和 `must_select_from_candidates=true`。
+
+**验证结果：**
+运行 `.venv/Scripts/python -m pytest tests/test_openai_compatible_client.py tests/test_gpt_sft_api.py tests/test_training_data_contracts.py tests/test_inference_policy.py`，结果 `48 passed in 0.34s`；运行 `.venv/Scripts/python scripts/training/generate_gpt_sft.py --config configs/training/gpt_sft_api_smoke.yaml --limit 1 --dry-run`，结果 `api_called=false` 且只输出 `first_message_summary`；运行 `.venv/Scripts/python -m compileall ...` 编译新增 Python 文件通过。
+
+**面试可讲点：**
+这次工作把“外部 GPT 生成 SFT 样本”做成了可审计的安全执行链路：默认 dry-run 不外发且不打印完整 prompt，execute 有双配置闸门；密钥只走环境变量，HTTP 错误体会脱敏；GPT 只能在原始候选池约束内生成 SFT 样本；同时补齐跨 CWD 路径解析、完整 chat-completions endpoint、raw JSON list 输入和 content parts 解析，降低代理/脚本调用边界问题，从而让后续 Qwen SFT/GRPO 数据闭环共享同一套样本质量边界。
 
 **面试可讲点：**
 这次工作体现的是阶段治理和工程叙事能力：当功能快速推进后，及时把入口文档、实施计划和架构边界同步到真实状态，避免“代码已完成但文档仍像规划”的信息漂移；同时保留训练未落地、服务非生产级、仿真非真实用户的边界，能让项目叙事可信而不夸大。
@@ -4718,3 +5458,1062 @@ formal governance 输出 PASS：`outputs/recall/data_governance/train_only_v1/ma
 - 解决方式：新增 `rs_core/workflow/online_recommendation.py` 作为纯在线 adapter；在 `RecommendationService` 增加 `recommend_from_sequence(...)`；在 FastAPI 暴露 `POST /recommend`；请求 schema 递归拒绝 `label/target_item/ground_truth/holdout` 等 evaluation-only 字段，响应不暴露 score/source/ranking/diagnostics。
 - 验证结果：`tests/test_serving_recommend_from_sequence.py` 5 个新增用例通过；`test_serving_smoke.py`、`test_agent_runtime.py`、`test_pool500_fallback_completion_route.py` 回归合计 `38 passed in 1.08s`；changed serving modules `py_compile` 通过。全量包含 `test_hybrid_demo.py` 的命令仍有既有配置文件缺失失败，与本次 `/recommend` 改动无关。
 - 面试可讲点：把离线推荐实验链路抽象为无副作用的在线 adapter，并通过 schema 和测试守住“评估标签不进候选生成、内部排序证据不外泄”的边界，实现了 Agent tool 可调用的真实推荐闭环。
+
+### 2026-06-06 - two_tower 20k epoch5 控制实验与规模瓶颈定位
+
+**任务：**
+继续诊断 pool500 recent-2y `two_tower` 为什么 20k preflight 长期停在 `Recall@500≈0.02`，并区分“epoch 太少”和“训练规模太小”两个可能原因。
+
+**遇到的问题：**
+20k epoch1 baseline、item side feature 组合和 full-vocab 单字段消融都接近 `Recall@500=0.024566`，但 full 687k epoch5/queryv2 baseline 达到 `Recall@500=0.070809`。如果只看 20k preflight，容易误判 side feature 或 queryv2 无效；需要补一个不改 side feature、只增加 epoch 的控制实验。
+
+**定位方式：**
+先把既有 20k epoch1 baseline 和 687k epoch1 source 重新用 queryv2 同口径 direct eval 复核，再在授权远程服务器运行 baseline 20k epoch5 no-side-feature 控制实验，输出到 `/mnt/data/luo/rs_agent_spill/two_tower/baseline_20k_epoch5_20260606/`，并拉回 `train_metrics.json`、`train_config.json`、`source_index_manifest.json`、`raw_two_tower_direct_eval_manifest.json`、`run_summary.json` 到本地 evidence 目录。
+
+**解决方式：**
+将 20k preflight 重新定位为 smoke/链路验证，而不是 two_tower 效果准入判断。证据显示 20k epoch5 虽然 loss 从 `1.769754` 降到 `1.712921`，但 queryv2 指标仍与 20k epoch1 完全相同：unique hits `17`、`Recall@500=0.024566`、`HitRate@500=0.032`。相比之下，687k epoch1 已达 unique hits `36`、`Recall@500=0.052023`，说明主要瓶颈是训练规模和有效 optimizer step，而不是单纯 epoch 数。
+
+**验证结果：**
+同口径对照：20k epoch1 `optimizer_steps=4`、20k epoch5 `optimizer_steps=5`，二者均为 `item_count=499566`、`queryless_user_count=16`、unique hits `17`、`Recall@500=0.024566`；687k epoch1 `optimizer_steps=127`、unique hits `36`、`Recall@500=0.052023`；687k epoch5 `optimizer_steps=635`、unique hits `49`、`Recall@500=0.070809`。本地验证输出 `two_tower_scale_epoch_diagnosis_validation_PASS`，eval manifest 保持 `no_oracle_label_injection=true`。
+
+**面试可讲点：**
+这段可以讲成“用控制实验避免把小样本 preflight 当作模型结论”：通过固定 item universe、queryv2 和 no-side-feature，只改变 epoch，证明 20k 训练即使多跑 epoch 也无法提供足够协同行为学习；再用 687k epoch1/epoch5 对照说明真正的提升来自训练规模和 full-scale optimizer steps。这个结论能指导后续实验预算：20k 用于链路 smoke，效果实验至少使用更大规模 preflight 或 formal 级训练。
+
+### 2026-06-06 - two_tower item side feature 20k preflight 与单因素消融反证
+
+**任务：**
+在 pool500 recent-2y `two_tower` 上验证默认关闭的 train-only item side feature token 是否能改善 YouTubeDNN-like item 初始化，并使用 queryv2 同口径 direct eval 与既有 epoch5/queryv2 baseline 对比。
+
+**遇到的问题：**
+初始 `item_quality_token + item_pop_bucket_token + item_user_count_bucket_token` 组合链路训练和治理都成立，但 20k preflight 指标明显低于 baseline：`Recall@500=0.024566`、`HitRate@500=0.034`、unique hits `17`，低于 epoch5/queryv2 baseline 的 `Recall@500=0.070809`、`HitRate@500=0.092`、unique hits `49`；同时 queryless user 从 `16` 增加到 `22`。进一步定位发现该组合 run 的 `training_item_universe_item_count=340141` 小于 baseline `499566`，存在 item universe 收缩干扰。
+
+**定位方式：**
+先在远端同步 queryv2 与 side-feature 代码，修复远端 governance manifest 中 Windows 路径导致的 artifact 解析问题，再构建 20k method dataset、训练、build source index 并运行 queryv2 direct eval。为排除 universe 收缩干扰，又基于 baseline formal `training_item_universe` 重新派生 full-vocab side-token item vocab，保持 `item_count=499566`，分别运行 `item_quality_token`、`item_pop_bucket_token`、`item_user_count_bucket_token` 三个单字段消融。证据拉回到 `outputs/recall/pool500_method_sources/recent_2y/two_tower/*fullvocab_preflight_20k_20260606/`，本地 `.venv` 校验 source/eval 的 train-only 和 governance flags。
+
+**解决方式：**
+将 all-light 组合和三个 full-vocab 单字段消融都收口为 rejected diagnostic challengers，不进入 full formal，不更新 registry/READY。保留证据和结论：控制 item universe 后 queryless 恢复到 `16`，说明 all-light 的 queryless 恶化主要来自 universe 收缩；但三个单字段消融的命中完全一致且仍远低于 epoch5/queryv2 baseline，说明这些粗粒度 item bucket token 暂不值得继续扩大训练。
+
+**验证结果：**
+all-light 组合：`item_count=340141`、`queryless_user_count=22`、`Recall@500=0.024566`、`HitRate@500=0.034`。full-vocab 单字段消融三组均为 `item_count=499566`、`queryless_user_count=16`、unique hits `17`、`Recall@500=0.024566`、`HitRate@500=0.032`，source index 均为 `FULL_DERIVED_INDEX_DIAGNOSTIC`，`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`final_pool500_ready_claimed=false`。本地验证输出 `controlled_side_feature_ablation_evidence_validation_PASS`。
+
+**面试可讲点：**
+这段可以讲成“用受控 preflight 及时否定一个看似合理的工业特征增强”：不是只看 side feature 是否能跑通，而是先发现 item universe 收缩导致 coverage 退化，再做 full-vocab 单因素消融排除干扰，最后基于 query coverage、unique hits、Recall 和治理 flags 决定停止 full formal，避免把粗粒度 side bucket 当作有效模型增强。
+
+### 2026-06-05 - two_tower YouTubeDNN 训练侧 challenger 反证
+
+**任务：**
+在 pool500 recent-2y `two_tower` 上继续对齐 YouTubeDNN 论文实践，远程 formal 验证 `recency_decay + example_age_decay + sampled_softmax_logq` 组合是否能优于既有 epoch5/queryv2 baseline。
+
+**遇到的问题：**
+训练侧机制全部生效，但 formal legacy direct-eval 指标明显下降：`Recall@500=0.018786`、`HitRate@500=0.026`、unique hits `13`，低于既有 queryv2 baseline `Recall@500=0.070809`，也低于上一轮 `ns_v2_plus_recency` legacy 对照 `Recall@500=0.047688`。
+
+**定位方式：**
+在授权远程 GPU 上完成 5 epoch formal 训练，检查 `train_metrics.json`、`source_index_manifest.json` 与 `raw_two_tower_direct_eval_manifest.json`。证据显示 PyTorch/CUDA、mixed precision、生效的 logQ 校正、example-age 权重和 source index 均正常；同时发现远端 eval 脚本缺少本地 queryv2 fallback 文件，当前评估属于 legacy direct-eval 口径，不能直接替代 queryv2 同口径比较。
+
+**解决方式：**
+将该 run 收口为 rejected diagnostic challenger，不写入主路配置、registry 或 READY 状态。本地只拉回小型证据 JSON 到 `outputs/recall/pool500_method_diagnostics/recent_2y/two_tower/formal_recency_age_logq_20260605_gpu_evidence/`，METHOD 文档记录失败结论和后续单因素消融方向。
+
+**验证结果：**
+训练证据：`training_examples=2103458`、`item_count=499566`、`sampled_softmax_corrected_examples=10517290`、`sampled_softmax_corrected_candidates=115690190`、example-age timestamp missing `0`、weight p50 `0.2`、loss 从 `3.530235` 降到 `3.464569`。治理证据：`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`pool1000_allowed=false`、`final_pool500_ready_claimed=false`。
+
+**面试可讲点：**
+这段可以讲成“论文机制不是直接叠加就一定提升”：先用工程 guard 保证 logQ、freshness weighting 和 recency tower 确实生效，再用 formal eval 证明组合策略反而伤害召回，并把结果治理为 rejected diagnostic，而不是为了追论文对齐强行晋升。它体现了推荐系统实验中单因素消融、评估口径一致性和失败实验复盘的重要性。
+
+### 2026-06-06 - two_tower item side feature token 与安全回归修复
+
+**任务：**
+继续把 pool500 recent-2y `two_tower` 向 YouTubeDNN 靠拢，在不改变默认 baseline、不引入 eval label 的前提下补充 train-only item side feature token，并修复 code-reviewer 发现的训练样本/负采样口径风险。
+
+**遇到的问题：**
+直接叠加 `recency + example-age + logQ` 的 formal challenger 已被反证；下一步应做更低风险的 item side input。但初版实现存在三类风险：多 sequence key 合并后可能不按全局时间排序；负采样只排除 capped recent window 而非完整用户已知历史；`item_quality:embedding_ready` 这类 side token 会被普通分词拆成泛化片段。
+
+**定位方式：**
+独立 code-reviewer 对 `rs_core/recsys/two_tower.py`、`rs_lab/experiments/recall/build_pool500_two_tower_method_dataset.py` 和相关测试提出 HIGH/HIGH/MEDIUM findings；随后用新增回归测试覆盖 cross-key timestamp ordering、older known item 负例排除、side feature atomic token。
+
+**解决方式：**
+`two_tower` 训练侧新增默认关闭的 `side_feature_fields` 路径，方法数据集输出 `item_quality_token`、`item_pop_bucket_token`、`item_user_count_bucket_token`，训练 metrics/model 记录 active side fields；side feature 以 `field=value` 原子 token 进入 item 初始化。训练序列合并按 timestamp 排序，负采样 `known_items` 改为完整 `recent_item_sequence`，避免 older known item 被采成负例。
+
+**验证结果：**
+本地 `.venv` 执行 `py_compile` 覆盖修改文件通过； targeted pytest `tests/test_pool500_two_tower_method_dataset.py tests/test_two_tower_training.py tests/test_pool500_two_tower_direct_eval.py tests/test_pool500_two_tower_method_source.py tests/test_pool500_two_tower_source_manifest.py tests/test_two_tower_source_manifest_guard.py -q` 结果 `72 passed, 3 skipped`。独立 code-reviewer 复核为 `APPROVE`，独立 verifier 复核为 `PASS`；当前仍无 formal 效果结论，`two_tower` 保持 `DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“向工业 YouTubeDNN 靠拢时先补安全可审计的 side input，而不是盲目堆论文机制”：item side token 默认关闭、可单因素消融、可回滚；同时通过时间顺序、负采样用户已知历史排除和原子 token 化，保证训练样本口径不泄漏、不自相矛盾。
+
+### 2026-06-05 - RSAgent typed long memory 与相关性召回
+
+**任务：**
+参考 Claude Code 的长期记忆实践，把 `rsagent` 的长期记忆从 constraints/profile snapshot MVP 升级为可类型化、可裁剪、可相关性召回的内部记忆层。
+
+**遇到的问题：**
+原有长期记忆只能跨 session 恢复 `active_constraints` / `user_profile`，缺少可解释的记忆条目、召回预算和 public 泄露防线；如果直接把记忆作为新 Agent tool 或直接影响排序，又会破坏当前 6 个业务工具和推荐主链路稳定性。
+
+**定位方式：**
+复核 `rs_core/rsagent/long_memory.py`、`rs_core/serving/service.py`、`rs_core/display/builder.py` 和长期记忆/serving/display/runtime 测试，确认低风险接入点是 snapshot 阶段生成 typed entries、提供 pure recall function，并保持 hydrate 仍只合并 legacy constraints。
+
+**解决方式：**
+新增 `LongMemoryEntry`、typed entry 序列化/反序列化、deterministic extractor 和 `recall_relevant_long_memory()`；`snapshot_session_long_memory()` 同时保存 legacy snapshot 与 typed entries，旧 JSON 无 `entries` 仍可读取，畸形 entry 自动跳过。Public display 增加 typed memory / memory recall forbidden keys 与 terms，并修复 catalog text 豁免只允许 `source/training/reward` 这类商品文本子串，不允许 `long_memory`、`agent_tool_trace` 等内部词穿透。
+
+**验证结果：**
+使用项目 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_long_memory.py tests/test_serving_long_memory.py tests/test_display_contract.py tests/test_agent_runtime.py -q`，结果 `77 passed`；运行 `./.venv/Scripts/python.exe -m compileall rs_core/rsagent rs_core/display tests` 通过。独立 code-reviewer 发现 catalog text 豁免过宽和 zero-budget feedback events 问题，已补修并新增回归测试；独立 verifier 复核为 PASS，无 blocker。
+
+**面试可讲点：**
+这段可以讲成“把用户长期记忆从黑盒快照升级成可治理 memory layer”：记忆不是无差别保存对话全文，而是结构化为喜欢/不喜欢商品、类目、关键词、用途、价格等 typed entries；同时通过预算、相关性召回、旧格式兼容和 public 安全校验，把 Agent 长期个性化能力和推荐主链路风险隔离开。
+
+### 2026-06-04 - RSAgent 长期用户记忆 MVP
+
+**任务：**
+参考 Claude Code 的分层记忆系统，为 `rsagent` 增加默认关闭、服务层可插拔的跨 session 用户长期记忆 MVP。
+
+**遇到的问题：**
+当前 `rsagent` 已有 `AgentSession.active_constraints`、`session_summary`、`user_profile` 和 `archived_turn_summaries`，但这些都只存在于单个 session；`RecommendationService` 也明确是单进程内存态，无法让同一用户在新 session 中复用历史偏好。
+
+**定位方式：**
+对比 Claude Code 的 `memdir/MEMORY.md`、相关记忆召回和 session memory 后，复核 `rs_core/rsagent/schema.py`、`rs_core/rsagent/context.py`、`rs_core/rsagent/runtime.py`、`rs_core/serving/service.py` 与 RAG/display 边界，确认最小接入点应在 serving 生命周期，而不是让 runtime 或商品 RAG 直接依赖外部存储。
+
+**解决方式：**
+新增 `rs_core/rsagent/long_memory.py`，提供 `LongMemoryConfig`、`UserLongMemory`、`InMemoryLongMemoryStore`、`JsonLongMemoryStore`、session hydrate/snapshot helper；在 `RecommendationService.start_session()` 后按 `user_id` 水合长期偏好，在 `chat()`/`feedback()` 后从 session 快照回写。默认 `enabled=False`，不改变现有行为；长期记忆只落到 `FeedbackConstraints/UserPreferenceProfile`，不混入商品 RAG evidence；同时加固 public display forbidden keys/terms，避免 `long_memory` 等内部字段外泄。
+
+**验证结果：**
+使用项目 `.venv` 运行 `.venv/Scripts/python.exe -m pytest tests/test_long_memory.py tests/test_serving_long_memory.py`，结果 `8 passed`；运行 `.venv/Scripts/python.exe -m pytest tests/test_agent_runtime.py tests/test_agent_feedback.py tests/test_serving_smoke.py tests/test_display_contract.py`，结果 `89 passed`；运行 `.venv/Scripts/python.exe -m pytest tests/test_rag_core.py tests/test_agent_dialogue.py`，结果 `38 passed`。独立 verifier 复核为 PASS，无 blocker。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 从会话内反馈升级到用户级长期偏好记忆”：不是把所有对话全文长期化，而是复用结构化 feedback/profile 作为可审计记忆单元，并把存储接在 service 生命周期上，保持 RAG grounding、public 展示和推荐主链路边界清晰。
+
+### 2026-06-04 - itemcf_weak RPA-lite diagnostic replay artifact 治理化
+
+**任务：**
+把 RPA-lite 从 eval-only 分片诊断推进为可审计的 diagnostic replay artifact，明确 train-only 构建输入、post-hoc 评估边界和 READY 阻断条件。
+
+**遇到的问题：**
+远程 20 分片报告证明 RPA-lite 方向有效，但它仍只是不写 candidates 的 eval-only replay；如果直接把最优指标写成 source readiness，容易把后验诊断误当成候选生成依据。
+
+**定位方式：**
+复核 `rpa_lite_local_10gb_sharded_remote_v1/evaluation_report.json` 的治理字段：`candidate_artifact_written=false`、`candidate_generation_allowed=false`、`promotion_allowed=false`。同时对照 `source_config.yaml`、`dataset_policy.yaml` 和 registry，确认 `itemcf_weak` 必须继续停在 `DIAGNOSTIC_ONLY`。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/itemcf_weak/rpa_lite_diagnostic_replay.py` 和 CLI wrapper，生成 `rpa_lite_diagnostic_replay_v1/rpa_lite_replay_manifest.json`、`governance_audit.json`、`no_eval_label_selection_audit.json`、`resource_audit.json`、`coverage_audit.json`。artifact 只固化治理和 replay contract，不写候选行；manifest 中记录 RPA-lite evidence schema、train-only input sha256、post-hoc metrics、READY blockers，并在配置/registry 中保持所有 promotion/generation flag 为 false。
+
+**验证结果：**
+单测 `tests/test_pool500_itemcf_weak_rpa_lite_diagnostic_replay.py` 覆盖 governed artifact 输出、forbidden output path、promoted report rejection。canonical manifest 当前 `status=PASS`、`artifact_type=diagnostic_replay_artifact`、`ready_source_artifact=false`，post-hoc 最优仍是 `rpa_iuf_sparse_medium_p100_user500_sharded10gb`：`raw_recall@500=0.026407`、`candidate_user_rate=0.928158`、candidate p50/p90/max=`100/100/100`。
+
+**面试可讲点：**
+这段可以讲成“把有效实验转成可治理 artifact，而不是直接追指标晋升”：RPA-lite 指标优于 AugCF-lite 后，仍先补齐 no-oracle audit、资源审计、覆盖审计和 READY blockers，让后续 overlap/route gate 有可信输入，体现推荐系统实验从 notebook/脚本到工程治理的收口能力。
+
+### 2026-06-04 - itemcf_weak RPA-lite 远程 20 分片诊断与 AugCF 产物清理
+
+**任务：**
+在本地 10GB hash-sample 证明 RPA-lite 方向有效后，迁移到远程服务器做 20 分片聚合诊断，并按用户决策清理 `itemcf_weak` 下 AugCF-lite 旧结果产物。
+
+**遇到的问题：**
+本地 `shard_mod=10` 的单分片在 `build_candidates` 阶段达到 `9.8862GB` 后被 memory guard 拦截，说明本机 10GB 下 full-scope 分片仍偏大；同时 AugCF-lite 已不再作为主线，继续保留结果目录会让配置和叙事混淆。
+
+**定位方式：**
+先把分片粒度改为 `shard_mod=20`，本地第 0 分片峰值约 `5.9GB` 并得到 `raw_recall@500=0.030007` 的方向性结果；随后在 `server:/home/luo/RS_agent_remote` 检查可用资源，确认远程 `/tmp` 有空间、内存充足，将脚本上传到 `/tmp` 并用 4 路并发跑 20 分片。远程 `.venv` 缺少 `psutil`，脚本改为可选 `psutil`，缺省时从 `/proc/self/status` 读取 RSS。
+
+**解决方式：**
+远程输出写入 `/tmp/rpa_lite_local_10gb_sharded_remote_v1`，日志写入 `/tmp/rpa_lite_remote_logs`，完成后拉回到 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_local_10gb_sharded_remote_v1/`。同时删除 `itemcf_weak` 的三个 AugCF-lite 结果目录，并在 `METHOD.md`、`dataset_policy.yaml`、`source_config.yaml` 中改成“历史诊断结果已删除，主线切到 RPA-lite”的口径。
+
+**验证结果：**
+远程聚合报告 `status=PASS`，20/20 shards 完成，`train_only_target_users_total=5,147,753`、`evaluated_target_users_with_labels_total=41,605`、`peak_observed_rss_gb_max=6.8637`。最优 `rpa_iuf_sparse_medium_p100_user500_sharded10gb`：`raw_recall@500=0.026407`、`in_universe_recall@500=0.050346`、`raw_hit_user_rate@500=0.032857`、sparse hit `0.024730`、medium hit `0.053875`、candidate p50/p90/max=`100/100/100`。相比 AugCF-lite v3 best 的 `0.024707` raw 和 `0.018064` sparse hit，分别提升 `+0.001700` 和 `+0.006666`。仍保持 `DIAGNOSTIC_ONLY`，不写正式 candidates，不打开 candidate generation / promotion。
+
+**面试可讲点：**
+这段可以讲成“用资源治理和分片验证把方向性实验推进到更接近全量的诊断”：先用内存 guard 发现本机分片过大，再迁移远程并保留每分片 10GB 约束；最终用全 20 分片聚合证明 RPA-lite 在更大范围仍优于 AugCF-lite，同时主动清理被淘汰方案产物，避免历史实验污染当前主线。
+
+### 2026-06-04 - itemcf_weak Recursive CF / RPA-lite 10GB 本地诊断
+
+**任务：**
+在用户确认 Recursive CF 比完整 AugCF 更轻、适合当前阶段后，复核 Zhang & Pu 2007 论文，并把其“递归/间接邻域补全”思想改造成本地 10GB 内存受限的 RPA-lite sparse/medium user augmentation 诊断。
+
+**遇到的问题：**
+AugCF-lite v3 虽然单源 `raw_recall@500=0.024707`，但 sparse hit 仍停在 `0.018064`，且候选预算 p50/p90/max=`200/400/500` 很满；完整 AugCF GAN 又需要 generator/discriminator/Gumbel-Softmax 和训练闭环，当前成本过高。
+
+**定位方式：**
+深读 RecSys 2007 `A recursive prediction algorithm for collaborative filtering recommender systems`，确认论文核心不是新 item-item sim，而是让未评价目标 item 的相似邻居通过递归预测继续参与上层评分。结合当前 implicit Top-N 召回，将其改成 train-only user-user IUF 相似传播：只做 bounded depth=1 pseudo candidate 补全，不照搬 explicit rating / MAE 公式。
+
+**解决方式：**
+在本地 `.venv` 下运行 `.omc/run_rpa_lite_local_10gb.py`，target selection 只用 train-only sequence bucket 与 deterministic user_id hash sample；valid/test label 在 candidate scores 构建完成后才加载用于 post-hoc evaluation。运行过程限制 10GB，设置 seed/candidate hot cap、candidate prune 与 per-user top100，保持 `DIAGNOSTIC_ONLY`、`candidate_generation_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+本地报告 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_local_10gb_v1/evaluation_report.json` 验证输出 `local_rpa_lite_10gb_report_validation_PASS`。最优 `rpa_iuf_sparse_medium_p100_user500_local10gb`：`raw_recall@500=0.027130`、`in_universe_recall@500=0.048733`、`sparse hit@500=0.029073`、candidate p50/p90/max=`100/100/100`；相比 AugCF-lite v3 best，raw Recall 绝对提升 `+0.002423`，sparse hit 绝对提升 `+0.011009`。峰值 RSS `7.3GB`，低于 10GB 限制，运行约 `498s`。
+
+**面试可讲点：**
+这段可以讲成“从重生成模型切到轻量协同图补全”：不是盲目复刻 GAN，而是读论文后抽取可工程化的递归邻域思想，用 train-only、内存上限和候选预算把它改造成可审计的 sparse repair source，并用分桶指标证明它比 AugCF-lite 更对症。
+
+### 2026-06-04 - RSAgent 轻量上下文压缩改造
+
+**任务：**
+为当前 RSAgent 规划并落地推荐 Agent 专用的上下文压缩策略，避免照搬 Claude Code code agent 的复杂 compact boundary / prompt cache / transcript 机制。
+
+**遇到的问题：**
+现有上下文压缩分散在 `rs_core/rsagent/runtime.py`、`rs_core/workflow/hybrid_environment.py` 和 `rs_core/recsys/rag/retriever.py`：`session_summary`、recent turns、工具 compact output、RAG per-item cap 各自存在，但缺少统一 `ContextBundle/ContextBudget`，RAG evidence 也只有条数限制没有字符/全局预算。
+
+**定位方式：**
+只读梳理 `AgentSession`、`AgentRuntime._memory_prefetch/_compact_session`、`_get_user_context_output`、`RagPolicy/build_rag_context_for_ranked_candidates`、`_rag_reason` 和 display allowlist/forbidden gate，确认当前策略更适合确定性结构化压缩，而不是 LLM rolling summary。
+
+**解决方式：**
+新增 `rs_core/rsagent/context.py`，引入 `ContextBudget`、`ContextBundle`、deterministic `UserPreferenceProfile` 和 `ArchivedTurnSummary`；让 runtime memory/session summary 与 `get_user_context` 共用同一 compact bundle；扩展 `RagPolicy` 的 `max_evidence_total/max_text_chars`，并在 RAG context、item evidence tool、解释文本三层做预算；补强 public display forbidden keys/terms，禁止 context/profile/raw RAG evidence 泄露。
+
+**验证结果：**
+使用项目 `.venv` 运行 `.venv/Scripts/python -m pytest tests/test_agent_runtime.py tests/test_agent_tools.py tests/test_rag_core.py tests/test_agent_dialogue.py tests/test_display_contract.py -q`，结果 `110 passed`；运行 `.venv/Scripts/python -m ruff check rs_core tests`，结果 `All checks passed`。Ruff 过程中发现并修复了既有 `_manifest_output` 未定义问题。
+
+**面试可讲点：**
+这段可以讲成“按业务类型设计上下文管理”：Code Agent 需要 transcript/compact boundary/prompt cache，但推荐 Agent 更需要结构化偏好、候选证据和展示安全边界；因此用可审计的 deterministic profile、ContextBundle 和 RAG evidence budget 控制上下文，而不是依赖不可控的 LLM 摘要。
+
+### 2026-06-04 - itemcf_weak AugCF-lite v3 sparse/side-info 诊断
+
+**任务：**
+在 v2 已确认 AugCF-lite 收益主要来自 augmented graph 可达性后，继续对照 KDD'19 AugCF 论文中的 sparse/inactive targeting 与 side information，远程验证是否还有低成本效果优化点。
+
+**遇到的问题：**
+`itemcf_weak` v2 最优 `base_observed_score_seed200_user500` 已达到 `raw_recall@500=0.024673`，但 sparse bucket hit 仍只有 `0.018064`，且候选预算 p50/p90/max=`200/400/500` 很满。若只压缩预算，可能降低中高活用户命中；若直接引入 side-info boost，则需要证明不是 eval label 泄漏或单点偶然提升。
+
+**定位方式：**
+按用户要求在 `server:/home/luo/RS_agent_remote` 运行 `/tmp/run_augcf_lite_v3_sparse_sideinfo.py`，复用 `/tmp/itemcf_weak_augcf_lite_formal_method_datasets_v3/itemcf_weak/method_dataset_rows.jsonl`，只使用 train-only row 与 item governance metadata 做 replay 排序；valid/test label 仍只用于后验 evaluation-only metrics。报告拉回到 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/augcf_lite_v3_sparse_sideinfo_v1/evaluation_report.json`。
+
+**解决方式：**
+设计三类对照：v2 baseline、按用户序列桶收紧中高活 fanout/cap 的 sparse-targeted variants、以及基于 train-only category/hotness/quality metadata 的 side-info boost/guard variants。所有 variant 均保持 `evaluation_only=true`、`source_artifact_complete=false`、`candidate_generation_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+远程报告 `status=PASS`，本地复核输出 `local_augcf_lite_v3_sparse_sideinfo_report_validation_PASS`。`sideinfo_category_boost_v1` 最优 raw：`raw_recall@500=0.024707`、`in_universe_recall@500=0.030573`、candidate p50/p90/max=`200/400/500`，相对 v2 baseline 仅提升 `+0.000034`；两个 sparse-targeted variants 分别降到 `0.022374` 和 `0.021403`，且 sparse hit 都仍为 `0.018064`。结论是简单预算重分配无效，category side-info 有弱正向信号但不足以单独晋升，`itemcf_weak` 继续保持 `DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“把论文机制拆成可验证消融”：不是直接说 AugCF 更强，而是分别验证扩图、稀疏用户预算、类目信息和热门约束的边际贡献，用 train-only/eval-only 边界防止泄漏，并把微弱提升收口为后续 adapter 与 route-gate 的候选信号。
+
+### 2026-06-04 - itemcf_strong AugCF route-gate evidence matrix
+
+**任务：**
+为 `itemcf_strong` AugCF q20/q30/no-hot/relaxed 诊断源新增轻量 route-gate evidence matrix，在固定 pool500 offline eval users 上统一跑 route-level eval，并把指标、overlap、source attribution 和 no-oracle 证据聚合到 `route_gate_evidence_manifest.json`。
+
+**遇到的问题：**
+单个 source manifest 的离线指标不足以判断是否可以进入主路：AugCF 诊断候选可能与 baseline 高度重叠，或收益来自 popular/category/hotness 覆盖；如果只看 Recall 提升，容易误判为可晋升。
+
+**定位方式：**
+复用 `rs_lab/experiments/recall/run_pool500_offline_eval_baseline.py` 中固定 eval users、no-oracle label policy、`source_manifest_paths` override 和 metrics/source_audit 输出，新增测试用 fake candidate runner 验证 relaxed 不传 override、q20 正确传 `itemcf_strong` override。
+
+**解决方式：**
+新增 `run_itemcf_strong_augcf_route_gate_matrix.py`：按 `--variant name=path` 串行运行 baseline eval，path 为 `default`/`relaxed`/空时不传 source override，否则传 `source_manifest_paths={"itemcf_strong": Path(path)}`；聚合 Recall@500/HitRate@500 delta、positive hit exclusive/overlap、user-item candidate jaccard、source hit attribution、diagnostic_hot_budget_audit，并限制决策只输出 diagnostic route-gate 三态，不输出 READY/PROMOTE。
+
+**验证结果：**
+本地 `.venv/Scripts/python.exe -m py_compile ...` 通过；`.venv/Scripts/python.exe -m pytest tests/test_pool500_offline_eval_baseline.py -q` 结果为 `6 passed`。新增测试覆盖 q20/relaxed、source override 传递、exclusive positive hits、no_oracle/eval_only/diagnostic_only 字段。
+
+**面试可讲点：**
+这段可以讲成“把召回增强实验从单点 Recall 报告升级为准入证据矩阵”：用固定用户集和 no-oracle 口径，对比边际命中、候选重叠、source 归因和 hotness audit，避免把热门覆盖或重复候选误当作模型增强收益。
+
+### 2026-06-04 - itemcf_strong AugCF route-level user hot/pseudo 预算门控
+
+**任务：**
+在 controlled v2 已证明 per-src hot quota 仍无法约束最终 user-level candidate hot share 后，为 `itemcf_strong` AugCF-lite/controlled 诊断源补齐 route-level 预算门控和固定 eval users 的通用 source override。
+
+**遇到的问题：**
+AugCF-controlled q20/q30 在单源 purchase Recall 上有提升，但最终候选池会聚合多个 seed，导致 user-level 热门候选比例仍高；如果只看 source 边预算，可能把热门商品覆盖误判成 `itemcf_strong` 相似度提升。
+
+**定位方式：**
+复核 `run_full_data_pool500_recall_only.py` 的 merge → popular/category cap → fallback completion 流程，确认预算应放在 `_enforce_popular_category_cap(...)` 后、fallback completion 前；同时复核 `run_pool500_offline_eval_baseline.py` 已有 `source_manifest_paths` 函数参数，但 CLI 只支持 two_tower 特例。
+
+**解决方式：**
+在 route 侧新增 `_augcf_route_budget_policy(...)` 和 `_apply_augcf_route_budget_cap(...)`：仅当 `itemcf_strong` source manifest 为 `diagnostic_only=true` 且 variant/policy 含 `augcf_lite` 或 `augcf_controlled` 时启用；按 `max_final_hot_share_per_user` 和 `max_pseudo_per_user` 删除 AugCF diagnostic 候选，优先删 pseudo、hot、单源、低分项，不误伤 relaxed baseline。新增 `diagnostic_hot_budget_audit.json`，并让 offline baseline CLI 支持 `--source-manifest itemcf_strong=...`。
+
+**验证结果：**
+本地 `.venv` 执行 `py_compile` 覆盖两个 route 脚本和相关测试通过；`pytest tests/test_full_data_pool500_recall_only.py tests/test_pool500_offline_eval_baseline.py -q` 结果为 `26 passed`。独立 verifier 复核为 `PASS`、无 blocker。
+
+**面试可讲点：**
+这段可以讲成“把单源实验收益转化为主路准入门禁”：不是因为 AugCF Recall 高就直接晋升，而是在最终候选池层面对热门偏置和 pseudo 边占比做治理，并用 audit artifact 让 route-gate 能比较边际收益、overlap 和 source share。
+
+### 2026-06-04 - itemcf_strong AugCF-controlled v2 hotness 预算实验
+
+**任务：**
+在 KDD'19 AugCF 思路的 `itemcf_strong` 轻量复刻实验中，继续验证“生成式/学习式补边”的收益是否可被 hotness 预算约束，而不是简单由热门商品覆盖驱动。
+
+**遇到的问题：**
+AugCF-lite unrestricted hot-dst 的 purchase `Recall@500=0.025721`，但 `candidate_hot_share=0.960442`；no-hot 对照 `Recall@500=0.000192` 又不超过 relaxed baseline `0.000211`。这说明有效信号和热门覆盖高度耦合，如果直接晋升会把 popular/category 能力误归因给 `itemcf_strong` 相似度。
+
+**定位方式：**
+复核远程 formal_50k hot/no-hot 报告后，在 `rs_lab/experiments/recall/pool500/methods/itemcf_strong/augcf_lite_builder.py` 中加入 per-src hot dst quota，并修复 controlled 模式下“超预算 hot dst 回填”的问题；随后在 `server:/home/luo/RS_agent_remote` 使用 `.venv/bin/python` 跑 q10/q20/q30/q50 对照，valid/test 仍只用于 evaluation-only purchase/strong label。
+
+**解决方式：**
+新增 `--controlled-hot-budget` 与 `--max-hot-share-per-src`，在 source 边排序后按 src item 控制 hot dst 边数。重 artifact 写入远程 `/tmp/rs_agent_spill`，本地只拉回 manifest、leakage audit、source manifest 和 purchase eval JSON，并在实验结束后用 Python `shutil.rmtree` 清理远程临时目录。
+
+**验证结果：**
+controlled v2 q10/q20/q30/q50 均完成远程 formal_50k：purchase `Recall@500` 分别为 `0.005037`、`0.010688`、`0.015129`、`0.019608`，`candidate_hot_share` 分别为 `0.440016`、`0.618814`、`0.717320`、`0.823463`。结果证明 per-src 预算能形成 Recall/hotness tradeoff，但 user-level candidate hot share 仍会因多 seed 聚合而高于 per-src quota，因此 q20/q30 只能作为 route-gate 诊断候选，不能替代 relaxed baseline 或自动并入主路。
+
+**面试可讲点：**
+这段可以讲成“把论文增强收益拆解为可治理的预算曲线”：不是只报告 Recall 变高，而是用 no-hot 和 quota grid 证明收益来源、约束热门偏置，并把实验结论收口到 route overlap、边际 Recall 和 source share cap 门禁。
+
+### 2026-06-04 - itemcf_weak AugCF-lite v2 score/cap 网格复核
+
+**任务：**
+在用户要求继续围绕 KDD'19 AugCF 做效果优化后，远程复核当前 AugCF-lite 的收益来源：是 pseudo contribution score 权重本身带来的，还是 augmented graph 扩图/候选可达性带来的。
+
+**遇到的问题：**
+上一轮 `augcf_lite` 单源 `raw_recall@500=0.024536` 明显优于 `weak_denoised=0.01478`，但候选预算更满（p50/p90=200/400）。如果继续盲目提高 pseudo 权重，可能只是在放大噪声；如果强行降低 fanout/cap，又可能损失覆盖。
+
+**定位方式：**
+按用户要求在 `server:/home/luo/RS_agent_remote` 运行 eval-only 网格：复用 `/tmp/itemcf_weak_augcf_lite_formal_method_datasets_v3/itemcf_weak/method_dataset_rows.jsonl`，对 `base_itemcf_score`、不同 pseudo 权重缩放和 `top_k_per_seed/per_user_cap` 组合做逐 variant replay。valid/test label 仍只在后验指标阶段读取，不参与构图、打分规则生成或候选产物输出。
+
+**解决方式：**
+新增一次性远程脚本 `/tmp/run_augcf_lite_v2_grid.py`，输出 `/tmp/augcf_lite_v2_grid_seed_cap_score_v1/evaluation_report.json`，并拉回本地 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/augcf_lite_v2_grid_seed_cap_score_v1/evaluation_report.json`。实验继续保持 `DIAGNOSTIC_ONLY`、`candidate_generation_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+远程报告 `status=PASS`，本地复核输出 `local_augcf_lite_v2_grid_report_validation_PASS`。最优 variant 为 `base_observed_score_seed200_user500`：`raw_recall@500=0.024673`、`in_universe_recall@500=0.030531`、`candidate_user_rate=0.944488`、candidate p50/p90/max=`200/400/500`。pseudo 权重缩放 `0.05/0.10/0.20/0.25` 对应 `raw_recall@500=0.024656/0.024639/0.024536/0.024536`，说明单纯提高 pseudo score 不是收益主因；收紧预算到 seed100/user300 后 `raw_recall@500=0.019258`，seed50/user200 后降到 `0.015478`，说明当前提升高度依赖扩图后的 fanout/cap 覆盖。
+
+**面试可讲点：**
+这段可以讲成“把论文复刻的收益来源做归因”：不是只报 AugCF-lite 提升，而是通过 score/cap 网格证明当前收益主要来自增强图的可达性，下一步应按论文补 sparse-user targeting、side information 和 like/dislike class，提高生成边质量，再用 route overlap 和边际 Recall 验证能否进入主路。
+
+### 2026-06-04 - itemcf_weak AugCF-lite 相似度/生成增强诊断落地
+
+**任务：**
+针对 KDD 2019 `Enhancing Collaborative Filtering with Generative Augmentation`，判断其相似度思想是否可以替代当前 `itemcf_weak` 的 weighted cooc cosine，并先落地可复核的轻量复刻。
+
+**遇到的问题：**
+AugCF 论文核心不是显式 item-item similarity 公式，而是 conditional GAN / Gumbel-Softmax 生成增强交互；如果直接声称替换 sim 或完整复现 GAN，会扩大训练和治理风险，也不利于和当前 `weak_denoised` baseline 公平对比。
+
+**定位方式：**
+调研 KDD/DBLP/DOI 资料后，将 AugCF 拆成“生成增强 sparse/inactive user 交互，再重算 CF score”的工程思想；复核 `rs_lab/experiments/recall/build_pool500_method_dataset.py` 中当前 `weighted_cooc / sqrt(src_user_count * dst_user_count)` 公式和 `weak_denoised` profile，决定新增 diagnostic profile 而不是直接改 registry 或主路。
+
+**解决方式：**
+新增 `augcf_lite` profile：`score_policy=augcf_lite_profile_score_v1`、`augmentation_policy=train_only_observed_pseudo_low_freq_v1`、`top_k_per_seed=200`、`gan_enabled=false`、`gumbel_softmax_enabled=false`，只做 train-only observed-pseudo 轻量增强并保留 `DIAGNOSTIC_ONLY`；文档和配置明确 `paper_claim_boundary=not_exact_kdd19_gan_reproduction`。
+
+**验证结果：**
+按用户要求在远程服务器 `server:/home/luo/RS_agent_remote` 执行验证：同步 builder 后远程 `.venv/bin/python -m py_compile` 通过，并在 `/tmp` fixture 上完成直接 smoke，输出 `remote_augcf_lite_smoke_after_update_PASS`。随后用 localized train-only governance manifest 构建 formal method dataset：`row_count=16714845`、`unique_pair_count=13433154`、`directed_edge_count_after_topk=16714845`；eval-only replay 报告拉回到 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/augcf_lite_eval_seed200_user500_v1/evaluation_report.json`，`raw_recall@500=0.024536`、`in_universe_recall@500=0.030362`、`candidate_user_rate=0.944488`、candidate max `500`。相比 `weak_denoised` 的 `raw_recall@500=0.01478` 有明显提升，但候选更满（p50/p90=200/400），因此仍保持 DIAGNOSTIC_ONLY，等待 overlap/marginal Recall/route gate。
+
+**面试可讲点：**
+这段可以讲成“把论文方法先降维成可治理的工程对照实验”：没有盲目复刻 GAN，而是先识别论文真正贡献不是 sim 公式、而是生成式增强数据，再用 train-only diagnostic profile 与现有 baseline 做 paired eval 的准备。
+
+### 2026-06-04 - itemcf_weak 去噪网格与修复口径调整
+
+**任务：**
+在 `weak_coverage` 已恢复覆盖但效果仍偏弱后，继续定位低效果原因，并在远程服务器上验证 support gate、BM25/IDF、shrinkage、hot-dst 排除和候选 cap 的修复方向。
+
+**遇到的问题：**
+`weak_coverage` 的 `raw_recall@500=0.01478` 仍偏低，且候选最大数达到 `4569`；直觉上的去噪方案（support>=2、BM25/IDF、去热门）可能会降低噪声，但也可能把弱召回真正命中的长尾/support=1 边一起删掉。
+
+**定位方式：**
+新增 evaluation-only 诊断脚本 `rs_lab/experiments/recall/diagnose_itemcf_weak_coverage_denoising.py`，在 `server:/home/luo/RS_agent_remote` 上读取 train-only method dataset rows 和 train-only item/profile 文件，只用 valid/test label 做后验 Recall@K。因远端 `/home` 分区满，将 3.2GB rows 临时移动到 `/tmp/itemcf_weak_diagnostics/` 执行，并拉回 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/weak_coverage_denoising_grid_v2/evaluation_report.json`。
+
+**解决方式：**
+远程网格显示 `support1_existing_seed200_user500` 与 baseline 一样保持 `raw_recall@500=0.01478`、`in_universe_recall@500=0.021617`、`candidate_user_rate=0.83305`，但把 candidate max 从 `4569` 收到 `500`；而 `support>=2` 将 raw Recall 降到 `0.005789`，`BM25/IDF + hot-dst non-hot` 只有 `0.000051` 或 `0.0`。因此新增 `weak_denoised` profile 时不采用强过滤，而是保留 `support=1 + weighted_cooc_cosine_normalized_v1`，设置 `top_k_per_seed=200`，并要求 route/eval 侧 `per_user_candidate_cap=500` 和 overlap/marginal Recall gate。
+
+**验证结果：**
+本地 `.venv` 通过 `pytest tests/test_pool500_method_dataset.py -q`（27 passed）和 `py_compile`。诊断报告 `status=PASS`，配置和文档已同步到 `METHOD.md`、`RECENT2Y_FAILURE_DIAGNOSIS_AND_FIX_PLAN.md`、`source_config.yaml`、`dataset_policy.yaml`。权限位仍保持 `candidate_generation_allowed=false`、`promotion_allowed=false`。
+
+**面试可讲点：**
+这段可以讲成“不是盲目去噪，而是用网格证明弱边的工程价值”：support=1 边确实带来噪声，但也是当前 raw Recall 的主要来源；最终选择先做候选预算控制和 route gate，而不是用看似更干净的强过滤牺牲覆盖。
+
+### 2026-06-03 - itemcf_weak weak_coverage 后验验证与继续诊断
+
+**任务：**
+在 `itemcf_weak` strict formal `Recall@500=0` 后，继续验证 `weak_coverage` 是否能解决覆盖过窄问题，并把结果收口到方法文档和配置中。
+
+**遇到的问题：**
+strict formal 的 source 图只有 `9856` 个 item、`candidate_user_rate=0.004268`，但如果直接把宽覆盖版本晋升，可能引入 support=1 弱边噪声、候选爆炸和与 popular/category 的重复。
+
+**定位方式：**
+复核既有 `outputs/recall/pool500_itemcf_new_dataset/method_datasets_smoke/itemcf_weak/method_dataset_manifest.json`，确认 `weak_coverage` method dataset 已有 `row_count=4445902`、`user_count=120000`、`item_count=185326` 且 `forbidden_scope_audit.status=PASS`。随后用 `.venv` 执行 evaluation-only 流式模拟，从 method dataset rows 构造临时候选，只用 valid/test label 做后验 Recall@K，不参与构建。
+
+**解决方式：**
+生成诊断报告 `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/weak_coverage_eval_from_method_dataset_v1/evaluation_report.json`，并把结果写入 `RECENT2Y_FAILURE_DIAGNOSIS_AND_FIX_PLAN.md`、`METHOD.md`、`source_config.yaml` 和 `dataset_policy.yaml`；权限位继续保持 `candidate_generation_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+`weak_coverage` eval-only 诊断 `status=PASS`：`source_item_union_count=185326`、`candidate_user_rate=0.83305`、`in_universe_label_ratio=0.6837`、`raw_recall@500=0.01478`、`in_universe_recall@500=0.021617`，显著优于 strict 的 `candidate_user_rate=0.004268` 和 `Recall@500=0.0`。但 `candidate_count_stats.max=4569`，且 kept edges 中 support=1 占多数，因此仍需 BM25/IDF、shrinkage、per-seed/per-user cap、source overlap 和 route gate 后才能考虑候选源权限。
+
+**面试可讲点：**
+这段可以讲成“用对照 profile 证伪 strict 失败原因”：不是笼统说 ItemCF 不行，而是用 strict vs weak_coverage 的覆盖、候选数和 Recall 对比证明失败来自过滤口径；同时在指标变好时仍主动保留晋升门禁，体现推荐系统里覆盖、噪声和主路互补性的工程平衡。
+
+### 2026-06-03 - itemcf_strong relaxed supplemental 从 strict diagnostic 升级为候选源
+
+**任务：**
+把 `itemcf_strong` recent-2y relaxed supplemental 版本更新为 `READY_CANDIDATE` / `SUPPLEMENTAL_READY_CANDIDATE` 候选，而不是 strict diagnostic-only，并同步方法文档、配置、注册表和工程日志。
+
+**遇到的问题：**
+strict 版本边数只有 22，虽然合规但候选贡献几乎为 0，无法说明 strong ItemCF 在 recent-2y 下的真实覆盖能力。新的 relaxed 版本恢复了覆盖，但如果叙事不收口，容易把 train-only 构建、eval-only 验证和主路晋升混写在一起。
+
+**定位方式：**
+核对 `outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json`，确认 formal `row_count=514216`；核对 `outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json`，确认 `row_count=514216` 与 8 个 shard；核对 `outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/single_source_eval_10000.json`，确认 `seed_hit=6141/10000`、`coverage=6128/10000`、`candidate=188494`、`Recall@500=0.000151`、`weak baseline Recall@500=0`、`candidate_hot_share=0`、`strong_unique_share_vs_weak=0.999867`；核对 `audit_evidence.json` 为 `PASS`。
+
+**解决方式：**
+把 `dic/recall_methods/itemcf_strong/METHOD.md` 改写为 relaxed supplemental 口径，明确它是 train-only / eval-only 边界下的 `READY_CANDIDATE`；同步更新 `configs/recall/full_data_pool500/itemcf_strong/source_config.yaml`、`dataset_policy.yaml` 与 `configs/recall/pool500_method_registry.json`，把 `itemcf_strong` 从 strict diagnostic 迁到 supplemental-ready 候选源，并保留 `candidate_generation_allowed=true`（仅 route-gate candidate source 范围）、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`。
+
+**验证结果：**
+方法文档、source 配置、dataset policy 和 registry 已更新；注册表中 `itemcf_strong` 现为 `READY_CANDIDATE`，`promotion_recommendation=KEEP_AS_READY_CANDIDATE_FOR_ROUTE_GATE`。证据路径已落到 formal dataset manifest、source index manifest、audit evidence 与 single source eval 报告，且 all evidence 都在 recent-2y train-only / eval-only 边界内。
+
+**面试可讲点：**
+这轮可以讲成“把强召回从 strict 诊断修正为可用补充源，但仍不越过主路晋升门禁”：先用 formal/source/eval 三类证据证明覆盖恢复，再把训练、评估和路由边界写进配置，避免把候选恢复误写成主路 ready。
+
+### 2026-06-03 - category all-eligible 改为索引型 route-formal artifact
+
+**任务：**
+把 pool500 recent-2y `category` 从 50k 物化切片补齐为全量 eligible route-formal artifact，同时避免默认生成全量 `candidates.jsonl`。
+
+**遇到的问题：**
+最初把 50k materialized candidates 当作 formal 证据，容易混淆“正式数据索引”和“用户-商品候选明细”；如果对 1,558,964 个 eligible 用户直接物化全量候选，会造成不必要的大文件和资源压力，也不符合召回路按需展开的设计。
+
+**定位方式：**
+核对 `data/processed/amazon_2023_recall_recent_2y_1m_3m/`、train-only governance manifest 和 `recall_views/category_top_items.jsonl` / `category_recall_items.jsonl`，确认 category 可以由 train-visible 轻量索引构建；远程构建后拉回 `outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/source_index_manifest.json`、`coverage_audit.json`、`resource_audit.json`、`no_holdout_audit.json` 与 `remote_provenance.json` 做本地复核。
+
+**解决方式：**
+在 `rs_lab/experiments/recall/pool500/methods/category/builder.py` 中增加 `candidate_materialization=full|none` 分支：`formal_50k` 保留物化候选用于 eval-only Recall，`all_eligible` 强制 `candidate_materialization="none"`，只输出 `eligible_users.jsonl`、`user_category_profile.jsonl`、`category_top_items_index.jsonl`。重任务放到 `server:/home/luo/RS_agent_remote` 执行，并用轻量 `recall_views/category_recall_items`、seed item category 子集、tuple/intern 存储降低内存。
+
+**验证结果：**
+远端 `category_recent2y_all_eligible_index_v1` 构建通过：`status=PASS`、`readiness=READY`、`target_user_count=1,558,964`、`user_coverage_count=1,558,964`、`user_coverage_ratio=1.0`、`profile_row_count=1,558,964`、`candidate_row_count=0`、`runtime_seconds=213.18248`、`no_holdout_audit.status=PASS`。本地使用 `.venv` 通过 `py_compile`、config/policy/manifest/provenance/registry consistency assertions，以及 `pytest tests/test_pool500_lightweight_source_governance.py -q`（2 passed）。
+
+**面试可讲点：**
+这轮可以讲成“把召回源从大规模物化文件改造成可治理的索引型 artifact”：全量 eligible 覆盖不等于全量候选落盘，通过 train-only profile + 类目 top-items index 支持按需展开，既控制资源，又保留 lineage、audit、registry 和 route-gate 边界。
+
+### 2026-06-03 - two_tower recent-2y full formal 远程训练与诊断收口
+
+**任务：**
+在 20k preflight 之后，按 full recent-2y formal 口径使用远程服务器训练 `two_tower`，拉回 artifact 并完成 source/eval/overlap/route gate 复核。
+
+**遇到的问题：**
+preflight 指标偏低可能被训练规模限制误导；但 full formal 是重资源任务，且远端 `/home` 磁盘使用率高，需要限流、单卡、保守 epoch，并防止 valid/test 进入训练或候选生成。
+
+**定位方式：**
+确认远端 `server:/home/luo/RS_agent_remote` 可用且有 3 张 RTX 4090；同步当前 two_tower 脚本和 formal manifest，修正远端 item vocab manifest 路径。训练进度日志显示 `training_rows_complete` 扫描 `687147` users、保留 `667734` training rows，并在 `cuda:0` 上执行 mixed precision。
+
+**解决方式：**
+以 `epochs=1`、`batch_size=8192`、`gradient_accumulation_steps=2`、`mixed_precision=true` 启动 full formal v1；训练完成后构建 source index，生成 500 eval users candidates，拉回训练产物和必要 embedding/index artifact，本地复核 source manifest guard、direct eval、overlap 和 route gate。
+
+**验证结果：**
+full epoch1 训练 `status=PASS`：`training_input_users=687147`、`users_with_training_rows=667734`、`training_examples=2069609`、`item_count=499566`、`loss_history=[1.723716]`、`training_seconds=686.865`。本地 direct eval 复核 `Recall@500=0.044798`、`hit_rate@500=0.054`，高于 20k preflight 的 `0.021676/0.028`，但 `queryless_user_rate=0.19` 未改善；overlap 与 route gate 均产出，route gate decision 仍为 `DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“用全量训练证伪/校准 preflight 上限”：不是只看小样本结论，而是在 train-only 治理下把 687k 用户 full formal 跑完，并用本地复核证明 full training 确实提升 Recall，但仍因 query 覆盖、互补性和 route gate 不足主动拒绝 READY，体现推荐系统离线指标与主路准入的分层治理。
+
+### 2026-06-04 - two_tower epoch5 与远端 /tmp 软链接资源治理
+
+**任务：**
+在 epoch1 full formal 基础上追加 `two_tower` 5 epoch 对照实验，并按用户建议把远端大目录迁移到 `/tmp` 大容量分区后用软链接挂回 canonical outputs 路径，避免 `/home` 空间不足影响后续 source/eval。
+
+**遇到的问题：**
+远端 `/home` 已接近 100% 使用率，直接继续写入 full training/candidate artifact 容易失败；同时 epoch1 虽有提升，但用户合理质疑 `epochs=1` 可能偏少，需要用 5 epoch 证实继续训练是否还有收益。
+
+**定位方式：**
+远端检查确认 `/home` 仅剩约 1.7G，而 `/tmp` 仍有约 33G；训练完成后读取 `formal_full_687k_training_run_epoch5/train_metrics.json`，并本地复核 source manifest、direct eval、overlap 和 route gate。
+
+**解决方式：**
+使用 `epochs=5`、`batch_size=8192`、`gradient_accumulation_steps=2`、`mixed_precision=true` 在远程 4090 单卡训练；训练/candidate 大目录迁移到 `server:/tmp/rs_agent_spill/two_tower/`，再用软链接回 `outputs/recall/pool500_method_sources/recent_2y/two_tower/...`；拉回本地后 patch manifest 路径并复核。
+
+**验证结果：**
+epoch5 训练 `loss_history=[1.723716, 1.6206, 1.553363, 1.50874, 1.477235]`、`training_seconds=907.373`、`optimizer_steps=635`。本地 direct eval 复核 `Recall@500=0.057803`、`hit_rate@500=0.076`、`raw_two_tower_unique_positive_hits=40`，相对 epoch1 的 `0.044798/0.054/31` 继续提升；但 `queryless_user_rate=0.19` 不变，route gate 仍为 `DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“用受控对照验证训练轮数，而不是拍脑袋加资源”：5 epoch 证明模型还在学习并提升 Recall，同时通过 `/tmp` 软链接做资源治理，最后仍基于 query coverage 和 route gate 拒绝过早晋升，体现实验收益、资源约束和上线门禁三者平衡。
+
+### 2026-06-04 - itemcf_strong 购买/强正反馈目标远程复测
+
+**任务：**
+按“strong 方法应以购买/强正反馈目标评估”的口径，在远程服务器复测 `itemcf_strong` relaxed supplemental source，而不是只看通用 binary label 的 10k sanity eval。
+
+**遇到的问题：**
+远程仓库已有 recent-2y train/valid/test 数据，但缺少当前 relaxed `itemcf_strong` source artifact；同时现有通用评估脚本先按 `label_binary` 判正，不能区分 purchase/strong-positive 目标。
+
+**定位方式：**
+确认 valid/test interaction schema 包含 `verified_purchase`、`label_binary`、`label_strong`、`label_strength`；本地用 `.venv` 对新脚本做 `py_compile` 和 100-user smoke。随后通过 `tar | ssh` 将评估脚本与 514216-edge source artifact 同步到 `server:/home/luo/RS_agent_remote`，用远程 `.venv/bin/python` 全量运行，并拉回 `outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/purchase_label_eval_remote_full.json`。
+
+**解决方式：**
+新增 `scripts/experiments/recall/pool500/evaluate_itemcf_strong_purchase_labels.py`，候选生成只读取 train `user_sequences.train.jsonl` 和 train-only source edges；valid/test label 只用于 evaluation-only，并分别报告 `purchase_positive`、`strong_positive`、`verified_purchase_any_rating`、`all_positive` 与 in-universe recall。
+
+**验证结果：**
+远程 full eval 通过：union target train users `53653`，source `edge_count=514216`。`purchase_positive` / `strong_positive` 目标下 `target_user_count=40043`、`seed_hit_rate=0.666409`、`user_coverage_rate=0.665410`、`candidate_row_count=840614`、`Recall@500=0.000211`、`HitRate@500=0.000275`、`in_universe_Recall@500=0.012514`、`candidate_hot_share=0.0`。同时 `label_in_dst_universe_ratio=0.016898`，说明 raw recall 低的关键瓶颈是当前 non-hot dst universe 对购买/强正目标覆盖很窄。
+
+**面试可讲点：**
+这段可以讲成“按业务目标重做离线验证”：用户指出 strong 方法应看购买目标后，不是直接沿用宽泛 binary 指标，而是拆出 purchase/strong-positive label 并保持 eval-only 边界。结论也不是简单放弃方法，而是证明它有覆盖和长尾补充价值，但单源购买召回仍低，必须放到 route-level 看边际增益和与其他源的互补。
+
+### 2026-06-04 - two_tower query builder 口径收敛
+
+**任务：**
+根据 YouTubeDNN 论文复盘和 epoch5 诊断结果，先修 `two_tower` 的 query coverage / serving-query consistency，而不是继续盲目加 epoch。
+
+**遇到的问题：**
+formal epoch5 虽将 `Recall@500` 提升到 `0.057803`、`hit_rate@500` 提升到 `0.076`，但 `queryless_user_count=95/500`、`underfilled_user_rate=0.19` 仍未改善；同时 direct eval、method source builder 和 candidate merge 三处 query 构造存在 artifact user embedding、seed fallback、projection 和 reason 统计不一致。
+
+**定位方式：**
+只读核对 `run_pool500_two_tower_direct_eval.py`、`pool500/methods/two_tower/builder.py`、`candidate_merge.py` 与 `vector_index.average_vectors()`，确认 seed 顺序、projection 与 queryless 统计口径分叉；用 targeted pytest 覆盖 direct eval、method source 和 source manifest guard。
+
+**解决方式：**
+新增 `rs_core/recsys/two_tower_query.py`，统一 artifact-user-first、train-only seed fallback、seed 顺序、projection 和 diagnostics；三条链路改为复用该 builder，并在 direct eval manifest 中输出 `query_source_counts`、`queryless_reason_counts`、seed count stats。
+
+**验证结果：**
+本地 `.venv` 通过 `pytest tests/test_pool500_two_tower_direct_eval.py tests/test_pool500_two_tower_method_source.py tests/test_two_tower_source_manifest_guard.py -q`（11 passed），并通过修改模块的 `py_compile`。当前只是代码口径收敛，尚未跑 queryv2 formal baseline，因此 `two_tower` 仍保持 `DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“先修服务口径，再谈模型优化”：离线 loss 和 epoch 数不是唯一瓶颈，召回系统还需要保证训练产物、query 构造、候选生成和评估链路一致；通过统一 query builder 和 diagnostics，把 19% queryless 从黑盒失败变成可解释、可验证的工程问题。
+
+### 2026-06-04 - itemcf_strong AugCF-lite 生成式补边远程实验
+
+**任务：**
+参考 KDD'19 AugCF 的“生成式交互增强”思路，为 `itemcf_strong` 新增独立 AugCF-lite 实验源，并在远程服务器验证它是否能改善 purchase/strong-positive 目标召回。
+
+**遇到的问题：**
+完整 AugCF 是 Conditional GAN，不是显式 item-item sim 公式，直接复刻成本高且审计复杂；同时 relaxed baseline 的 purchase `Recall@500=0.000211` 主要受 non-hot dst universe 过窄影响，如果简单放开热门 item，可能把 popular 覆盖误判成 ItemCF 相似度提升。
+
+**定位方式：**
+新增 `rs_lab/experiments/recall/pool500/methods/itemcf_strong/augcf_lite_builder.py` 和 CLI wrapper，只读取 train-only sequences / item profile / frequency / canonical item metadata，输出兼容 source adapter 的 observed/pseudo edges；本地 `.venv/Scripts/python.exe` 通过 py_compile、100-user smoke、source conversion、purchase eval 和 manifest assertions。远程在 `server:/home/luo/RS_agent_remote` 运行，重 artifact 写到 `/tmp/rs_agent_spill/...`，只拉回 manifest/audit/eval JSON。
+
+**解决方式：**
+实现 train-only `augcf_lite_score`：融合强正共现、类目/主类目/store、train-only 强正/正反馈频次、quality/hotness 等特征；同时修正 ItemCF source adapter，使 `train_only=false` fail-closed，并从 manifest lineage 推导 `RECENT_2Y_DERIVED_INDEX`。远程分别跑 hot-dst 和 no-hot-dst 50k src-item formal 对照。
+
+**验证结果：**
+AugCF-lite hot-dst 版本 `row_count=6174682`、`observed=5010969`、`pseudo=1163713`，purchase `Recall@500=0.025721`、`HitRate@500=0.031416`、`in_universe_Recall@500=0.031212`、`label_in_dst_universe_ratio=0.824084`，但 `candidate_hot_share=0.960442`。no-hot-dst 对照 `row_count=2308758`、purchase `Recall@500=0.000192`、`HitRate@500=0.000250`、`label_in_dst_universe_ratio=0.019378`、`candidate_hot_share=0.0`，未超过 relaxed baseline 的 `0.000211/0.000275`。
+
+**面试可讲点：**
+这段可以讲成“把论文思想转成可审计工程实验，而不是盲目套 GAN”：先用 AugCF-lite 验证生成式补边确实能提升 raw recall，再用 no-hot 消融证明主要收益来自 dst universe / 热门覆盖，最终保留 experimental 结论和 route gate，而不是把热门商品命中冒充方法主路成功。
+
+### 2026-06-04 - two_tower queryv2 formal diagnostic 跑通
+
+**任务：**
+在 epoch5 full formal source artifact 基础上，运行统一 query builder v2 的 direct eval、target-slice candidate generation、overlap 和 route gate，验证 query coverage 修复是否真实提升 `two_tower`。
+
+**遇到的问题：**
+epoch5 baseline 虽比 epoch1 提升，但 `queryless_user_count=95/500`、`underfilled_user_rate=0.19`，说明模型训练之外还有服务 query 构造覆盖问题；同时不能用 valid/test label 或 oracle 补 query，也不能把 500-user target-slice 诊断误写成 READY。
+
+**定位方式：**
+复用 full epoch5 train-only source index，使用新统一 query builder 只从 artifact user embedding、train-only seed sequence 与 item vectors 构造 query；direct eval 中 valid/test label 仅用于 scoring。对比 `formal_full_687k_eval_epoch5_local_verify` baseline 与 `formal_full_687k_eval_queryv2_local_verify` queryv2 manifest。
+
+**解决方式：**
+运行 queryv2 direct eval、`formal_full_687k_candidates_queryv2` target-slice source builder、overlap diagnostics 和 route gate；同步更新 `METHOD.md`、`source_config.yaml`、`dataset_policy.yaml` 与 registry evidence，所有 promotion / pool1000 / ranking replacement 权限继续保持 false。
+
+**验证结果：**
+queryv2 direct eval `query_user_count=484`、`queryless_user_count=16`、`candidate_rows=242000`、`Recall@500=0.070809`、`HitRate@500=0.092`、unique positive hits `49`；相对 epoch5 baseline 的 `405/95/202500/0.057803/0.076/40` 有明显改善。overlap 报告 `status=PASS`，但 popular item-union overlap vs primary 为 `1.0`，category comparable user 只有 `1`；route gate `status=PASS`、decision 仍为 `DIAGNOSTIC_ONLY`。
+
+**面试可讲点：**
+这段可以讲成“把推荐召回低效拆成模型效果和服务 query 覆盖两个问题”：不靠 eval label 补洞，而是用 train-only queryv2 把 queryless 从 19% 降到 3.2%，同时因为缺 route-level marginal lift 和 full candidate quality audit，主动拒绝 READY，体现离线收益与上线门禁的分层治理。
+
+### 2026-06-04 - RS Agent 六个核心业务工具收敛
+
+**任务：**
+将 RS Agent 的 agent-facing 工具从底层召回/排序实现名收敛为 6 个高层业务工具：`get_user_context`、`retrieve_candidates`、`rank_candidates`、`get_item_evidence`、`record_user_feedback`、`build_recommendation_slate`。
+
+**遇到的问题：**
+如果直接模仿 Claude Code 的 ToolSearch，把 ItemCF、Semantic、DeepFM、catalog search 等底层能力暴露给对话 Agent，会让前台语义和工程 artifact 耦合，也增加 public display 泄露工具名、score trace、source、diagnostics 的风险。
+
+**定位方式：**
+对照 `rs_core/rsagent/tools.py` 的 manifest、`rs_core/rsagent/dialogue.py` 的 tool plan、`rs_core/workflow/hybrid_environment.py` 的 dispatch，以及 `rs_core/display/builder.py` 的 public payload validator，确认需要保留底层函数作为内部 helper，但把正式 Agent 工具边界提升到推荐任务语义层。
+
+**解决方式：**
+新增 6 组工具输入/输出 dataclass，`AGENT_TOOL_MANIFEST` 与 capability manifest 只暴露 6 个高层工具；对话规划切换到 context → retrieve → rank → evidence → slate；环境 dispatch 内部继续复用现有召回、排序、RAG 和 feedback 逻辑，但输出压缩为 item ids、counts、evidence/display-safe 摘要；`build_recommendation_slate` 复用 display builder 并二次校验 public payload。
+
+**验证结果：**
+使用项目默认 `.venv` 执行：`pytest tests/test_agent_tools.py tests/test_agent_dialogue.py tests/test_agent_runtime.py -q` 结果 `46 passed`；`pytest tests/test_display_contract.py tests/test_serving_smoke.py -q` 初次发现旧 serving 测试仍断言 `understand_user_need` / `match_specific_need_in_pool`，更新为新 5 个默认执行工具后结果 `53 passed`；补跑 `pytest tests/test_rag_core.py tests/test_agent_feedback.py tests/test_feedback_rerank.py -q` 结果 `34 passed`。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 的工具边界产品化”：不是把所有算法模块暴露给 LLM，而是用少量稳定业务工具隐藏召回、排序、RAG、反馈和展示实现，既降低前台复杂度，也通过 display allowlist 和 forbidden terms 把内部诊断与 public payload 隔离。
+
+### 2026-06-04 - two_tower 对齐 YouTubeDNN 的训练侧诊断优化
+
+**任务：**
+在 queryv2 已将 `two_tower` direct eval 提升到 `Recall@500=0.070809` 后，继续对照 YouTubeDNN 论文补齐训练侧机制，形成下一轮 diagnostic challenger，但不做 READY 或主路晋升。
+
+**遇到的问题：**
+上一轮 formal ablation 显示 explicit negative v2 对 direct-only 指标是负贡献，而 recency-only 有轻微正向；同时当前训练缺少论文中的 freshness/example-age 思路和 sampled softmax 采样校正。如果直接把 explicit negative 与 logQ 混开，会引入采样分布不一致风险。
+
+**定位方式：**
+对比论文 candidate generation / sampled softmax / example age 思路与本地 `rs_core/recsys/two_tower.py`、`rs_core/workflow/two_tower_training.py` 的训练实现；随后用独立 `code-reviewer` 复核，发现 logQ 初版未按实际负采样数校正、explicit-negative/logQ mixture 不安全、padded candidate 未 mask、fallback 会静默忽略 PyTorch-only weighting、compact timestamp 可能错位。
+
+**解决方式：**
+新增默认关闭的 `example_age_weighting=decay` 与 `sampled_softmax_correction=logq`；example-age 只用 train-only timestamp 计算 loss weight，logQ 按有效 negative sample count 计算；显式禁止 explicit-negative mixture 与 logQ 同时启用；candidate padding 在 loss 前 mask；无 PyTorch 时对 example-age/logQ fail-closed；compact inputs 按 item/timestamp pair 同步过滤，避免时间戳错配。
+
+**验证结果：**
+使用项目默认 `.venv` 通过 `py_compile` 与本地 guard：`tests/test_two_tower_training.py`、`tests/test_pool500_two_tower_direct_eval.py`、`tests/test_pool500_two_tower_method_source.py`、`tests/test_two_tower_source_manifest_guard.py` 共 `49 passed in 3.77s`。二次独立 code review 结论为无阻塞问题，当前改动可用于 diagnostic PyTorch remote smoke/formal，但仍不能作为 READY promotion 证据。
+
+**面试可讲点：**
+这段可以讲成“把论文机制转成可审计、可回滚的训练优化”：不是盲目堆 epoch 或照搬论文，而是先用 queryv2 修服务口径，再逐项补 freshness 与 sampled-softmax 校正，并通过 reviewer 发现目标函数细节问题后 fail-closed，体现推荐模型优化中的训练目标、采样分布和工程治理一致性。
+
+### 2026-06-05 - Recursive CF/RPA-like smoke-formal 数据集治理
+
+**任务：**
+为 Zhang & Pu 2007 Recursive Prediction Algorithm / Recursive CF 方向先整理 recent-2y train-only 的 smoke/formal 数据集，并按用户要求把本地构建内存限制在 5G 以内。
+
+**遇到的问题：**
+前一版 `Recursive CF-lite` 更像隐式二阶 UserCF 扩散，不是论文中“邻居缺失 target-item rating 时递归预测该 rating”的完整 RPA；同时 fixed eval users 多数 train 历史极短，直接在短序列 sidecar 上调参会混淆算法前提与数据口径问题。
+
+**定位方式：**
+复核 ACM DOI `10.1145/1297231.1297241` 的论文元数据与 DBLP/CiteSeerX 摘要信息，并对照 `user_sequences.train.jsonl`、train-only governance、旧 UserCF method dataset 的短序列/eligible filtering 逻辑；用 smoke/formal manifest 和 resource/no-oracle audit 验证只读取 recent-2y train-only 输入。
+
+**解决方式：**
+新增 `rs_lab/experiments/recall/build_rpa_like_recent2y_method_dataset.py` 和 CLI wrapper，产出 `rpa_like_eligible_sequence_v1` rows；smoke 采用 sparse/medium-like 均衡确定性样本，formal 使用全量 `1 <= eligible_seed_item_count <= 4` 的 train-only short-sequence users；manifest 明确 dataset-only、diagnostic-only、不生成 candidate/source artifact；资源 guard 默认 `max_rss_mb=4096`，代码硬拒绝超过 `5120MB`。
+
+**验证结果：**
+新增测试 `tests/test_pool500_rpa_like_recent2y_method_dataset.py` 通过 `5 passed`，并补跑 `tests/test_pool500_itemcf_weak_rpa_lite_diagnostic_replay.py` 与 `tests/test_full_train_usercf_sidecar.py` 共 `22 passed`。本地 smoke 产物 `smoke_local_20260605a` 为 `5000` 行，bucket 为 `2500/2500`，峰值 RSS `1436MB`；formal 产物 `formal_local_20260605a` 为 `5,147,753` 行，bucket 为 `3,816,414` sparse 与 `1,331,339` medium-like，峰值 RSS `1538MB`，no-oracle audit 为 PASS。
+
+**面试可讲点：**
+这段可以讲成“把论文算法前提先工程化成数据治理口径”：在不使用 valid/test/oracle label 的前提下，把 RPA 所需的短序列用户、seed item、共享邻居信号和资源审计整理成可复现 smoke/formal 数据集，并用 5G 内存门禁证明本地可运行，为后续真正 RPA-like source builder 留出清晰边界。
+
+### 2026-06-05 - RPA-like UserCF-compatible 召回实验诊断
+
+**任务：**
+基于已生成的 RPA-like formal method dataset，构建可进入 pool500 route 的 usercf-compatible diagnostic source，并做 1000-user / 10k offline 对照实验。
+
+**遇到的问题：**
+RPA-like dataset 只有 `seed_item_sequence`，旧 `build_full_train_usercf_sidecar.py` 只接受 `eligible_item_sequence` 和旧 `pool500_method_dataset_v1`；同时默认 route 的 `swing_recall` manifest 处于 `TARGET_SLICE_DIAGNOSTIC`，会被 runtime guard 拒绝，不能为了跑通实验绕过守卫。
+
+**定位方式：**
+检查 `build_full_train_usercf_sidecar.py`、`candidate_merge.load_usercf_recall_sidecar` guard、RPA-like formal manifest 与 1000-user offline eval 输出；用 old-usercf / no-usercf / RPA-like-usercf 三组统一禁用 swing 的口径进行对照，并由独立 verifier 复核 manifest、metrics 与 source audit。
+
+**解决方式：**
+扩展 sidecar builder 支持 `rpa_like_recent2y_method_dataset_v1`、`rpa_like_eligible_sequence_v1` 和 `seed_item_sequence`；新增 `--target-users` 作为 materialization targets only；保持 `DIAGNOSTIC_ONLY`、train-only、promotion/ranking replacement 全部 false。先构建 bounded diagnostic source，再在相同 1000-user eval 口径下运行三组 ablation。
+
+**验证结果：**
+代码验证 `py_compile` 与 `tests/test_full_train_usercf_sidecar.py tests/test_pool500_rpa_like_recent2y_method_dataset.py -q` 通过 `26 passed`。1000-user source 侧 `target_user_count=947`、`candidate_user_count=877`、`candidate_total_count=43318`、峰值 RSS `344MB`；offline eval 中 old-usercf 与 no-usercf 指标完全一致，RPA-like arm 贡献 `usercf_recall=8210`、ratio `0.01642`，但 Recall/HitRate 指标仍与 no-usercf 完全一致，source-hit 分析显示 `usercf_recall` 正样本命中为 `0`。在用户授权 5GB 后扩展到完整 10k eval，10k source 侧 `target_user_count=9190`、`candidate_user_count=8566`、`candidate_total_count=440250`、峰值 RSS `1083MB`；no-usercf 为 `Recall@500=0.023994`、`HitRate@500=0.0406`，RPA-like arm 为 `Recall@500=0.023877`、`HitRate@500=0.0405`，`usercf_recall=79916`、ratio `0.015983`，但 `usercf_recall` 正样本命中仍为 `0`，pool500 总体新增正样本 `3`、丢失正样本 `4`。
+
+**面试可讲点：**
+这段可以讲成“把新增召回源先作为边际贡献诊断，而不是只看能否生成候选”：RPA-like source 在无泄漏和低内存约束下确实进入 route 并替换了部分 fallback/co-visit 候选，但没有带来正样本命中，说明下一步应优化 RPA-like scoring/递归预测质量，而不是直接晋升主路。
+
+## 2026-06-06｜按 Zhang & Pu 2007 严格复现 Recursive CF 评分预测实验
+
+- **任务**：在前一版 RPA-like 候选扩散效果很弱后，重新按 Zhang & Pu 2007 Recursive Prediction Algorithm 的论文逻辑实现本地适配实验。
+- **遇到的问题**：原先 RPA-like source 本质是 implicit UserCF candidate diffusion，不是论文中的 rating prediction；完整 route eval 也过重，难以作为方法本身诊断。
+- **定位方式**：重新核对论文可访问文本，确认核心应为 Pearson user similarity、BS/BS+/SS/CS/CS+ 邻居策略、递归补全邻居对 target item 的缺失评分，并用 MAE/RMSE 评估 held-out ratings。
+- **解决方式**：新增 SQLite-backed smoke 实验 `rs_lab/experiments/recall/run_rpa_strict_zhang_pu_2007_sqlite_smoke.py`，直接利用 `recall_clean.sqlite` 的索引构造局部 train-only 评分矩阵；valid/test 只作为 evaluation-only held-out target，不参与索引扩展。
+- **验证结果**：`py_compile` 通过；warm/hot 1000 条 held-out 评分实验中，`zeta=2` 的 CS 策略 MAE=0.66330988，相比 BS 的 MAE=0.67613943 降低 0.01282955，说明严格论文版递归评分预测在局部评分预测任务上出现正向信号。
+- **面试可讲点**：不是机械套用论文到候选召回，而是先识别论文任务定义与当前 implicit recall 的差异，再把算法还原为评分预测实验，用 train-only 索引和 evaluation-only label 守住无泄漏边界，最后用小规模可控实验判断是否值得继续扩展。
+
+## 2026-06-06｜严格 Recursive CF 扩样本与参数消融
+
+- **任务**：在严格 Zhang & Pu 2007 RPA SQLite smoke 出现正向信号后，继续扩大 warm/hot 用户样本并做参数消融。
+- **定位方式**：使用 `recall_clean.sqlite` 的 `ranked_interactions` 索引，仅用 train row 构造局部评分矩阵，valid/test 正样本 rating 仅作为 evaluation-only held-out targets。
+- **实验结果**：2000 个 warm/hot 用户、4734 条 held-out rating 上，`k=10,k'=10,zeta=2,lambda=0.5,phi=2` 的 CS+ MAE=0.64567520，相比 BS MAE=0.64703180 改善 0.00135660；lambda=0.25/0.5/0.75 差异很小，CS+ 均约 0.64567。`k=20,k'=20,phi=2` 时 BS+ 最好，MAE=0.64296877；继续放大到 `k=50,k'=50` 后，`phi=2` 的 CS+ MAE=0.64446953，优于同配置 BS 的 0.64670602，但 `phi=5/10` 时 BS+/CS+ 退回到 MAE=0.64635084。进一步按论文口径固定 `k'=10,zeta=2,lambda=0.5,phi=10` 扫 `K=3..90`，最佳均为 BS+，MAE=0.64635084，说明本地数据上论文推荐的高 overlap threshold 会让递归组合收益消失，当前更有效的是较低 overlap 的 `phi=2`。随后构建 train-window 内 80/20 deterministic split 的 paper-adapted formal 数据集（139653 users、3650008 train ratings、914786 eval pairs），在 5000 eval pairs 上 strict RPA 提升更明显：`k=50,k'=50,phi=2` 的 CS MAE=0.88694818，相比 BS MAE=0.95935793 降低 0.07240975。
+- **工程取舍**：严格论文算法在评分预测任务上有可复现正向信号，但收益随样本和参数变化；当前更适合保留为 rating-prediction diagnostic，不应直接等同于 pool500 top-N 召回 source。进一步把 RPA score 用于 1000-user pool500 候选重排时，纯 RPA rerank 明显伤害 Recall@20/50/100，局部 bucket20 rerank 仅让 Recall@50 从 0.017255 到 0.018255，小幅改善但不足以晋升。
+- **面试可讲点**：通过扩样本和 zeta/lambda/k/phi 消融，区分“论文评分预测任务有效”和“候选召回任务不一定有效”，体现从算法复现到业务适配的边界意识。
+
+### 2026-06-06 - Qwen QLoRA/SFT/GRPO 训练环境 scaffold
+
+**任务：**
+补齐 Qwen3.5-4B + QLoRA + SFT + GRPO 的训练环境 scaffold，在不做真实训练、不生成正式训练数据、不默认加载大模型的前提下，先建立配置、数据 contract、reward adapter、runner dry-run 和轻量测试入口。
+
+**遇到的问题：**
+训练链路需要为后续 SFT/GRPO 留出 TRL 初始化能力，但当前阶段不能误导为训练已完成，也不能让 smoke 因 GPU、模型下载或 Windows bitsandbytes 问题失败。
+
+**定位方式：**
+对照 `rs_core/rsagent/rollout.py` 的 `training_samples` contract、`rs_core/rsagent/reward.py` 的 reward 组件，以及已存在的 `configs/training/qwen_*.yaml` 和 `rs_core.training.config`，确认 scaffold 只应校验配置、依赖 import、synthetic 样本和 reward adapter。
+
+**解决方式：**
+新增 `rs_core/training/data_contracts.py`、`qwen_loader.py`、`sft_runner.py`、`grpo_runner.py`、`reward_adapter.py`，并新增三个 dry-run CLI；runner 默认不加载 Qwen，只有 `--init-only` 或 `--max-steps > 0` 才进入重路径。补充训练 guide 和 README 路由，明确当前是 scaffold，不是正式训练完成。
+
+**验证结果：**
+新增轻量单测覆盖 training config、SFT/GRPO synthetic contract 与 reward adapter；dry-run 脚本用于验证配置、依赖 import 和 reward 输出，不依赖 GPU、不下载模型、不加载 Qwen。当前 `.venv` 仍缺少 `peft` 和 `trl`，安装尝试被权限策略拒绝；dry-run 会报告缺失依赖但不进入重路径。
+
+**面试可讲点：**
+这段可以讲成“先把 LLM 推荐 Agent 训练链路工程化成可验证边界”：用 contract 和 dry-run 把数据、reward、runner 与依赖检查分层固定下来，避免在没有真实训练数据和资源门禁时把 scaffold 夸大成训练成果。
+
+### 2026-06-06 - pool500 非 ItemCF/双塔召回方法修复收口
+
+**任务：**
+盘点并修复除 ItemCF 与 two_tower 外的 pool500 recent-2y 召回方法半成品链路，重点补齐 runner contract、评估边际指标、category 按需展开，以及 semantic_title_category_expansion / co_visit_fallback_repair 的分片与 checkpoint 契约。
+
+**遇到的问题：**
+各方法成熟度不一致：`popular/category` 接近可用但缺 route-level 证据，`semantic` 只有 10k diagnostic，`swing/usercf` 有产物但缺边际贡献或覆盖不足，`semantic_title_category_expansion/co_visit_fallback_repair` formal 尚未完成。统一 runner 还存在 method_config/shard/checkpoint 参数在 dry-run contract 中不可审计的问题。
+
+**定位方式：**
+只读检查 `configs/recall/pool500_method_registry.json`、各方法 `source_config.yaml` / `METHOD.md`、`run_pool500_method_source.py`、`evaluate_method_source_artifact.py`、category/semantic_title/co_visit builder 和现有测试，确认修复应优先补“无泄漏、可审计、可远端执行”的工程契约，而不是直接本地重跑 50k/full formal。
+
+**解决方式：**
+扩展 runner dry-run contract，显式输出 `method_config`、`resource_guard`、`dataset_manifests`、`current_artifacts` 与 route/governance 字段；在 evaluator 中增加可选 baseline source manifest，输出 baseline/source/union/marginal 指标且保持 valid/test label 只在 evaluation-only 阶段使用；为 `category` 增加 all-eligible index 的 `expand_category_candidates_for_users` 按需展开 helper；为 semantic_title/co_visit 补齐 checkpoint、offset、limit、shard contract，保持 candidate generation / promotion / ranking replacement / pool1000 权限关闭。
+
+**验证结果：**
+使用项目 `.venv` 运行聚焦测试：`python -m pytest tests/test_pool500_method_source_runner.py tests/test_pool500_method_source_eval.py tests/test_pool500_method_source_overlap.py tests/test_pool500_category_on_demand.py tests/test_pool500_semantic_title_category_source.py tests/test_pool500_co_visit_fallback_repair_source.py -q`，结果 `22 passed`；对修改的 runner/evaluator/overlap/category/semantic_title/co_visit 文件执行 `py_compile` 通过；semantic_title formal dry-run 和 co_visit `formal_shard50k` dry-run 均能输出 shard/limit/checkpoint contract，且未本地跑重型 50k formal。
+
+**面试可讲点：**
+这段可以讲成“把一批半成品召回源先收敛为可治理工程链路”：不是为了指标直接重跑或晋升，而是先统一入口、评估口径、无泄漏边界和分片执行契约；用 marginal metrics 与 on-demand index 让后续 route gate 能判断真实边际贡献，用 shard/checkpoint contract 为远端 formal 留出可恢复路径。
+
+### 2026-06-06 - itemcf_weak RPA paper-binary Top500 è¯Šæ–­
+
+**ä»»åŠ¡ï¼š**
+åœ¨ v3 paper-faithful depth1 top100 å�ªäº§ç”Ÿè½»å¾® rerank æ•ˆæžœå�Žï¼Œç»§ç»­å�šæ›´æŽ¥è¿‘ Zhang & Pu RPA å‰�æ��çš„ binary implicit Top500 è¯Šæ–­ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+v3 ä»�å¸¦æœ‰å€™é€‰æž„å»º IDF å��ç½®ï¼Œä¸”æ¯�ç”¨æˆ·å�ªä¿�ç•™ 100 ä¸ªå€™é€‰ï¼Œæ— æ³•åˆ¤æ–­è®ºæ–‡å¼� user-based binary rating åœ¨ Top500 é¢„è®¡ç®—ä¸‹çš„çœŸå®žè¦†ç›–èƒ½åŠ›ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+å¯¹æ¯” v2/v3 æŒ‡æ ‡å�‘çŽ° v3 `raw_recall@500=0.026407` æœªè¶…è¿‡ v2 confidence `0.026923`ï¼Œä¸” observed mass normalization å¯¹å�Œä¸€ç”¨æˆ·æ˜¯æŽ’åº�å¸¸æ•°ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+è¿œç¨‹è¿�è¡Œ `rpa_lite_v4_paper_binary_p500_remote_no_mem_limit_4jobs_v1`ï¼Œè®¾ç½® `candidate_idf_power=0.0`ã€�æ¯�ç”¨æˆ·å€™é€‰é¢„è®¡ç®— `500`ï¼Œä»�ä¿�æŒ� train-only æž„å»ºå’Œ valid/test post-hoc evaluation-onlyã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+20/20 shards PASSï¼Œå³°å€¼ RSS `12.5566GB`ï¼›best `rpa_v4_paper_binary_sum_similarity_p500` è¾¾åˆ° `raw_recall@500=0.038220`ã€�`hit_user_rate@500=0.046821`ã€�sparse/medium hit=`0.034529/0.078614`ï¼Œç›¸å¯¹ v2 best å¢žåŠ  `613` ä¸ª raw hits å’Œ `554` ä¸ª hit usersã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œæŠŠè®ºæ–‡å�‡è®¾æ‹†æˆ�å�¯æŽ§æ¶ˆèž�â€�ï¼šå…ˆåŽ»æŽ‰å€™é€‰æž„å»ºå��ç½®ï¼Œå†�æ‰©å¤§æ¯�ç”¨æˆ·é¢„è®¡ç®—ä¸Šé™�ï¼Œç”¨å�Œä¸€ train-only / post-hoc eval è¾¹ç•ŒéªŒè¯� RPA-like æ–¹æ³•æ˜¯å�¦çœŸçš„æ��å�‡è¦†ç›–ï¼Œè€Œä¸�æ˜¯æŠŠ rerank æˆ–çƒ­é—¨å��ç½®è¯¯åˆ¤æˆ�ç®—æ³•æ”¶ç›Šã€‚
+### 2026-06-06 - pool500 非 ItemCF/双塔召回方法二次审查修复
+
+**任务：**
+继续修复上一轮 code review 发现的非 ItemCF / 非 two_tower pool500 召回方法遗留问题，重点覆盖 semantic 运行 blocker、no-holdout fail-closed、popular recent-2y 入口、category index-only 评估，以及 semantic_title 候选质量。
+
+**遇到的问题：**
+上一轮修复把工程契约打通后，审查发现仍有可导致误判或直接运行失败的问题：`semantic` builder 仍按二元组接收三返回值 helper；`semantic/co_visit` 在 no-holdout audit 为 BLOCKED 时仍可能发布可用 manifest；evaluator 只用有候选用户做分母会高估低覆盖方法；`popular` runner 仍可能走旧 lightweight promoted source；`semantic_title` 的 title token 只读标题、`per_seed` 未实际限制 fanout，且 max candidate 截断按 item_id 字典序而非索引桶顺序。
+
+**定位方式：**
+复核 `run_pool500_method_source.py`、`evaluate_method_source_artifact.py`、`semantic/builder.py`、`semantic_title_category_expansion/builder.py`、`co_visit_fallback_repair/builder.py` 与对应测试，按 failure scenario 增加回归：无候选 label 用户计入 0 分、category all_eligible index-only 按需展开、popular runner 调用 recent-2y builder、co_visit forbidden input fail-closed、semantic_title category-token fallback / per_seed / non-lexicographic truncation。
+
+**解决方式：**
+runner 写回 resolved tier 并保留 requested alias，`popular` 改调 `build_popular_recent2y()`；evaluator 改以 eval label users 为分母，缺候选用户按 0 分计，同时识别 category index-only manifest 并调用 `expand_category_candidates_for_users()`；semantic 修正 helper 三返回值 unpack，并在 forbidden input 时只写 `no_holdout_audit` 后 fail-closed；co_visit forbidden input 同样不发布 source manifest；semantic_title 恢复 title+category token，按 seed 应用 `per_seed`，并按 inverted-index bucket encounter order 截断候选集合。
+
+**验证结果：**
+使用项目 `.venv` 执行 targeted 回归：`python -m pytest tests/test_pool500_method_source_runner.py tests/test_pool500_method_source_eval.py tests/test_pool500_method_source_overlap.py tests/test_pool500_category_on_demand.py tests/test_pool500_semantic_title_category_source.py tests/test_pool500_co_visit_fallback_repair_source.py tests/test_pool500_semantic_newdata_config.py -q`，结果 `48 passed`；`py_compile` 覆盖 runner/evaluator/semantic/semantic_title/co_visit 修改文件通过；runner dry-run 验证 category `route_formal` 输出 all_eligible method_config、popular recent-2y contract、semantic recent2y smoke contract、co_visit `local_formal` shard/checkpoint contract，均未生成重型产物。
+
+**面试可讲点：**
+这段可以讲成“工程契约修复后继续做审查驱动的质量收口”：不仅让脚本能跑，还修正评估分母、入口数据源和 fail-closed 治理，避免低覆盖方法被高估或旧产物混入；同时把 semantic_title 的候选生成从全局粗截断改成按 seed 控制 fanout，体现推荐召回链路中质量、治理和可复现评估的一体化修复。
+
+### 2026-06-06 - pool500 召回源 registry 候选生成权限收口
+
+**任务：**
+继续盘点非 ItemCF / 非 two_tower 方法的工作文件后，修复核心 registry 层把所有 recall source 默认视作可候选生成的问题，避免诊断源或 guarded source 绕过方法配置中的权限护栏。
+
+**遇到的问题：**
+`category`、`swing_recall`、`semantic`、`semantic_title_category_expansion`、`usercf_recall`、`co_visit_fallback_repair` 在配置和方法文档中都要求 route gate、diagnostic-only 或 deferred 边界，但 `RecallSourceSpec.candidate_generating` 默认值为 `True`，测试还固化了“所有 source 都 candidate-generating”的错误假设。
+
+**定位方式：**
+对照各方法 `METHOD.md`、`source_config.yaml`、`configs/recall/pool500_method_registry.json` 与 `rs_core/recsys/recall_sources/registry.py`，确认真正允许候选生成的当前白名单应为 `popular` 和 route-gate candidate 的 `itemcf_strong`，其余 guarded/diagnostic/deferred source 都不应被 `list_candidate_generating_sources()` 返回。
+
+**解决方式：**
+将 `RecallSourceSpec.candidate_generating` 默认值改为 `False`，新增 `READY_CANDIDATE` 状态常量以同步 registry JSON；在核心 registry 中仅对 `popular` 与 `itemcf_strong` 显式 opt-in；同步 `itemcf_strong` 与 `two_tower` 最新 registry artifact 字段；更新 registry 测试为显式白名单，并补 runner contract 测试确保 semantic、semantic_title、co_visit、usercf 的 candidate generation / promotion / ranking replacement / pool1000 权限保持关闭；category 配置补充 route-gate-only 字段，保留 `candidate_generation_allowed=false`。
+
+**验证结果：**
+使用项目 `.venv` 执行 `python -m pytest tests/test_recall_source_registry.py tests/test_pool500_method_source_runner.py -q`，结果 `26 passed`；对 `rs_core/recsys/recall_sources/base.py`、`registry.py`、`__init__.py` 与 runner 执行 `py_compile` 通过；独立 verifier 复核结论为 PASS，确认候选生成已改为显式 opt-in，category 仍不是直接主路物化生成。
+
+**面试可讲点：**
+这段可以讲成“把方法级治理护栏下沉到核心 registry”：不仅在文档和配置中声明 diagnostic/deferred，还让候选生成枚举本身 fail-closed，只有经过明确 route-gate 授权的 source 才能进入候选生成入口，降低半成品召回源被误用到主路的风险。
+
+### 2026-06-06 - pool500 方法源轻量验证与远端 handoff 收口
+
+**任务：**
+汇总本轮 pool500 非重型方法源运行结果，避免在本地继续启动 50k/full formal 重任务，同时把已验证链路、未完成 blocker 和远端 handoff 边界写清楚。
+
+**遇到的问题：**
+各 source 状态不同：`popular/category` 可做轻量 dry-run 与 route-formal/all-eligible contract 检查，`semantic` 有 10k diagnostic artifact，`semantic_title_category_expansion` 和 `co_visit_fallback_repair` 仍缺 formal 七件套，`swing/usercf` 已有诊断产物但缺 route overlap / 边际贡献证据。若只说“已跑完”，会把 diagnostic、guarded、NEEDS_REMOTE 与 READY 混淆。
+
+**定位方式：**
+复核 `dic/recall_methods/semantic_title_category_expansion/METHOD.md` 和 `dic/recall_methods/semantic_title_category_expansion/FORMAL_SERVER_HANDOFF.md`，确认 semantic_title formal 只有 checkpoint、无七件套；用项目 `.venv` 运行 focused tests、`py_compile` 和 runner dry-run contract，检查 governance 字段、recent-2y 输入、按需展开和 checkpoint/shard 参数。
+
+**解决方式：**
+保留轻量本地验证，只运行 focused pytest、编译检查和 dry-run，不启动 50k/full formal。汇总结果时按 `PASS / READY_GUARDED / DIAGNOSTIC_ONLY / NEEDS_REMOTE` 分层：已通过的契约作为后续远端执行基础，未产出 formal artifact 的 source 继续阻断 READY 与 ranking input replacement。
+
+**验证结果：**
+`.venv` 执行 `pytest tests/test_pool500_method_source_runner.py tests/test_pool500_method_source_eval.py tests/test_pool500_category_on_demand.py tests/test_pool500_semantic_newdata_config.py tests/test_pool500_semantic_title_category_source.py tests/test_pool500_co_visit_fallback_repair_source.py -q`，结果 `51 passed`；`py_compile` 覆盖 runner/evaluator/category/semantic_title/co_visit 关键脚本通过。dry-run 复核 category `route_formal`、popular `all_eligible`、semantic_title `recent2y_formal` 与 co_visit `local_formal` contract；其中 co_visit 原先按不存在的 `formal_shard50k` tier 调用失败，复核配置后改用实际存在的 `local_formal` tier，确认 formal 仍需远端或受控分片执行。
+
+**面试可讲点：**
+这段可以讲成“多召回源收口时用证据分层而不是一刀切宣布完成”：把能本地验证的 runner/contract/治理字段先跑实，把重资源 formal 明确交给 server handoff，并用测试与 dry-run 证明不会把诊断源、guarded source 或半成品 artifact 误用为主路 READY。
+
+### 2026-06-06 - two_tower batch-shared sampled softmax 第一阶段实现
+
+**任务：**
+在不触碰 READY/promotion、不运行远端任务的前提下，为 `two_tower` 训练增加默认关闭的 `sampled_softmax_candidate_mode`，支持旧行为 `per_example` 与新实验模式 `batch_shared`。
+
+**遇到的问题：**
+原先 sampled softmax 每个样本独立构造候选，无法模拟 batch 内共享候选集合；如果直接共享 batch positives，又可能把同一用户的其他已知正样本当负样本参与 loss，需要 row-level mask 保护训练语义。
+
+**定位方式：**
+聚焦 `rs_core/recsys/two_tower.py` 的 `_normalized_config`、`_validate_config`、`_torch_batch_tensors`、negative sampling payload，以及 `scripts/training/train_two_tower.py` CLI 透传和 `tests/test_two_tower_training.py` 中已有 sampled softmax/CLI/metrics 测试。
+
+**解决方式：**
+保留 `per_example` 默认路径，新增 `batch_shared` 分支：batch target positives 按出现顺序去重，与 batch-level sampled negatives 组成共享 candidate list；负样本排除 batch target positives 和 batch positive_set union；每行 target 指向自身 positive 位置，并对该用户 `positive_set - {target}` 在候选中的碰撞做 mask，target mask 强制为 1。第一版安全禁止 `batch_shared + explicit_negative_weight>0`，并在 metrics/model/negative_sampling payload 记录 mode、negative sample 解释和 batch-shared 统计。
+
+**验证结果：**
+本地 `.venv` 通过 `python -m pytest tests/test_two_tower_training.py`，结果 `47 passed`；通过 `python -m py_compile rs_core/recsys/two_tower.py scripts/training/train_two_tower.py tests/test_two_tower_training.py`。
+
+**面试可讲点：**
+这段可以讲成“把 sampled softmax 从样本级候选扩展为 batch 共享候选，同时用用户正样本 mask 保住负采样语义”：既提升候选构造的可实验性，又通过默认关闭、显式校验、payload 留痕和单测覆盖控制回归风险。
+
+
+### 2026-06-06 - itemcf_weak RPA index-backed Top500 è¯Šæ–­
+
+**ä»»åŠ¡ï¼š**
+åœ¨ v4 paper-binary Top500 å·²æˆ�ä¸º `itemcf_weak` æœ€å¼ºè¯Šæ–­å�Žï¼Œç»§ç»­æŠŠ Zhang & Pu 2007 RPA çš„â€œè¯„åˆ†çŸ©é˜µã€�é‚»å±…ç´¢å¼•ã€�é€’å½’é¢„æµ‹è¯�æ�®â€�æ”¹é€ æˆ�é€‚é…�å½“å‰� implicit Top-N å�¬å›žçš„ compact index-backed è¯Šæ–­ï¼Œå¹¶è¿œç¨‹è·‘ 20 shard full evalã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+è®ºæ–‡åŽŸå§‹è®¾å®šæ˜¯ MovieLens æ˜¾å¼�è¯„åˆ†é¢„æµ‹å’Œ MAE è¯„ä¼°ï¼Œè€Œå½“å‰�é“¾è·¯æ˜¯ implicit positive-only sequence çš„ pool500 å�¬å›žï¼›å¦‚æžœç›´æŽ¥å�š recursive expansionï¼Œå®¹æ˜“å�ªå¢žåŠ ä½Žä½�å€™é€‰è€Œä¸�å¢žåŠ å‘½ä¸­ã€‚å�Œæ—¶ v5 æŠŠ candidate cache å’Œ top-neighbor ä¸Šé™�æ”¾å¤§å�Žï¼Œèµ„æº�æˆ�æœ¬ä¹Ÿå�¯èƒ½é«˜äºŽ v4ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+å…ˆç”¨æœ¬åœ° shard `0/200` smoke éªŒè¯� v5 è„šæœ¬ã€�index snapshot å’Œ recursive branch èƒ½è·‘é€šï¼Œå†�è¿œç¨‹å�¯åŠ¨ 20 shard / 4 jobsã€‚æœ€ç»ˆæŠ¥å‘Šä¸º `outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_v5_rpa_index_replay_remote_no_mem_limit_4jobs_v1/evaluation_report.json`ï¼Œä¸Ž v4 æŠ¥å‘Š `rpa_lite_v4_paper_binary_p500_remote_no_mem_limit_4jobs_v1/evaluation_report.json` å�Œå�£å¾„æ¯”è¾ƒã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢ž compact RPA index-backed è¯Šæ–­è„šæœ¬ï¼Œæž„å»ºé˜¶æ®µå�ªä½¿ç”¨ train-only sequence å’Œ train-only item frequencyï¼Œvalid/test label ä»�åœ¨å€™é€‰/index æž„å»ºå®Œæˆ�å�Žæ‰�åŠ è½½ç”¨äºŽ post-hoc evaluationã€‚æ¯�ä¸ª shard å†™å‡º `rpa_index_manifest.json`ã€�`user_neighbor_samples.jsonl`ã€�`candidate_evidence_samples.jsonl` å’Œ `index_sample_stats.json`ï¼Œå¹¶é¢„å£°æ˜Ž observed p300/p500ã€�path-support logã€�min-support fallbackã€�observed400+recursive100 äº”ä¸ª variantã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+è¿œç¨‹ 20/20 shards `PASS`ï¼Œ`evaluated_target_users_with_labels_total=41605`ã€‚æœ€ä¼˜ `rpa_v5_index_path_support_log_p500` è¾¾åˆ° `raw_recall@500=0.038644`ã€�`raw_recall@100=0.027734`ã€�`hit_user_rate@500=0.047158`ã€�raw hits `2097`ï¼Œç›¸å¯¹ v4 best `raw_recall@500=0.038220` æ��å�‡ `+0.000424`ã€�raw hits `+23`ã€�hit users `+14`ï¼Œcandidate p50/p90/max ä»�ä¸º `194/500/500`ã€‚ä½† recursive expansion variant å�ªæœ‰ `raw_recall@500=0.037888`ï¼Œä½ŽäºŽ observed/path-support p500ï¼›èµ„æº�å³°å€¼ä»Ž v4 `12.5566GB` å¢žè‡³ v5 `14.9178GB`ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œè®ºæ–‡ç®—æ³•é€‚é…�ä¸�æ˜¯ç…§æ�¬å…¬å¼�ï¼Œè€Œæ˜¯å…ˆæŠ½å‡ºå�¯æ²»ç�†çš„æ•°æ�®ç»“æž„ä¸Žè¯�æ�®é“¾â€�ï¼šæŠŠ RPA çš„ user-neighbor/rating-matrix æ€�æƒ³è�½æˆ� train-only index snapshotï¼Œå¹¶ç”¨å�Œå�£å¾„ full eval è¯�æ˜Ž path support å¯¹ Top-N å�¬å›žæœ‰å°�å¹…æ”¶ç›Šï¼Œå�Œæ—¶å��è¯�å½“å‰� recursive expansion ä¸�å€¼å¾—ç›´æŽ¥æ™‹å�‡ï¼Œä¸‹ä¸€æ­¥åº”è¡¥çœŸæ­£çš„ `Ï†`ã€�`K/Kâ€²` å’Œ `Î¶=2` scoring æ¶ˆèž�ã€‚
+
+### 2026-06-06 - strong/RPA-like 增强方向记录与传统 ItemCF 回切
+
+**任务：**
+按用户决策，把当前 strong/RPA-like、RPA-lite/RPA-index、AugCF-lite/controlled 等增强方向的关键结果记录下来，并把后续路线切回传统 ItemCF。
+
+**遇到的问题：**
+RPA-index 在 `itemcf_weak` 上虽然略优于 v4，但增益很小且资源成本上升；strong 侧 AugCF/controlled 的召回提升与 hot dst 覆盖高度绑定，容易把热门覆盖误归因为 ItemCF 相似度优化。如果继续沿增强方向推进，会让路线叙事偏离“传统 ItemCF 可解释共现”的当前目标。
+
+**定位方式：**
+复核 `dic/recall_methods/itemcf_weak/METHOD.md` 中 RPA v4/v5 远程 20 shard 结果，以及 `dic/recall_methods/itemcf_strong/METHOD.md` 中 relaxed strong baseline、AugCF-lite hot/no-hot 和 AugCF-controlled q10/q20/q30/q50 的 purchase eval 指标。所有这些结果仍只作为 post-hoc evaluation-only 诊断，不参与候选生成、训练、variant selection 或 promotion。
+
+**解决方式：**
+在 `itemcf_weak/METHOD.md` 中新增“舍弃 RPA/生成增强方向，回到传统 ItemCF”路线更新，记录 v5 best `raw_recall@500=0.038644`、相对 v4 仅 `+0.000424`、recursive expansion 未胜出和资源成本上升。在 `itemcf_strong/METHOD.md` 中记录 relaxed baseline `Recall@500=0.000211`、AugCF-lite hot-dst `Recall@500=0.025721` 但 hot share `0.960442`、no-hot `Recall@500=0.000192` 低于 baseline，以及 controlled q10→q50 的 recall/hot-share 绑定曲线。随后清理 strong 侧 AugCF-lite / AugCF-controlled 生成产物，并写出审计 `outputs/cleanup_records/itemcf_strong_augcf_cleanup_20260606.json`。
+
+**验证结果：**
+本次只做方法文档和工程叙事记录，没有新增候选产物、没有修改 registry READY、没有打开 candidate generation / ranking input replacement / promotion。后续主线明确为 train-only 传统 ItemCF：item-item 共现、weighted cooc / cosine normalization、active-user penalty、support/热度治理、per-seed topK 和 route-level source budget。
+
+**面试可讲点：**
+这段可以讲成“实验路线的止损与归因治理”：不是看到某个增强方法 Recall 变高就继续堆复杂度，而是拆解收益来源和治理代价；当 RPA 只有微弱收益、AugCF 强依赖热门覆盖时，主动记录证据并回切到可解释、可控、可面向生产治理的传统 ItemCF。
+
+
+### 2026-06-06 - ItemCF weak çŸ©é˜µå�£å¾„æ”¶å�£ä¸Ž guarded READY æ™‹å�‡
+
+**ä»»åŠ¡ï¼š**
+æŠŠ `itemcf_weak` ä»Žæ—§ formal flat method dataset è·¯çº¿æ”¶å�£åˆ° filter-before-build compact matrix è·¯çº¿ï¼Œå¹¶æŒ‰ç”¨æˆ·ç¡®è®¤å°†æ–¹æ³•æ™‹å�‡ä¸ºå½“å‰�é˜¶æ®µ READYã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+æ—§æ��è¿°ä»�æŠŠ strict smoke/formal flat dataset å†™æˆ�å½“å‰�ä¸»äº§ç‰©ï¼Œå®¹æ˜“è¯¯å¯¼å�Žç»­çª—å�£ä»¥ä¸ºå¿…é¡»å…ˆç”Ÿæˆ� formal rowsï¼›ä½†å®žé™…æœ€ä¼˜è·¯çº¿å·²ç»�å�˜ä¸ºè¿�è¡Œæ—¶ç›´æŽ¥ç­›é€‰ train-only åº�åˆ—å¹¶æž„å»º item-to-neighbors çŸ©é˜µã€‚å�Œæ—¶ï¼Œvalid quick å¯¹æ¯”å�ªèƒ½ä½œä¸ºå�ŽéªŒè¯�æ�®ï¼Œä¸�èƒ½æ�®æ­¤ç›´æŽ¥æ‰“å¼€ candidate generation æˆ– final promotionã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ ¸å¯¹ `dic/recall_methods/itemcf_weak/METHOD.md`ã€�`configs/recall/full_data_pool500/itemcf_weak/dataset_policy.yaml`ã€�`configs/recall/full_data_pool500/itemcf_weak/source_config.yaml` å’Œ `configs/recall/pool500_method_registry.json`ï¼Œç¡®è®¤ readinessã€�dataset contractã€�latest artifact ä»�æŒ‡å�‘æ—§ strict formal sourceã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+å°†å½“å‰�ä¸»å�£å¾„æ”¹ä¸º `src>=2,dst>=3,user_after_item_filter>=2,keep_hot` çš„ filter-before-build compact matrixï¼šä¸�è¦�æ±‚ formal flat datasetï¼Œsmoke dataset ä»…ä¿�ç•™ä¸º program/schema/gate æµ‹è¯•ï¼›registry å’Œé…�ç½®ä¸­æŠŠ `itemcf_weak` æ™‹å�‡ä¸º `READY_GUARDED` / `MATRIX_READY`ï¼Œlatest artifact æŒ‡å�‘ `outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_keep_hot_src2_dst3_filter_before_build_traditional_matrix_v1/matrix_manifest.json`ã€‚å�Œæ—¶ç»§ç»­ä¿�æŒ� `candidate_generation_allowed=false`ã€�`ranking_input_replacement_allowed=false`ã€�`promotion_allowed=false`ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+çŸ©é˜µæž„å»º manifest å·²æ˜¾ç¤º `status=PASS`ã€�`edge_count=17,141,611`ã€�`src_item_count=421,365`ã€�`users_used_for_pairs=1,496,171`ï¼›è¿œç¨‹ quick post-hoc eval ä¸­ `src2_dst3_user2` è¾¾åˆ° `raw_recall@500=0.034512`ã€�`candidate_user_rate=0.963519`ï¼Œä¼˜äºŽå�–æ¶ˆ dst æˆ–åŠ ä¸¥ user çš„å�˜ä½“ã€‚é…�ç½®æ›´æ–°å�Žä»�éœ€è½»é‡� JSON/YAML è¯­æ³•æ ¡éªŒã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œæŠŠæŽ¨è��å�¬å›žæ–¹æ³•ä»Žç¦»çº¿ rows æ•°æ�®é›†æ€�ç»´æ”¹æˆ�å�¯æœ�åŠ¡çš„çŸ©é˜µ artifact æ€�ç»´â€�ï¼šæž„å»ºæ—¶ç›´æŽ¥åœ¨ train-only åº�åˆ—ä¸ŠæŒ‰ item/user è§„åˆ™ç­›é€‰ï¼Œè¾“å‡º compact item-to-neighbors çŸ©é˜µï¼Œæ—¢é�¿å…� 19GB çº§ flat rows å†—ä½™ï¼Œä¹Ÿä¿�ç•™æ²»ç�†è¾¹ç•Œï¼›READY è¢«æ‹†æˆ� artifact ready å’Œ route promotion ä¸¤å±‚ï¼Œä½“çŽ°å·¥ç¨‹å�¯ç”¨æ€§ä¸Žä¸Šçº¿é—¨ç¦�è§£è€¦ã€‚
+
+
+### 2026-06-06 - two_tower sparse-aware 数据集画像与训练 CLI 扩展
+
+**任务：**
+针对 two_tower / YouTubeDNN 当前指标偏低的问题，先不盲目继续训练，而是按 train-only 口径补充 item 分布、item 筛后 user 分布和 sparse-aware 数据集 tier，验证低效果是否来自 item 长尾和 post-prune 用户序列过稀疏。
+
+**遇到的问题：**
+原有 method dataset 只把 `embedding_ready` 作为 negative universe，formal 中已有大量 target 落在 negative universe 外；同时 `used_quality_bucket_counts` 容易混淆“eligible users seen”和“真正产出样本的 users/samples”，无法回答 item pruning 后到底还剩多少可训练用户。
+
+**定位方式：**
+聚焦 `rs_lab/experiments/recall/build_pool500_two_tower_method_dataset.py`、`scripts/training/train_two_tower.py` 和 `tests/test_pool500_two_tower_method_dataset.py`：检查 scale tier、negative universe、sample generation、training item universe 和 CLI override 透传；用新增 fixture 构造 `embedding_ready/cf_ready/mid_frequency/low_frequency/single_seed` item 与 post-prune 用户，验证 user-level drop 和 sample-level no-negative drop 是否分离。
+
+**解决方式：**
+新增 `sparse_aware_smoke` / `sparse_aware_formal` tier：target universe 允许 `embedding_ready/cf_ready/mid_frequency` 及满足 `frequency>=2 && user_count>=2` 的 `low_frequency`，negative universe 保守限制为 `embedding_ready/cf_ready/mid_frequency`；样本生成前先按 target universe 过滤正反馈序列，并记录 pre/post positive、transition、retention、user bucket transition、sample-emitting user 和 training item universe role counts。训练 CLI 增加 `min_user_positives`、`max_samples_per_user`、`batch_size`、`user_history_window`、`embedding_dim`、`hidden_dim`、`learning_rate`，方便后续远程 sparse-aware YouTubeDNN 对照实验。
+
+**验证结果：**
+本地 `.venv` 通过 py_compile；`tests/test_pool500_two_tower_method_dataset.py -q` 为 `16 passed, 3 skipped`；WMI-safe `tests/test_two_tower_training.py -q` 为 `48 passed`；`tests/test_train_only_data_governance.py -q` 为 `13 passed`；`tests/test_pool500_two_tower_method_source.py tests/test_pool500_two_tower_direct_eval.py tests/test_two_tower_source_manifest_guard.py -q` 为 `11 passed`。独立 code-reviewer 复核最初指出的 user-level retained count 与 sample-level no-negative drop 混淆后，修复并重新 review，结论 `APPROVE`。
+
+**面试可讲点：**
+这段可以讲成“把模型效果问题先转化为数据稀疏性可观测问题”：不是简单增加 epoch 或负样本，而是先把 item universe、post-prune user retention、sample-emitting users 和 target/negative universe mismatch 量化，再用隔离 tier 给后续 YouTubeDNN 训练提供更符合 Amazon 长尾数据的输入，同时守住 train-only 和 no-promotion 边界。
+
+### 2026-06-06 - ItemCF weak src3/dst3/source adapter 固定并接入主路默认 manifest
+
+**任务：**
+将 valid 一个月筛选出的传统 ItemCF weak 最优口径固定为可复用 source artifact，并准备并入 pool500 recall-only 主路加载链路。
+
+**遇到的问题：**
+已有本地矩阵和 source 多数仍是旧 `src2_dst3` 或 strict flat-dataset 产物，不能直接冒充当前确认的 `src3_dst3_user2_keep_hot_cosine`；同时主路 runner 默认还指向旧 `target500_train_weak_edges_v1`，且完整 route smoke 会被无关 two_tower/swing manifest 契约问题阻断。
+
+**定位方式：**
+核对 `memory/project_itemcf_selected_filter_policy.md`、远程 one-pass screen 输出和 cold-filtered grid 输出，确认最佳配置为 `src>=3,dst>=3,user_after_item>=2,keep_hot,cosine`，valid `raw_recall@500=0.034482`、`candidate_user_rate=0.951935`。检查 `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的 `DEFAULT_SOURCE_MANIFESTS` 与 `load_itemcf_source_manifest` 契约，确认 source index 需要 sharded `edges_shards`、`train_only=true`，并保持 promotion/candidate-generation 关闭。
+
+**解决方式：**
+在远程将 train-only `cold_u2_i3_cosine_seed200` method dataset rows 转为 64 分片 source index：`outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json`，共 `16,454,229` 条 item-item edge，row count audit PASS。随后把 `run_full_data_pool500_recall_only.py` 的默认 `itemcf_weak` manifest 指向该 source，并更新 `configs/recall/full_data_pool500/itemcf_weak/{source_config.yaml,dataset_policy.yaml}`、`configs/recall/pool500_method_registry.json` 和 `dic/recall_methods/itemcf_weak/METHOD.md`，明确这是 source adapter ready、route gated，而不是 final promotion。
+
+**验证结果：**
+远程 source adapter 构建完成，manifest 显示 `status=PASS`、`train_only=true`、`source_status=DIAGNOSTIC_ONLY`、`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`final_pool500_ready_claimed=false`。source index 已同步到本地，64 个 shard 均存在，manifest shard path 已改为本地可解析的相对路径。`load_itemcf_source_manifest(..., allowed_src_items={"0811836037"})` 抽样加载成功，返回 1 个 src、22 个候选。isolated 1000-user route smoke 产出 `500000` candidate rows，其中 `itemcf_weak` 贡献 `19540` 行、覆盖 `643/1000` 用户、marginal share `0.03908`；smoke 最终 `STOP` 来自刻意禁用 swing/usercf ready sources 后触发的无关 stoploss，不是 ItemCF source 加载失败，相关 smoke 产物已同步到本地。代码验证：`.venv/Scripts/python.exe -m py_compile rs_lab/experiments/recall/run_full_data_pool500_recall_only.py`、registry JSON 解析、两个 ItemCF YAML 解析和本地 source loader 抽样均通过。
+
+**面试可讲点：**
+这段可以讲成“把离线算法参数搜索收口成可治理的生产候选源”：先用 train-only 构建、valid-only 后验筛选确定 `src3/dst3/user2/keep-hot/cosine`，再把大规模 item-item 边转成分片 source index 接入主路 loader，同时保留 no-oracle、no-promotion、no-ranking-replacement 的治理阀门，避免把诊断提升误宣称为最终上线效果。
+
+### 2026-06-07 - UserCF A ç»„è¯Šæ–­äº§ç‰©å¹¶å…¥ pool500 ä¸»è·¯å®¡è®¡
+
+**ä»»åŠ¡ï¼š**
+å°† UserCF A ç»„ `src>=2,dst>=3,user_after_src_filter>=2,keep_hot=true,iuf_cosine` äº§ç‰©åˆ‡ä¸º pool500 é»˜è®¤ UserCF manifestï¼Œä½†å�ªä½œä¸º `DIAGNOSTIC_ONLY` diagnostic contributionï¼Œä¸�èƒ½è¿›å…¥ READY stoplossã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+A ç»„ 3k è¯Šæ–­åˆ‡ç‰‡å·²ç”Ÿæˆ� 300000 è¡Œå€™é€‰ï¼Œå®¹æ˜“è¢«ä¸»è·¯ rows/index å­˜åœ¨æ€§é€»è¾‘è¯¯åˆ¤ä¸º READYï¼›å�Œæ—¶æ—§é…�ç½®é‡Œ UserCF è¿˜å‡ºçŽ°åœ¨ READY stoploss sources ä¸­ï¼Œå’Œå½“å‰�â€œå‘½ä¸­å¼±ã€�ä¸�æ™‹å�‡ READYâ€�çš„æ²»ç�†ç»“è®ºå†²çª�ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ ¸å¯¹ `source_index_manifest.json` ä¸­ `diagnostic_only=true`ã€�`source_status=DIAGNOSTIC_ONLY`ã€�`candidate_generation_allowed=false` ç­‰å¥‘çº¦ï¼Œå¹¶æ£€æŸ¥ `rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` ä¸­ source manifestã€�readiness contractã€�derived index å’Œ contribution audit çš„çŠ¶æ€�æŽ¨æ–­é€»è¾‘ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+å°†é»˜è®¤ UserCF manifest åˆ‡åˆ° A ç»„è·¯å¾„ï¼›ä»Ž `READY_STOPLOSS_SOURCES` ç§»é™¤ `usercf_recall`ï¼ŒåŠ å…¥ `DIAGNOSTIC_CONTRIBUTION_SOURCES`ï¼›æ–°å¢ž artifact diagnostic-only åˆ¤å®šï¼Œç¡®ä¿� output manifestã€�readiness contractã€�derived index å’Œ contribution audit ä¸�ä¼šä»…å› æœ‰ rows/index å°±æŠŠ UserCF æ ‡æˆ� READYã€‚å�Œæ­¥æ›´æ–° registryã€�source_configã€�dataset_policyã€�æµ‹è¯•æ–­è¨€å’Œæ–¹æ³•æ–‡æ¡£ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ `py_compile` ä¸Ž targeted pytestï¼›éªŒè¯�ç»“æžœè§�æœ¬æ¬¡æœ€ç»ˆå›žå¤�ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œè¯Šæ–­äº§ç‰©é˜²è¯¯æ™‹å�‡æ²»ç�†â€�ï¼šåœ¨æŽ¨è��å�¬å›žä¸»è·¯ä¸­å…�è®¸ä½Žä¿¡å¿ƒæ–¹æ³•å�‚ä¸Žè´¡çŒ®å®¡è®¡ï¼Œä½†é€šè¿‡ manifest-level `diagnostic_only/source_status` å’Œ ready/diagnostic source åˆ†å±‚ï¼Œé�¿å…�æŠŠå€™é€‰è¦†ç›–æ”¹å–„åŒ…è£…æˆ� READY æ•ˆæžœã€‚
+
+
+## 2026-06-07 - ItemCF weak 非最佳实验产物清理
+
+- 任务：在 `src3_dst3_user2_keep_hot_cosine_v1` 已固定为当前 source adapter 后，盘点并清理旧 formal/strict/source/matrix/smoke 产物，避免非最佳实践继续占用本地和远程空间。
+- 遇到的问题：历史 `formal_strict_v1`、`smoke_strict_v1`、src2/dst3 旧矩阵、旧 route smoke 和远程 weak_denoised/grid rows 仍残留；部分配置仍指向旧矩阵或旧 strict report，直接删除会造成 current 配置误读。
+- 定位方式：按 `outputs/recall/pool500_method_sources/recent_2y/itemcf_weak`、`outputs/recall/itemcf_matrices/recent_2y`、`outputs/recall/full_data_pool500_recall_only` 以及远程 `/mnt/data/luo/RS_agent_remote_storage/outputs/recall` 盘点大小；形成清理记录 `dic/recall_methods/itemcf_weak/CLEANUP_RECORD_2026_06_07.md`。
+- 解决方式：删除本地旧 strict source、src2/dst3 旧矩阵和旧 ItemCF weak smoke；删除远程非最佳 cold grid rows、旧 weak_denoised source、旧 src2/dst3 matrix 和空 smoke；保留当前最佳 `src3_dst3_user2_keep_hot_cosine_v1` source、1000-user smoke evidence，以及当前最佳 `cold_u2_i3_cosine_seed200` 输入 rows。同步更新 source config、dataset policy、method registry 和 METHOD 文档，把旧矩阵标记为历史已清理，不再作为 current readiness 依据。
+- 验证结果：本地和远程登记删除路径均已不存在；当前 source manifest 仍存在；使用 `.venv/Scripts/python.exe` 调用 `load_itemcf_source_manifest(...)` 抽样加载 `0811836037`，返回 `loaded_src_count=1`、`candidate_count=22`、sample item `B08D9BXTC4`、score `0.064519`。
+- 面试可讲点：不仅完成算法口径收口，还做了 artifact 生命周期治理：区分 canonical source、历史诊断证据和可删除中间产物，清理空间同时保持可审计性与主路 loader 可用性。
+
+
+## 2026-06-07 - itemcf_strong 主路默认 manifest 指向修复
+
+- 任务：修复 pool500 recall-only 主路中 `itemcf_strong` 默认 manifest 仍指向旧路径的问题，使其对齐此前固定的 recent-2y relaxed strong supplemental artifact。
+- 遇到的问题：`configs/recall/full_data_pool500/itemcf_strong/source_config.yaml` 与 registry 已记录 current artifact 为 `outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json`，但 `run_full_data_pool500_recall_only.py` 的 `DEFAULT_SOURCE_MANIFESTS["itemcf_strong"]` 仍指向旧 `itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/.../formal_sharded` 路径，本地 manifest 不存在。
+- 定位方式：核对主路默认 manifest、itemcf_strong source config、registry latest artifact，并在远程确认固定 artifact 存在；同步该 artifact 到本地后读取 source manifest，确认 `index_scope=RECENT_2Y_DERIVED_INDEX`、`train_only=true`、`row_count=514216`、`shard_count=8`。
+- 解决方式：将 `run_full_data_pool500_recall_only.py` 默认 `itemcf_strong` manifest 改为 `pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json`，与 config/registry 固定 artifact 对齐。
+- 验证结果：本地 `.venv/Scripts/python.exe` 验证 `itemcf_weak`、`itemcf_strong`、`swing_recall` 三个主路默认 manifest 均存在；`load_itemcf_source_manifest(...)` 对 `itemcf_strong` 抽样加载成功，`loaded_src_count=1`、`candidate_count=1`、sample src `0440412676`、sample item `B08FDPRLVF`、score `0.03557`；`py_compile` 通过。
+- 面试可讲点：这是一次主路配置漂移修复：不是重跑算法，而是把 runner 默认入口、registry 和 source config 的 canonical artifact 对齐，避免“文档/配置 ready，但运行入口仍指向旧 artifact”的工程风险。
+
+
+## 2026-06-07 - two_tower_DSSM 独立诊断链路落位
+
+- 任务：参考 DSSM 双塔思路，为 recent_2y 数据集新增独立 `two_tower_DSSM` 文件夹链路，服务“user 无个人信息、item 信息更丰富”的 item-rich 双塔召回诊断。
+- 遇到的问题：仓库已有 `_TorchDSSM` 和训练 workflow，但现有 safe CLI、source manifest、direct eval 入口主要围绕 `two_tower_youtube_dnn`；如果直接复用 `two_tower` 命名，后续用户重命名 YouTubeDNN 时容易混淆 artifact、配置和评估口径。
+- 定位方式：只读核对 `rs_core/recsys/two_tower.py`、`rs_core/workflow/two_tower_training.py`、`scripts/training/train_two_tower.py`、`rs_core/recsys/two_tower_source_manifest.py`、`build_pool500_two_tower_method_dataset.py` 和 recent_2y 配置，确认模型主体可复用，缺口在 DSSM 独立目录、source contract、source index 构建、direct eval wrapper 与 item-rich vocab manifest。
+- 解决方式：新增 `configs/recall/full_data_pool500/two_tower_DSSM/`、`scripts/training/two_tower_DSSM/`、`scripts/recall/two_tower_DSSM/`、`rs_core/recsys/two_tower_DSSM/`、`rs_lab/experiments/recall/two_tower_DSSM/`；DSSM 训练入口固定 `variant=dssm/source_name=two_tower_dssm`，source manifest 固定 diagnostic-only contract；method dataset 额外输出 `two_tower_dssm_item_vocab_manifest.json`，指向含 title/category/description/features/side feature 的 `training_item_universe.jsonl`。复核阶段进一步加强 manifest 防护：扫描 `item_vocab_manifest` 内部 provenance，校验 item/index/user embedding 的 row count、维度一致性、非有限值和 forbidden path，并让 direct eval 实际加载 `user_embedding_path` 作为 `artifact_user_embedding` 查询来源。
+- 验证结果：使用项目默认 `.venv` 运行 DSSM focused tests：`tests/test_pool500_two_tower_method_dataset.py tests/test_two_tower_dssm_source_manifest.py tests/test_two_tower_dssm_source_index.py tests/test_pool500_two_tower_dssm_direct_eval.py`，结果 `36 passed, 3 skipped in 0.87s`；运行相关 two_tower 回归：`tests/test_two_tower_training.py tests/test_pool500_two_tower_source_manifest.py tests/test_pool500_two_tower_direct_eval.py`，结果 `55 passed in 2.90s`；DSSM 相关 ruff 检查通过：`All checks passed!`。
+- 面试可讲点：这段可以讲成“在不造用户画像、不污染主路的前提下，为 item-rich DSSM 双塔建立独立受治理诊断链路”：user tower 只用 train-only 行为序列聚合，item tower 优先使用商品文本/类目/质量桶等字段；通过独立 manifest contract 和 diagnostic-only flags，避免把实验召回源误接入正式 pool500/ranking。
+
+
+### 2026-06-07 - UserCF item-first full diagnostic é˜ˆå€¼å›ºå®š
+
+**ä»»åŠ¡ï¼š**
+æŠŠ UserCF ä»Ž 3K smoke å�£å¾„çº æ­£ä¸º recent-2y train-only full diagnosticï¼Œå¹¶åœ¨ `src>=2,dst>=3,keep_hot=true,iuf_cosine` ä¸�å�˜çš„å‰�æ��ä¸‹é€‰æ‹©æ­£å¼� user è¡Œä¸ºé˜ˆå€¼ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+3K smoke artifact å�ªèƒ½ä½œä¸ºå�£å¾„é€‰æ‹©è¯�æ�®ï¼Œä¸�èƒ½ä»£è¡¨ full ä¸»è·¯äº§ç‰©ï¼›å�Œæ—¶ `user_after_src_filter>=2` è¦†ç›–æœ€å¤§ä½†åŒ…å�«å¤§é‡�å�ªæœ‰ä¸¤ä¸ªæœ‰æ•ˆ item çš„ä½Žä¿¡å�·ç”¨æˆ·ï¼ŒUserCF ç›¸ä¼¼åº¦è´¨é‡�å’Œè®¡ç®—æˆ�æœ¬å­˜åœ¨å�–èˆ�ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+ä½¿ç”¨è¿œç¨‹æœ�åŠ¡å™¨ `/home/luo/RS_agent_remote` åœ¨ recent-2y æ•°æ�®é›†ä¸Šé‡�è·‘ full diagnosticï¼Œåˆ†åˆ«è¯„ä¼° `user_after_src_filter>=2/3/4/5/6/10`ã€‚valid/test labels ä»…é€šè¿‡ shard-aware evaluation-only è„šæœ¬å�ŽéªŒè¯„ä¼°ï¼Œä¸�å�‚ä¸Žå€™é€‰ç”Ÿæˆ�ã€‚å…³é”®è¯�æ�®è®°å½•åœ¨ `outputs/recall/pool500_method_evals/recent_2y/usercf_threshold_shard_eval_summary.json`ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+å›ºå®šå½“å‰� UserCF é»˜è®¤ full diagnostic artifact ä¸º `usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1`ã€‚item è¿‡æ»¤ä¿�æŒ� train-only `src_min_positive_user_count=2`ã€�`dst_min_positive_user_count=3`ã€�`keep_hot=true`ï¼Œç”¨æˆ·è¿‡æ»¤è°ƒæ•´ä¸º `min_src_filtered_items_per_user=3`ã€‚è¯¥é˜ˆå€¼å°† target users ä»Ž user2 çš„ 1,495,958 é™�è‡³ 651,099ï¼Œå�Œæ—¶æ¯” user4/5/6/10 ä¿�ç•™æ›´å……åˆ†è¦†ç›–ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+é€‰å®š artifact `source_index_manifest.json` ä¸º `PASS`ã€�`source_status=DIAGNOSTIC_ONLY`ã€�`target_user_count=651099`ã€�`row_count=651046`ã€�`candidate_total_count=64327024`ã€�`underfilled_user_coverage=0.999919`ã€�`no_holdout_audit=PASS`ã€‚é˜ˆå€¼æ‰«æ��ä¸­ user3 çš„ combined `Recall@100=0.000950`ã€�`HitRate@100=0.001305`ï¼Œserved-user combined `HitRate@100=6.04%`ï¼Œtest served `HitRate@100=4.77%` ä¸ºå�„é˜ˆå€¼æœ€é«˜ï¼›user2 å…¨å±€ Recall@100 æœ€é«˜ä½†æˆ�æœ¬å’Œä½Žè¡Œä¸ºå™ªå£°æ›´é«˜ã€‚æœ€ç»ˆä»�ä¿�æŒ� `DIAGNOSTIC_ONLY`ï¼Œä¸�æ‰“å¼€ candidate generation / ranking replacement / pool1000 / promotion / final readyã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œå��å�Œè¿‡æ»¤å�¬å›žçš„ full-scale é˜ˆå€¼æ²»ç�†â€�ï¼šä¸�æ˜¯æŠŠ smoke ç»“æžœå†’å……ä¸»è·¯ï¼Œè€Œæ˜¯åœ¨ train-only æ•°æ�®ä¸Šå�š full artifactã€�æŒ‰ç”¨æˆ·è¡Œä¸ºå¼ºåº¦æ‰«æ��è¦†ç›–-è´¨é‡�-æˆ�æœ¬æ›²çº¿ï¼Œæœ€ç»ˆé€‰æ‹© user3 ä½œä¸ºå�‡è¡¡é˜ˆå€¼ï¼Œå¹¶æ˜Žç¡®å°† valid/test é™�å®šä¸ºå�ŽéªŒè¯„ä¼°ï¼Œä½“çŽ°æŽ¨è��ç³»ç»Ÿä¸­å�¬å›žå®žéªŒã€�æ•°æ�®æ³„æ¼�æŽ§åˆ¶å’Œå·¥ç¨‹æ™‹å�‡è¾¹ç•Œçš„ç»¼å�ˆæ²»ç�†ã€‚
+
+
+## 2026-06-07 - pool500 ä¸‰æ–¹æ³• follow-up è¯�æ�®é“¾å¤�æ ¸
+
+- ä»»åŠ¡ï¼šå¯¹ `semantic_title_category_expansion`ã€�`co_visit_fallback_repair`ã€�`semantic` ä¸‰ä¸ª follow-up artifact å�šæœ€ç»ˆç‹¬ç«‹éªŒè¯�ï¼Œç¡®è®¤å…¶å�ªä½œä¸ºè¯Šæ–­è¯�æ�®ï¼Œä¸�è¯¯æ™‹å�‡ä¸º full route æˆ– ranking è¾“å…¥ã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šé¦–æ¬¡å¤�æ ¸æ—¶ `semantic_title_category_expansion` ä¸Ž `co_visit_fallback_repair` çš„æœ¬åœ°å�ªè¯»è¯�æ�®åŒºç¼ºå°‘æ˜¾å¼� `no_holdout PASS` artifactï¼Œä¸�èƒ½ä»…å‡­ manifest è·¯å¾„å¼•ç”¨ç»™å‡ºæˆ�åŠŸç»“è®ºã€‚
+- å®šä½�æ–¹å¼�ï¼šåŸºäºŽ `D:/sinrotic_code/python_project/summer/RS_agent/.omc/scientist/followup_20260607` é€�é¡¹è¯»å�– source manifestã€�resource auditã€�no_holdout auditã€�eval sanity reportã€�marginal metrics å’Œ overlap reportï¼Œæ ¸å¯¹ä¸‰æ–¹æ³•-onlyã€�row/user countã€�eval-only label roleã€�baseline roleã€�overlap diagnostic scope ä¸Ž promotion flagsã€‚
+- è§£å†³æ–¹å¼�ï¼šç­‰å¾…è¿œç¨‹æ�¢å¤�å¹¶é•œåƒ� `semantic_title_no_holdout_audit.json`ã€�`co_visit_no_holdout_audit.json`ã€�`semantic_no_holdout_audit.json` å�Žé‡�æ–°éªŒè¯�ï¼›ä¸�ä¿®æ”¹å€™é€‰ç”Ÿæˆ�é€»è¾‘ï¼Œå�ªè¡¥é½�å®¡è®¡è¯�æ�®é“¾ã€‚
+- éªŒè¯�ç»“æžœï¼šä¸‰æ–¹æ³•å�‡é€šè¿‡æœ€ç»ˆ artifact gateï¼šsemantic_title `5000 users / 500000 rows / resource PASS / no_holdout PASS`ï¼Œco_visit `5000 users / 480619 rows / resource PASS / no_holdout PASS`ï¼Œsemantic `2000 users / 200000 rows / resource PASS / no_holdout PASS`ï¼›ä¸‰è€… `candidate_generation_uses_holdout=false`ã€�`no_oracle_label_injection=true`ã€�`eval_scope=evaluation_only`ã€�baseline/marginal comparison ä»…ä½œ evaluation-onlyï¼Œoverlap scope ä¸º `diagnostic_overlap_only_not_promotion_gate_by_itself`ï¼Œä¸” `candidate_generation_allowed=false`ã€�`ranking_input_replacement_allowed=false`ã€�`promotion_allowed=false`ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œå�¬å›žå®žéªŒæ™‹å�‡å‰�çš„è¯�æ�®é—¨ç¦�â€�ï¼šä¸�å› è·‘å‡ºå€™é€‰æˆ– sanity Recall å°±å£°æ˜Ž READYï¼Œè€Œæ˜¯æŠŠèµ„æº�ã€�æ—  holdoutã€�æ—  oracleã€�è¯Šæ–­-only å’Œ promotion boundary æ‹†æˆ�å�¯å®¡è®¡ gateï¼Œå�‘çŽ°è¯�æ�®ç¼ºå�£å�Žå…ˆé˜»æ–­æˆ�åŠŸç»“è®ºï¼Œå†�è¡¥é½�è¿œç¨‹ artifact å¹¶å¤�æ ¸é€šè¿‡ã€‚
+
+
+## 2026-06-07 - ä¸‰æ–¹æ³•å�¬å›ž scoring ä¿®æ­£ä¸Žæœ¬åœ°éªŒè¯�
+
+- ä»»åŠ¡ï¼šåœ¨ä»…é™�å®š `semantic`ã€�`semantic_title_category_expansion`ã€�`co_visit_fallback_repair` çš„èŒƒå›´å†…ï¼Œä¿®æ­£ valid-only æ•ˆæžœè¿‡ä½Žæš´éœ²å‡ºçš„å�¬å›ž scoring é—®é¢˜ï¼Œå…ˆå®Œæˆ�æœ¬åœ° guarded çº§åˆ«å®žçŽ°ä¸Žæµ‹è¯•ï¼Œä¸�å£°æ˜Ž READY / promotionã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šåŽŸå®žçŽ°ä¸­ `semantic` ä¸»è¦�ä¾�èµ–ç®€å�• token overlapï¼Œå®¹æ˜“è¢«æ³›è¯�å’Œé•¿æ–‡æœ¬å�¶ç„¶é‡�å� å¹²æ‰°ï¼›`co_visit_fallback_repair` çš„ sequence transition ç¼ºå°‘è·�ç¦»è¡°å‡�ã€�support gateã€�popularity normalization ä¸Ž underfill refillï¼›`semantic_title_category_expansion` ç‹¬ç«‹æ‰©æ¡£æ•ˆæžœå·®ï¼Œéœ€è¦�é™�çº§ä¸º semantic çš„ title/category channelã€‚
+- å®šä½�æ–¹å¼�ï¼šç»“å�ˆè¿œç¨‹ valid-only sanity æŒ‡æ ‡ã€�è®ºæ–‡/èµ„æ–™è°ƒç ”ç»“è®ºå’Œæº�ç �æ£€æŸ¥ï¼Œå®šä½�åˆ° `rs_lab/experiments/recall/pool500/methods/semantic/builder.py`ã€�`rs_lab/experiments/recall/pool500/methods/co_visit_fallback_repair/builder.py`ã€�ä¸‰æ–¹æ³• `source_config.yaml` ä¸Ž focused testsã€‚ä»£ç �å¤�å®¡è¿›ä¸€æ­¥å�‘çŽ° forbidden audit éœ€è¦†ç›– `oracle/eval_label`ã€�BM25F é•¿åº¦å½’ä¸€åŒ–å’Œè¿‡æ»¤ token scoring éœ€è¡¥å¼ºã€�co_visit v2 contract éœ€ä¸Ž support gate å¯¹é½�ã€‚
+- è§£å†³æ–¹å¼�ï¼š`semantic` æ”¹ä¸º BM25F-style field-weighted scorerï¼ŒåŠ å…¥ title/category æ�ƒé‡�ã€�IDFã€�å¹³å�‡å­—æ®µé•¿åº¦å½’ä¸€åŒ–ã€�generic/high-DF token è¿‡æ»¤ä¸Ž `bm25f_score/field_scores` è¯�æ�®å­—æ®µï¼›`co_visit_fallback_repair` å�‡çº§ä¸º `train_transition_metadata_repair_v2`ï¼ŒåŠ å…¥ reciprocal/linear/exponential transition decayã€�pair support/distinct user support gateã€�popularity normalizationã€�underfill repairï¼Œå¹¶åœ¨ manifest/config/doc ä¸­æ˜Žç¡®ä»�ä¸º diagnosticï¼›`semantic_title_category_expansion` ä¿�ç•™ builder contractï¼Œå°†é…�ç½®è¯­ä¹‰é™�çº§ä¸º `semantic_title_category_channel`ï¼Œä¸�å†�ä½œä¸ºç›²ç›®ç‹¬ç«‹æ‰©æ¡£æ–¹å�‘ã€‚
+- éªŒè¯�ç»“æžœï¼šä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ scoped ç¼–è¯‘ä¸Žæµ‹è¯•ï¼š`./.venv/Scripts/python.exe -m py_compile ...` é€šè¿‡æ— è¾“å‡ºï¼›`./.venv/Scripts/python.exe -m pytest tests/test_pool500_co_visit_fallback_repair_source.py tests/test_pool500_semantic_bm25f.py tests/test_pool500_semantic_newdata_config.py tests/test_pool500_method_source_runner.py -q` å¾—åˆ° `43 passed in 0.87s`ã€‚ç‹¬ç«‹ code-reviewer å¤�å®¡ä¸º `APPROVE`ï¼Œç¡®è®¤ forbidden scopeã€�BM25Fã€�co_visit v2 gate contract å’Œ governance è¾¹ç•Œå·²å¯¹é½�ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œä½Žæ•ˆæžœå�¬å›žæ–¹æ³•çš„è¯Šæ–­åž‹å·¥ç¨‹ä¿®å¤�â€�ï¼šä¸�æ˜¯ç›´æŽ¥ç”¨ label/oracle è°ƒå�‚å†’å……æ��å�‡ï¼Œè€Œæ˜¯å…ˆä»Žå€™é€‰ç”Ÿæˆ�æœºåˆ¶æ‹†è§£é”™è¯¯æ�¥æº�ï¼Œåˆ†åˆ«ç”¨ BM25F å­—æ®µæ�ƒé‡�ã€�åº�åˆ—è½¬ç§» support gate å’Œ underfill repair ä¿®å¤�å�¬å›žé€»è¾‘ï¼Œå�Œæ—¶ç”¨ no-holdout auditã€�governance flagã€�focused unit tests å’Œç‹¬ç«‹ review ä¿�è¯�å®žéªŒè¾¹ç•Œå�¯å¤�è¿°ã€�å�¯éªŒè¯�ã€�å�¯ç»§ç»­æ‰©å±•åˆ°è¿œç¨‹ guarded è¯„ä¼°ã€‚
+
+## 2026-06-08 - semantic 描述式召回诊断口径强化
+
+- 任务：按“自然语言描述能否召回真正匹配商品”的目标，补充 `semantic` / `semantic_title_category_expansion` 的描述式诊断，而不是继续用单方法 valid purchase Recall 判断语义召回生死。
+- 遇到的问题：初版关键词命中诊断 `avg_alignment_precision_at_10_min2_terms=0.892`，但人工查看发现 `wireless_mouse` 会召回 mouse pad，`baby_stroller_organizer` 会召回 desk organizer，`cat_litter_mat` 会召回 litter-box adapter，说明简单 token overlap 会把弱词命中误判为真实意图命中。
+- 定位方式：读取 `outputs/diagnostics/semantic_description_recall_20260608/README.md` 的 topK 结果，按 query 检查标题、类目、核心词、负例词；同时复核 valid-only 报告 `Recall@500=1e-05` 的原因，确认 purchase-valid 口径与 description relevance 口径不同。
+- 解决方式：新增 `scripts/experiments/recall/pool500/diagnose_semantic_description_recall.py`，把 query fixture 拆成 `core_terms`、`must_terms`、`must_any_groups`、`intent_phrases`、`category_any`、`negative_phrases`，评分加入核心标题词覆盖、短语 boost、类目 prior、负例惩罚和 strict/required/bad intent 指标；新增 `tests/test_pool500_semantic_description_diagnostic.py` 验证 stroller organizer 与 wireless mouse 的错误类型会被降权。
+- 验证结果：`./.venv/Scripts/python.exe -m py_compile scripts/experiments/recall/pool500/diagnose_semantic_description_recall.py tests/test_pool500_semantic_description_diagnostic.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_pool500_semantic_description_diagnostic.py tests/test_pool500_semantic_bm25f.py -q` 得到 `3 passed`。严格诊断输出 `outputs/diagnostics/semantic_description_recall_strict_v2_20260608/README.md`：`avg_strict_precision_at_5=0.5`、`avg_strict_precision_at_10=0.483`、`avg_required_precision_at_10=0.75`、`queries_with_strict_hit_top5=8/12`。其中 `wireless_mouse`、`usb_c_hub`、`medical_clipboard` 表现稳定，`dog_chew_toy`、`baby_stroller_organizer`、`cat_litter_mat` 暴露商品类型和类目缺口。
+- 面试可讲点：这段可以讲成“把语义召回从粗糙指标改成可解释的描述式相关性诊断”：不使用 label/oracle 注入，而是用 train-only 商品 metadata 构造可审计 query suite，区分词面命中、核心商品类型、类目先验和负例污染，为后续 Agent/RAG 的商品理解召回建立可复述、可迭代的评估门禁。
+
+
+### 2026-06-08 - pool500 主路方法接入线上服务与 Agent 高层工具
+
+**任务：**
+把已准备好的 pool500 主路候选 artifact 接成可被 FastAPI 服务和 Agent 调用的 online route，同时保持 Agent 前台只暴露 6 个高层业务工具。
+
+**遇到的问题：**
+现有 `/recommend` 的 `complete_pool500=True` 仍直接拒绝，`/health` 仍标记 single-process demo；Agent 工具执行链虽然有 `retrieve_candidates` / `rank_candidates`，但实现仍偏内部 helper。另一个边界问题是 session export 中曾返回 `agent_thoughts`，会把内部工具名和诊断信息暴露到 public payload。
+
+**定位方式：**
+沿 `rs_core/serving/app.py`、`rs_core/serving/service.py`、`rs_core/workflow/online_recommendation.py`、`rs_core/workflow/hybrid_environment.py` 和 `rs_core/rsagent/tools.py` 追踪服务入口、online 推荐路径和 Agent tool dispatch；用 focused pytest 验证 `/recommend`、`/health`、`/ready`、semantic live、Agent manifest 和 public display/export 边界。
+
+**解决方式：**
+新增 `rs_core/recsys/pool500_artifacts.py`，在 `rs_core` 内只读解析 `pool500_candidates.jsonl` 并拒绝 oracle/evaluation 字段；改造 `OnlinePool500Recommender`，让 `complete_pool500=True` 走 pool500 artifact route，并保留 demo-compatible fallback；新增 `/ready`，更新 `/health` 为 online-service 语义；在 `HybridRecommendationEnvironment` 中让高层 `retrieve_candidates` / `rank_candidates` 优先走 online route facade，同时保留 semantic_live 优先级；移除 public session export 中的 `agent_thoughts`，避免泄漏工具链和诊断。
+
+**验证结果：**
+`./.venv/Scripts/python.exe -m pytest tests/test_agent_capability_manifest.py tests/test_pool500_online_artifacts.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_agent_runtime.py tests/test_agent_tools.py tests/test_display_contract.py tests/test_engineering_contracts.py -q` 结果 `154 passed`；`./.venv/Scripts/python.exe -m ruff check rs_core tests/test_pool500_online_artifacts.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py scripts/serving/run_service.py` 结果 `All checks passed!`。独立 verifier 指出 export 泄漏问题后已修复并复测通过。
+
+**面试可讲点：**
+这段工作可以讲成“把离线推荐主路晋升为在线可调用能力，但不让 Agent 直接接触底层算法细节”：服务层通过 artifact loader、readiness 和 fail-closed 字段校验治理数据入口；Agent 侧仍只调用候选检索、排序、证据和 slate 构建等高层工具；public display/export 严格隔离诊断和工具轨迹。这样既能支持真实交互服务，也保留了推荐方法、Agent 编排和前端展示之间的边界。
+
+### 2026-06-09 - COLD/DeepFM 冷用户冷 item 筛选与 feature contract 门禁
+
+**任务：**
+根据“先 user 后 item / 先 item 后 user”两种候选方案，实际实现 COLD 粗排 / DeepFM 精排的 train-only 筛选策略，并完成 smoke 训练、frozen eval 诊断和门禁复审。
+
+**遇到的问题：**
+原训练链路没有显式记录冷用户/冷 item 的筛选顺序，且 eval runner 可能从候选 rank/source 临时派生特征，导致 train/eval feature space 不一致；同时 frozen candidate 与 valid label overlap 为 0，不能把训练完成包装成排序效果提升。复审还发现非法 feature contract threshold 可能导致 eval builder 崩溃，以及 runner 在缺少 `coverage_gate.json` sidecar 时可能错误放行 ranking-effect conclusion。
+
+**定位方式：**
+围绕 `build_cold_deepfm_ranking_training_dataset.py`、`build_pool500_frozen_candidate_eval_dataset.py` 和 `run_cold_deepfm_offline_train_eval.py` 做 targeted test 与 code-reviewer 复审。通过 `screening_audit.json` 对比 user-first / item-first 的 retained stats，通过 `feature_contract_gate` 检查 train/eval 每行 feature set、feature version、screening policy 和 contract hash，通过 `coverage_gate.json` 核实 valid label 正例是否进入 frozen candidates。
+
+**解决方式：**
+新增 `screening_policy={none,user_first,item_first}` 和默认阈值 `min_user_train_positive_count=2`、`min_item_train_positive_user_count=2`。主线 user-first 先过滤低历史用户，再在保留用户上筛 item；item-first 作为 ablation 先筛 item，再筛 retained users。训练、负采样和 history features 都只用 2y1m3m train-only positives；eval builder 只对 frozen candidates 做同一 eligible user/item filtering，不做 label 注入。新增 `feature_contract.json`，runner 严格要求 train/eval artifact hash、feature names、feature version 和 row-level feature set 与 contract 一致；非法 threshold 走 STOP gate，不崩溃；缺 coverage sidecar 时一律拒绝 ranking-effect conclusion。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_cold_deepfm_ranking.py -q`，结果 `40 passed in 0.48s`。user-first smoke 训练集为 43752 rows / 14584 positives / 9437 positive users，DeepFM loss 从 `0.6292415099` 降到 `0.6150086049`；item-first 为 51870 rows / 17290 positives / 7215 positive users，loss 从 `0.6086242059` 降到 `0.6070367131`。两者的 oracle gate 和 feature contract gate 均 PASS；但 frozen eval 分别只有 830 rows / 6 users / 0 positives 和 999 rows / 5 users / 0 positives，coverage gate 均为 `STOP_FOR_RANKING_EFFECT`，因此 `ranking_effect_conclusion_allowed=false`、`ranking_effect_conclusion_refused=true`。最终 code-reviewer 复审确认 HIGH/CRITICAL 为 0。
+
+**面试可讲点：**
+这段可以讲成“排序训练前的数据口径治理与效果门禁”：不是简单删除冷用户/冷 item，而是把筛选顺序、阈值、eligible sets 和 feature contract 固化成可审计 artifact；即使 COLD/DeepFM 完成训练，也通过 frozen candidate coverage gate 主动拒绝不成立的排序效果宣称，体现了推荐系统离线实验中 no-oracle、train-only feature stats 和 candidate coverage 的工程严谨性。
+
+### 2026-06-09 - DeepFM shadow scorer 接入在线排序链路
+
+**任务：**
+响应“先把这个模型用上”，把已训练的 DeepFM artifact 接入在线 pool500 / Agent 推荐链路，但只作为 shadow / diagnostic scorer，不替换主排序器、不声明排序效果。
+
+**遇到的问题：**
+当前离线报告仍不允许 `ranking_replacement` 和 `ranking_effect_conclusion`，且 serving artifact 可能缺失；原 `deepfm_model` 钩子在非 shadow 模式下可直接改变 `final_score`，存在把诊断模型误用为线上排序增益的风险。同时 public display 必须继续隔离 raw score、feature contract、model path 和 ranking internals。
+
+**定位方式：**
+沿 `rs_core/recsys/ranking.py` 的 `rank_candidates -> rerank_candidates -> _apply_deepfm_model_score` 追踪模型打分入口，并复核 `configs/serving/online_service.yaml`、`rs_core/display/builder.py`、`tests/test_recsys_core.py`、`tests/test_display_contract.py`。独立 code-reviewer 先后指出 artifact 缺失 fail-closed、disabled policy masking、diagnostic-only governance、`max_scored_candidates` 优先级等风险，均以回归测试固定。
+
+**解决方式：**
+新增/兼容 `deepfm_shadow` 配置入口，加载 DeepFM 模型与 offline report；默认 `feature_strategy=all_zero_safe`，不读取 valid/test/holdout，不使用 label/oracle 字段。治理门禁要求 policy、model/report diagnostic flags 与 report permission 同时允许才可产生排序 delta；当前配置 `affect_ranking=false`、`score_scale=0.0`，因此只记录 `deepfm_shadow_score` 内部事件。缺失 artifact 转为 skipped event，disabled shadow 不再遮蔽 legacy `deepfm_model`，`max_scored_candidates` 按 fine-stage 排名优先级限流；display validator 增加 DeepFM shadow 相关 forbidden key/term。
+
+**验证结果：**
+使用项目默认 `.venv` 运行：`./.venv/Scripts/python.exe -m pytest tests/test_recsys_core.py tests/test_display_contract.py tests/test_cold_deepfm_ranking.py -q` 得到 `130 passed in 0.56s`；`./.venv/Scripts/python.exe -m pytest tests/test_serving_recommend_from_sequence.py -q` 得到 `6 passed in 0.52s`。最终 code-reviewer 复审确认 HIGH/MEDIUM 为 0，仅剩低优先级可观测性/配置健壮性建议，已补充缺失路径事件和非法 `max_scored_candidates` 降级处理。
+
+**面试可讲点：**
+这段可以讲成“把离线排序模型安全接入在线链路的 shadow rollout”：不是直接用 smoke/offline 模型改线上排序，而是在服务链路真实加载、真实打分、内部留痕，同时通过治理门禁、fail-closed、限流和 public payload 隔离保证不会把未通过 coverage/effect gate 的模型包装成线上效果提升，为后续 challenger / promotion 留出清晰升级路径。
+
+### 2026-06-12 - RAG é»˜è®¤å­—æ®µé™�å™ªä¸Ž evidence é…�é¢�æ”¶å�£
+
+**ä»»åŠ¡ï¼š**
+å°† RAG é»˜è®¤è¯�æ�®å­—æ®µä»Ž `category` / `main_category` ç­‰é«˜å™ªå£°åˆ«å��ä¸­æ”¶çª„åˆ° `title`ã€�`category_path`ã€�`description`ã€�`features`ï¼Œå¹¶é™�åˆ¶ title ä½œä¸º anchor ä½†ä¸�èƒ½ç‹¬å� æ¯�ä¸ª item çš„ evidenceã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+åŽŸé»˜è®¤å­—æ®µä¼šæŠŠç²—ç²’åº¦ç±»ç›®å’Œæ ‡é¢˜ä¸€èµ·æŽ¨åˆ°è¯�æ�®å‰�åˆ—ï¼Œå®¹æ˜“è®©è§£é‡Šå��å�‘ç±»ç›®/æ ‡é¢˜åŒ¹é…�ï¼Œè€Œä¸�æ˜¯å•†å“�æ��è¿°å’Œç‰¹å¾�ï¼›SQLite BM25 ä¸Ž Hybrid retriever å�ˆæœ‰ä¸�å�Œ evidence æ�¥æº�ï¼Œéœ€è¦�é�¿å…�å�ªä¿®ä¸€æ�¡è·¯å¾„ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ²¿ `rs_core/recsys/rag/corpus.py`ã€�`bm25.py`ã€�`retriever.py`ã€�`hybrid.py` å’Œ `tests/test_rag_core.py` æ£€æŸ¥å­—æ®µé»˜è®¤å€¼ã€�BM25 æ£€ç´¢ã€�Hybrid èž�å�ˆä¸Ž RAG policy çš„é¢„ç®—è£�å‰ªé¡ºåº�ã€‚é¦–æ¬¡å®šå�‘ pytest æš´éœ²å‡ºé»˜è®¤å­—æ®µæµ‹è¯•æ�’å…¥ä½�ç½®ã€�full_text æ—§æ–­è¨€ã€�BM25 description è¢«å¤š chunk features æŒ¤å‡ºã€�Hybrid æœ¬åœ°å�‘é‡� compact_text å…¼å®¹æ€§ç­‰é—®é¢˜ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+é»˜è®¤å­—æ®µå’Œ compact dense source å­—æ®µç§»é™¤ `category` / `main_category`ï¼›InMemory candidate card é»˜è®¤æ”¹ä¸º `title/category_path/description/features`ï¼›SQLite BM25 candidate/query-planning æ£€ç´¢é»˜è®¤å�ªè¿”å›žæ ‡å‡†å­—æ®µå¹¶æŒ‰ item-field é…�é¢�åŽ»é‡�ï¼›Hybrid èž�å�ˆå�Žå�Œæ ·è¿‡æ»¤é»˜è®¤å­—æ®µå¹¶ä¿�ç•™ `compact_text` å…¼å®¹æœ¬åœ°å�‘é‡�ç´¢å¼•ã€‚RAG policy å±‚å¢žåŠ  title å�• item é…�é¢�ï¼Œé�¿å…�é«˜åˆ† title å¤š chunk å� æ»¡ per-item budgetã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›® `.venv` è¿�è¡Œ `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_rag_core.py`ï¼Œç»“æžœ `26 passed in 1.67s`ï¼›è¿�è¡Œ `py_compile` æ£€æŸ¥ 5 ä¸ªä¿®æ”¹æ–‡ä»¶æ— è¯­æ³•é”™è¯¯ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œRAG è¯�æ�®æ²»ç�†çš„å­—æ®µçº§é™�å™ªâ€�ï¼šä¸�æ˜¯å�•çº¯æ��é«˜å�¬å›žæ•°é‡�ï¼Œè€Œæ˜¯é€šè¿‡é»˜è®¤å­—æ®µç™½å��å�•ã€�title anchor é…�é¢�å’Œè·¨ BM25/Hybrid çš„ä¸€è‡´è¿‡æ»¤ï¼ŒæŠŠè§£é‡Š grounding ä»Žç²—ç±»ç›®/æ ‡é¢˜å��ç½®æ‹‰å›žåˆ°æ��è¿°ä¸Žç‰¹å¾�è¯�æ�®ï¼Œå�Œæ—¶ä¿�ç•™æ—§ç´¢å¼•å’Œ compact vector çš„å…¼å®¹è¾¹ç•Œã€‚
+
+
+## 2026-06-14 Agent 本地 smoke、资源门禁与公开输出隔离
+
+- 任务：优化 Agent 系统上线前的本地可运行性检查，并调通本地 smoke；在真正运行 Qwen 推理/训练前判断本机资源是否足够，不足时转远程服务器。
+- 遇到的问题：本地 10k smoke artifact 缺少 `itemcf_recall_strong.jsonl`；RAG 解释证据没有从候选卡片的类目字段生成可用 grounding；CLI 写公开展示产物时触发 `public payload contains forbidden term: itemcf`；SFT/GRPO 依赖和显存门槛不满足本机重任务要求。
+- 定位方式：通过 Agent/runtime 相关 pytest、CLI smoke stack trace、资源门禁输出和公开 payload 校验定位；关键验证命令为 `.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo_optional_strong.py tests/test_agent_runtime.py tests/test_agent_tools.py tests/test_agent_dialogue.py tests/test_agent_capability_manifest.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py tests/test_training_resource_gate.py -q`，结果 `132 passed in 1.86s`；CLI smoke 使用 `.venv/Scripts/python.exe -m rs_core.rsagent.cli --limit-users 1 --simulate-conversation --output-dir tmp_agent_goal_smoke_20260613 --inference-policy off` 成功写出 session、turns、rollout、display 和 report 文件。
+- 解决方式：新增 Qwen smoke/inference/SFT/GRPO 资源门禁并接入 smoke/SFT/GRPO runner；将 `itemcf_strong` sidecar 设为可选；修复候选卡片 RAG evidence 的 `category_path` fallback；将 deterministic Agent 的公开解释文案从具体内部方法名改为“可用候选提供方 + 用户反馈约束 + 确定性排序规则”，避免泄漏内部实现词。
+- 验证结果：Agent/resource focused test suite 通过；CLI 本地多轮 smoke 成功生成公开展示产物；额外 verifier 复核 display artifacts 未命中 `itemcf/source/training/reward/diagnostic/internal` 等公开禁用词。当前不能宣称全仓库 pytest 通过，因为全量测试仍受历史配置/产物缺失影响。
+- 面试可讲点：这次把 Agent 上线前检查从“能跑一次”升级为可复现 gate：先做资源/依赖分层判定，再做 RAG grounding 与公开/内部 payload 隔离，最后用 CLI smoke 证明多轮对话、推荐、解释、rollout 与展示产物能闭环；本机适合 smoke 和轻量推理，SFT/GRPO 重任务应按限流策略迁移远程服务器执行。
+
+## 2026-06-14 P3 Agent candidate flow 与在线治理收口
+
+- 任务：收口 P3 的 Agent candidate flow 与 online governance，确保 retrieve_candidates 进入最终推荐回合，rank_candidates 只接受显式候选 id，co_visit 诊断路径不进入 live candidates，坏的 pool500 artifact 走降级/回退，`/health` 保持轻量。
+- 遇到的问题：retrieve_candidates 如果只停留在诊断层，会导致候选没有进入 final turn；rank_candidates 容易出现“有交集就算成功”的伪通过；co_visit_fallback_repair 这类 diagnostic/batch-scoped 路径不能误入 live `/recall` 或 `/recommend`；`/health` 若承担 readiness 会拖重在线探活。最终 review 还补充定位到 registry / artifact / source-index 相对路径依赖 CWD、online candidate route 缺 governance 时 fail-open，以及 `final_pool500_ready_claimed` 未纳入 serving guardrail 的治理风险。
+- 定位方式：围绕 `tests/test_agent_runtime.py`、`tests/test_serving_smoke.py`、`tests/test_serving_recommend_from_sequence.py`、`tests/test_serving_facades.py` 这组 contract/targeted tests 核对候选传递、显式 id 收紧、降级路径、健康检查、路径解析和 governance fail-closed 语义；worker-code focused `tests/test_agent_runtime.py -q` 结果 `30 passed`，worker-test contract suite `.venv/Scripts/python -m pytest tests/test_agent_runtime.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py -q` 结果 `80 passed in 1.64s`。
+- 解决方式：让 `retrieve_candidates` 的输出显式进入 final turn；`rank_candidates` 只接受当前 turn pool 内的 explicit ids；将 co-visit fallback 标记为 diagnostic-only，不再进入 live candidate generation；bad pool500 artifact 走 degraded/fallback 而不是伪成功；`/health` 继续只做轻量 liveness，把 readiness 留给 `/ready`。同时将默认 serving registry 固定到 repo root 解析，pool500/source-index 路径按 repo root/config-dir 解析且不再 fallback 到 CWD；online candidate route 缺 `online_route.governance` 时启动即拒绝；guardrail 增加 `final_pool500_ready_claimed=false`。
+- 验证结果：先跑 serving governance regression：`.venv/Scripts/python -m pytest tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py -q`，结果 `53 passed in 1.64s`。最终 targeted suite：`.venv/Scripts/python -m pytest tests/test_agent_runtime.py tests/test_agent_dialogue.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py tests/test_serving_facades.py tests/test_display_contract.py tests/test_agent_tools.py tests/test_agent_capability_manifest.py -q`，结果 `239 passed in 2.10s`。code-reviewer 最终 `APPROVE`，verifier 最终 `PASS/APPROVE`，未发现 blocker。
+- 面试可讲点：这段可以概括成“把 Agent 候选流和在线治理从能跑改成语义正确、启动即受控”：最终 turn、候选池、降级与健康检查各司其职，避免诊断路径污染线上候选；同时把路径解析和 governance guardrail 前置成服务启动合同，防止部署 CWD、配置漂移或 final-ready 误声明绕过上线边界。

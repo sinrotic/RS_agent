@@ -28,11 +28,26 @@
 
 ### 3. Agent
 
-- 让 Agent 站在候选结果之上做决策
-- 负责重排、过滤、追问和推荐解释
-- 不直接替代召回和排序
+- 未来主线固定为 **LLM-orchestrated RecSys**：让 LLM 作为推荐系统调度大脑，而不是普通推荐 chatbot
+- 把召回、排序、过滤、广告投放、用户记忆、RAG 证据、解释和反馈更新抽象成 Agent 可调用工具
+- 让 Agent 根据用户意图、会话状态、长期偏好、业务约束和实时反馈，自动选择召回通道、排序目标、过滤策略和解释方式
+- 当前阶段先让 Agent 站在候选结果之上做重排、过滤、追问和推荐解释，后续再逐步提升为对召回/排序/广告策略的自动化编排
+- 不让 LLM 直接编造商品或替代可验证的推荐 backbone；LLM 负责策略调度，推荐子系统负责产生可追溯结果
 
-### 4. Agent RAG 增强
+### 4. Agent 工具边界与候选获取
+
+- 当前 Agent-facing 工具已收敛为 6 个业务级核心工具：`get_user_context`、`retrieve_candidates`、`rank_candidates`、`get_item_evidence`、`record_user_feedback`、`build_recommendation_slate`
+- Agent 不直接面对 `itemcf_strong`、`semantic`、`catalog_constraint_search`、`deepfm_rank_candidates` 等底层方法名；这些能力保留在后端内部，由 6 个高层工具封装
+- `get_user_context` 负责会话状态、最近 turn、显式偏好和已展示/喜欢/不喜欢 item 的 compact 摘要
+- `retrieve_candidates` 负责从真实 catalog / recall index / candidate pool 获取候选，但输出只保留 candidate item ids、数量和摘要，不把 recall path、source score 或诊断细节暴露给前台
+- `rank_candidates` 负责对候选池排序，内部可复用 DeepFM / hybrid ranker，但工具输出只保留 ranked item ids、数量和排序摘要，不直接输出 `score_trace` 或 `feature_rows`
+- `get_item_evidence` 负责候选内证据选择：优先消费 RAG evidence，无 RAG 时退回 display-safe 商品卡事实，用于解释 grounding 和幻觉控制
+- `record_user_feedback` 负责显式反馈写入 session constraints，但不在普通推荐流程里默认执行，避免和 dialogue plan 的反馈合并重复写入
+- `build_recommendation_slate` 负责生成展示安全 slate，是 6 个工具中唯一允许 public payload 的工具，必须复用 display builder 和 public payload validator
+- 所有候选获取路径仍必须经过真实商品校验、hard filter、质量门禁、排序/重排和展示安全检查；LLM 负责调度语义，不负责编造商品或绕过推荐 backbone
+- 排序文本特征方向采用“目标条件化商品描述”：Agent 保持原始商品 listing 风格，根据当前用户目标重组 title/category/features/description 等真实字段，作为 shadow feature / ablation，而不是直接把自由推荐理由喂给排序模型
+
+### 5. Agent RAG 增强
 
 - 为 Agent 增加商品知识检索能力，用于推荐解释 grounding、约束澄清和幻觉控制
 - 构建物品知识库，围绕 `parent_asin` 聚合标题、类目、描述、卖点、价格、评分和可展示属性
@@ -201,11 +216,22 @@
 - `rag.max_evidence_per_item` 作为可选证据上限
 - provenance gate 会剔除 label / holdout / oracle / ground_truth / test_truth / diagnostic_label / eval_label / target / future-like 证据
 - RAG 不修改 `candidates`、`ranking`、`final_items` 或 `scores`
-- 已新增 SQLite FTS5/BM25 轻量检索第一版：`build_sqlite_bm25_index()` 负责商品字段 chunk 入库，`rag.index_path` / `rag.bm25_index_path` 存在时 Agent 解释链路使用 `SQLiteBM25CandidateRetriever`
-- 已新增 Hybrid 检索第一版：`rag.retriever=hybrid` 时使用 `HybridCandidateRetriever`，融合 BM25 分数和 deterministic hashed text vector cosine 分数
-- BM25 / Hybrid 检索仍限定在已排序候选 item id 内，只选择解释证据，不作为新的召回源
+- 已新增 SQLite FTS5/BM25 检索：`build_sqlite_bm25_index()` 负责商品字段 chunk 入库，`rag.index_path` / `rag.bm25_index_path` 存在时 Agent 解释链路使用 `SQLiteBM25CandidateRetriever`
+- 已新增 dense 本地向量索引：默认 `sentence_transformer_dense_v1` + `BAAI/bge-m3`，保留 `local_tfidf_vector_v1` 作为显式 baseline
+- 已新增 Hybrid 检索：`rag.retriever=hybrid` 时使用 `HybridCandidateRetriever`，支持 BM25 + dense/vector 的 `weighted` 或 `rrf` 融合，并可配置字段权重
+- RAG 建库范围默认是 `product_catalog` 商品知识库，manifest / vector metadata 记录 `corpus_scope=product_catalog` 与 `index_scope=product_catalog`
+- RAG 运行时检索范围固定为 `candidate_item_ids`，BM25 / dense / Hybrid 都只能在已排序候选 item id 内选择解释证据，不作为新的召回源
+- manifest 显式记录 `knowledge_base_role=rag_evidence`、`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`
 
-当前结论是：RAG 已具备候选内 BM25 + 轻量 Hybrid 证据检索闭环。下一步如果继续扩展，应优先补真实 embedding 替换接口、item_knowledge 数据质量和离线证据质量评估，而不是先改主路候选治理。
+#### 双 lane 边界
+
+- **Lane A：rag_evidence**。只承担候选内证据检索、解释 grounding 和 undercoverage 诊断，不把“证据更全”写成“召回更强”。该 lane 的 `artifact_role=rag_evidence`，`candidate_scoped=true`，`candidate_generation_allowed=false`，`ranking_input_replacement_allowed=false`，`promotion_allowed=false`。
+- **Lane B：diagnostic_only / recall_candidate_source**。只允许作为候选来源诊断与覆盖分析的受控输入，任何晋升都必须先通过 train-visible-only 全过程约束、冻结编码器可复现性检查、远程重放可复现性门禁，以及 dirty artifact no-promotion 规则；未通过门禁的产物只能停留在 diagnostic_only。
+- 冻结编码器可复现性至少要记录：`model_name`、`checkpoint_sha`、`tokenizer_sha`、`corpus_hash`、`index_hash`、`seed`、`build_command`、`build_env`。
+- 若产物存在未提交改动、未追踪数据、哈希不一致或远程重放失败，则视为 dirty artifact，禁止 promotion。
+
+
+当前结论是：RAG 已具备“全量商品知识库建索引、候选池内取证据”的 BM25 + BGE-M3 dense hybrid 闭环。下一步如果继续扩展，应优先补真实 BGE-M3 全量建库资源 smoke、证据质量评估和 rerank/grounding 指标，而不是让 RAG 替代主路召回或排序。
 
 ---
 

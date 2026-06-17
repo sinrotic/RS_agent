@@ -24,9 +24,18 @@ from rs_lab.experiments.recall.build_train_only_data_governance import load_gove
 SCHEMA_VERSION = "pool500_method_dataset_v1"
 ITEMCF_ACTIVE_USER_PENALTY_POLICY = "round(1 / log1p(filtered_sequence_len), 6)"
 ITEMCF_SCORE_POLICY = "weighted_cooc_cosine_normalized_v1"
+ITEMCF_RECENT_2Y_WEAK_SCORE_POLICY = "sciomc_bm25_tfidf_idf_weighted_cooc_cosine_v1"
+ITEMCF_RECENT_2Y_STRONG_SCORE_POLICY = "directed_strong_seed_weighted_cooc_cosine_shrinkage_v1"
 ITEMCF_SCORE_FORMULA = "round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)"
-DEFAULT_GOVERNANCE_MANIFEST = ROOT / "outputs" / "recall" / "data_governance" / "train_only_v1" / "manifest.json"
-DEFAULT_OUTPUT_ROOT = ROOT / "outputs" / "recall" / "pool500_method_datasets" / "collab_v1"
+AUGCF_LITE_SCORE_POLICY = "augcf_lite_profile_score_v1"
+AUGCF_LITE_AUGMENTATION_POLICY = "train_only_observed_pseudo_low_freq_v1"
+ITEMCF_SHRINKAGE_SCORE_FORMULA = "round((weighted_cooc / sqrt(src_user_count * dst_user_count)) * pair_support / (pair_support + shrinkage_alpha), 6)"
+RECENT_2Y_DATASET_ROOT = ROOT / "data" / "processed" / "amazon_2023_recall_recent_2y_1m_3m"
+RECENT_2Y_GOVERNANCE_MANIFEST = RECENT_2Y_DATASET_ROOT / "train_only_governance" / "manifest.json"
+DEFAULT_GOVERNANCE_MANIFEST = RECENT_2Y_GOVERNANCE_MANIFEST
+DEFAULT_OUTPUT_ROOT = ROOT / "outputs" / "recall" / "pool500_method_datasets" / "recent_2y" / "collab_v1"
+CURRENT_SCALE_TIERS = ("smoke", "formal")
+RETIRED_SCALE_TIERS = {"diagnostic", "local_formal"}
 SOURCE_METHODS = ("itemcf_weak", "itemcf_strong", "usercf_method_dataset", "swing_method_dataset")
 POLICY_SOURCE_BY_METHOD = {
     "itemcf_weak": "itemcf_weak",
@@ -36,15 +45,14 @@ POLICY_SOURCE_BY_METHOD = {
 }
 RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
     "itemcf_weak": {
-        "input_scope": "governance_train_only",
-        "scale_tier": "local_formal_default",
-        "default_tier": "local_formal",
+        "input_scope": "recent_window_2y_train_only_governance",
+        "scale_tier": "formal_default",
+        "default_tier": "formal",
         "scale_tiers": {
             "smoke": {"max_output_users": 1_000, "max_items_per_user": 50, "max_item_user_freq": 5_000, "min_pair_support": 1, "top_k_per_seed": 100},
-            "diagnostic": {"max_output_users": 50_000, "max_items_per_user": 50, "max_item_user_freq": 5_000, "min_pair_support": 1, "top_k_per_seed": 100},
-            "local_formal": {"max_output_users": 300_000, "max_items_per_user": 50, "max_item_user_freq": 5_000, "min_pair_support": 1, "top_k_per_seed": 100},
+            "formal": {"max_output_users": 0, "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users", "max_items_per_user": 0, "max_items_per_user_semantics": "agent_managed_unlimited_user_history", "max_item_user_freq": 0, "max_item_user_freq_semantics": "agent_managed_no_method_cap", "min_pair_support": 1, "top_k_per_seed": 0, "top_k_per_seed_semantics": "agent_managed_no_method_cap"},
         },
-        "selection_policy_version": "p2_method_dataset_policy_v1",
+        "selection_policy_version": "p2_method_dataset_policy_v2_recent_2y_smoke_formal",
         "selection_strategy": {
             "policy_name": "itemcf_weak_edges_v1",
             "sampling_unit": "user_positive_sequence_to_item_pairs",
@@ -53,9 +61,12 @@ RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
             "over_hot_control": "cap_or_downweight",
             "coverage_mode": "broad",
         },
-        "max_output_users": 300_000,
-        "max_items_per_user": 50,
-        "max_item_user_freq": 5_000,
+        "max_output_users": 0,
+        "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+        "max_items_per_user": 0,
+        "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+        "max_item_user_freq": 0,
+        "max_item_user_freq_semantics": "agent_managed_no_method_cap",
         "min_pair_support": 1,
         "score_policy": ITEMCF_SCORE_POLICY,
         "active_user_penalty_policy": ITEMCF_ACTIVE_USER_PENALTY_POLICY,
@@ -63,15 +74,14 @@ RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
         "p2_contract_scope": "method_dataset_only",
     },
     "itemcf_strong": {
-        "input_scope": "governance_train_only",
-        "scale_tier": "local_formal_default",
-        "default_tier": "local_formal",
+        "input_scope": "recent_window_2y_train_only_governance",
+        "scale_tier": "formal_default",
+        "default_tier": "formal",
         "scale_tiers": {
             "smoke": {"max_output_users": 1_000, "max_items_per_user": 50, "max_item_user_freq": 3_000, "min_pair_support": 2, "top_k_per_seed": 100},
-            "diagnostic": {"max_output_users": 80_000, "max_items_per_user": 50, "max_item_user_freq": 3_000, "min_pair_support": 2, "top_k_per_seed": 100},
-            "local_formal": {"max_output_users": 200_000, "max_items_per_user": 50, "max_item_user_freq": 3_000, "min_pair_support": 2, "top_k_per_seed": 100},
+            "formal": {"max_output_users": 0, "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users", "max_items_per_user": 0, "max_items_per_user_semantics": "agent_managed_unlimited_user_history", "max_item_user_freq": 0, "max_item_user_freq_semantics": "agent_managed_no_method_cap", "min_pair_support": 2, "top_k_per_seed": 0, "top_k_per_seed_semantics": "agent_managed_no_method_cap"},
         },
-        "selection_policy_version": "p2_method_dataset_policy_v1",
+        "selection_policy_version": "p2_method_dataset_policy_v2_recent_2y_smoke_formal",
         "selection_strategy": {
             "policy_name": "itemcf_strong_edges_v1",
             "sampling_unit": "user_positive_sequence_to_item_pairs",
@@ -80,9 +90,12 @@ RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
             "over_hot_control": "strict_cap",
             "pair_window_control": "strong_support_window",
         },
-        "max_output_users": 200_000,
-        "max_items_per_user": 50,
-        "max_item_user_freq": 3_000,
+        "max_output_users": 0,
+        "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+        "max_items_per_user": 0,
+        "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+        "max_item_user_freq": 0,
+        "max_item_user_freq_semantics": "agent_managed_no_method_cap",
         "min_pair_support": 2,
         "score_policy": ITEMCF_SCORE_POLICY,
         "active_user_penalty_policy": ITEMCF_ACTIVE_USER_PENALTY_POLICY,
@@ -90,15 +103,30 @@ RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
         "p2_contract_scope": "method_dataset_only",
     },
     "usercf_method_dataset": {
-        "input_scope": "governance_train_only",
-        "scale_tier": "local_formal_default",
-        "default_tier": "local_formal",
+        "input_scope": "recent_window_2y_train_only_governance",
+        "scale_tier": "formal_default",
+        "default_tier": "formal",
         "scale_tiers": {
-            "smoke": {"max_output_users": 1_000, "max_items_per_user": 80, "max_item_user_freq": 5_000, "similar_users_top_k": 50},
-            "diagnostic": {"max_output_users": 60_000, "max_items_per_user": 80, "max_item_user_freq": 5_000, "similar_users_top_k": 100},
-            "local_formal": {"max_output_users": 120_000, "max_items_per_user": 80, "max_item_user_freq": 5_000, "similar_users_top_k": 200},
+            "smoke": {
+                "max_output_users": 0,
+                "max_output_user_ratio": 0.02,
+                "max_output_users_semantics": "profile_driven_2pct_of_actual_eligible_users",
+                "max_items_per_user": 80,
+                "max_item_user_freq": 5_000,
+                "similar_users_top_k": 50,
+            },
+            "formal": {
+                "max_output_users": 0,
+                "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+                "max_items_per_user": 0,
+                "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+                "max_item_user_freq": 0,
+                "max_item_user_freq_semantics": "agent_managed_no_method_cap",
+                "similar_users_top_k": 0,
+                "similar_users_top_k_semantics": "agent_managed_no_method_cap",
+            },
         },
-        "selection_policy_version": "p2_method_dataset_policy_v1",
+        "selection_policy_version": "usercf_sciomc_preprocess_recent_2y_smoke_formal_v1",
         "selection_strategy": {
             "policy_name": "usercf_neighbors_v1",
             "sampling_unit": "connected_user_item_subgraph",
@@ -108,22 +136,25 @@ RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
             "shard_unit": "ego_network",
             "record_orphan_counts": True,
         },
-        "max_output_users": 120_000,
-        "max_items_per_user": 80,
-        "max_item_user_freq": 5_000,
-        "similar_users_top_k": 200,
+        "max_output_users": 0,
+        "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+        "max_items_per_user": 0,
+        "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+        "max_item_user_freq": 0,
+        "max_item_user_freq_semantics": "agent_managed_no_method_cap",
+        "similar_users_top_k": 0,
+        "similar_users_top_k_semantics": "agent_managed_no_method_cap",
         "p2_contract_scope": "method_dataset_only",
     },
     "swing_method_dataset": {
-        "input_scope": "governance_train_only",
-        "scale_tier": "local_formal_default",
-        "default_tier": "local_formal",
+        "input_scope": "recent_window_2y_train_only_governance",
+        "scale_tier": "formal_default",
+        "default_tier": "formal",
         "scale_tiers": {
             "smoke": {"max_graph_users": 2_000, "max_items_per_user": 50, "max_item_user_freq": 1_000, "min_pair_support": 1},
-            "diagnostic": {"max_graph_users": 50_000, "max_items_per_user": 80, "max_item_user_freq": 1_000, "min_pair_support": 1},
-            "local_formal": {"max_graph_users": 120_000, "max_items_per_user": 80, "max_item_user_freq": 600, "min_pair_support": 2},
+            "formal": {"max_graph_users": 0, "max_graph_users_semantics": "agent_managed_unlimited_actual_eligible_users", "max_items_per_user": 0, "max_items_per_user_semantics": "agent_managed_unlimited_user_history", "max_item_user_freq": 0, "max_item_user_freq_semantics": "agent_managed_no_method_cap", "min_pair_support": 2},
         },
-        "selection_policy_version": "p2_method_dataset_policy_v1",
+        "selection_policy_version": "p2_method_dataset_policy_v2_recent_2y_smoke_formal",
         "selection_strategy": {
             "policy_name": "swing_graph_v1",
             "sampling_unit": "bipartite_user_item_graph_to_pair_support",
@@ -132,9 +163,12 @@ RESOURCE_SCALE_POLICIES: dict[str, dict[str, Any]] = {
             "eligible_item_bucket": "cf_ready",
             "hot_item_control": "strict_cap",
         },
-        "max_graph_users": 120_000,
-        "max_items_per_user": 80,
-        "max_item_user_freq": 600,
+        "max_graph_users": 0,
+        "max_graph_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+        "max_items_per_user": 0,
+        "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+        "max_item_user_freq": 0,
+        "max_item_user_freq_semantics": "agent_managed_no_method_cap",
         "min_pair_support": 2,
         "p2_contract_scope": "method_dataset_only",
     },
@@ -176,8 +210,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--governance-manifest", default=str(DEFAULT_GOVERNANCE_MANIFEST))
     parser.add_argument("--output-root", default=str(DEFAULT_OUTPUT_ROOT))
     parser.add_argument("--source-method", choices=SOURCE_METHODS + ("all",), default="all")
-    parser.add_argument("--scale-tier", choices=("smoke", "diagnostic", "local_formal"), default="local_formal")
-    parser.add_argument("--itemcf-coverage-profile", choices=("strict", "weak_coverage", "relaxed_strong"), default="strict")
+    parser.add_argument("--scale-tier", choices=CURRENT_SCALE_TIERS, default="smoke")
+    parser.add_argument("--itemcf-coverage-profile", choices=("strict", "weak_coverage", "weak_denoised", "augcf_lite", "relaxed_strong", "recent_2y", "usercf_relaxed_iuf"), default="strict")
+    parser.add_argument("--recent-2y-itemcf", action="store_true", help="Build only recent-window 2y ItemCF weak/strong datasets with sciomc preprocessing policies.")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
@@ -188,8 +223,9 @@ def build_pool500_method_datasets(
     governance_manifest_path: Path = DEFAULT_GOVERNANCE_MANIFEST,
     output_root: Path = DEFAULT_OUTPUT_ROOT,
     source_methods: Iterable[str] = SOURCE_METHODS,
-    scale_tier: str = "local_formal",
+    scale_tier: str = "smoke",
     itemcf_coverage_profile: str = "strict",
+    strict_recent_2y_manifest: bool = True,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, dict[str, Any]]:
@@ -200,6 +236,7 @@ def build_pool500_method_datasets(
             source_method=source_method,
             scale_tier=scale_tier,
             itemcf_coverage_profile=itemcf_coverage_profile,
+            strict_recent_2y_manifest=strict_recent_2y_manifest,
             overwrite=overwrite,
             enforce_venv=enforce_venv,
         )
@@ -212,8 +249,9 @@ def build_pool500_method_dataset(
     governance_manifest_path: Path = DEFAULT_GOVERNANCE_MANIFEST,
     output_dir: Path,
     source_method: str,
-    scale_tier: str = "local_formal",
+    scale_tier: str = "smoke",
     itemcf_coverage_profile: str = "strict",
+    strict_recent_2y_manifest: bool = True,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
@@ -222,24 +260,42 @@ def build_pool500_method_dataset(
     if source_method not in SOURCE_METHODS:
         raise ValueError(f"Unsupported source_method: {source_method}")
     resource_policy = _effective_resource_policy(source_method, scale_tier)
-    if itemcf_coverage_profile == "weak_coverage":
+    if itemcf_coverage_profile == "recent_2y":
+        resource_policy = _apply_itemcf_recent_2y_profile(source_method, resource_policy)
+    elif itemcf_coverage_profile == "weak_coverage":
         resource_policy = _apply_itemcf_weak_coverage_profile(source_method, resource_policy)
+    elif itemcf_coverage_profile == "weak_denoised":
+        resource_policy = _apply_itemcf_weak_denoised_profile(source_method, resource_policy)
+    elif itemcf_coverage_profile == "augcf_lite":
+        resource_policy = _apply_augcf_lite_profile(source_method, resource_policy)
     elif itemcf_coverage_profile == "relaxed_strong":
         resource_policy = _apply_itemcf_relaxed_strong_profile(source_method, resource_policy)
+    elif itemcf_coverage_profile == "usercf_relaxed_iuf":
+        resource_policy = _apply_usercf_relaxed_iuf_profile(source_method, resource_policy)
     elif itemcf_coverage_profile != "strict":
         raise ValueError(f"Unsupported itemcf_coverage_profile: {itemcf_coverage_profile}")
 
     governance_manifest_path = Path(governance_manifest_path).resolve()
     output_dir = Path(output_dir).resolve()
+    if strict_recent_2y_manifest:
+        _enforce_recent_2y_governance_manifest(governance_manifest_path)
     _prepare_output_dir(output_dir, overwrite)
 
     governance_manifest = load_governance_manifest(governance_manifest_path)
     policies = method_dataset_policies(governance_manifest)
     policy = dict(policies[POLICY_SOURCE_BY_METHOD[source_method]])
-    if itemcf_coverage_profile == "weak_coverage" and source_method == "itemcf_weak":
+    if itemcf_coverage_profile == "recent_2y" and source_method in {"itemcf_weak", "itemcf_strong"}:
+        policy = _apply_itemcf_recent_2y_selection_policy(policy, source_method)
+    elif itemcf_coverage_profile == "weak_coverage" and source_method == "itemcf_weak":
         policy = _apply_itemcf_weak_coverage_selection_policy(policy)
+    elif itemcf_coverage_profile == "weak_denoised" and source_method == "itemcf_weak":
+        policy = _apply_itemcf_weak_denoised_selection_policy(policy)
+    elif itemcf_coverage_profile == "augcf_lite" and source_method == "itemcf_weak":
+        policy = _apply_augcf_lite_selection_policy(policy)
     elif itemcf_coverage_profile == "relaxed_strong" and source_method == "itemcf_strong":
         policy = _apply_itemcf_relaxed_strong_selection_policy(policy)
+    elif itemcf_coverage_profile == "usercf_relaxed_iuf" and source_method == "usercf_method_dataset":
+        policy = _apply_usercf_relaxed_iuf_selection_policy(policy)
     paths = _governance_paths(governance_manifest)
     read_files = [governance_manifest_path, paths["user_quality_profile"], paths["item_quality_profile"], paths["item_frequency_train"], paths["train_user_sequences"]]
 
@@ -318,6 +374,10 @@ def build_pool500_method_dataset(
             src_sequence_key=resource_policy.get("src_sequence_key"),
             dst_sequence_key=resource_policy.get("dst_sequence_key"),
             directed_seed_to_candidate_only=bool(resource_policy.get("directed_seed_to_candidate_only", False)),
+            score_policy=str(resource_policy.get("score_policy") or ITEMCF_SCORE_POLICY),
+            shrinkage_alpha=float(resource_policy.get("shrinkage_alpha") or 0.0),
+            augmentation_policy=resource_policy.get("augmentation_policy"),
+            pseudo_weight=float(resource_policy.get("pseudo_weight") or 0.0),
         )
     elif source_method == "swing_method_dataset":
         rows, dropped_reason_counts, manifest_counts = _swing_pair_rows(
@@ -335,7 +395,7 @@ def build_pool500_method_dataset(
             users,
             eligible_items,
             source_method,
-            max_output_users=int(resource_policy["max_output_users"]),
+            max_output_users=_effective_max_output_users(resource_policy, len(users)),
             max_items_per_user=int(resource_policy["max_items_per_user"]),
         )
     dropped_reason_counts.update(item_drop_counts)
@@ -344,6 +404,7 @@ def build_pool500_method_dataset(
     outputs = {"dataset_rows_path": str(row_path), "dataset_schema": _dataset_schema(source_method)}
     if source_method in {"itemcf_weak", "itemcf_strong"}:
         outputs["feature_schema"] = "itemcf_edge_features_v1"
+    actual_scale_stats = _actual_scale_stats(manifest_counts, rows, users, eligible_items, dropped_reason_counts)
     manifest = _manifest(
         source_method=source_method,
         status="PASS",
@@ -358,6 +419,7 @@ def build_pool500_method_dataset(
         item_count=manifest_counts["item_count"],
         dropped_reason_counts=dict(dropped_reason_counts),
         outputs=outputs,
+        actual_scale_stats=actual_scale_stats,
     )
     for count_key in (
         "schema_name",
@@ -368,12 +430,15 @@ def build_pool500_method_dataset(
         "score_policy",
         "active_user_penalty_policy",
         "itemcf_score_formula",
+        "shrinkage_alpha",
         "weighted_cooc_sum_before_topk",
         "weighted_cooc_sum_after_topk",
         "feature_summary",
     ):
         if count_key in manifest_counts:
             manifest[count_key] = manifest_counts[count_key]
+        manifest["preprocessing_policy"] = resource_policy.get("preprocessing_policy")
+        manifest["weighting_policy"] = resource_policy.get("weighting_policy")
     audit = _forbidden_scope_audit(output_dir, manifest, rows)
     manifest["forbidden_scope_audit"] = audit
     if audit["status"] != "PASS":
@@ -386,11 +451,19 @@ def build_pool500_method_dataset(
 def _effective_resource_policy(source_method: str, scale_tier: str) -> dict[str, Any]:
     policy = dict(RESOURCE_SCALE_POLICIES[source_method])
     scale_tiers = policy["scale_tiers"]
+    if scale_tier in RETIRED_SCALE_TIERS:
+        raise ValueError(f"Retired scale_tier: {scale_tier}. Current method datasets only support smoke/formal.")
     if scale_tier not in scale_tiers:
         raise ValueError(f"Unsupported scale_tier: {scale_tier}")
     policy.update(scale_tiers[scale_tier])
     policy["scale_tier"] = scale_tier
     return policy
+
+
+def _enforce_recent_2y_governance_manifest(governance_manifest_path: Path) -> None:
+    required = RECENT_2Y_GOVERNANCE_MANIFEST.resolve()
+    if governance_manifest_path != required:
+        raise ValueError(f"Current method datasets must use recent 2y train-only governance manifest: {required}")
 
 
 def _apply_itemcf_weak_coverage_profile(source_method: str, resource_policy: dict[str, Any]) -> dict[str, Any]:
@@ -401,14 +474,18 @@ def _apply_itemcf_weak_coverage_profile(source_method: str, resource_policy: dic
         {
             "dataset_variant": "itemcf_weak_coverage_formal_v1",
             "coverage_profile": "weak_coverage",
-            "max_output_users": 120_000,
-            "max_items_per_user": 80,
-            "max_item_user_freq": 20_000,
+            "max_output_users": 0,
+            "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+            "max_items_per_user": 0,
+            "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+            "max_item_user_freq": 0,
+            "max_item_user_freq_semantics": "agent_managed_no_method_cap",
             "min_pair_support": 1,
-            "top_k_per_seed": 200,
+            "top_k_per_seed": 0,
+            "top_k_per_seed_semantics": "agent_managed_no_method_cap",
             "item_quality_buckets": ["cf_ready", "embedding_ready"],
             "allow_over_hot": True,
-            "over_hot_control": "allow_with_user_freq_cap_and_score_denominator",
+            "over_hot_control": "allow_with_agent_managed_scale",
         }
     )
     selection_strategy = dict(policy.get("selection_strategy") or {})
@@ -416,8 +493,80 @@ def _apply_itemcf_weak_coverage_profile(source_method: str, resource_policy: dic
         {
             "eligible_user_buckets": ["medium_behavior", "sequence_sufficient", "collaborative_rich"],
             "eligible_item_buckets": ["cf_ready", "embedding_ready"],
-            "over_hot_control": "allow_with_user_freq_cap_and_score_denominator",
-            "coverage_mode": "broad_coverage_formal",
+            "over_hot_control": "allow_with_agent_managed_scale",
+            "coverage_mode": "broad_coverage_formal_agent_managed_scale",
+        }
+    )
+    policy["selection_strategy"] = selection_strategy
+    return policy
+
+
+def _apply_itemcf_weak_denoised_profile(source_method: str, resource_policy: dict[str, Any]) -> dict[str, Any]:
+    if source_method != "itemcf_weak":
+        raise ValueError("weak_denoised profile is only supported for itemcf_weak")
+    policy = _apply_itemcf_weak_coverage_profile(source_method, resource_policy)
+    policy.update(
+        {
+            "dataset_variant": "itemcf_weak_denoised_formal_v1",
+            "coverage_profile": "weak_denoised",
+            "min_pair_support": 1,
+            "top_k_per_seed": 200,
+            "top_k_per_seed_semantics": "bounded_seed_fanout_cap_preserves_weak_coverage_recall_in_diagnostic_grid",
+            "allow_over_hot": True,
+            "over_hot_control": "allow_with_route_budget_and_posthoc_overlap_gate",
+            "score_policy": ITEMCF_SCORE_POLICY,
+            "shrinkage_alpha": 0.0,
+            "weighting_policy": "existing_weighted_cooc_cosine_with_seed_topk200_cap_v1",
+            "noise_control_policy": "keep_support1_edges_for_recall_but_bound_seed_fanout_and_require_route_gate_per_user_cap",
+        }
+    )
+    selection_strategy = dict(policy.get("selection_strategy") or {})
+    selection_strategy.update(
+        {
+            "policy_name": "itemcf_weak_denoised_edges_v1",
+            "eligible_user_buckets": ["medium_behavior", "sequence_sufficient", "collaborative_rich"],
+            "eligible_item_buckets": ["cf_ready", "embedding_ready"],
+            "over_hot_control": "allow_with_route_budget_and_posthoc_overlap_gate",
+            "coverage_mode": "broad_coverage_with_seed_fanout_cap",
+            "score_policy": ITEMCF_SCORE_POLICY,
+            "shrinkage_alpha": 0.0,
+            "top_k_per_seed": 200,
+        }
+    )
+    policy["selection_strategy"] = selection_strategy
+    return policy
+
+
+def _apply_augcf_lite_profile(source_method: str, resource_policy: dict[str, Any]) -> dict[str, Any]:
+    if source_method != "itemcf_weak":
+        raise ValueError("augcf_lite profile is only supported for itemcf_weak")
+    policy = _apply_itemcf_weak_coverage_profile(source_method, resource_policy)
+    policy.update(
+        {
+            "dataset_variant": "itemcf_weak_augcf_lite_formal_v1",
+            "coverage_profile": "augcf_lite",
+            "score_policy": AUGCF_LITE_SCORE_POLICY,
+            "augmentation_policy": AUGCF_LITE_AUGMENTATION_POLICY,
+            "top_k_per_seed": 200,
+            "top_k_per_seed_semantics": "bounded_seed_fanout_cap_for_augcf_lite_diagnostic_comparison",
+            "pseudo_weight": 0.25,
+            "augcf_family": "AugCF-lite",
+            "augcf_reproduction_level": "lightweight_train_only_profile",
+            "paper_claim_boundary": "not_exact_kdd19_gan_reproduction",
+            "gan_enabled": False,
+            "gumbel_softmax_enabled": False,
+            "pseudo_pseudo_pairs_enabled": False,
+        }
+    )
+    selection_strategy = dict(policy.get("selection_strategy") or {})
+    selection_strategy.update(
+        {
+            "policy_name": "itemcf_weak_augcf_lite_edges_v1",
+            "augmentation_policy": AUGCF_LITE_AUGMENTATION_POLICY,
+            "pseudo_weight": 0.25,
+            "pseudo_pair_policy": "observed_to_single_low_freq_observed_pseudo_no_pseudo_pseudo",
+            "score_policy": AUGCF_LITE_SCORE_POLICY,
+            "top_k_per_seed": 200,
         }
     )
     policy["selection_strategy"] = selection_strategy
@@ -428,11 +577,10 @@ def _apply_itemcf_relaxed_strong_profile(source_method: str, resource_policy: di
     if source_method != "itemcf_strong":
         raise ValueError("relaxed_strong profile is only supported for itemcf_strong")
     policy = dict(resource_policy)
-    scale_tier = str(policy.get("scale_tier") or policy.get("default_tier") or "local_formal")
+    scale_tier = str(policy.get("scale_tier") or policy.get("default_tier") or "formal")
     relaxed_scale_tiers = {
         "smoke": {"max_output_users": 5_000, "max_items_per_user": 60, "max_item_user_freq": 8_000, "min_pair_support": 1, "top_k_per_seed": 150},
-        "diagnostic": {"max_output_users": 80_000, "max_items_per_user": 60, "max_item_user_freq": 8_000, "min_pair_support": 1, "top_k_per_seed": 150},
-        "local_formal": {"max_output_users": 160_000, "max_items_per_user": 60, "max_item_user_freq": 8_000, "min_pair_support": 1, "top_k_per_seed": 150},
+        "formal": {"max_output_users": 0, "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users", "max_items_per_user": 0, "max_items_per_user_semantics": "agent_managed_unlimited_user_history", "max_item_user_freq": 0, "max_item_user_freq_semantics": "agent_managed_no_method_cap", "min_pair_support": 1, "top_k_per_seed": 0, "top_k_per_seed_semantics": "agent_managed_no_method_cap"},
     }
     policy.update(
         {
@@ -468,6 +616,58 @@ def _apply_itemcf_relaxed_strong_profile(source_method: str, resource_policy: di
     return policy
 
 
+def _apply_usercf_relaxed_iuf_profile(source_method: str, resource_policy: dict[str, Any]) -> dict[str, Any]:
+    if source_method != "usercf_method_dataset":
+        raise ValueError("usercf_relaxed_iuf profile is only supported for usercf_method_dataset")
+    policy = dict(resource_policy)
+    scale_tier = str(policy.get("scale_tier") or policy.get("default_tier") or "formal")
+    relaxed_scale_tiers = {
+        "smoke": {
+            "max_output_users": 5_000,
+            "max_output_user_ratio": 0.0,
+            "max_output_users_semantics": "bounded_relaxed_iuf_smoke_users",
+            "max_items_per_user": 80,
+            "max_item_user_freq": 20_000,
+            "similar_users_top_k": 200,
+        },
+        "formal": {
+            "max_output_users": 0,
+            "max_output_users_semantics": "agent_managed_unlimited_actual_eligible_users",
+            "max_items_per_user": 0,
+            "max_items_per_user_semantics": "agent_managed_unlimited_user_history",
+            "max_item_user_freq": 20_000,
+            "max_item_user_freq_semantics": "relaxed_usercf_iuf_train_only_freq_cap",
+            "similar_users_top_k": 200,
+        },
+    }
+    policy.update(
+        {
+            "dataset_variant": f"usercf_relaxed_iuf_{scale_tier}_v1",
+            "coverage_profile": "usercf_relaxed_iuf",
+            "relaxed_scale_tiers": relaxed_scale_tiers,
+            **relaxed_scale_tiers[scale_tier],
+            "item_quality_buckets": ["cf_ready", "embedding_ready"],
+            "allow_over_hot": True,
+            "over_hot_control": "allow_as_similarity_signal_with_iuf_penalty",
+            "preprocessing_policy": "usercf_relaxed_cf_or_embedding_ready_hot_allowed_train_only_v1",
+            "weighting_policy": "iuf_cosine_user_similarity_v1",
+        }
+    )
+    selection_strategy = dict(policy.get("selection_strategy") or {})
+    selection_strategy.update(
+        {
+            "policy_name": "usercf_relaxed_iuf_neighbors_v1",
+            "eligible_user_buckets": ["sequence_sufficient", "collaborative_rich"],
+            "eligible_item_buckets": ["cf_ready", "embedding_ready"],
+            "over_hot_control": "allow_as_similarity_signal_with_iuf_penalty",
+            "coverage_mode": "relaxed_user_neighbor_reachability",
+            "weighting_policy": "iuf_cosine_user_similarity_v1",
+        }
+    )
+    policy["selection_strategy"] = selection_strategy
+    return policy
+
+
 def _apply_itemcf_weak_coverage_selection_policy(policy: dict[str, Any]) -> dict[str, Any]:
     updated = dict(policy)
     updated["eligible_user_buckets"] = ["medium_behavior", "sequence_sufficient", "collaborative_rich"]
@@ -478,6 +678,34 @@ def _apply_itemcf_weak_coverage_selection_policy(policy: dict[str, Any]) -> dict
         "eligible_user_bucket_is_sequence_sufficient_or_above",
         "item_user_freq_cap_applied",
         "active_user_penalty_applied",
+    ]
+    return updated
+
+
+def _apply_itemcf_weak_denoised_selection_policy(policy: dict[str, Any]) -> dict[str, Any]:
+    updated = _apply_itemcf_weak_coverage_selection_policy(policy)
+    updated["eligible_item_policy"] = "cf_ready_or_embedding_ready_with_support1_and_seed_topk200_route_gate"
+    updated["acceptance_checks"] = [
+        "train_only_inputs",
+        "eligible_user_bucket_is_sequence_sufficient_or_above",
+        "support1_edges_retained_for_raw_recall",
+        "active_user_penalty_applied",
+        "top_k_per_seed_cap_applied",
+        "route_gate_overlap_required_before_candidate_permission",
+    ]
+    return updated
+
+
+def _apply_augcf_lite_selection_policy(policy: dict[str, Any]) -> dict[str, Any]:
+    updated = _apply_itemcf_weak_coverage_selection_policy(policy)
+    updated["eligible_item_policy"] = "cf_ready_or_embedding_ready_train_only_observed_pseudo_augcf_lite"
+    updated["acceptance_checks"] = [
+        "train_only_inputs",
+        "eligible_user_bucket_is_sequence_sufficient_or_above",
+        "pseudo_pairs_derive_only_from_filtered_observed_items",
+        "pseudo_pseudo_pairs_disabled",
+        "pseudo_contribution_capped_by_configured_pseudo_weight",
+        "valid_test_holdout_lopo_oracle_eval_labels_not_used",
     ]
     return updated
 
@@ -608,7 +836,7 @@ def _eligible_items(
         if over_hot and not allow_over_hot:
             dropped["item_over_hot"] += 1
             continue
-        if item_user_counts.get(item_id, 0) > max_item_user_freq:
+        if max_item_user_freq > 0 and item_user_counts.get(item_id, 0) > max_item_user_freq:
             dropped["item_user_freq_over_cap"] += 1
             continue
         eligible.add(item_id)
@@ -617,6 +845,28 @@ def _eligible_items(
 
 def _is_over_hot(row: dict[str, Any]) -> bool:
     return row.get("hotness_bucket") == "hot"
+
+
+def _effective_max_output_users(resource_policy: dict[str, Any], actual_eligible_users: int) -> int:
+    configured = int(resource_policy.get("max_output_users") or 0)
+    ratio = float(resource_policy.get("max_output_user_ratio") or 0.0)
+    if ratio > 0:
+        return max(1, min(actual_eligible_users, math.ceil(actual_eligible_users * ratio)))
+    if configured <= 0:
+        return actual_eligible_users
+    return min(configured, actual_eligible_users)
+
+
+def _limit_items(values: list[str], limit: int) -> list[str]:
+    if limit <= 0:
+        return values
+    return values[:limit]
+
+
+def _limit_rows(values: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+    if limit <= 0:
+        return values
+    return values[:limit]
 
 
 def _dataset_rows(
@@ -635,12 +885,12 @@ def _dataset_rows(
         if user_id not in users:
             dropped["user_bucket_not_allowed"] += 1
             continue
-        if len(rows) >= max_output_users:
+        if max_output_users > 0 and len(rows) >= max_output_users:
             dropped["max_output_users_exceeded"] += 1
             continue
         positives = [str(item_id) for item_id in sequence.get("recent_positive_item_sequence") or [] if item_id]
         filtered_all = [item_id for item_id in positives if item_id in eligible_items]
-        filtered = filtered_all[:max_items_per_user]
+        filtered = _limit_items(filtered_all, max_items_per_user)
         if not filtered:
             dropped["no_cf_ready_non_over_hot_items"] += 1
             continue
@@ -681,11 +931,19 @@ def _itemcf_edge_rows(
     src_sequence_key: str | None = None,
     dst_sequence_key: str | None = None,
     directed_seed_to_candidate_only: bool = False,
+    score_policy: str = ITEMCF_SCORE_POLICY,
+    shrinkage_alpha: float = 0.0,
+    augmentation_policy: Any = None,
+    pseudo_weight: float = 0.0,
 ) -> tuple[list[dict[str, Any]], Counter[str], dict[str, Any]]:
     eligible_dst_items = eligible_dst_items or eligible_items
     pair_items = eligible_items | eligible_dst_items
+    augcf_lite_enabled = augmentation_policy == AUGCF_LITE_AUGMENTATION_POLICY and pseudo_weight > 0
     pair_support: Counter[tuple[str, str]] = Counter()
     pair_weighted_cooc: Counter[tuple[str, str]] = Counter()
+    pair_observed_weighted_cooc: Counter[tuple[str, str]] = Counter()
+    pair_pseudo_contribution: Counter[tuple[str, str]] = Counter()
+    pair_augmented_support: Counter[tuple[str, str]] = Counter()
     pair_user_buckets: dict[tuple[str, str], Counter[str]] = {}
     contributing_users: set[str] = set()
     dropped: Counter[str] = Counter()
@@ -694,7 +952,7 @@ def _itemcf_edge_rows(
         if user_id not in users:
             dropped["user_bucket_not_allowed"] += 1
             continue
-        if len(contributing_users) >= max_output_users:
+        if max_output_users > 0 and len(contributing_users) >= max_output_users:
             dropped["max_output_users_exceeded"] += 1
             continue
         default_sequence_key = "recent_strong_positive_item_sequence" if source_method == "itemcf_strong" else "recent_positive_item_sequence"
@@ -705,8 +963,8 @@ def _itemcf_edge_rows(
         if directed_seed_to_candidate_only:
             filtered_src_all = _unique_in_order(item_id for item_id in src_positives if item_id in eligible_items)
             filtered_dst_all = _unique_in_order(item_id for item_id in dst_positives if item_id in eligible_dst_items)
-            filtered_src = filtered_src_all[:max_items_per_user]
-            filtered_dst = filtered_dst_all[:max_items_per_user]
+            filtered_src = _limit_items(filtered_src_all, max_items_per_user)
+            filtered_dst = _limit_items(filtered_dst_all, max_items_per_user)
             if len(filtered_src_all) > len(filtered_src):
                 dropped["src_items_over_user_cap"] += len(filtered_src_all) - len(filtered_src)
             if len(filtered_dst_all) > len(filtered_dst):
@@ -724,7 +982,7 @@ def _itemcf_edge_rows(
             continue
         positives = src_positives
         filtered_all = _unique_in_order(item_id for item_id in positives if item_id in pair_items)
-        filtered = filtered_all[:max_items_per_user]
+        filtered = _limit_items(filtered_all, max_items_per_user)
         if len(filtered_all) > len(filtered):
             dropped["items_over_user_cap"] += len(filtered_all) - len(filtered)
         if len(filtered) < 2:
@@ -734,8 +992,26 @@ def _itemcf_edge_rows(
         contributing_users.add(user_id)
         for pair in combinations(sorted(filtered), 2):
             pair_support[pair] += 1
-            pair_weighted_cooc[pair] += active_user_penalty
+            pair_weight = active_user_penalty
+            if score_policy == ITEMCF_RECENT_2Y_WEAK_SCORE_POLICY:
+                pair_weight *= math.sqrt(
+                    _itemcf_bm25_tfidf_idf_weight(pair[0], item_user_counts, item_frequency_counts)
+                    * _itemcf_bm25_tfidf_idf_weight(pair[1], item_user_counts, item_frequency_counts)
+                )
+            pair_weighted_cooc[pair] += pair_weight
+            pair_observed_weighted_cooc[pair] += pair_weight
             pair_user_buckets.setdefault(pair, Counter())[users[user_id]] += 1
+        if augcf_lite_enabled:
+            for pair in _augcf_lite_observed_pseudo_pairs(filtered, item_user_counts, item_frequency_counts):
+                remaining_cap = pseudo_weight - pair_pseudo_contribution[pair]
+                if remaining_cap <= 0:
+                    continue
+                pseudo_contribution = min(active_user_penalty * pseudo_weight, remaining_cap)
+                pair_support[pair] += 1
+                pair_augmented_support[pair] += 1
+                pair_pseudo_contribution[pair] += pseudo_contribution
+                pair_weighted_cooc[pair] += pseudo_contribution
+                pair_user_buckets.setdefault(pair, Counter())[users[user_id]] += 1
 
     supported_pairs = [(pair, support) for pair, support in sorted(pair_support.items()) if support >= min_pair_support]
     dropped["pair_below_min_support"] += sum(1 for support in pair_support.values() if support < min_pair_support)
@@ -759,7 +1035,11 @@ def _itemcf_edge_rows(
             if src_user_count <= 0 or dst_user_count <= 0:
                 dropped["missing_or_zero_item_user_count"] += 1
                 continue
-            itemcf_score = round(weighted_cooc / math.sqrt(src_user_count * dst_user_count), 6)
+            cosine_score = weighted_cooc / math.sqrt(src_user_count * dst_user_count)
+            itemcf_score = round(cosine_score * support / (support + shrinkage_alpha), 6) if shrinkage_alpha > 0 else round(cosine_score, 6)
+            base_weighted_cooc = round(pair_observed_weighted_cooc[(item_i, item_j)], 6)
+            base_cosine_score = base_weighted_cooc / math.sqrt(src_user_count * dst_user_count)
+            base_itemcf_score = round(base_cosine_score * support / (support + shrinkage_alpha), 6) if shrinkage_alpha > 0 else round(base_cosine_score, 6)
             emitted_pairs.add((item_i, item_j))
             directed_edge_count_before_topk += 1
             weighted_cooc_sum_before_topk += weighted_cooc
@@ -780,8 +1060,21 @@ def _itemcf_edge_rows(
                     "src_user_count": src_user_count,
                     "dst_user_count": dst_user_count,
                     "itemcf_score": itemcf_score,
-                    "score_policy": ITEMCF_SCORE_POLICY,
-                    "itemcf_score_formula": ITEMCF_SCORE_FORMULA,
+                    "score_policy": score_policy,
+                    "augmentation_policy": augmentation_policy,
+                    "augcf_family": "AugCF-lite" if augcf_lite_enabled else None,
+                    "augcf_reproduction_level": "lightweight_train_only_profile" if augcf_lite_enabled else None,
+                    "gan_enabled": False if augcf_lite_enabled else None,
+                    "gumbel_softmax_enabled": False if augcf_lite_enabled else None,
+                    "base_itemcf_score": base_itemcf_score if augcf_lite_enabled else itemcf_score,
+                    "augcf_lite_score": itemcf_score if augcf_lite_enabled else None,
+                    "observed_weighted_cooc": base_weighted_cooc,
+                    "pseudo_contribution_sum": round(pair_pseudo_contribution[(item_i, item_j)], 6),
+                    "observed_pair_support": support - pair_augmented_support[(item_i, item_j)],
+                    "augmented_pair_support": pair_augmented_support[(item_i, item_j)],
+                    "pseudo_pseudo_pairs_enabled": False if augcf_lite_enabled else None,
+                    "itemcf_score_formula": ITEMCF_SHRINKAGE_SCORE_FORMULA if shrinkage_alpha > 0 else ITEMCF_SCORE_FORMULA,
+                    "shrinkage_alpha": shrinkage_alpha,
                     "active_user_penalty_policy": ITEMCF_ACTIVE_USER_PENALTY_POLICY,
                     "supporting_user_buckets": dict(sorted(pair_user_buckets[(item_i, item_j)].items())),
                     "min_pair_support": min_pair_support,
@@ -792,9 +1085,10 @@ def _itemcf_edge_rows(
     rows: list[dict[str, Any]] = []
     for src_item_id in sorted(edges_by_src):
         ranked_edges = sorted(edges_by_src[src_item_id], key=lambda row: (-row["itemcf_score"], -row["cooc_cnt"], row["dst_item_id"]))
-        if len(ranked_edges) > top_k_per_seed:
+        limited_edges = _limit_rows(ranked_edges, top_k_per_seed)
+        if top_k_per_seed > 0 and len(ranked_edges) > top_k_per_seed:
             dropped["edge_over_top_k_per_seed"] += len(ranked_edges) - top_k_per_seed
-        for edge_rank, row in enumerate(ranked_edges[:top_k_per_seed], start=1):
+        for edge_rank, row in enumerate(limited_edges, start=1):
             row["edge_rank"] = edge_rank
             rows.append(row)
 
@@ -811,16 +1105,18 @@ def _itemcf_edge_rows(
         "directed_edge_count_after_topk": len(rows),
         "top_k_per_seed": top_k_per_seed,
         "schema_name": "itemcf_edge_features_v1",
-        "score_policy": ITEMCF_SCORE_POLICY,
+        "score_policy": score_policy,
         "active_user_penalty_policy": ITEMCF_ACTIVE_USER_PENALTY_POLICY,
-        "itemcf_score_formula": ITEMCF_SCORE_FORMULA,
+        "itemcf_score_formula": ITEMCF_SHRINKAGE_SCORE_FORMULA if shrinkage_alpha > 0 else ITEMCF_SCORE_FORMULA,
+        "shrinkage_alpha": shrinkage_alpha,
         "weighted_cooc_sum_before_topk": weighted_cooc_sum_before_topk,
         "weighted_cooc_sum_after_topk": weighted_cooc_sum_after_topk,
         "feature_summary": {
             "schema_name": "itemcf_edge_features_v1",
             "layer": "method_dataset",
-            "score_policy": ITEMCF_SCORE_POLICY,
-            "score_formula": ITEMCF_SCORE_FORMULA,
+            "score_policy": score_policy,
+            "score_formula": ITEMCF_SHRINKAGE_SCORE_FORMULA if shrinkage_alpha > 0 else ITEMCF_SCORE_FORMULA,
+            "shrinkage_alpha": shrinkage_alpha,
             "active_user_penalty_policy": ITEMCF_ACTIVE_USER_PENALTY_POLICY,
             "rank_policy": "source_method + src_item_id by itemcf_score desc, cooc_cnt desc, dst_item_id asc",
             "unique_pair_count_before_topk": unique_pair_count,
@@ -852,11 +1148,11 @@ def _swing_pair_rows(
         if user_id not in users:
             dropped["user_bucket_not_allowed"] += 1
             continue
-        if len(contributing_users) >= max_graph_users:
+        if max_graph_users > 0 and len(contributing_users) >= max_graph_users:
             dropped["max_graph_users_exceeded"] += 1
             continue
         positives = [str(item_id) for item_id in sequence.get("recent_positive_item_sequence") or [] if item_id]
-        filtered = _unique_in_order(item_id for item_id in positives if item_id in eligible_items)[:max_items_per_user]
+        filtered = _limit_items(_unique_in_order(item_id for item_id in positives if item_id in eligible_items), max_items_per_user)
         if len(filtered) < 2:
             dropped["insufficient_graph_items"] += 1
             continue
@@ -898,12 +1194,62 @@ def _unique_in_order(values: Iterable[str]) -> list[str]:
     return unique
 
 
+def _augcf_lite_observed_pseudo_pairs(
+    filtered_items: list[str], item_user_counts: dict[str, int], item_frequency_counts: dict[str, int]
+) -> list[tuple[str, str]]:
+    if len(filtered_items) < 2:
+        return []
+    scored_items = sorted(
+        filtered_items,
+        key=lambda item_id: (
+            item_user_counts.get(item_id) or item_frequency_counts.get(item_id, 0),
+            item_frequency_counts.get(item_id, 0),
+            item_id,
+        ),
+    )
+    pseudo_item = scored_items[0]
+    pairs = []
+    for observed_item in sorted(item_id for item_id in filtered_items if item_id != pseudo_item):
+        pairs.append(tuple(sorted((observed_item, pseudo_item))))
+    return pairs
+
+
+def _itemcf_bm25_tfidf_idf_weight(item_id: str, item_user_counts: dict[str, int], item_frequency_counts: dict[str, int]) -> float:
+    user_count = max(item_user_counts.get(item_id) or item_frequency_counts.get(item_id, 0), 1)
+    corpus_user_count = max(sum(item_user_counts.values()), 1)
+    idf = math.log1p(corpus_user_count / user_count)
+    tf = math.log1p(item_frequency_counts.get(item_id, user_count))
+    bm25_tf = tf / (tf + 1.2)
+    return max(bm25_tf * idf, 1e-6)
+
+
 def _dataset_schema(source_method: str) -> str:
     if source_method in {"itemcf_weak", "itemcf_strong"}:
         return "itemcf_edge_features_v1"
     if source_method == "swing_method_dataset":
         return "swing_item_pair_support_v1"
     return "eligible_user_sequence_v1"
+
+
+def _actual_scale_stats(
+    manifest_counts: dict[str, Any],
+    rows: list[dict[str, Any]],
+    users: dict[str, str],
+    eligible_items: set[str],
+    dropped_reason_counts: Counter[str],
+) -> dict[str, Any]:
+    return {
+        "actual_eligible_user_count": len(users),
+        "actual_eligible_item_count": len(eligible_items),
+        "actual_contributing_user_count": int(manifest_counts.get("user_count", 0)),
+        "actual_output_row_count": len(rows),
+        "actual_unique_pair_count": int(manifest_counts.get("unique_pair_count", 0)),
+        "actual_edge_count_before_topk": int(manifest_counts.get("edge_count", 0)),
+        "actual_directed_edge_count_after_topk": int(manifest_counts.get("directed_edge_count_after_topk", 0)),
+        "actual_seed_item_count": len({str(row.get("src_item_id")) for row in rows if row.get("src_item_id")}),
+        "actual_candidate_item_count": len({str(row.get("dst_item_id")) for row in rows if row.get("dst_item_id")}),
+        "max_output_users_exceeded": int(dropped_reason_counts.get("max_output_users_exceeded", 0)),
+    }
 
 
 def _manifest(
@@ -921,6 +1267,7 @@ def _manifest(
     item_count: int,
     dropped_reason_counts: dict[str, int],
     outputs: dict[str, str],
+    actual_scale_stats: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     manifest = {
         "schema_version": SCHEMA_VERSION,
@@ -964,11 +1311,32 @@ def _manifest(
     return manifest
 
 
+def _apply_usercf_relaxed_iuf_selection_policy(policy: dict[str, Any]) -> dict[str, Any]:
+    updated = dict(policy)
+    updated["eligible_user_buckets"] = ["sequence_sufficient", "collaborative_rich"]
+    updated["eligible_user_policy"] = "sequence_sufficient_or_collaborative_rich_for_relaxed_usercf_iuf"
+    updated["eligible_item_policy"] = "cf_ready_or_embedding_ready_with_hot_allowed_as_iuf_weighted_similarity_signal"
+    updated["acceptance_checks"] = [
+        "train_only_inputs",
+        "eligible_user_bucket_is_sequence_sufficient_or_collaborative_rich",
+        "eligible_item_bucket_is_cf_ready_or_embedding_ready",
+        "valid_test_eval_labels_not_used_for_candidate_generation",
+        "hot_items_allowed_only_with_iuf_penalty",
+    ]
+    return updated
+
+
 def _item_bucket_policy(source_method: str, resource_policy: dict[str, Any] | None = None) -> str:
     if source_method == "swing_method_dataset":
         return "item_quality_profile.cf_ready=true and over_hot=false for swing collaborative pairs"
+    if resource_policy and resource_policy.get("coverage_profile") == "usercf_relaxed_iuf":
+        return "item_quality_profile.quality_bucket_v2 in {cf_ready, embedding_ready}; over_hot allowed as IUF-weighted similarity signal"
     if resource_policy and resource_policy.get("coverage_profile") == "weak_coverage":
         return "item_quality_profile.quality_bucket_v2 in {cf_ready, embedding_ready}; over_hot allowed only under item_user_freq cap"
+    if resource_policy and resource_policy.get("coverage_profile") == "weak_denoised":
+        return "item_quality_profile.quality_bucket_v2 in {cf_ready, embedding_ready}; support1 retained with seed top_k_per_seed cap and route/eval user cap gate"
+    if resource_policy and resource_policy.get("coverage_profile") == "augcf_lite":
+        return "item_quality_profile.quality_bucket_v2 in {cf_ready, embedding_ready}; AugCF-lite uses train-only observed-pseudo pairs without pseudo-pseudo pairs"
     if resource_policy and resource_policy.get("coverage_profile") == "relaxed_strong":
         return "src strong-seed items in {cf_ready, embedding_ready} with hot allowed; dst candidate items in {cf_ready, embedding_ready} and non-hot"
     return "item_quality_profile.cf_ready=true and over_hot=false for collaborative filtering"
@@ -1027,6 +1395,7 @@ def main() -> None:
         source_methods=source_methods,
         scale_tier=args.scale_tier,
         itemcf_coverage_profile=args.itemcf_coverage_profile,
+        strict_recent_2y_manifest=True,
         overwrite=args.overwrite,
         enforce_venv=not args.skip_venv_check,
     )

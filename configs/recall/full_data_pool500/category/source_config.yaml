@@ -1,31 +1,93 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v2_recent2y
 source: category
 canonical_source: category
-source_status: READY_WITH_LIGHT_GOVERNANCE_AUDIT
-role: category coverage and diversity fallback source
-output_root: outputs/recall/pool500_method_sources/category
+source_status: READY_RECENT2Y_TRAIN_ONLY_CATEGORY_SOURCE
+role: train-only category preference and category-popularity fallback source
+output_root: outputs/recall/pool500_method_sources/recent_2y
 run_id: null
-promoted_dir: outputs/recall/pool500_main_route_direct_recall_full_promoted
-index_scope: LIGHTWEIGHT_FALLBACK_COVERAGE_SOURCE
-evaluation_mode: train_only
-category_bucket_cap_per_user: 80
-long_tail_rank_threshold: 50
-max_source_share_recommended: 0.35
+default_tier: smoke
+tier_aliases:
+  local_smoke: smoke
+  local_formal: formal
+  route_formal: all_eligible
+  all_formal: all_eligible
+input_contract:
+  dataset_root: data/processed/amazon_2023_recall_recent_2y_1m_3m
+  clean_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+  lightweight_views_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json
+  governance_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+  allowed_inputs: ["canonical_items.jsonl", "user_sequences.train.jsonl", "train_only_governance/user_quality_profile.jsonl", "train_only_governance/item_frequency_train.jsonl", "recall_views/category_top_items.jsonl", "recall_views/category_recall_items.jsonl"]
+  forbidden_inputs: ["holdout", "valid", "test", "LOPO", "oracle", "eval_label", "clean_10000", "pool1000", "full_data_derived_method_dataset"]
+method_config:
+  scale_tier: smoke
+  limit_users: 500
+  per_user: 40
+  seed_window: 20
+  max_profile_buckets: 6
+  category_bucket_cap_per_user: 20
+  category_min_item_count: 5
+  fallback_bucket_count: 8
+  include_path_categories: true
+  eligible_user_buckets: ["fallback_only", "medium_behavior", "sequence_sufficient", "collaborative_rich"]
+tiers:
+  smoke:
+    method_config:
+      scale_tier: smoke
+      limit_users: 500
+      per_user: 40
+      seed_window: 20
+      max_profile_buckets: 4
+      category_bucket_cap_per_user: 12
+      category_min_item_count: 5
+      fallback_bucket_count: 6
+  formal:
+    method_config:
+      scale_tier: formal
+      limit_users: 50000
+      candidate_materialization: full
+      per_user: 80
+      seed_window: 20
+      max_profile_buckets: 6
+      category_bucket_cap_per_user: 20
+      category_min_item_count: 5
+      fallback_bucket_count: 10
+  all_eligible:
+    method_config:
+      scale_tier: all_eligible
+      limit_users: all
+      candidate_materialization: "none"
+      per_user: 80
+      seed_window: 20
+      max_profile_buckets: 6
+      category_bucket_cap_per_user: 20
+      category_min_item_count: 5
+      fallback_bucket_count: 10
 resource_guard:
-  batch_size: null
-  checkpoint_enabled: true
   heavy_job: false
+  local_execution_allowed: true
+  checkpoint_enabled: true
+  batch_size: null
+  server_required: false
+  all_eligible_server_required: true
 manifest_contract:
-  source_index_manifest: source_index_manifest.json
   method_dataset_manifest: method_dataset_manifest.json
+  source_index_manifest: source_index_manifest.json
   candidates: candidates.jsonl
+  eligible_users: eligible_users.jsonl
+  user_category_profile: user_category_profile.jsonl
+  category_top_items_index: category_top_items_index.jsonl
   coverage_audit: coverage_audit.json
   undercoverage_audit: undercoverage_audit.json
   resource_audit: resource_audit.json
   no_holdout_audit: no_holdout_audit.json
 governance:
+  train_only: true
   candidate_generation_allowed: false
+  route_gate_candidate_generation_allowed: true
+  route_gate_candidate_generation_scope: all_eligible_index_on_demand_expansion_only
+  main_route_merge_requires_global_gate: true
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
   final_pool500_ready_claimed: false
+notes: ["Current artifact must be generated directly from recent-2y train-visible inputs, not from historical full-data promoted candidates.", "smoke is only program/schema validation; formal_50k materializes candidates for eval-only method-effect evidence.", "all_eligible tier is the route-formal index artifact: it uses all recent-2y eligible users but stores eligible users, user category profiles, and category top-items index instead of materializing all user-item candidates.", "candidate_generation_allowed=false means no direct main-route materialized candidate generation; route_gate_candidate_generation_allowed=true only authorizes audited on-demand expansion behind the global route gate."]

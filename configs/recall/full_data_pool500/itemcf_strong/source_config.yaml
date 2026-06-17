@@ -1,39 +1,233 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v2_recent_2y
 source: itemcf_strong
 canonical_source: itemcf_strong
-source_status: DIAGNOSTIC_ONLY
+source_status: READY_CANDIDATE
+readiness_semantics: SUPPLEMENTAL_READY_CANDIDATE
 source_name: itemcf_strong
-output_root: outputs/recall/pool500_method_sources/itemcf_strong
-run_id: null
-index_scope: FULL_DERIVED_INDEX
-evaluation_mode: train_only
-clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
-eligible_user_quality_manifest: outputs/recall/pool500_user_quality/target500_train_only/eligible_user_quality_manifest.json
+variant: relaxed_strong_supplemental_recent2y_v1
+output_root: outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1
+run_id: formal_relaxed_from_recent2y
+index_scope: RECENT_2Y_DERIVED_INDEX
+evaluation_mode: train_only_build_eval_only_labels
+clean_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+governance_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json
+source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json
+edges_shards_dir: outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards
+single_source_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/single_source_eval_10000.json
+purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/purchase_label_eval_remote_full.json
 seed_sequence_field: recent_strong_positive_item_sequence
-candidate_top_k_per_user: 100
-max_seed_items_per_user: 50
-max_item_user_freq: 5000
+candidate_top_k_per_user: 500
 strong_edge_min_score: 0.0
 strong_edge_min_cooc_cnt: 1
-target_batch_size: 100
-min_free_bytes: 53687091200
-min_free_memory_bytes: 0
-max_rss_mb: 4096
+formal_quantity_policy: agent_managed_no_method_side_fixed_quantity_caps
+scale_tiers:
+  smoke:
+    purpose: program_and_schema_validation_only
+    quantity_policy: bounded_5000_user_smoke
+    method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/smoke/itemcf_strong/method_dataset_manifest.json
+    row_count: 30466
+    user_count: 5000
+    item_count: 24576
+  formal:
+    purpose: official_method_logic_dataset_under_recent_2y_train_only_governance
+    quantity_policy: agent_managed_no_method_side_fixed_quantity_caps
+    method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json
+    row_count: 514216
+    user_count: 82838
+    item_count: 215713
+source_artifact:
+  status: PASS
+  source_manifest_status: DIAGNOSTIC_ONLY
+  source_manifest_diagnostic_only: true
+  row_count: 514216
+  edge_count: 514216
+  shard_count: 8
+  adapter_note: generic_itemcf_source_adapter_keeps_promotion_flags_false; config_and_registry_mark_route_gate_candidate_only
 resource_guard:
+  heavy_job: false
   batch_size: 100
-  checkpoint_enabled: true
-  heavy_job: true
+  checkpoint_enabled: false
+  max_rss_mb: 4096
 manifest_contract:
   method_dataset_manifest: method_dataset_manifest.json
   source_index_manifest: source_index_manifest.json
-  candidates: candidates.jsonl
-  coverage_audit: coverage_audit.json
-  undercoverage_audit: undercoverage_audit.json
-  resource_audit: resource_audit.json
-  no_holdout_audit: no_holdout_audit.json
+  edges: edges_shards/itemcf_strong_edges_shard_*.jsonl
+  audit_evidence: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/audit_evidence.json
 governance:
-  candidate_generation_allowed: false
+  train_only: true
+  candidate_generation_allowed: true
+  candidate_generation_scope: route_gate_candidate_only
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
   final_pool500_ready_claimed: false
+  source_adapter_manifest_remains_diagnostic_boundary: true
+promotion_decision:
+  recommendation: keep_as_ready_candidate_for_route_gate
+  readiness_semantics: SUPPLEMENTAL_READY_CANDIDATE
+  route_gate_blocker: route_level_marginal_gain_and_overlap_gate_not_yet_completed
+  evidence:
+    source_edge_count: 514216
+    single_source_eval_target_users: 10000
+    seed_hit_user_count: 6141
+    seed_hit_rate: 0.6141
+    single_source_eval_candidate_row_count: 188494
+    single_source_eval_user_coverage_count: 6128
+    user_coverage_rate: 0.6128
+    recall_at_500: 0.000151
+    hit_rate_at_500: 0.0002
+    purchase_eval_target_user_count: 40043
+    purchase_eval_user_coverage_rate: 0.66541
+    purchase_eval_recall_at_500: 0.000211
+    purchase_eval_hit_rate_at_500: 0.000275
+    purchase_eval_in_universe_recall_at_500: 0.012514
+    strong_positive_eval_target_user_count: 40043
+    strong_positive_eval_recall_at_500: 0.000211
+    strong_positive_eval_hit_rate_at_500: 0.000275
+    strong_positive_eval_in_universe_recall_at_500: 0.012514
+    purchase_eval_label_in_dst_universe_ratio: 0.016898
+    candidate_hot_share: 0.0
+    strong_unique_share_vs_weak: 0.999867
+experimental_augcf_lite:
+  status: EXPERIMENTAL_DIAGNOSTIC_ONLY
+  source_variant: itemcf_strong_augcf_lite_v1
+  note: KDD19_AugCF_inspired_train_only_scored_pseudo_edge_experiment_not_main_route_ready
+  remote_host: server:/home/luo/RS_agent_remote
+  implementation:
+    builder: rs_lab/experiments/recall/pool500/methods/itemcf_strong/augcf_lite_builder.py
+    cli: scripts/experiments/recall/pool500/build_itemcf_strong_augcf_lite_method_dataset.py
+    source_adapter: rs_lab/experiments/recall/pool500/method_dataset_to_itemcf_source.py
+  governance:
+    train_only: true
+    valid_test_role: evaluation_only
+    candidate_generation_allowed: false
+    ranking_input_replacement_allowed: false
+    promotion_allowed: false
+    pool1000_allowed: false
+  formal_50k_hot_dst:
+    method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_lite/v1/formal_50k/method_dataset_manifest.json
+    source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_augcf_lite_recent2y/source_index_manifest.json
+    purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_augcf_lite_recent2y_eval/purchase_label_eval_remote_full.json
+    row_count: 6174682
+    observed_edge_count: 5010969
+    pseudo_edge_count: 1163713
+    purchase_eval_target_user_count: 40043
+    purchase_eval_user_coverage_rate: 0.598706
+    purchase_eval_label_in_dst_universe_ratio: 0.824084
+    purchase_eval_recall_at_500: 0.025721
+    purchase_eval_hit_rate_at_500: 0.031416
+    purchase_eval_in_universe_recall_at_500: 0.031212
+    candidate_hot_share: 0.960442
+  formal_50k_nohot_dst:
+    method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_lite/v1/formal_50k_nohot/method_dataset_manifest.json
+    source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_nohot_augcf_lite_recent2y/source_index_manifest.json
+    purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_nohot_augcf_lite_recent2y_eval/purchase_label_eval_remote_full.json
+    row_count: 2308758
+    observed_edge_count: 311844
+    pseudo_edge_count: 1996914
+    purchase_eval_target_user_count: 40043
+    purchase_eval_user_coverage_rate: 0.585471
+    purchase_eval_label_in_dst_universe_ratio: 0.019378
+    purchase_eval_recall_at_500: 0.000192
+    purchase_eval_hit_rate_at_500: 0.00025
+    purchase_eval_in_universe_recall_at_500: 0.009921
+    candidate_hot_share: 0.0
+  controlled_v2:
+    status: EXPERIMENTAL_DIAGNOSTIC_ONLY
+    note: per_src_hot_dst_budget_grid_for_augcf_lite_tradeoff_not_main_route_ready
+    source_variant: itemcf_strong_augcf_controlled_v2
+    controlled_hot_budget: true
+    common:
+      remote_host: server:/home/luo/RS_agent_remote
+      valid_test_role: evaluation_only
+      candidate_limit: 500
+      max_src_items: 50000
+      top_k_per_src: 100
+      promotion_allowed: false
+      ranking_input_replacement_allowed: false
+    q10:
+      max_hot_share_per_src: 0.1
+      method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q10/formal_50k/method_dataset_manifest.json
+      source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q10_formal_50k_recent2y/source_index_manifest.json
+      purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q10_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json
+      row_count: 1096254
+      observed_edge_count: 1032205
+      pseudo_edge_count: 64049
+      selected_hot_edge_count: 750000
+      purchase_eval_target_user_count: 40043
+      purchase_eval_user_coverage_rate: 0.598706
+      purchase_eval_label_in_dst_universe_ratio: 0.720237
+      purchase_eval_recall_at_500: 0.005037
+      purchase_eval_hit_rate_at_500: 0.006418
+      purchase_eval_in_universe_recall_at_500: 0.006993
+      candidate_hot_share: 0.440016
+    q20:
+      max_hot_share_per_src: 0.2
+      method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q20/formal_50k/method_dataset_manifest.json
+      source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q20_formal_50k_recent2y/source_index_manifest.json
+      purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q20_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json
+      row_count: 1845069
+      observed_edge_count: 1733341
+      pseudo_edge_count: 111728
+      selected_hot_edge_count: 1499996
+      purchase_eval_target_user_count: 40043
+      purchase_eval_user_coverage_rate: 0.598706
+      purchase_eval_label_in_dst_universe_ratio: 0.784021
+      purchase_eval_recall_at_500: 0.010688
+      purchase_eval_hit_rate_at_500: 0.01351
+      purchase_eval_in_universe_recall_at_500: 0.013633
+      candidate_hot_share: 0.618814
+    q30:
+      max_hot_share_per_src: 0.3
+      method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q30/formal_50k/method_dataset_manifest.json
+      source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q30_formal_50k_recent2y/source_index_manifest.json
+      purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q30_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json
+      row_count: 2592359
+      observed_edge_count: 2374633
+      pseudo_edge_count: 217726
+      selected_hot_edge_count: 2248768
+      purchase_eval_target_user_count: 40043
+      purchase_eval_user_coverage_rate: 0.598706
+      purchase_eval_label_in_dst_universe_ratio: 0.803687
+      purchase_eval_recall_at_500: 0.015129
+      purchase_eval_hit_rate_at_500: 0.018755
+      purchase_eval_in_universe_recall_at_500: 0.018825
+      candidate_hot_share: 0.71732
+    q50:
+      max_hot_share_per_src: 0.5
+      method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q50/formal_50k/method_dataset_manifest.json
+      source_index_manifest: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q50_formal_50k_recent2y/source_index_manifest.json
+      purchase_label_eval_report: outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q50_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json
+      row_count: 3995662
+      observed_edge_count: 3454114
+      pseudo_edge_count: 541548
+      selected_hot_edge_count: 3656705
+      purchase_eval_target_user_count: 40043
+      purchase_eval_user_coverage_rate: 0.598706
+      purchase_eval_label_in_dst_universe_ratio: 0.818797
+      purchase_eval_recall_at_500: 0.019608
+      purchase_eval_hit_rate_at_500: 0.024124
+      purchase_eval_in_universe_recall_at_500: 0.023948
+      candidate_hot_share: 0.823463
+    decision:
+      recommendation: keep_as_experimental_diagnostic_only_route_gate_candidate_q20_q30
+      reason: controlled_quota_creates_recall_hotness_tradeoff_but_user_level_candidate_hot_share_remains_high_due_to_multi_seed_aggregation
+  route_gate_support:
+    route_level_augcf_hot_budget_status: IMPLEMENTED_DIAGNOSTIC_ONLY
+    implementation: rs_lab/experiments/recall/run_full_data_pool500_recall_only.py
+    offline_eval_override_cli: rs_lab/experiments/recall/run_pool500_offline_eval_baseline.py --source-manifest itemcf_strong=source_index_manifest.json
+    trigger_policy: diagnostic_only_true_and_source_variant_contains_augcf_lite_or_augcf_controlled
+    max_final_hot_share_per_user_default: 0.3
+    max_pseudo_per_user_default: 100
+    cap_stage: after_popular_category_cap_before_fallback_completion
+    deletion_scope: augcf_diagnostic_itemcf_strong_candidates_only
+    audit_output: diagnostic_hot_budget_audit.json
+    validation:
+      py_compile: PASS
+      targeted_pytest: tests/test_full_data_pool500_recall_only.py tests/test_pool500_offline_eval_baseline.py -q => 26 passed
+    promotion_allowed: false
+    ranking_input_replacement_allowed: false
+  decision:
+    recommendation: keep_as_experimental_diagnostic_only
+    reason: hot_dst_variant_improves_raw_purchase_recall_but_is_96_percent_hot_candidates; nohot_variant_does_not_beat_relaxed_baseline; controlled_v2_q20_q30_are_route_gate_diagnostic_candidates_not_promoted

@@ -71,6 +71,8 @@ export interface DemoRoundtripResponse {
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
+  items?: DisplayItem[];
+  thoughts?: any;
 }
 
 export interface SanitizedTimelineEvent {
@@ -95,6 +97,7 @@ export interface SessionExportResponse {
   turn_count: number;
   public_timeline: PublicTimeline;
   display_responses: DisplayResponse[];
+  agent_thoughts?: any[];
 }
 
 export interface SimulationSceneRequest {

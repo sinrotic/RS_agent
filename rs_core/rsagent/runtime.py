@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from dataclasses import dataclass, field
+from inspect import Parameter, signature
 from typing import Any, Protocol
 
+from rs_core.rsagent.context import ContextBudget, budget_value, build_context_bundle, constraints_summary, ensure_session_context_state
 from rs_core.rsagent.reward import build_reward_evidence, compute_turn_reward
-from rs_core.rsagent.schema import INTENT_RECOMMEND_REQUEST, AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
 
 
 RUNTIME_TRACE_STEP_ORDER = [
@@ -15,8 +16,10 @@ RUNTIME_TRACE_STEP_ORDER = [
     "tool_result_budget",
     "plan_dialogue",
     "apply_constraints",
+    "execute_pre_recommendation_tools",
     "recommend_or_dialogue",
     "build_turn",
+    "execute_post_recommendation_tools",
     "stop_check",
     "attach_diagnostics",
     "update_session_summary",
@@ -42,6 +45,7 @@ class AgentRuntimeHost(Protocol):
         user_input: str,
         assistant_response: str,
         merge_user_input: bool,
+        tool_context: dict[str, Any] | None = None,
     ) -> AgentTurn: ...
 
     def build_dialogue_turn(self, session: AgentSession, user_input: str, assistant_response: str) -> AgentTurn: ...
@@ -76,8 +80,9 @@ class RuntimeStep:
 
 
 class AgentRuntime:
-    def __init__(self, budget: RuntimeBudget | None = None) -> None:
+    def __init__(self, budget: RuntimeBudget | None = None, context_budget: ContextBudget | None = None) -> None:
         self.budget = budget or RuntimeBudget()
+        self.context_budget = context_budget or ContextBudget()
 
     def run_turn(
         self,
@@ -121,11 +126,22 @@ class AgentRuntime:
             "active_constraints": self._constraints_summary(session.active_constraints),
         }))
 
+        tool_context: dict[str, Any] = {}
+        tool_reports = [self._execute_agent_tools(host, session, plan, "pre_recommendation", None, tool_context)]
+        trace.append(self._step("execute_pre_recommendation_tools", tool_reports[-1].get("summary", {})))
+
         branch = "recommendation" if plan.should_recommend else "dialogue_only"
         trace.append(self._step("recommend_or_dialogue", {"branch": branch}))
 
         if plan.should_recommend:
-            turn = host.build_recommendation_turn(session, normalized_input, plan.assistant_response, merge_user_input=False)
+            turn = self._build_recommendation_turn(
+                host,
+                session,
+                normalized_input,
+                plan.assistant_response,
+                merge_user_input=False,
+                tool_context=tool_context,
+            )
         else:
             turn = host.build_dialogue_turn(session, normalized_input, plan.assistant_response)
         trace.append(self._step("build_turn", {
@@ -136,6 +152,11 @@ class AgentRuntime:
             "fallback_used": bool(turn.fallback_used),
         }))
 
+        tool_reports.append(self._execute_agent_tools(host, session, plan, "post_recommendation", turn, tool_context))
+        trace.append(self._step("execute_post_recommendation_tools", tool_reports[-1].get("summary", {})))
+
+        tool_diagnostics = self._tool_diagnostics(tool_reports)
+        turn.diagnostics.update(tool_diagnostics)
         stop_check_result = self._stop_check(turn)
         trace.append(self._step("stop_check", stop_check_result))
 
@@ -144,15 +165,25 @@ class AgentRuntime:
             "agent_action": plan.action,
             "assistant_response": plan.assistant_response,
             **plan.diagnostics,
+            **tool_diagnostics,
             "memory_snapshot": self._budget_value(memory_snapshot, RuntimeBudget()),
             "tool_result_budget": budget_preview,
             "stop_check_result": stop_check_result,
         })
         trace.append(self._step("attach_diagnostics", {
             "diagnostic_keys": sorted(turn.diagnostics),
-            "runtime_diagnostic_keys": ["memory_snapshot", "tool_result_budget", "stop_check_result", "agent_runtime_trace"],
+            "runtime_diagnostic_keys": [
+                "memory_snapshot",
+                "tool_result_budget",
+                "agent_tool_trace",
+                "agent_tool_events",
+                "agent_tool_summary",
+                "stop_check_result",
+                "agent_runtime_trace",
+            ],
         }))
 
+        ensure_session_context_state(session, self.context_budget)
         session.session_summary = self._compact_session(session)
         trace.append(self._step("update_session_summary", session.session_summary))
 
@@ -165,51 +196,105 @@ class AgentRuntime:
     def _step(self, name: str, summary: dict[str, Any]) -> RuntimeStep:
         return RuntimeStep(name=name, summary=self._budget_value(summary, RuntimeBudget()))
 
-    def _memory_prefetch(self, session: AgentSession) -> dict[str, Any]:
-        recent_turns = session.turns[-3:]
+    def _build_recommendation_turn(
+        self,
+        host: AgentRuntimeHost,
+        session: AgentSession,
+        user_input: str,
+        assistant_response: str,
+        *,
+        merge_user_input: bool,
+        tool_context: dict[str, Any],
+    ) -> AgentTurn:
+        builder = host.build_recommendation_turn
+        if self._callable_accepts_keyword(builder, "tool_context"):
+            return builder(session, user_input, assistant_response, merge_user_input, tool_context=tool_context)
+        return builder(session, user_input, assistant_response, merge_user_input)
+
+    def _execute_agent_tools(
+        self,
+        host: AgentRuntimeHost,
+        session: AgentSession,
+        plan: DialoguePlanLike,
+        phase: str,
+        turn: AgentTurn | None,
+        tool_context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        executor = getattr(host, "execute_agent_tools", None)
+        if not callable(executor):
+            return {"phase": phase, "results": [], "summary": {"supported": False, "result_count": 0}}
+        try:
+            if self._callable_accepts_keyword(executor, "tool_context"):
+                report = executor(session, plan, phase, turn, tool_context=tool_context)
+            else:
+                report = executor(session, plan, phase, turn)
+        except Exception as exc:
+            return {
+                "phase": phase,
+                "results": [{
+                    "name": "agent_tool_dispatcher",
+                    "phase": phase,
+                    "status": "error",
+                    "error_type": type(exc).__name__,
+                    "message": str(exc),
+                    "event": {
+                        "tool_name": "agent_tool_dispatcher",
+                        "phase": phase,
+                        "status": "error",
+                        "error_type": type(exc).__name__,
+                    },
+                }],
+                "summary": {"supported": True, "status": "error", "result_count": 1},
+            }
+        if hasattr(report, "to_dict"):
+            report = report.to_dict()
+        if not isinstance(report, dict):
+            report = {}
+        results = report.get("results", []) if isinstance(report.get("results"), list) else []
+        summary = report.get("summary", {}) if isinstance(report.get("summary"), dict) else {}
+        summary.setdefault("supported", True)
+        summary.setdefault("result_count", len(results))
+        return {"phase": report.get("phase", phase), "results": results, "summary": summary}
+
+    def _callable_accepts_keyword(self, func: Any, keyword: str) -> bool:
+        try:
+            parameters = signature(func).parameters.values()
+        except (TypeError, ValueError):
+            return False
+        return any(
+            parameter.kind is Parameter.VAR_KEYWORD or parameter.name == keyword
+            for parameter in parameters
+        )
+
+    def _tool_diagnostics(self, reports: list[dict[str, Any]]) -> dict[str, Any]:
+        trace: list[dict[str, Any]] = []
+        events: list[dict[str, Any]] = []
+        for report in reports:
+            for result in report.get("results", []):
+                if not isinstance(result, dict):
+                    continue
+                trace.append(result)
+                event = result.get("event")
+                if isinstance(event, dict) and event:
+                    events.append(event)
         return {
-            "session_summary": deepcopy(session.session_summary),
-            "active_constraints": self._constraints_summary(session.active_constraints),
-            "conversation_state": session.conversation_state.to_dict(),
-            "prior_turn_count": len(session.turns),
-            "recent_turns": [
-                {
-                    "turn_index": turn.turn_index,
-                    "user_input": turn.user_input,
-                    "assistant_response": turn.assistant_response,
-                    "intent": turn.diagnostics.get("conversation_intent"),
-                    "agent_action": turn.diagnostics.get("agent_action"),
-                    "item_ids": self._item_ids(turn.recommendation.final_items),
-                    "fallback_used": bool(turn.fallback_used),
-                }
-                for turn in recent_turns
-            ],
+            "agent_tool_trace": trace,
+            "agent_tool_events": events,
+            "agent_tool_summary": {
+                "phase_count": len(reports),
+                "result_count": len(trace),
+                "event_count": len(events),
+                "error_count": sum(1 for result in trace if result.get("status") == "error"),
+            },
         }
 
+    def _memory_prefetch(self, session: AgentSession) -> dict[str, Any]:
+        bundle = build_context_bundle(session, self.context_budget)
+        return bundle.memory_snapshot(session.session_summary)
+
     def _compact_session(self, session: AgentSession) -> dict[str, Any]:
-        constraints = session.active_constraints
-        shown_item_ids: list[str] = []
-        for turn in session.turns:
-            shown_item_ids.extend(self._item_ids(turn.recommendation.final_items))
-        return {
-            "current_goal": session.conversation_state.last_intent or INTENT_RECOMMEND_REQUEST,
-            "latest_intent": session.conversation_state.last_intent,
-            "pending_clarification": session.conversation_state.pending_clarification,
-            "clarification_history": list(session.conversation_state.clarification_history[-5:]),
-            "shown_item_ids": list(dict.fromkeys(shown_item_ids))[-20:],
-            "liked_item_ids": sorted(constraints.liked_item_ids),
-            "disliked_item_ids": sorted(constraints.disliked_item_ids),
-            "disliked_categories": sorted(constraints.disliked_categories),
-            "preferred_categories": dict(sorted(constraints.preferred_categories.items())),
-            "preferred_sources": dict(sorted(constraints.preferred_sources.items())),
-            "preferred_keywords": dict(sorted(constraints.preferred_keywords.items())),
-            "disliked_keywords": dict(sorted(constraints.disliked_keywords.items())),
-            "max_price": constraints.max_price,
-            "filter_prior_turn_items": constraints.filter_prior_turn_items,
-            "constraints_summary": self._constraints_summary(constraints),
-            "recent_action": session.conversation_state.last_agent_action,
-            "turn_count": len(session.turns),
-        }
+        bundle = build_context_bundle(session, self.context_budget)
+        return bundle.session_summary(session.active_constraints)
 
     def _budget_preview(self, *payloads: dict[str, Any]) -> dict[str, Any]:
         budget = RuntimeBudget(
@@ -233,32 +318,7 @@ class AgentRuntime:
         ]
 
     def _budget_value(self, value: Any, budget: RuntimeBudget) -> Any:
-        if isinstance(value, dict):
-            items = list(value.items())
-            retained = items[: budget.max_dict_items]
-            budget.retained += len(retained)
-            if len(items) > len(retained):
-                budget.truncated += len(items) - len(retained)
-            result = {str(key): self._budget_value(item, budget) for key, item in retained}
-            if len(items) > len(retained):
-                result["_truncated_keys"] = len(items) - len(retained)
-            return result
-        if isinstance(value, (list, tuple, set)):
-            values = sorted(value) if isinstance(value, set) else list(value)
-            retained_values = values[: budget.max_list_items]
-            budget.retained += len(retained_values)
-            if len(values) > len(retained_values):
-                budget.truncated += len(values) - len(retained_values)
-            result = [self._budget_value(item, budget) for item in retained_values]
-            if len(values) > len(retained_values):
-                result.append({"_truncated_items": len(values) - len(retained_values)})
-            return result
-        if isinstance(value, str) and len(value) > budget.max_string_chars:
-            budget.retained += 1
-            budget.truncated += 1
-            return value[: budget.max_string_chars] + "..."
-        budget.retained += 1
-        return value
+        return budget_value(value, budget)
 
     def _stop_check(self, turn: AgentTurn) -> dict[str, Any]:
         original_constraints = turn.feedback_constraints.to_dict()
@@ -329,18 +389,7 @@ class AgentRuntime:
         }
 
     def _constraints_summary(self, constraints: FeedbackConstraints) -> dict[str, Any]:
-        return {
-            "liked_item_ids": sorted(constraints.liked_item_ids),
-            "disliked_item_ids": sorted(constraints.disliked_item_ids),
-            "disliked_categories": sorted(constraints.disliked_categories),
-            "preferred_categories": dict(sorted(constraints.preferred_categories.items())),
-            "preferred_sources": dict(sorted(constraints.preferred_sources.items())),
-            "preferred_keywords": dict(sorted(constraints.preferred_keywords.items())),
-            "disliked_keywords": dict(sorted(constraints.disliked_keywords.items())),
-            "max_price": constraints.max_price,
-            "filter_prior_turn_items": constraints.filter_prior_turn_items,
-            "unsupported_free_text_count": len(constraints.unsupported_free_text),
-        }
+        return constraints_summary(constraints, self.context_budget)
 
     def _item_ids(self, items: list[dict[str, Any]]) -> list[str]:
         return [str(item.get("parent_asin") or item.get("item_id")) for item in items if item.get("parent_asin") or item.get("item_id")]

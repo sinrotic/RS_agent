@@ -13,6 +13,9 @@ from rs_core.serving.schema import (
     DemoRoundtripResponse,
     FeedbackRequest,
     FeedbackResponse,
+    ReadinessResponse,
+    RecallRequest,
+    RecallResponse,
     RecommendFromSequenceRequest,
     RecommendFromSequenceResponse,
     SessionExportResponse,
@@ -46,7 +49,7 @@ def session_not_found_handler(request: Request, exc: SessionNotFoundError) -> JS
 
 @lru_cache(maxsize=1)
 def get_service() -> RecommendationService:
-    return RecommendationService(DEFAULT_CONFIG)
+    return RecommendationService(DEFAULT_CONFIG, config_overrides={"evaluation_mode": "public_serving"})
 
 
 @app.get("/health")
@@ -54,8 +57,14 @@ def health() -> dict[str, str]:
     return {
         "status": "ok",
         "service": "rs-agent-serving",
-        "mode": "single-process-demo",
+        "mode": "online-service",
+        "session_state": "single_process_in_memory",
     }
+
+
+@app.get("/ready", response_model=ReadinessResponse)
+def ready() -> ReadinessResponse:
+    return ReadinessResponse(**get_service().readiness())
 
 
 @app.post("/session/start", response_model=StartSessionResponse)
@@ -86,6 +95,15 @@ def recommend_from_sequence(request: RecommendFromSequenceRequest) -> RecommendF
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return RecommendFromSequenceResponse(**result)
+
+
+@app.post("/recall", response_model=RecallResponse)
+def recall(request: RecallRequest) -> RecallResponse:
+    try:
+        result = get_service().recall(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    return RecallResponse(**result)
 
 
 @app.get("/session/{session_id}", response_model=SessionExportResponse)

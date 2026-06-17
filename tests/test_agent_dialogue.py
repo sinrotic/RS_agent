@@ -41,9 +41,9 @@ def test_clarification_dialogue_plan_output_is_allowlisted():
 
 def test_vague_request_triggers_clarification_without_recommendation(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
+    session = env.start_session("u1")
 
-    turn = env.converse(session, "I want headphones")
+    turn = env.converse(session, "I want something")
 
     assert turn.recommendation.trigger_reason == "clarification_needed"
     assert turn.ranking == []
@@ -53,10 +53,34 @@ def test_vague_request_triggers_clarification_without_recommendation(tmp_path: P
     assert session.conversation_state.pending_clarification
 
 
+@pytest.mark.parametrize("user_input", ["I want headphones", "I want TV", "想要耳机"])
+def test_concrete_request_recommends_without_blocking_clarification(tmp_path: Path, user_input: str):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+
+    turn = env.converse(session, user_input)
+
+    assert turn.diagnostics["conversation_intent"] == "recommend_request"
+    assert turn.diagnostics["agent_action"] == "recommend_items"
+    assert turn.ranking
+    assert session.conversation_state.pending_clarification == ""
+
+
+def test_generic_quality_request_still_triggers_clarification(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+
+    turn = env.converse(session, "I want something good")
+
+    assert turn.ranking == []
+    assert turn.diagnostics["agent_action"] == "ask_clarifying_question"
+    assert session.conversation_state.pending_clarification
+
+
 def test_clarification_answer_updates_constraints_and_recommends(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
-    env.converse(session, "I want headphones")
+    session = env.start_session("u1")
+    env.converse(session, "I want something")
 
     turn = env.converse(session, "For commute, prefer bluetooth and Audio, avoid wired")
 
@@ -72,8 +96,8 @@ def test_clarification_answer_updates_constraints_and_recommends(tmp_path: Path)
 
 def test_why_request_explains_prior_turn_without_changing_constraints(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
-    env.converse(session, "I want headphones")
+    session = env.start_session("u1")
+    env.converse(session, "I want something")
     env.converse(session, "For commute, prefer bluetooth and Audio")
     constraints_before = session.active_constraints.to_dict()
 
@@ -88,7 +112,7 @@ def test_why_request_explains_prior_turn_without_changing_constraints(tmp_path: 
 
 def test_why_request_without_prior_recommendation_returns_public_fallback(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
+    session = env.start_session("u1")
 
     turn = env.converse(session, "为什么推荐？")
 
@@ -98,7 +122,7 @@ def test_why_request_without_prior_recommendation_returns_public_fallback(tmp_pa
 
 def test_why_request_for_stale_item_returns_public_fallback(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
+    session = env.start_session("u1")
     env.converse(session, "For commute, prefer bluetooth and Audio")
 
     turn = env.converse(session, "why? item_id=stale_item_1")
@@ -109,7 +133,7 @@ def test_why_request_for_stale_item_returns_public_fallback(tmp_path: Path):
 
 def test_why_request_targets_latest_recommendation_item_after_dialogue_only_turns(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
+    session = env.start_session("u1")
     env.converse(session, "For commute, prefer bluetooth and Audio")
     env.converse(session, "why? item_id=speaker_1")
 
@@ -123,7 +147,7 @@ def test_why_request_targets_latest_recommendation_item_after_dialogue_only_turn
 
 def test_show_different_filters_prior_turn_items(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
+    session = env.start_session("u1")
     first = env.step(session, "")
     first_items = {item["parent_asin"] for item in first.ranking}
 
@@ -136,7 +160,7 @@ def test_show_different_filters_prior_turn_items(tmp_path: Path):
 
 def test_rag_off_preserves_prior_explanation_output(tmp_path: Path):
     base_env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path / "base")), limit_users=1)
-    base_session = base_env.start_session()
+    base_session = base_env.start_session("u1")
     base_env.converse(base_session, "For commute, prefer bluetooth and Audio")
     base_turn = base_env.converse(base_session, "why? item_id=speaker_1")
 
@@ -144,7 +168,7 @@ def test_rag_off_preserves_prior_explanation_output(tmp_path: Path):
         str(_write_rag_dialogue_fixture(tmp_path / "off", {"evidence_mode": "off"})),
         limit_users=1,
     )
-    off_session = off_env.start_session()
+    off_session = off_env.start_session("u1")
     recommendation_turn = off_env.converse(off_session, "For commute, prefer bluetooth and Audio")
     off_turn = off_env.converse(off_session, "why? item_id=speaker_1")
 
@@ -157,7 +181,7 @@ def test_rag_shadow_builds_context_without_changing_explanation(tmp_path: Path):
         str(_write_rag_dialogue_fixture(tmp_path, {"evidence_mode": "shadow", "max_evidence_per_item": 2})),
         limit_users=1,
     )
-    session = env.start_session()
+    session = env.start_session("u1")
     recommendation_turn = env.converse(session, "For commute, prefer bluetooth and Audio")
 
     turn = env.converse(session, "why? item_id=speaker_1")
@@ -177,7 +201,7 @@ def test_rag_explain_uses_evidence_without_mutating_recommendation_payload(tmp_p
         str(_write_rag_dialogue_fixture(tmp_path, {"evidence_mode": "explain", "max_evidence_per_item": 2})),
         limit_users=1,
     )
-    session = env.start_session()
+    session = env.start_session("u1")
     recommendation_turn = env.converse(session, "For commute, prefer bluetooth and Audio")
     before = deepcopy(
         {
@@ -191,8 +215,8 @@ def test_rag_explain_uses_evidence_without_mutating_recommendation_payload(tmp_p
 
     assert "商品信息显示" in turn.assistant_response
     assert "Audio" in turn.assistant_response
-    assert recommendation_turn.rag_context["metadata"]["consumed_by_explanation"] is True
-    assert recommendation_turn.diagnostics["rag"]["consumed_by_explanation"] is True
+    assert "consumed_by_explanation" not in recommendation_turn.rag_context["metadata"]
+    assert "consumed_by_explanation" not in recommendation_turn.diagnostics["rag"]
     assert before == {
         "candidates": recommendation_turn.candidates,
         "ranking": recommendation_turn.ranking,
@@ -202,7 +226,7 @@ def test_rag_explain_uses_evidence_without_mutating_recommendation_payload(tmp_p
 
 def test_unsupported_free_text_is_preserved_across_turns_and_rollout(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
-    session = env.start_session()
+    session = env.start_session("u1")
 
     env.converse(session, "make it match my living room vibe")
     env.converse(session, "prefer Audio")

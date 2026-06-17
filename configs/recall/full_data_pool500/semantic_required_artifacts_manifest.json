@@ -1,0 +1,57 @@
+{
+  "schema_version": "pool500_required_artifacts_manifest_v1",
+  "source": "semantic",
+  "canonical_source": "semantic",
+  "source_status": "TARGET_SLICE_DIAGNOSTIC",
+  "dataset_scope": "newdata_train_only_pool500_smoke",
+  "input_contract": {
+    "required_scopes": [
+      "pool500_eligible_users",
+      "train_only_interactions",
+      "canonical_pool500_source",
+      "train_only_item_metadata",
+      "newdata_recent_2y_1m_3m"
+    ],
+    "forbidden_scopes": [
+      "holdout",
+      "valid",
+      "test",
+      "clean_10000",
+      "LOPO",
+      "youtube_dnn",
+      "pool1000"
+    ],
+    "clean_manifest": "data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json",
+    "lightweight_views_manifest": "data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json",
+    "eligible_user_manifest": "outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json",
+    "tier_specific_eligible_manifests": {
+      "recent2y_smoke": "outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json",
+      "recent2y_formal": "outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_formal_v1/eligible_user_manifest.json"
+    },
+    "train_only": true
+  },
+  "required_outputs": [
+    "method_dataset_manifest.json",
+    "source_index_manifest.json",
+    "candidates.jsonl",
+    "coverage_audit.json",
+    "undercoverage_audit.json",
+    "resource_audit.json",
+    "no_holdout_audit.json"
+  ],
+  "governance": {
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "pool1000_allowed": false,
+    "promotion_allowed": false,
+    "full_pool500_ready_declared": false,
+    "final_pool500_ready_claimed": false
+  },
+  "acceptance_checks": [
+    "required_outputs_declared",
+    "newdata_train_only_inputs_only",
+    "forbidden_evidence_scopes_absent",
+    "governance_flags_false",
+    "target_slice_diagnostic_status_only"
+  ]
+}

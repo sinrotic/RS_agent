@@ -1,0 +1,61 @@
+# Qwen QLoRA + SFT smoke 配置。
+# 默认 dry-run，只校验环境、配置和 synthetic SFT contract。
+experiment_name: qwen_qlora_sft_smoke
+stage: sft_environment_smoke
+dry_run: true
+seed: 20260606
+
+model:
+  model_id: Qwen/Qwen3.5-4B
+  local_files_only: true
+  trust_remote_code: true
+  torch_dtype: auto
+  device_map: auto
+  max_seq_length: 2048
+
+quantization:
+  mode: 4bit_nf4
+  load_in_4bit: true
+  load_in_8bit: false
+  bnb_4bit_quant_type: nf4
+  bnb_4bit_use_double_quant: true
+  bnb_4bit_compute_dtype: bfloat16
+  windows_bitsandbytes_optional: true
+
+lora:
+  enabled: true
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  bias: none
+  task_type: CAUSAL_LM
+  target_modules: ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+
+data:
+  status: deferred
+  source: synthetic_smoke_only
+  sft_path: null
+  grpo_path: null
+  rollout_schema: rs_agent_rollout_v1
+  training_signals_schema: rs_agent_training_signals_v1
+
+sft:
+  enabled: true
+  max_steps: 0
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 1
+  learning_rate: 0.0002
+  max_seq_length: 2048
+  report_to: none
+  output_dir: outputs/training/qwen_qlora_sft_smoke
+
+grpo:
+  enabled: false
+  max_steps: 0
+  per_device_train_batch_size: 1
+  num_generations: 2
+  learning_rate: 0.000001
+  max_prompt_length: 1024
+  max_completion_length: 256
+  report_to: none
+  output_dir: outputs/training/qwen_grpo_smoke

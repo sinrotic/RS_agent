@@ -62,6 +62,7 @@ def test_build_two_tower_method_source_writes_target_slice_diagnostic_contract(t
     assert source_index["recall_index_path"] == str(paths["source_index_manifest"].resolve())
     assert source_index["source_index_manifest_path"] == str(paths["source_index_manifest"].resolve())
     assert source_index["candidate_path"] == str((output_dir / "candidates.jsonl").resolve())
+    assert source_index["query_vector_policy"] == "artifact_user_embedding_first_then_projected_train_sequence_seed_average_vectors"
 
     rows = _read_jsonl(output_dir / "candidates.jsonl")
     assert rows
@@ -79,7 +80,10 @@ def test_build_two_tower_method_source_writes_target_slice_diagnostic_contract(t
     assert by_user["u_artifact"][0]["metadata"]["query_vector_source"] == "artifact_user_embedding"
     assert [row["item_id"] for row in by_user["u_seed_fallback"]] == ["item_c", "item_a", "item_d"]
     assert by_user["u_seed_fallback"][0]["metadata"]["query_vector_source"] == "seed_item_average"
+    assert by_user["u_seed_fallback"][0]["metadata"]["query_source"] == "recent_positive_item_sequence_average_vectors"
     assert by_user["u_seed_fallback"][0]["metadata"]["seed_item_count"] == 1
+    assert by_user["u_seed_fallback"][0]["metadata"]["seed_vector_count"] == 1
+    assert by_user["u_seed_fallback"][0]["metadata"]["applied_query_projection"] is False
     assert "u_missing_seed_vector" not in by_user
     assert "u_no_seed" not in by_user
 
@@ -89,6 +93,8 @@ def test_build_two_tower_method_source_writes_target_slice_diagnostic_contract(t
     assert coverage["seed_fallback_user_count"] == 1
     assert coverage["candidate_under_limit_user_count"] >= 1
     assert undercoverage["undercovered_user_count"] >= 2
+    assert undercoverage["reason_counts"]["seed_items_missing_item_vectors"] == 1
+    assert undercoverage["reason_counts"]["no_train_seed_items"] == 1
 
 
 def test_two_tower_method_source_blocks_forbidden_actual_reads_but_ignores_declared_eval_splits(tmp_path: Path) -> None:

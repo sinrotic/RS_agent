@@ -1,68 +1,132 @@
-import { SimulationAction, SimulationSceneResponse } from '../../types';
+import { useEffect, useRef } from 'react';
+import { SimulationSceneResponse } from '../../types';
+import { Trophy, User, Cpu } from 'lucide-react';
+import { ProductCard } from '../ProductCard';
 
-function actionLabel(action: SimulationAction) {
-  return action.action_type ? `${action.type} • ${action.action_type}` : action.type;
+interface AgentTimelineProps {
+  simScene: SimulationSceneResponse | null;
+  selectedTurnIndex: number | null;
+  setSelectedTurnIndex: (turnIndex: number | null) => void;
 }
 
-export function AgentTimeline({ simScene }: { simScene: SimulationSceneResponse | null }) {
+export function AgentTimeline({ simScene, selectedTurnIndex, setSelectedTurnIndex }: AgentTimelineProps) {
+  const timelineEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    timelineEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [simScene]);
+
   if (!simScene) return null;
 
   return (
-    <div className="mt-6 flex flex-col gap-6">
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-        <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Actions Timeline (Agent-to-Agent)</h3>
-        <div className="space-y-4">
-          {simScene.actions.map((action, i) => (
-            <div key={`${action.turn_index}-${action.type}-${i}`} className="flex gap-3 text-sm">
-              <div className="flex flex-col items-center">
-                <div className="w-6 h-6 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center text-xs font-bold text-gray-600">{action.turn_index}</div>
-                {i < simScene.actions.length - 1 && <div className="w-px h-full bg-gray-200 my-1"></div>}
+    <div className="flex flex-col gap-4 w-full">
+      {simScene.session.public_timeline.events.map((event) => {
+        const displayInfo = simScene.session.display_responses[event.display_response_index];
+        const isSelected = event.turn_index === selectedTurnIndex;
+
+        return (
+          <div key={event.public_event_id} className="flex flex-col gap-3 w-full">
+            {/* User Agent message bubble (Purple, aligned to Right) */}
+            <div 
+              onClick={() => setSelectedTurnIndex(event.turn_index)}
+              className={`flex flex-col gap-1 max-w-[85%] self-end items-end cursor-pointer transition-all duration-200 ${
+                isSelected 
+                  ? 'scale-[1.01] ring-2 ring-purple-400 ring-offset-2 ring-offset-gray-50 shadow-md' 
+                  : 'hover:scale-[1.005]'
+              }`}
+            >
+              <div className="text-[10px] text-gray-400 px-2 font-semibold uppercase flex items-center gap-1">
+                <User size={10} className="text-purple-500" />
+                用户智能体 (User Agent - {simScene.role.role_id})
               </div>
-              <div className="flex-1 pb-2">
-                <div className="font-semibold text-gray-800 uppercase text-xs tracking-wider mb-1">
-                  {actionLabel(action)}
+              <div className="rounded-2xl p-4 text-sm shadow-sm bg-purple-600 text-white rounded-tr-none text-left w-full">
+                <p className="whitespace-pre-wrap leading-relaxed">{event.user_message}</p>
+                <div className="mt-2 text-[9px] text-purple-200 border-t border-purple-500/30 pt-1.5 flex justify-between">
+                  <span>第 {event.turn_index} 轮对话</span>
+                  <span>点击查看决策轨迹</span>
                 </div>
-                {action.message && <div className="text-gray-700 bg-gray-50 p-2 rounded border border-gray-100">"{action.message}"</div>}
-                {action.comment && <div className="text-gray-600 mt-1 italic text-xs">Comment: "{action.comment}"</div>}
-                {action.item_id && <div className="text-gray-500 mt-1 text-xs">Item: {action.item_id}</div>}
               </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-        <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Session Summary</h3>
-        <div className="space-y-4">
-          {simScene.session.public_timeline.events.map((event) => {
-            const displayInfo = simScene.session.display_responses[event.display_response_index];
-            return (
-              <div key={event.public_event_id} className="border border-indigo-100 rounded-lg bg-indigo-50/30 p-4 text-sm">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-xs font-semibold text-indigo-800 bg-indigo-100 px-2 py-1 rounded">Turn {event.turn_index} - {event.event_type.toUpperCase()}</span>
-                </div>
-                <div className="mb-2">
-                  <span className="font-semibold text-gray-800">User Agent: </span>
-                  <span className="text-gray-700">{event.user_message}</span>
-                </div>
-                <div className="mb-3">
-                  <span className="font-semibold text-indigo-700">RS Agent: </span>
-                  <span className="text-gray-700">{event.assistant_message}</span>
-                </div>
+            {/* Recommendation Agent message bubble (White, aligned to Left) */}
+            <div 
+              onClick={() => setSelectedTurnIndex(event.turn_index)}
+              className={`flex flex-col gap-1 max-w-[85%] self-start items-start w-full cursor-pointer transition-all duration-200 ${
+                isSelected 
+                  ? 'scale-[1.01] ring-2 ring-indigo-400 ring-offset-2 ring-offset-gray-50 shadow-md' 
+                  : 'hover:scale-[1.005]'
+              }`}
+            >
+              <div className="text-[10px] text-gray-400 px-2 font-semibold uppercase flex items-center gap-1">
+                <Cpu size={10} className="text-indigo-500" />
+                推荐系统智能体 (Recommendation Agent)
+              </div>
+              <div className="rounded-2xl p-4 text-sm shadow-sm bg-white text-gray-800 border border-gray-200 rounded-tl-none w-full text-left">
+                <p className="whitespace-pre-wrap leading-relaxed">{event.assistant_message}</p>
+
+                {/* Inline Recommended Items */}
                 {displayInfo?.items && displayInfo.items.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mt-3 pt-3 border-t border-indigo-100">
-                    {displayInfo.items.map((item) => (
-                      <div key={item.parent_asin} className="bg-white border border-gray-200 rounded p-1.5 text-xs">
-                         <div className="font-medium text-gray-800 truncate" title={item.title || item.parent_asin}>{item.title || item.parent_asin}</div>
-                      </div>
-                    ))}
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <h4 className="font-semibold text-xs text-gray-500 uppercase tracking-wider mb-3">为您推荐以下商品：</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {displayInfo.items.map((item) => (
+                        <div key={item.parent_asin} className="w-full">
+                          <ProductCard
+                            item={item}
+                            onFeedback={() => {}}
+                            disabled={true}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
+                
+                <div className="mt-3 text-[9px] text-gray-400 border-t border-gray-150 pt-1.5 flex justify-between">
+                  <span>第 {event.turn_index} 轮推荐</span>
+                  <span className="text-indigo-600 font-semibold">点击查看内部决策轨迹</span>
+                </div>
               </div>
-            );
-          })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* 4. Terminal System Outcome Message */}
+      {simScene.metrics && (
+        <div className="self-center bg-emerald-50 border border-emerald-200 text-emerald-850 rounded-2xl px-5 py-4 text-xs font-medium my-3 max-w-[90%] shadow-sm flex flex-col gap-2 items-center text-center">
+          <div className="font-bold flex items-center gap-1.5 text-sm text-emerald-850">
+            <Trophy size={16} className="text-amber-500 animate-bounce" />
+            仿真交互流程已闭环
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-[11px] text-emerald-700 mt-1.5 border-t border-emerald-100/60 pt-2.5 w-full">
+            <div className="flex flex-col">
+              <span className="text-emerald-555 font-sans">客户满意度</span>
+              <span className="text-sm font-extrabold text-emerald-800">{simScene.state.satisfaction} / 5.0</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-emerald-555 font-sans">总对话轮数</span>
+              <span className="text-sm font-extrabold text-emerald-800">{simScene.metrics.turn_count} / {simScene.actions.length}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-emerald-555 font-sans">最终动作</span>
+              <span className="text-sm font-extrabold text-purple-700 uppercase">{simScene.metrics.final_action}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-emerald-555 font-sans">是否购买达成</span>
+              <span className={`text-sm font-extrabold ${simScene.metrics.accepted ? 'text-emerald-600' : 'text-gray-500'}`}>
+                {simScene.metrics.accepted ? 'YES' : 'NO'}
+              </span>
+            </div>
+          </div>
+          {simScene.metrics.accepted_item_id && (
+            <div className="mt-2 text-[10px] bg-white border border-emerald-200 rounded px-2.5 py-1 text-emerald-800 font-mono">
+              已购入 ASIN 商品: <span className="font-bold text-indigo-600">{simScene.metrics.accepted_item_id}</span>
+            </div>
+          )}
         </div>
-      </div>
+      )}
+      <div ref={timelineEndRef} />
     </div>
   );
 }

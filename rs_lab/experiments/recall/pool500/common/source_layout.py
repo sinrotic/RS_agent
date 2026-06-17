@@ -34,6 +34,8 @@ FORBIDDEN_EVIDENCE_SCOPES = (
     "clean_10000",
     "youtube_dnn",
     "pool1000",
+    "oracle",
+    "eval_label",
 )
 
 def method_output_dir(output_root: Path, source: str, run_id: str) -> Path:

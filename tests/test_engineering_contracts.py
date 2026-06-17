@@ -153,6 +153,14 @@ def test_route_registry_contract_rejects_missing_required_route(tmp_path: Path):
     assert [violation.check for violation in violations] == ["route_registry_required_routes"]
 
 
+def test_route_registry_contract_rejects_missing_online_service_route(tmp_path: Path):
+    registry = _write_valid_registry(tmp_path, omit_online_service=True)
+
+    violations = validate_route_registry_contract(tmp_path, registry)
+
+    assert [violation.check for violation in violations] == ["route_registry_required_routes"]
+
+
 def test_route_registry_contract_rejects_missing_path(tmp_path: Path):
     registry = _write_valid_registry(tmp_path, extra_config_path="configs/recall/missing.yaml")
 
@@ -175,6 +183,98 @@ def test_route_registry_contract_rejects_pool500_as_ranking_input(tmp_path: Path
     violations = validate_route_registry_contract(tmp_path, registry)
 
     assert [violation.check for violation in violations] == ["pool500_not_ranking_input"]
+
+
+def test_route_registry_contract_accepts_matching_online_service_artifact_path(tmp_path: Path):
+    registry = _write_valid_registry(tmp_path)
+
+    assert validate_route_registry_contract(tmp_path, registry) == []
+
+
+def test_route_registry_contract_rejects_mismatched_online_service_artifact_path(tmp_path: Path):
+    registry = _write_valid_registry(
+        tmp_path,
+        online_serving_candidates_path="outputs/recall/old_pool500/pool500_candidates.jsonl",
+    )
+
+    violations = validate_route_registry_contract(tmp_path, registry)
+
+    assert [violation.check for violation in violations] == ["online_serving_artifact_path_consistency"]
+
+
+def test_route_registry_contract_rejects_dual_path_flagged_mismatch(tmp_path: Path):
+    registry = _write_valid_registry(
+        tmp_path,
+        online_serving_candidates_path="outputs/recall/old_pool500/pool500_candidates.jsonl",
+        online_service_route_overrides={"dual_path_governance_allowed": True},
+    )
+
+    violations = validate_route_registry_contract(tmp_path, registry)
+
+    assert [violation.check for violation in violations] == ["online_serving_dual_path_governance_forbidden"]
+
+
+@pytest.mark.parametrize(
+    "dual_path_field",
+    ["dual_path_governance", "dual_path_governance_allowed", "explicit_dual_path_governance"],
+)
+def test_route_registry_contract_rejects_dual_path_flagged_matching_path(
+    tmp_path: Path,
+    dual_path_field: str,
+):
+    registry = _write_valid_registry(tmp_path, online_service_route_overrides={dual_path_field: True})
+
+    violations = validate_route_registry_contract(tmp_path, registry)
+
+    assert [violation.check for violation in violations] == ["online_serving_dual_path_governance_forbidden"]
+
+
+@pytest.mark.parametrize(
+    ("online_service_route_overrides", "expected_checks"),
+    [
+        ({"required_output_paths": []}, ["online_serving_required_output_path_shape"]),
+        (
+            {"required_output_paths": ["outputs/recall/current/pool500_candidates.jsonl", "outputs/recall/other/pool500_candidates.jsonl"]},
+            ["online_serving_required_output_path_shape"],
+        ),
+        ({"required_output_paths": [123]}, ["route_registry_path_value", "online_serving_required_output_path_shape"]),
+        ({"config_paths": []}, ["online_serving_config_path_shape"]),
+        (
+            {"config_paths": ["configs/serving/online_service.yaml", "configs/serving/other.yaml"]},
+            ["online_serving_config_path_shape"],
+        ),
+        ({"config_paths": [123]}, ["route_registry_path_value", "online_serving_config_path_shape"]),
+    ],
+)
+def test_route_registry_contract_requires_single_online_service_artifact_and_config_path(
+    tmp_path: Path,
+    online_service_route_overrides: dict[str, object],
+    expected_checks: list[str],
+):
+    registry = _write_valid_registry(tmp_path, online_service_route_overrides=online_service_route_overrides)
+
+    violations = validate_route_registry_contract(tmp_path, registry)
+
+    assert [violation.check for violation in violations] == expected_checks
+
+
+@pytest.mark.parametrize(
+    "online_route_overrides",
+    [
+        {"pool500_candidates_path": None},
+        {"pool500_candidates_path": 123},
+        {"pool500_candidates_path": ""},
+    ],
+)
+def test_route_registry_contract_requires_online_service_pool500_candidates_path(
+    tmp_path: Path,
+    online_route_overrides: dict[str, object],
+):
+    registry = _write_valid_registry(tmp_path, online_route_overrides=online_route_overrides)
+
+    violations = validate_route_registry_contract(tmp_path, registry)
+
+    assert [violation.check for violation in violations] == ["online_serving_pool500_candidates_path_required"]
 
 
 @pytest.mark.parametrize(
@@ -293,24 +393,37 @@ def _write_valid_registry(
     *,
     status: str = "current",
     omit_ranking: bool = False,
+    omit_online_service: bool = False,
     extra_config_path: str | None = None,
     ranking_pool500_path: str | None = None,
     pool500_route_overrides: dict[str, object] | None = None,
+    online_service_route_overrides: dict[str, object] | None = None,
+    online_route_overrides: dict[str, object] | None = None,
+    online_serving_candidates_path: str = "outputs/recall/current/pool500_candidates.jsonl",
 ) -> Path:
     paths = [
         "configs/recall/current.yaml",
         "configs/ranking/current.yaml",
         "configs/demo/current.yaml",
+        "configs/serving/online_service.yaml",
         "rs_core/workflow/current.py",
         "rs_core/workflow/full_data_pool500_route_gate.py",
         "rs_lab/experiments/recall/current.py",
         "outputs/recall/current/manifest.json",
+        "outputs/recall/current/pool500_candidates.jsonl",
         "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md",
     ]
     if ranking_pool500_path:
         paths.append(ranking_pool500_path)
+    if online_serving_candidates_path:
+        paths.append(online_serving_candidates_path)
     if pool500_route_overrides and isinstance(pool500_route_overrides.get("required_output_paths"), list):
         paths.extend(path for path in pool500_route_overrides["required_output_paths"] if isinstance(path, str))
+    if online_service_route_overrides:
+        for field in ("config_paths", "required_output_paths"):
+            override_paths = online_service_route_overrides.get(field)
+            if isinstance(override_paths, list):
+                paths.extend(path for path in override_paths if isinstance(path, str))
     for relative in paths:
         path = tmp_path / relative
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -318,6 +431,14 @@ def _write_valid_registry(
     config_paths = ["configs/recall/current.yaml"]
     if extra_config_path:
         config_paths.append(extra_config_path)
+    online_route = {"pool500_candidates_path": online_serving_candidates_path}
+    if online_route_overrides:
+        online_route.update(online_route_overrides)
+    serving_config = tmp_path / "configs" / "serving" / "online_service.yaml"
+    serving_config.write_text(
+        json.dumps({"online_route": online_route}, ensure_ascii=False),
+        encoding="utf-8",
+    )
     registry = tmp_path / "configs" / "governance" / "current_route_registry.yaml"
     registry.parent.mkdir(parents=True, exist_ok=True)
     routes = {
@@ -372,8 +493,27 @@ def _write_valid_registry(
             "notes": "pool500 recall only",
         },
     }
+    if not omit_online_service:
+        routes["current_online_service_route"] = {
+            "role": "online_serving",
+            "status": "provisional_current",
+            "authority_refs": ["dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"],
+            "config_paths": ["configs/serving/online_service.yaml"],
+            "workflow_paths": ["rs_core/workflow/current.py"],
+            "script_paths": [],
+            "required_output_paths": ["outputs/recall/current/pool500_candidates.jsonl"],
+            "promotion_gate_ref": "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion",
+            "candidate_generation_allowed": True,
+            "ranking_input_replacement_allowed": False,
+            "pool1000_allowed": False,
+            "promotion_allowed": False,
+            "full_pool500_ready_semantics": "recall_artifact_readiness_only",
+            "notes": "online route",
+        }
     if pool500_route_overrides:
         routes["pool500_recall_continuation_route"].update(pool500_route_overrides)
+    if online_service_route_overrides:
+        routes["current_online_service_route"].update(online_service_route_overrides)
     if not omit_ranking:
         routes["current_ranking_route"] = {
             "role": "ranking",

@@ -22,6 +22,7 @@ from rs_core.recsys.candidate_merge import (
 )
 from rs_core.recsys.evaluation import evaluate, frozen_candidate_signature, heldout_positives, inspect_physical_ranking_pipeline_artifacts
 from rs_core.recsys.ranking import rank_candidates
+from rs_core.recsys.types import MergedCandidate
 from rs_core.rsagent.decision import make_agent_decision
 from rs_core.rsagent.feedback_rerank import apply_feedback_rerank
 from rs_core.rsagent.inference_policy import RerankPolicyClient, apply_optional_inference_policy, resolve_inference_policy_config
@@ -67,8 +68,14 @@ def run_hybrid_demo(
 
     popular = load_popular_candidates(paths["popular"], limit=int(config.get("popular_fallback_count", 50)))
     category_top = load_category_candidates(paths["category_top"])
-    evaluation_mode = str(config.get("evaluation_mode", "valid_test"))
-    if evaluation_mode not in {"valid_test", "leave_one_positive_out"}:
+    if "evaluation_mode" in config:
+        configured_evaluation_mode = config.get("evaluation_mode")
+        evaluation_mode = str(configured_evaluation_mode) if configured_evaluation_mode not in (None, "") else "public_serving"
+        if evaluation_mode == "none":
+            evaluation_mode = "public_serving"
+    else:
+        evaluation_mode = "valid_test"
+    if evaluation_mode not in {"valid_test", "leave_one_positive_out", "public_serving"}:
         raise ValueError(f"Unsupported evaluation_mode: {evaluation_mode}")
 
     run_started_at = perf_counter()
@@ -81,7 +88,7 @@ def run_hybrid_demo(
         train_sequences, holdout, lopo_stats = _leave_one_positive_out_sequences(train_sequences)
     itemcf_seed_items = _itemcf_seed_items(train_sequences)
     itemcf_weak = load_itemcf_by_source(paths["itemcf_weak"], "itemcf_weak", itemcf_seed_items)
-    itemcf_strong = load_itemcf_by_source(paths["itemcf_strong"], "itemcf_strong", itemcf_seed_items)
+    itemcf_strong = load_itemcf_by_source(paths["itemcf_strong"], "itemcf_strong", itemcf_seed_items) if paths["itemcf_strong"].exists() else {}
     item_graph = load_item_graph_recall(paths["item_graph"], itemcf_seed_items) if config.get("item_graph_enabled") else {}
     graph_walk_seed = (
         load_graph_walk_seed_recall(paths["graph_walk_seed"], itemcf_seed_items, paths["graph_walk_seed_manifest"])
@@ -899,6 +906,7 @@ def recommend_for_user(
     prior_turn_items: set[str] | None = None,
     inference_client: RerankPolicyClient | None = None,
     turn_index: int | None = None,
+    extra_candidates: list[MergedCandidate] | None = None,
 ) -> RecommendationTurnResult:
     user_id = user_sequence.get("user_id", "")
     started_at = perf_counter()
@@ -917,6 +925,8 @@ def recommend_for_user(
         two_tower_seed,
         graph_walk_seed,
     )
+    if extra_candidates:
+        candidates = _merge_extra_candidates(candidates, extra_candidates)
     candidates, feedback_diagnostics = apply_feedback_to_candidates(
         candidates, feedback_constraints, config, prior_turn_items
     )
@@ -957,6 +967,31 @@ def recommend_for_user(
         fallback_used=fallback_used,
         diagnostics=diagnostics,
     )
+
+
+def _merge_extra_candidates(
+    candidates: list[MergedCandidate],
+    extra_candidates: list[MergedCandidate],
+) -> list[MergedCandidate]:
+    merged: dict[str, MergedCandidate] = {candidate.item_id: candidate for candidate in candidates}
+    for extra in extra_candidates:
+        if not extra.item_id:
+            continue
+        current = merged.get(extra.item_id)
+        if current is None:
+            merged[extra.item_id] = extra
+            continue
+        for source in extra.sources:
+            if source not in current.sources:
+                current.sources.append(source)
+            current.source_scores[source] = max(
+                float(current.source_scores.get(source, 0.0)),
+                float(extra.source_scores.get(source, 0.0)),
+            )
+        if not current.category:
+            current.category = extra.category
+        current.metadata.update({key: value for key, value in extra.metadata.items() if key not in current.metadata})
+    return list(merged.values())
 
 
 def _merge_nested(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
@@ -1107,7 +1142,8 @@ def _required_paths(clean_dir: Path, views_dir: Path) -> dict[str, Path]:
 
 
 def _ensure_inputs(paths: dict[str, Path]) -> None:
-    missing = [str(path) for path in paths.values() if not path.exists()]
+    optional_keys = {"itemcf_strong"}
+    missing = [str(path) for key, path in paths.items() if key not in optional_keys and not path.exists()]
     if missing:
         raise FileNotFoundError("Missing hybrid demo inputs: " + ", ".join(missing))
 

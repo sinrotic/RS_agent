@@ -80,6 +80,26 @@ TWO_TOWER_REQUIRED_STATS = {
 }
 TWO_TOWER_BOUNDARY_RESTRICTED_KEYS = {"label_artifacts", "oracle_artifacts", "diagnostic_oracle_artifacts"}
 TWO_TOWER_FORBIDDEN_DATA_USES = {"training", "negative_sampling", "index_build", "official_candidate_generation"}
+RECENT_WINDOW_SAMPLE_SCHEMA_VERSION = "recent_window_two_tower_train_sample_v1"
+TARGET_ITEM_SOURCE_ENUM = {"heldout_interaction", "train_positive", "candidate_pool", "manual_debug", "unknown"}
+P2_FORBIDDEN_TARGET_ITEM_SOURCES = {"manual_debug", "unknown"}
+LEGACY_TARGET_ITEM_SOURCE_MIGRATIONS = {
+    "train_only_user_sequence": "train_positive",
+    "recent_window_train_only_user_sequence_positive_event": "train_positive",
+}
+RECENT_WINDOW_REQUIRED_MANIFEST_FIELDS = {
+    "recent_window_sample_schema_version",
+    "builder_version",
+    "history_source_path",
+    "history_source_hash",
+    "target_source_path",
+    "target_source_hash",
+    "target_item_source_enum",
+    "target_item_source_p2_forbidden",
+    "target_item_source_legacy_migrations",
+    "window_policy",
+    "leakage_audit_path",
+}
 
 
 def parse_args() -> argparse.Namespace:
@@ -254,6 +274,7 @@ def _audit_method_dataset_manifest(path: Path) -> dict[str, Any]:
         _audit_collab_v2_dependency(manifest, blockers, diagnostics)
     if schema_version == "pool500_two_tower_method_dataset_v1":
         _audit_two_tower_phase1_manifest_contract(manifest, blockers, diagnostics)
+        _audit_two_tower_recent_window_contract(manifest_path.parent, manifest, blockers, diagnostics)
         _audit_two_tower_negative_universe(manifest_path.parent, manifest, governance_diagnostics, blockers, diagnostics)
         _audit_two_tower_training_item_universe(manifest_path.parent, manifest, blockers, diagnostics)
         _audit_two_tower_train_sample_quality(manifest_path.parent, manifest, blockers, diagnostics)
@@ -383,15 +404,90 @@ def _audit_two_tower_phase1_manifest_contract(manifest: dict[str, Any], blockers
             blockers.append(f"two_tower_phase1_data_usage_boundary_allows_forbidden_scope:{key}")
 
 
+def _audit_two_tower_recent_window_contract(output_dir: Path, manifest: dict[str, Any], blockers: list[str], diagnostics: dict[str, Any]) -> None:
+    outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
+    samples_path = Path(str(outputs.get("two_tower_train_samples") or output_dir / "two_tower_train_samples.jsonl")).resolve()
+    leakage_path = Path(str(manifest.get("leakage_audit_path") or output_dir / "leakage_audit.json")).resolve()
+    missing_manifest_fields = sorted(field for field in RECENT_WINDOW_REQUIRED_MANIFEST_FIELDS if field not in manifest)
+    diagnostics["recent_window_sample_contract"] = {
+        "samples_path": str(samples_path),
+        "leakage_audit_path": str(leakage_path),
+        "missing_manifest_fields": missing_manifest_fields,
+        "sample_schema_version": manifest.get("recent_window_sample_schema_version"),
+    }
+    if missing_manifest_fields:
+        blockers.append(f"two_tower_recent_window_manifest_missing_fields:{','.join(missing_manifest_fields)}")
+    if manifest.get("recent_window_sample_schema_version") != RECENT_WINDOW_SAMPLE_SCHEMA_VERSION:
+        blockers.append("two_tower_recent_window_sample_schema_version_invalid")
+    if not isinstance(manifest.get("window_policy"), dict):
+        blockers.append("two_tower_recent_window_policy_missing")
+    if set(manifest.get("target_item_source_enum") or []) != TARGET_ITEM_SOURCE_ENUM:
+        blockers.append("two_tower_target_item_source_enum_invalid")
+    if set(manifest.get("target_item_source_p2_forbidden") or []) != P2_FORBIDDEN_TARGET_ITEM_SOURCES:
+        blockers.append("two_tower_target_item_source_p2_forbidden_invalid")
+    if manifest.get("target_item_source_legacy_migrations") != LEGACY_TARGET_ITEM_SOURCE_MIGRATIONS:
+        blockers.append("two_tower_target_item_source_legacy_migration_missing")
+    for path_field, hash_field in (("history_source_path", "history_source_hash"), ("target_source_path", "target_source_hash")):
+        source_path = Path(str(manifest.get(path_field) or "")).resolve()
+        diagnostics["recent_window_sample_contract"][path_field] = str(source_path)
+        if not source_path.is_file():
+            blockers.append(f"two_tower_recent_window_source_missing:{path_field}")
+        elif manifest.get(hash_field) != _file_sha256(source_path):
+            blockers.append(f"two_tower_recent_window_source_hash_mismatch:{hash_field}")
+    if not samples_path.is_file():
+        blockers.append("two_tower_missing_train_samples")
+        return
+    bad_rows = 0
+    missing_time_rows = 0
+    for row in iter_jsonl(samples_path):
+        history_items = row.get("history_items") or []
+        history_times = row.get("history_times")
+        target_time = row.get("target_time")
+        if row.get("schema_version") != RECENT_WINDOW_SAMPLE_SCHEMA_VERSION:
+            bad_rows += 1
+            continue
+        if not isinstance(history_times, list) or target_time is None:
+            missing_time_rows += 1
+            continue
+        if len(history_times) != len(history_items) or any(int(timestamp) >= int(target_time) for timestamp in history_times):
+            bad_rows += 1
+    diagnostics["recent_window_sample_contract"].update({"bad_row_count": bad_rows, "missing_time_row_count": missing_time_rows})
+    if missing_time_rows:
+        blockers.append("two_tower_recent_window_sample_missing_times")
+    if bad_rows:
+        blockers.append("two_tower_recent_window_sample_time_contract_invalid")
+    if not leakage_path.is_file():
+        blockers.append("two_tower_recent_window_leakage_audit_missing")
+        return
+    leakage = read_json(leakage_path)
+    if leakage.get("recent_window_sample_schema_version") != RECENT_WINDOW_SAMPLE_SCHEMA_VERSION:
+        blockers.append("two_tower_recent_window_leakage_schema_invalid")
+    for field in (
+        "history_source_path",
+        "history_source_hash",
+        "target_source_path",
+        "target_source_hash",
+        "target_item_source_enum",
+        "target_item_source_p2_forbidden",
+        "target_item_source_legacy_migrations",
+        "window_policy",
+    ):
+        if leakage.get(field) != manifest.get(field):
+            blockers.append(f"two_tower_recent_window_leakage_mismatch:{field}")
+
+
 def _audit_two_tower_negative_universe(output_dir: Path, manifest: dict[str, Any], governance_diagnostics: dict[str, Any], blockers: list[str], diagnostics: dict[str, Any]) -> None:
     outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
     universe_path = Path(str(outputs.get("negative_item_universe") or output_dir / "negative_item_universe.jsonl")).resolve()
     item_quality_path = _artifact_path(governance_diagnostics, "item_quality_profile")
     item_frequency_path = _artifact_path(governance_diagnostics, "item_frequency_train")
+    negative_source_path = Path(str(manifest.get("negative_universe_source_path") or "")).resolve()
     diagnostics["negative_universe_provenance"] = {
         "negative_item_universe_path": str(universe_path),
         "expected_sources": [str(path) for path in (item_quality_path, item_frequency_path) if path is not None],
         "policy": manifest.get("negative_universe_policy"),
+        "negative_universe_source_path": str(negative_source_path),
+        "negative_sampling_policy": manifest.get("negative_sampling_policy"),
     }
     if not universe_path.is_file():
         blockers.append("two_tower_missing_negative_item_universe")
@@ -399,6 +495,19 @@ def _audit_two_tower_negative_universe(output_dir: Path, manifest: dict[str, Any
     if item_quality_path is None or item_frequency_path is None:
         blockers.append("two_tower_missing_p1_negative_universe_sources")
         return
+    if negative_source_path != item_frequency_path or manifest.get("negative_universe_source_hash") != _file_sha256(item_frequency_path):
+        blockers.append("two_tower_negative_universe_source_hash_mismatch")
+    sampling_policy = manifest.get("negative_sampling_policy") if isinstance(manifest.get("negative_sampling_policy"), dict) else {}
+    required_policy_flags = {
+        "source_scope": "train_only_item_universe",
+        "excludes_target_item": True,
+        "excludes_user_known_history": True,
+        "excludes_items_after_target_window_boundary": True,
+    }
+    missing_policy = [key for key, value in required_policy_flags.items() if sampling_policy.get(key) != value]
+    diagnostics["negative_universe_provenance"]["missing_sampling_policy_keys"] = missing_policy
+    if missing_policy:
+        blockers.append(f"two_tower_negative_sampling_policy_incomplete:{','.join(missing_policy)}")
 
     frequency_items = {str(row.get("parent_asin")) for row in iter_jsonl(item_frequency_path) if row.get("parent_asin")}
     quality_items = {str(row.get("parent_asin")) for row in iter_jsonl(item_quality_path) if row.get("parent_asin") and row.get("quality_bucket_v2") == "embedding_ready"}
@@ -471,12 +580,25 @@ def _audit_two_tower_train_sample_quality(output_dir: Path, manifest: dict[str, 
     duplicate_negative_count = 0
     empty_negative_count = 0
     negative_count_under_requested_count = 0
+    target_item_source_counts: Counter[str] = Counter()
+    forbidden_target_source_count = 0
+    legacy_target_source_count = 0
+    unknown_target_source_count = 0
     requested_negative_ratio = int(stats.get("negative_ratio_requested") or manifest.get("limits", {}).get("negative_ratio") or 0)
 
     for sample in samples:
         target_item = str(sample.get("target_item") or "")
         history_items = {str(item) for item in sample.get("history_items") or [] if item}
         negatives = [str(item) for item in sample.get("negative_item_ids") or [] if item]
+        raw_target_source = str(sample.get("target_item_source") or "unknown")
+        migrated_target_source = LEGACY_TARGET_ITEM_SOURCE_MIGRATIONS.get(raw_target_source, raw_target_source)
+        target_item_source_counts[migrated_target_source] += 1
+        if raw_target_source in LEGACY_TARGET_ITEM_SOURCE_MIGRATIONS:
+            legacy_target_source_count += 1
+        if migrated_target_source in P2_FORBIDDEN_TARGET_ITEM_SOURCES:
+            forbidden_target_source_count += 1
+        if migrated_target_source not in TARGET_ITEM_SOURCE_ENUM:
+            unknown_target_source_count += 1
         if target_item:
             target_items.add(target_item)
         if not negatives:
@@ -518,6 +640,10 @@ def _audit_two_tower_train_sample_quality(output_dir: Path, manifest: dict[str, 
             "leakage_count": leakage_count,
             "duplicate_negative_sample_count": duplicate_negative_count,
             "empty_negative_sample_count": empty_negative_count,
+            "target_item_source_counts": dict(sorted(target_item_source_counts.items())),
+            "legacy_target_item_source_count": legacy_target_source_count,
+            "forbidden_target_item_source_count": forbidden_target_source_count,
+            "unknown_target_item_source_count": unknown_target_source_count,
             "positive_target_metadata_incomplete_count": len(positive_target_metadata_incomplete),
         }
     )
@@ -530,6 +656,10 @@ def _audit_two_tower_train_sample_quality(output_dir: Path, manifest: dict[str, 
         blockers.append("two_tower_empty_train_sample_negatives")
     if leakage_count or duplicate_negative_count:
         blockers.append("two_tower_train_sample_negative_leakage")
+    if forbidden_target_source_count:
+        blockers.append("two_tower_target_item_source_forbidden_in_p2")
+    if unknown_target_source_count:
+        blockers.append("two_tower_target_item_source_unknown_enum")
     for key, value in recomputed.items():
         if stats.get(key) != value:
             blockers.append("two_tower_negative_usage_stats_mismatch")

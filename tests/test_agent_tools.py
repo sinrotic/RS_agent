@@ -4,29 +4,60 @@ import json
 
 import pytest
 
+from rs_core.rsagent.dialogue import plan_dialogue_turn
+from rs_core.rsagent.schema import AgentSession
 from rs_core.rsagent.tools import (
     AGENT_CAPABILITY_MANIFEST,
+    AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT,
     AGENT_TOOL_MANIFEST,
+    AgentToolCall,
+    AgenticRecallRequest,
     BrandConstraint,
+    BuildRecommendationSlateInput,
+    BuildRecommendationSlateOutput,
     CategoryConstraint,
+    DeepFMRankRequest,
     DisplayResponseDraft,
+    GetItemEvidenceInput,
+    GetItemEvidenceOutput,
+    GetUserContextInput,
+    GetUserContextOutput,
     KeywordConstraint,
     ProductSearchRequest,
+    QueryRagInput,
+    QueryRagOutput,
+    RankCandidatesInput,
+    RankCandidatesOutput,
+    RecallPathPlan,
+    RecordUserFeedbackInput,
+    RecordUserFeedbackOutput,
+    RetrieveCandidatesInput,
+    RetrieveCandidatesOutput,
     UnderstandUserNeedInput,
     UnderstandUserNeedOutput,
+    agentic_recall_candidates,
+    build_agent_tool_planner_system_prompt,
+    build_target_conditioned_catalog_text,
     catalog_constraint_search,
+    collect_diagnostic_tool_events,
+    deepfm_rank_candidates,
+    normalize_agent_tool_calls,
+    validate_agent_tool_call,
+    validate_rank_candidates_arguments,
 )
 
 pytestmark = pytest.mark.unit
 
-EXPECTED_INTERNAL_TOOLS = {
-    "understand_user_need",
-    "rerank_for_browsing",
-    "match_specific_need_in_pool",
-    "catalog_constraint_search",
-    "build_product_reasoning",
-    "compose_shopping_response",
+EXPECTED_CORE_TOOLS = {
+    "get_user_context",
+    "query_rag",
+    "retrieve_candidates",
+    "rank_candidates",
+    "get_item_evidence",
+    "record_user_feedback",
+    "build_recommendation_slate",
 }
+PUBLIC_PAYLOAD_TOOLS = {"build_recommendation_slate"}
 BLOCKED_PUBLIC_TERMS = {
     "agent_runtime_trace",
     "runtime_trace",
@@ -37,37 +68,368 @@ BLOCKED_PUBLIC_TERMS = {
 }
 
 
-def test_agent_tool_manifest_contains_core_internal_tools():
-    assert {tool.name for tool in AGENT_TOOL_MANIFEST} == EXPECTED_INTERNAL_TOOLS
+def test_agent_tool_manifest_contains_core_business_tools():
+    assert {tool.name for tool in AGENT_TOOL_MANIFEST} == EXPECTED_CORE_TOOLS
 
 
 def test_agent_tool_schema_names_have_local_contracts_for_new_tools():
+    assert GetUserContextInput(session_id="s1").to_dict()["include_recent_turns"] == 3
+    assert GetUserContextOutput(session_id="s1", user_id="u1").to_dict()["turn_count"] == 0
+    query_rag_payload = QueryRagInput(query="通勤耳机", fields=["title"]).to_dict()
+    assert query_rag_payload["purpose"] == "query_planning"
+    assert query_rag_payload["scope"] == "catalog_knowledge"
+    assert query_rag_payload["fields"] == ["title"]
+    assert QueryRagOutput(semantic_query_hint="通勤 蓝牙").to_dict()["semantic_query_hint"] == "通勤 蓝牙"
+    retrieve_payload = RetrieveCandidatesInput(query="通勤耳机", limit=50, semantic_mode="hybrid_query_history").to_dict()
+    assert retrieve_payload["limit"] == 50
+    assert retrieve_payload["semantic_mode"] == "hybrid_query_history"
+    assert retrieve_payload["use_history_profile"] is True
+    assert RetrieveCandidatesOutput(candidate_item_ids=["i1"]).to_dict()["candidate_count"] == 0
+    assert RankCandidatesInput(candidate_item_ids=["i1"], return_top_k=1).to_dict()["return_top_k"] == 1
+    assert RankCandidatesOutput(ranked_item_ids=["i1"]).to_dict()["ranked_item_count"] == 0
+    assert GetItemEvidenceInput(item_ids=["i1"]).to_dict()["max_evidence_per_item"] == 3
+    assert GetItemEvidenceOutput(evidence={"i1": [{"field": "title", "text": "耳机"}]}).to_dict()["item_count"] == 0
+    assert RecordUserFeedbackInput(action_type="like", item_id="i1").to_dict()["item_id"] == "i1"
+    assert RecordUserFeedbackOutput(applied=True).to_dict()["applied"] is True
+    assert BuildRecommendationSlateInput(max_items=2).to_dict()["max_items"] == 2
+    assert BuildRecommendationSlateOutput(display={"items": []}).to_dict()["item_count"] == 0
     assert UnderstandUserNeedInput(user_input="推荐点耳机").to_dict()["user_input"] == "推荐点耳机"
     assert UnderstandUserNeedOutput(intent="recommend_request", action="recommend_items").to_dict()["confidence"] == 0.0
     assert DisplayResponseDraft(user_need_summary="通勤耳机").to_dict()["user_need_summary"] == "通勤耳机"
+    assert AgenticRecallRequest(user_id="u1", paths=[RecallPathPlan(name="constraint_catalog_search")]).to_dict()["paths"][0]["name"] == "constraint_catalog_search"
+    assert DeepFMRankRequest(user_id="u1", return_top_k=2).to_dict()["return_top_k"] == 2
 
 
-def test_agent_tool_specs_are_hidden_and_internal_except_optional_composer_payload():
+def test_agent_tool_specs_are_hidden_with_only_slate_public_payload_allowed():
     for tool in AGENT_TOOL_MANIFEST:
         assert tool.hidden is True
         assert tool.description
         assert tool.input_schema_name
         assert tool.output_schema_name
-        if tool.name == "compose_shopping_response":
-            assert tool.public_payload_allowed is True
-        else:
-            assert tool.public_payload_allowed is False
+        assert tool.public_payload_allowed is (tool.name in PUBLIC_PAYLOAD_TOOLS)
 
 
-def test_agent_capability_manifest_remains_hidden_from_public_payloads():
+def test_query_rag_declares_optional_planning_boundaries():
+    tool = next(tool for tool in AGENT_TOOL_MANIFEST if tool.name == "query_rag")
+
+    assert tool.stage == "query_planning"
+    assert tool.read_only is True
+    assert tool.hidden is True
+    assert tool.public_payload_allowed is False
+    assert tool.requires_candidate_pool is False
+    assert tool.can_search_catalog is True
+    assert tool.uses_rag_evidence is True
+    assert tool.routing_attributes["available_phase"] == "pre_recommendation"
+    assert tool.routing_attributes["candidate_pool_required"] is False
+    assert "concept_completion" in tool.routing_attributes["uses"]
+    assert "synonym_expansion" in tool.routing_attributes["uses"]
+    assert "query_rewrite_support" in tool.routing_attributes["uses"]
+    assert "concept completion" in tool.boundary_prompt
+    assert "attribute expansion" in tool.boundary_prompt
+    assert "scenario" in tool.boundary_prompt
+    assert "synonym" in tool.boundary_prompt
+    assert "category knowledge" in tool.boundary_prompt
+    assert "query rewrite" in tool.boundary_prompt
+    assert "never use query_rag as a replacement" in tool.boundary_prompt
+    assert "optionally call query_rag before retrieve_candidates" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+
+
+def test_agent_tool_planner_system_prompt_payload_contains_hidden_tool_boundaries():
+    prompt = build_agent_tool_planner_system_prompt()
+
+    assert prompt.startswith(AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT)
+    assert "retrieve_candidates" in prompt
+    assert "query_rag" in prompt
+    assert "semantic_live" in prompt
+    assert "semantic_live is available to every user" in prompt
+    assert "never use query_rag as a replacement" in prompt
+    assert "concept completion" in prompt
+    assert "attribute expansion" in prompt
+    assert "query rewrite" in prompt
+    assert "Ask a clarifying question before retrieval only when" in prompt
+    assert "After candidates are ranked" in prompt
+    assert "must not add new candidates" in prompt
+    assert "must not change ranking" in prompt
+    assert "tool traces" in prompt
+    assert "public_payload_allowed" in prompt
+    assert "public_output" in prompt
+
+
+def test_get_item_evidence_declares_post_ranking_grounding_boundary():
+    tool = next(tool for tool in AGENT_TOOL_MANIFEST if tool.name == "get_item_evidence")
+
+    assert tool.stage == "evidence"
+    assert tool.requires_candidate_pool is True
+    assert "after retrieval and ranking" in tool.boundary_prompt
+    assert "ground explanations" in tool.boundary_prompt
+    assert "must not add new candidates" in tool.boundary_prompt
+    assert "change ranking" in tool.boundary_prompt
+    assert "raw RAG/source diagnostics" in tool.boundary_prompt
+
+
+def test_retrieve_candidates_declares_semantic_and_behavioral_boundaries():
+    tool = next(tool for tool in AGENT_TOOL_MANIFEST if tool.name == "retrieve_candidates")
+
+    assert tool.routing_attributes["semantic_live"]["enabled_for"] == "all_users"
+    assert set(tool.routing_attributes["semantic_live"]["modes"]) == {
+        "auto",
+        "query_intent",
+        "history_profile",
+        "hybrid_query_history",
+    }
+    assert tool.routing_attributes["behavioral_recall"]["usercf_recall"]["min_recent_positive_items"] == 3
+    assert tool.routing_attributes["behavioral_recall"]["co_visit_fallback_repair"]["min_recent_positive_items"] == 2
+    assert "semantic_live is available to every user" in tool.boundary_prompt
+    assert "never public scores" in tool.boundary_prompt
+    assert "semantic_live" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "tool traces" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+
+
+def test_dialogue_plan_passes_semantic_mode_boundary_to_retrieve_candidates():
+    plan = plan_dialogue_turn("For commute, prefer bluetooth speaker", AgentSession(session_id="s1", user_id="u1"))
+
+    tool_names = [call["name"] for call in plan.tool_calls]
+    assert tool_names == [
+        "get_user_context",
+        "query_rag",
+        "retrieve_candidates",
+        "rank_candidates",
+        "get_item_evidence",
+        "build_recommendation_slate",
+    ]
+    query_rag_call = next(call for call in plan.tool_calls if call["name"] == "query_rag")
+    assert query_rag_call["arguments"] == {"query": "For commute, prefer bluetooth speaker", "purpose": "query_planning"}
+
+    retrieve_call = next(call for call in plan.tool_calls if call["name"] == "retrieve_candidates")
+    arguments = retrieve_call["arguments"]
+
+    assert arguments["semantic_mode"] == "hybrid_query_history"
+    assert arguments["use_history_profile"] is True
+    assert arguments["use_behavioral_recall"] is True
+    assert arguments["query"] == "For commute, prefer bluetooth speaker"
+
+
+def test_agent_capability_manifest_matches_tool_public_payload_policy():
     serialized = json.dumps([capability.__dict__ for capability in AGENT_CAPABILITY_MANIFEST], ensure_ascii=False).lower()
 
+    assert {capability.name for capability in AGENT_CAPABILITY_MANIFEST} == EXPECTED_CORE_TOOLS
     for capability in AGENT_CAPABILITY_MANIFEST:
         assert capability.hidden is True
-        assert capability.public_payload_allowed is False
+        assert capability.public_payload_allowed is (capability.name in PUBLIC_PAYLOAD_TOOLS)
         assert capability.name.lower() in serialized
     for term in BLOCKED_PUBLIC_TERMS:
         assert term not in serialized
+
+
+def test_normalize_agent_tool_calls_accepts_strings_dicts_and_lists():
+    calls = normalize_agent_tool_calls([
+        "get_user_context",
+        {"tool_name": "retrieve_candidates", "arguments": {"limit": 3}, "phase": "pre_recommendation"},
+        {"requested_tools": [{"name": "build_recommendation_slate"}]},
+    ])
+
+    assert [call.name for call in calls] == [
+        "get_user_context",
+        "retrieve_candidates",
+        "build_recommendation_slate",
+    ]
+    assert calls[1].arguments == {"limit": 3}
+    assert calls[1].phase == "pre_recommendation"
+
+
+def test_validate_agent_tool_call_reports_unknown_intent_and_phase_reasons():
+    assert validate_agent_tool_call(AgentToolCall("missing_tool"), "recommend_request", "post_recommendation") == "unknown_tool"
+    assert validate_agent_tool_call(AgentToolCall("retrieve_candidates"), "unsupported", "pre_recommendation") == "intent_not_allowed"
+    assert validate_agent_tool_call(AgentToolCall("query_rag"), "recommend_request", "pre_recommendation") is None
+    assert validate_agent_tool_call(AgentToolCall("rank_candidates"), "recommend_request", "pre_recommendation") == "candidate_pool_not_available"
+
+
+def test_agent_tool_events_are_collected_from_diagnostics():
+    events = collect_diagnostic_tool_events({"agent_tool_events": [{"tool_name": "understand_user_need", "status": "ok"}]})
+
+    assert events == [{"tool_name": "understand_user_need", "status": "ok"}]
+
+
+def test_validate_rank_candidates_arguments_normalizes_allowlisted_fields():
+    validation = validate_rank_candidates_arguments({
+        "candidate_item_ids": [" a ", "", None, "a", 7],
+        "candidates": [{"item_features": {"parent_asin": "b"}}],
+        "return_top_k": "3",
+        "ranking_context": {"query": "bluetooth"},
+    })
+
+    assert validation.valid is True
+    assert validation.normalized_arguments["candidate_item_ids"] == ["a", "7"]
+    assert validation.normalized_arguments["return_top_k"] == 3
+    assert validation.normalized_arguments["candidates"] == [{"item_features": {"parent_asin": "b"}}]
+    assert validation.diagnostics == {"compact": True, "internal_only": True, "public_payload_allowed": False}
+
+
+@pytest.mark.parametrize(
+    ("arguments", "reason"),
+    [
+        ([], "invalid_rank_candidates_arguments_type"),
+        ({"unexpected": 1}, "invalid_rank_candidates_arguments_unknown_fields"),
+        ({"return_top_k": True}, "invalid_rank_candidates_return_top_k_type"),
+        ({"return_top_k": 1.5}, "invalid_rank_candidates_return_top_k_type"),
+        ({"return_top_k": "1.5"}, "invalid_rank_candidates_return_top_k_type"),
+        ({"return_top_k": 0}, "invalid_rank_candidates_return_top_k_range"),
+        ({"return_top_k": 501}, "invalid_rank_candidates_return_top_k_range"),
+        ({"candidate_item_ids": "a"}, "invalid_rank_candidates_candidate_item_ids_type"),
+        ({"candidates": {}}, "invalid_rank_candidates_candidates_type"),
+        ({"candidates": ["a"]}, "invalid_rank_candidates_candidate_entry_type"),
+        ({"candidates": [{"title": "missing id"}]}, "invalid_rank_candidates_candidate_entry_type"),
+        ({"ranking_context": []}, "invalid_rank_candidates_ranking_context_type"),
+    ],
+)
+def test_validate_rank_candidates_arguments_rejects_invalid_inputs(arguments, reason):
+    validation = validate_rank_candidates_arguments(arguments)
+
+    assert validation.valid is False
+    assert validation.reason == reason
+    assert validation.diagnostics["compact"] is True
+    assert validation.diagnostics["internal_only"] is True
+    assert validation.diagnostics["public_payload_allowed"] is False
+
+
+def test_agentic_recall_candidates_respects_path_top_k_and_global_rules():
+    output = agentic_recall_candidates(
+        AgenticRecallRequest(
+            user_id="u1",
+            target_pool_size=3,
+            global_rules={
+                "dedupe_by_parent_asin": True,
+                "must_satisfy": [{"field": "category", "op": "in", "values": ["Audio"]}],
+                "must_not_satisfy": [{"field": "brand", "op": "in", "values": ["CableCo"]}],
+            },
+            paths=[
+                RecallPathPlan(
+                    name="constraint_catalog_search",
+                    limit=4,
+                    top_k=2,
+                    rules=[{"field": "keyword", "op": "preferred", "values": ["bluetooth"]}],
+                    reason="audio bluetooth path",
+                ),
+                RecallPathPlan(name="semantic_intent_search", limit=4, top_k=2, query="portable bluetooth"),
+            ],
+            ranking_context={"intent_type": "portable bluetooth audio"},
+        ),
+        _catalog_items(),
+    )
+
+    item_ids = [candidate.item_id for candidate in output.candidates]
+    assert 1 <= len(item_ids) <= 3
+    assert len(item_ids) == len(set(item_ids))
+    assert "keyboard" not in item_ids
+    assert "wired_bluetooth_adapter" not in item_ids
+    assert all(candidate.acquisition_path in {"constraint_catalog_search", "semantic_intent_search"} for candidate in output.candidates)
+    assert all(candidate.source_rank <= 2 for candidate in output.candidates)
+    assert all(candidate.item_features["target_conditioned_catalog_text"] for candidate in output.candidates)
+
+
+
+def test_agentic_recall_candidates_dedupes_parent_asin_and_enforces_source_budget():
+    catalog = _catalog_items()
+    catalog["speaker_budget_variant"] = {
+        **catalog["speaker_budget"],
+        "item_id": "speaker_budget_variant",
+        "parent_asin": "parent_speaker_budget",
+        "price": 45.0,
+        "sources": ["semantic"],
+    }
+    catalog["speaker_budget"]["parent_asin"] = "parent_speaker_budget"
+    catalog["speaker_budget"]["sources"] = ["semantic"]
+    catalog["speaker_other_store"]["sources"] = ["semantic"]
+
+    output = agentic_recall_candidates(
+        AgenticRecallRequest(
+            user_id="u1",
+            target_pool_size=5,
+            global_rules={"dedupe_by_parent_asin": True},
+            paths=[RecallPathPlan(
+                name="semantic_intent_search",
+                limit=5,
+                top_k=5,
+                query="bluetooth",
+                sources=["semantic"],
+                source_budgets={"semantic": 1},
+            )],
+        ),
+        catalog,
+    )
+
+    parent_ids = [candidate.item_features.get("parent_asin") for candidate in output.candidates]
+    assert parent_ids.count("parent_speaker_budget") <= 1
+    assert len(output.candidates) == 1
+    assert output.diagnostics["paths"][0]["source_counts"] == {"semantic": 1}
+
+
+
+def test_agentic_recall_candidates_supports_cheaper_alternative_path():
+    output = agentic_recall_candidates(
+        AgenticRecallRequest(
+            user_id="u1",
+            target_pool_size=5,
+            paths=[RecallPathPlan(
+                name="cheaper_alternative_search",
+                limit=5,
+                top_k=5,
+                reference_item_id="speaker_ref",
+                target_item_id="speaker_ref",
+            )],
+        ),
+        _catalog_items(),
+    )
+
+    item_ids = {candidate.item_id for candidate in output.candidates}
+    assert "speaker_ref" not in item_ids
+    assert item_ids
+    assert all(_catalog_items()[item_id]["price"] < _catalog_items()["speaker_ref"]["price"] for item_id in item_ids)
+
+
+
+def test_rank_candidates_compact_output_does_not_leak_deepfm_internals():
+    output = RankCandidatesOutput(ranked_item_ids=["i1"], ranking_summary={"ranker": "facade"}).to_dict()
+    payload = json.dumps(output, ensure_ascii=False)
+
+    assert "feature_rows" not in payload
+    assert "deepfm_score" not in payload
+
+
+def test_deepfm_rank_candidates_returns_top_k_with_feature_rows():
+    recall_output = agentic_recall_candidates(
+        AgenticRecallRequest(
+            user_id="u1",
+            session_id="s1",
+            target_pool_size=4,
+            paths=[RecallPathPlan(name="constraint_catalog_search", limit=4, top_k=4, query="bluetooth portable")],
+            ranking_context={"intent_type": "bluetooth portable"},
+        ),
+        _catalog_items(),
+    )
+
+    output = deepfm_rank_candidates(DeepFMRankRequest(
+        user_id="u1",
+        session_id="s1",
+        return_top_k=2,
+        ranking_context={"intent_type": "bluetooth portable"},
+        candidates=[candidate.to_dict() for candidate in recall_output.candidates],
+    ))
+
+    assert len(output.ranked_items) == 2
+    assert len(output.feature_rows) == len(recall_output.candidates)
+    assert output.ranked_items[0]["deepfm_score"] >= output.ranked_items[1]["deepfm_score"]
+    assert all(row.target_conditioned_catalog_text for row in output.feature_rows)
+
+
+
+def test_target_conditioned_catalog_text_keeps_listing_style_and_target():
+    text = build_target_conditioned_catalog_text(_catalog_items()["speaker_budget"], {"intent_type": "commute bluetooth"})
+
+    assert "Product: Budget Bluetooth Speaker" in text
+    assert "Category: Audio" in text
+    assert "Target fit: commute bluetooth" in text
+
 
 
 def test_catalog_constraint_search_rejects_missing_price_for_relative_price_request():

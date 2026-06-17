@@ -39,6 +39,7 @@ FULL_METADATA_OVERLAP_STOP_WORDS = {
     "the", "and", "for", "with", "from", "this", "that", "your", "you", "are", "black", "white", "edition", "products", "product", "amazon", "into", "full", "size", "made", "great", "compatible", "replacement", "case"
 }
 SELECTION_MODE_TITLE_CATEGORY_SCORER = "title_category_scorer"
+SELECTION_MODE_TITLE_CATEGORY_CHANNEL = "semantic_title_category_channel"
 SELECTION_MODE_FULL_METADATA_OVERLAP = "full_metadata_overlap"
 
 
@@ -58,6 +59,11 @@ def build_semantic_title_category_expansion_source(
     per_token_item_limit: int | None = None,
     max_candidate_items: int | None = None,
     selection_mode: str | None = None,
+    checkpoint_every_users: int | None = None,
+    target_user_offset: int | None = None,
+    target_user_limit: int | None = None,
+    shard_id: int | None = None,
+    shard_count: int | None = None,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
@@ -80,6 +86,11 @@ def build_semantic_title_category_expansion_source(
             "per_token_item_limit": per_token_item_limit,
             "max_candidate_items": max_candidate_items,
             "selection_mode": selection_mode,
+            "checkpoint_every_users": checkpoint_every_users,
+            "target_user_offset": target_user_offset,
+            "target_user_limit": target_user_limit,
+            "shard_id": shard_id,
+            "shard_count": shard_count,
         },
     })
     input_contract = config.get("input_contract") if isinstance(config.get("input_contract"), dict) else {}
@@ -96,6 +107,17 @@ def build_semantic_title_category_expansion_source(
     per_token_item_limit = int(method_config.get("per_token_item_limit", 2000))
     max_candidate_items = int(method_config.get("max_candidate_items", 80000))
     selection_mode = str(method_config.get("selection_mode") or SELECTION_MODE_TITLE_CATEGORY_SCORER)
+    checkpoint_every_users = int(method_config.get("checkpoint_every_users", 0) or 0)
+    target_user_offset = int(method_config.get("target_user_offset", 0) or 0)
+    target_user_limit_value = method_config.get("target_user_limit")
+    target_user_limit = int(target_user_limit_value) if target_user_limit_value is not None else None
+    shard_id_value = method_config.get("shard_id")
+    shard_count_value = method_config.get("shard_count")
+    shard_id = int(shard_id_value) if shard_id_value is not None else None
+    shard_count = int(shard_count_value) if shard_count_value is not None else None
+    _validate_shard_contract(target_user_offset, target_user_limit, shard_id, shard_count)
+    if selection_mode == SELECTION_MODE_TITLE_CATEGORY_CHANNEL:
+        selection_mode = SELECTION_MODE_TITLE_CATEGORY_SCORER
     if selection_mode not in {SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP}:
         raise ValueError(f"unsupported semantic selection mode: {selection_mode}")
     output_dir = method_output_dir(output_root.resolve(), SOURCE, run_id)
@@ -115,10 +137,28 @@ def build_semantic_title_category_expansion_source(
     semantic_inputs_path = _resolve_repo_path(view_outputs["semantic_recall_inputs"])
     semantic_inverted_index_path = _resolve_repo_path(view_outputs["semantic_inverted_index"])
 
-    target_user_ids = _target_user_ids(eligible_user_manifest_path, limit_users)
+    all_target_user_ids = _eligible_user_ids(eligible_user_manifest_path)
+    target_user_ids = _select_target_user_ids(
+        all_target_user_ids,
+        limit_users,
+        target_user_offset=target_user_offset,
+        target_user_limit=target_user_limit,
+        shard_id=shard_id,
+        shard_count=shard_count,
+    )
     sequences = _load_target_sequences(train_sequences_path, target_user_ids, limit_users)
     checkpoint_path = output_dir / "checkpoint.json"
-    write_json(checkpoint_path, {"stage": "target_sequences_loaded", "user_count": len(sequences), "source": SOURCE})
+    shard_contract = _shard_contract(
+        full_eligible_user_count=len(all_target_user_ids) if all_target_user_ids is not None else None,
+        selected_target_user_count=len(target_user_ids) if target_user_ids is not None else len(sequences),
+        limit_users=limit_users,
+        target_user_offset=target_user_offset,
+        target_user_limit=target_user_limit,
+        shard_id=shard_id,
+        shard_count=shard_count,
+        checkpoint_every_users=checkpoint_every_users,
+    )
+    write_json(checkpoint_path, {"stage": "target_sequences_loaded", "user_count": len(sequences), "source": SOURCE, "shard_contract": shard_contract})
 
     seed_items_by_user = _seed_items_by_user(sequences, seed_window)
     seed_items = {item for items in seed_items_by_user.values() for item in items}
@@ -133,7 +173,7 @@ def build_semantic_title_category_expansion_source(
             per_user=per_user,
         )
     else:
-        candidate_item_ids, token_bucket_stats = _candidate_ids_from_inverted_index(
+        candidate_item_ids, token_candidate_ids, token_bucket_stats = _candidate_ids_from_inverted_index(
             semantic_inverted_index_path,
             seed_tokens,
             per_token_item_limit=per_token_item_limit,
@@ -141,6 +181,16 @@ def build_semantic_title_category_expansion_source(
         )
         candidate_records = _load_records_by_ids(semantic_inputs_path, candidate_item_ids | seed_items)
         semantic_index = {item_id: _with_semantic_tokens(record) for item_id, record in candidate_records.items()}
+        write_json(checkpoint_path, {
+            "stage": "semantic_index_loaded",
+            "user_count": len(sequences),
+            "seed_item_count": len(seed_items),
+            "seed_metadata_count": len(seed_records),
+            "candidate_item_id_count": len(candidate_item_ids),
+            "semantic_index_record_count": len(semantic_index),
+            "selection_mode": selection_mode,
+            "source": SOURCE,
+        })
         generation_config = {
             "semantic_title_category_expansion": {
                 "enabled": True,
@@ -154,11 +204,13 @@ def build_semantic_title_category_expansion_source(
                 "text_fields": list(TEXT_FIELDS),
                 "require_category_overlap": True,
                 "max_bucket_candidates": max_candidate_items,
+                "token_candidate_ids": token_candidate_ids,
             }
         }
         rows = _title_category_scorer_candidate_rows(sequences, seed_items_by_user, seed_records, semantic_index, generation_config, per_user)
-    candidate_records = _load_records_by_ids(semantic_inputs_path, candidate_item_ids | seed_items)
-    semantic_index = {item_id: _with_semantic_tokens(record) for item_id, record in candidate_records.items()}
+    if selection_mode == SELECTION_MODE_FULL_METADATA_OVERLAP:
+        candidate_records = _load_records_by_ids(semantic_inputs_path, candidate_item_ids | seed_items)
+        semantic_index = {item_id: _with_semantic_tokens(record) for item_id, record in candidate_records.items()}
     write_json(checkpoint_path, {
         "stage": "semantic_index_loaded",
         "user_count": len(sequences),
@@ -168,6 +220,7 @@ def build_semantic_title_category_expansion_source(
         "semantic_index_record_count": len(semantic_index),
         "selection_mode": selection_mode,
         "source": SOURCE,
+        "shard_contract": shard_contract,
     })
 
     input_dataset_path = output_dir / "semantic_title_category_input_dataset.jsonl"
@@ -225,6 +278,7 @@ def build_semantic_title_category_expansion_source(
     }
     resource_audit = {
         "schema_version": SCHEMA_VERSION,
+        "status": "PASS",
         "source": SOURCE,
         "source_status": DEFAULT_SOURCE_STATUS,
         "heavy_job": False,
@@ -236,7 +290,13 @@ def build_semantic_title_category_expansion_source(
             "per_token_item_limit": per_token_item_limit,
             "max_candidate_items": max_candidate_items,
             "selection_mode": selection_mode,
+            "checkpoint_every_users": checkpoint_every_users,
+            "target_user_offset": target_user_offset,
+            "target_user_limit": target_user_limit,
+            "shard_id": shard_id,
+            "shard_count": shard_count,
         },
+        "shard_contract": shard_contract,
         "runtime_seconds": round(perf_counter() - started, 6),
         "source_signatures": signatures,
     }
@@ -249,6 +309,13 @@ def build_semantic_title_category_expansion_source(
         "selection_mode": selection_mode,
         "train_only": True,
         "target_user_count": len(sequences),
+        "full_eligible_user_count": shard_contract["full_eligible_user_count"],
+        "target_user_offset": target_user_offset,
+        "target_user_limit": target_user_limit,
+        "shard_id": shard_id,
+        "shard_count": shard_count,
+        "formal_shard_mode": shard_contract["formal_shard_mode"],
+        "shard_contract": shard_contract,
         "seed_item_count": len(seed_items),
         "seed_item_metadata_count": len(seed_records),
         "semantic_index_record_count": len(semantic_index),
@@ -278,6 +345,13 @@ def build_semantic_title_category_expansion_source(
         "candidate_count_p50": coverage_audit["candidate_count_p50"],
         "candidate_count_p90": coverage_audit["candidate_count_p90"],
         "candidate_count_max": coverage_audit["candidate_count_max"],
+        "full_eligible_user_count": shard_contract["full_eligible_user_count"],
+        "target_user_offset": target_user_offset,
+        "target_user_limit": target_user_limit,
+        "shard_id": shard_id,
+        "shard_count": shard_count,
+        "formal_shard_mode": shard_contract["formal_shard_mode"],
+        "shard_contract": shard_contract,
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
         "pool1000_allowed": False,
@@ -296,7 +370,11 @@ def build_semantic_title_category_expansion_source(
 
 
 def _resolve_repo_path(raw_path: str | Path) -> Path:
-    path = Path(raw_path)
+    normalized = str(raw_path).replace("\\", "/")
+    repo_marker = f"/{ROOT.name}/"
+    if repo_marker in normalized:
+        normalized = normalized.split(repo_marker, 1)[1]
+    path = Path(normalized)
     return path.resolve() if path.is_absolute() else (ROOT / path).resolve()
 
 
@@ -358,22 +436,91 @@ def _deep_merge(*configs: dict[str, Any]) -> dict[str, Any]:
     return merged
 
 
-def _target_user_ids(path: Path | None, limit_users: int) -> set[str] | None:
+def _eligible_user_ids(path: Path | None) -> list[str] | None:
     if path is None or not path.is_file():
         return None
     payload = read_json(path)
     user_ids = payload.get("eligible_user_ids")
     if not isinstance(user_ids, list):
         return None
-    selected = [str(user_id) for user_id in user_ids if user_id]
-    if limit_users > 0:
+    return [str(user_id) for user_id in user_ids if user_id]
+
+
+def _select_target_user_ids(
+    user_ids: list[str] | None,
+    limit_users: int,
+    *,
+    target_user_offset: int,
+    target_user_limit: int | None,
+    shard_id: int | None,
+    shard_count: int | None,
+) -> set[str] | None:
+    if user_ids is None:
+        return None
+    selected = user_ids[target_user_offset:]
+    if target_user_limit is not None:
+        selected = selected[:target_user_limit]
+    elif limit_users > 0:
         selected = selected[:limit_users]
+    if shard_id is not None and shard_count is not None:
+        selected = [user_id for index, user_id in enumerate(selected) if index % shard_count == shard_id]
     return set(selected)
+
+
+def _target_user_ids(path: Path | None, limit_users: int) -> set[str] | None:
+    return _select_target_user_ids(
+        _eligible_user_ids(path),
+        limit_users,
+        target_user_offset=0,
+        target_user_limit=None,
+        shard_id=None,
+        shard_count=None,
+    )
+
+
+def _validate_shard_contract(target_user_offset: int, target_user_limit: int | None, shard_id: int | None, shard_count: int | None) -> None:
+    if target_user_offset < 0:
+        raise ValueError("target_user_offset must be >= 0")
+    if target_user_limit is not None and target_user_limit <= 0:
+        raise ValueError("target_user_limit must be positive when provided")
+    if shard_id is None and shard_count is None:
+        return
+    if shard_id is None or shard_count is None:
+        raise ValueError("shard_id and shard_count must be provided together")
+    if shard_count <= 0:
+        raise ValueError("shard_count must be positive")
+    if shard_id < 0 or shard_id >= shard_count:
+        raise ValueError("shard_id must be >= 0 and < shard_count")
+
+
+def _shard_contract(
+    *,
+    full_eligible_user_count: int | None,
+    selected_target_user_count: int,
+    limit_users: int,
+    target_user_offset: int,
+    target_user_limit: int | None,
+    shard_id: int | None,
+    shard_count: int | None,
+    checkpoint_every_users: int,
+) -> dict[str, Any]:
+    return {
+        "full_eligible_user_count": full_eligible_user_count,
+        "selected_target_user_count": selected_target_user_count,
+        "limit_users": limit_users,
+        "target_user_offset": target_user_offset,
+        "target_user_limit": target_user_limit,
+        "shard_id": shard_id,
+        "shard_count": shard_count,
+        "formal_shard_mode": target_user_offset > 0 or target_user_limit is not None or shard_id is not None or shard_count is not None,
+        "checkpoint_enabled": checkpoint_every_users > 0,
+        "checkpoint_every_users": checkpoint_every_users,
+    }
 
 
 def _load_target_sequences(path: Path, target_user_ids: set[str] | None, limit_users: int) -> list[dict[str, Any]]:
     sequences: list[dict[str, Any]] = []
-    if target_user_ids:
+    if target_user_ids is not None:
         remaining = set(target_user_ids)
         for sequence in iter_jsonl(path):
             user_id = str(sequence.get("user_id", ""))
@@ -427,20 +574,91 @@ def _title_category_scorer_candidate_rows(
     generation_config: dict[str, Any],
     per_user: int,
 ) -> list[dict[str, Any]]:
+    source_config = generation_config.get("semantic_title_category_expansion", {})
+    if not isinstance(source_config, dict):
+        return []
+    per_seed = int(source_config.get("per_seed", 40))
+    min_title_overlap = int(source_config.get("min_title_overlap", 1))
+    category_weight = float(source_config.get("category_weight", 2.0))
+    weak_category_boost = float(source_config.get("weak_category_boost", 0.5))
+    weak_categories = {str(item).lower() for item in source_config.get("weak_categories", [])}
+    require_category_overlap = bool(source_config.get("require_category_overlap", True))
+    raw_token_candidate_ids = source_config.get("token_candidate_ids", {})
+    token_candidate_ids = raw_token_candidate_ids if isinstance(raw_token_candidate_ids, dict) else {}
+
+    item_tokens = {item_id: set(record.get("semantic_tokens", set())) for item_id, record in semantic_index.items()}
+    item_categories = {item_id: _category_values(record) for item_id, record in semantic_index.items()}
+    inverted_index: dict[str, set[str]] = {}
+    for item_id, tokens in item_tokens.items():
+        for token in tokens:
+            inverted_index.setdefault(token, set()).add(item_id)
+
     rows: list[dict[str, Any]] = []
-    for sequence in sequences:
+    progress_step = max(1, len(sequences) // 10)
+    for sequence_index, sequence in enumerate(sequences, start=1):
         user_id = str(sequence.get("user_id", ""))
-        candidates = semantic_title_category_expansion_candidates_for_user(sequence, semantic_index, generation_config)
-        for rank, candidate in enumerate(candidates, start=1):
+        seed_items = seed_items_by_user.get(user_id, [])
+        seed_item_set = set(seed_items)
+        user_tokens: set[str] = set()
+        user_categories: set[str] = set()
+        for seed_item in seed_items:
+            user_tokens.update(item_tokens.get(seed_item, set()))
+            user_categories.update(item_categories.get(seed_item, set()))
+        if not user_tokens and not user_categories:
+            continue
+        seen_items = {str(item) for item in sequence.get("recent_item_sequence", []) or [] if item}
+        by_item: dict[str, tuple[float, int, int, int, str, str, int]] = {}
+        for seed_rank, seed_item in enumerate(seed_items, start=1):
+            seed_tokens = item_tokens.get(seed_item, set())
+            seed_categories = item_categories.get(seed_item, set())
+            if not seed_tokens and not seed_categories:
+                continue
+            overlap_counts: Counter[str] = Counter()
+            for token in seed_tokens:
+                token_items = token_candidate_ids.get(token) or inverted_index.get(token, set())
+                if not isinstance(token_items, set):
+                    token_items = set(token_items)
+                overlap_counts.update(token_items)
+            seed_candidates: list[tuple[float, str, int, int, str, int]] = []
+            for item_id, overlap in overlap_counts.items():
+                if item_id in seed_item_set or item_id in seen_items or overlap < min_title_overlap:
+                    continue
+                candidate_categories = item_categories.get(item_id, set())
+                category_overlap = len(seed_categories & candidate_categories)
+                if not category_overlap and require_category_overlap:
+                    continue
+                boost = weak_category_boost if candidate_categories & weak_categories else 0.0
+                reason = "weak_category_boost" if boost else "category_path" if category_overlap else "title_sim"
+                score = round(float(overlap) + float(category_overlap) * category_weight + boost, 6)
+                seed_candidates.append((score, item_id, overlap, category_overlap, reason, seed_rank))
+            ranked_seed_candidates = heapq.nsmallest(per_seed, seed_candidates, key=lambda item: (-item[0], item[1]))
+            for source_rank, (score, item_id, overlap, category_overlap, reason, seed_rank_value) in enumerate(ranked_seed_candidates, start=1):
+                current = by_item.get(item_id)
+                candidate = (score, overlap, category_overlap, seed_rank_value, reason, seed_item, source_rank)
+                if current is None or candidate[0] > current[0] or (candidate[0] == current[0] and candidate[3] < current[3]):
+                    by_item[item_id] = candidate
+        ranked_user_items = heapq.nsmallest(per_user, by_item.items(), key=lambda item: (-item[1][0], item[0]))
+        for rank, (item_id, (score, overlap, category_overlap, _seed_rank, reason, seed_item, source_rank)) in enumerate(ranked_user_items, start=1):
+            record = semantic_index[item_id]
+            metadata = {k: v for k, v in record.items() if k != "semantic_tokens"}
+            metadata.update({
+                "reason": reason,
+                "seed_item_id": seed_item,
+                "source_score": score,
+                "source_rank": source_rank,
+                "title_token_overlap": overlap,
+                "category_overlap": category_overlap,
+                "source_scores": {SOURCE: score},
+            })
             rows.append({
                 "user_id": user_id,
-                "item_id": candidate.item_id,
+                "item_id": item_id,
                 "source": SOURCE,
                 "canonical_source": SOURCE,
                 "sources": [SOURCE],
-                "score": candidate.score,
+                "score": score,
                 "rank": rank,
-                "metadata": {**candidate.metadata, "source_scores": {SOURCE: candidate.score}},
+                "metadata": metadata,
             })
     return rows
 
@@ -582,8 +800,10 @@ def _candidate_ids_from_inverted_index(
     *,
     per_token_item_limit: int,
     max_candidate_items: int,
-) -> tuple[set[str], dict[str, Any]]:
+) -> tuple[set[str], dict[str, set[str]], dict[str, Any]]:
     candidate_ids: set[str] = set()
+    ordered_candidate_ids: list[str] = []
+    token_candidate_ids: dict[str, set[str]] = {}
     matched_tokens = 0
     truncated_token_buckets = 0
     for row in iter_jsonl(path):
@@ -596,17 +816,25 @@ def _candidate_ids_from_inverted_index(
             continue
         if len(raw_items) > per_token_item_limit:
             truncated_token_buckets += 1
-        for item_id in raw_items[:per_token_item_limit]:
-            candidate_ids.add(str(item_id))
-            if len(candidate_ids) >= max_candidate_items:
-                return candidate_ids, {
-                    "seed_token_count": len(seed_tokens),
-                    "matched_token_count": matched_tokens,
-                    "truncated_token_bucket_count": truncated_token_buckets,
-                    "candidate_item_id_count": len(candidate_ids),
-                    "max_candidate_items_reached": True,
-                }
-    return candidate_ids, {
+        bucket_ids: set[str] = set()
+        for raw_item_id in raw_items[:per_token_item_limit]:
+            item_id = str(raw_item_id)
+            bucket_ids.add(item_id)
+            if item_id not in candidate_ids:
+                candidate_ids.add(item_id)
+                ordered_candidate_ids.append(item_id)
+        token_candidate_ids[token] = bucket_ids
+        if len(candidate_ids) >= max_candidate_items:
+            retained_ids = set(ordered_candidate_ids[:max_candidate_items])
+            token_candidate_ids = {key: values & retained_ids for key, values in token_candidate_ids.items()}
+            return retained_ids, token_candidate_ids, {
+                "seed_token_count": len(seed_tokens),
+                "matched_token_count": matched_tokens,
+                "truncated_token_bucket_count": truncated_token_buckets,
+                "candidate_item_id_count": len(retained_ids),
+                "max_candidate_items_reached": True,
+            }
+    return candidate_ids, token_candidate_ids, {
         "seed_token_count": len(seed_tokens),
         "matched_token_count": matched_tokens,
         "truncated_token_bucket_count": truncated_token_buckets,
@@ -617,14 +845,14 @@ def _candidate_ids_from_inverted_index(
 
 def _with_semantic_tokens(record: dict[str, Any]) -> dict[str, Any]:
     enriched = dict(record)
-    enriched["semantic_tokens"] = _tokens_from_fields(record, TEXT_FIELDS)
+    enriched["semantic_tokens"] = _title_tokens(record)
     return enriched
 
 
 def _record_tokens(records: Iterable[dict[str, Any]]) -> set[str]:
     tokens: set[str] = set()
     for record in records:
-        tokens.update(_tokens_from_fields(record, TEXT_FIELDS))
+        tokens.update(_title_tokens(record))
     return tokens
 
 
@@ -650,7 +878,7 @@ def _category_values(record: dict[str, Any]) -> set[str]:
 
 
 def _title_tokens(record: dict[str, Any]) -> set[str]:
-    return _tokens_from_fields(record, ("title_clean",))
+    return _tokens_from_fields(record, TEXT_FIELDS)
 
 
 def _has_category(record: dict[str, Any]) -> bool:
@@ -778,7 +1006,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--per-seed", type=int, default=None)
     parser.add_argument("--per-token-item-limit", type=int, default=None)
     parser.add_argument("--max-candidate-items", type=int, default=None)
-    parser.add_argument("--selection-mode", choices=[SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_FULL_METADATA_OVERLAP], default=None)
+    parser.add_argument("--selection-mode", choices=[SELECTION_MODE_TITLE_CATEGORY_SCORER, SELECTION_MODE_TITLE_CATEGORY_CHANNEL, SELECTION_MODE_FULL_METADATA_OVERLAP], default=None)
+    parser.add_argument("--checkpoint-every-users", type=int, default=None)
+    parser.add_argument("--target-user-offset", type=int, default=None)
+    parser.add_argument("--target-user-limit", type=int, default=None)
+    parser.add_argument("--shard-id", type=int, default=None)
+    parser.add_argument("--shard-count", type=int, default=None)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
@@ -801,6 +1034,11 @@ def main() -> None:
         per_token_item_limit=args.per_token_item_limit,
         max_candidate_items=args.max_candidate_items,
         selection_mode=args.selection_mode,
+        checkpoint_every_users=args.checkpoint_every_users,
+        target_user_offset=args.target_user_offset,
+        target_user_limit=args.target_user_limit,
+        shard_id=args.shard_id,
+        shard_count=args.shard_count,
         overwrite=args.overwrite,
         enforce_venv=not args.skip_venv_check,
     )

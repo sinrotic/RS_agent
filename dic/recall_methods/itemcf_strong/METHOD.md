@@ -1,141 +1,213 @@
 # itemcf_strong
 
 ## 方法定位
-强标签 ItemCF 召回，基于更可信的 item 共现边提供高精度补充候选。它属于 `custom_dataset_policy`，是重资源方法，当前只做诊断，不可替换 ranking。
+
+`itemcf_strong` 是 pool500 recent-2y 下的高置信 ItemCF 补充召回源。它基于 train-only 用户强正反馈序列构造 item-item 共现边，适合提供可解释的邻居候选；这次 relaxed 版本放宽了种子侧覆盖，但仍然只允许 train-only 构建、eval-only 评估，不允许把 valid/test label 回流到候选生成。
+
+当前结论：**升级为 `READY_CANDIDATE` / `SUPPLEMENTAL_READY_CANDIDATE` 候选**。相较 strict 版本，这个 relaxed supplemental 版本恢复了足够的 source 覆盖和候选贡献，但仍然不把自己描述成主路 ready，也不替代 `itemcf_weak`、`swing_recall` 或 ranking input。
+
+## SciOMC 文献与最佳实践依据
+
+详见 `dic/recall_methods/itemcf_strong/RECENT2Y_SCIOMC_RESEARCH.md`。本轮调研纳入：
+
+- Sarwar et al., *Item-Based Collaborative Filtering Recommendation Algorithms*, WWW 2001：离线构建 item-item similarity matrix，并评估覆盖、效率和可扩展性。
+- Linden / Smith / York, *Amazon.com Recommendations: Item-to-Item Collaborative Filtering*, IEEE Internet Computing 2003：大规模线上推荐适合离线 item-item 表 + 在线按历史 seed 查询邻居。
+- Hu / Koren / Volinsky, *Collaborative Filtering for Implicit Feedback Datasets*, ICDM 2008：implicit feedback 中未观测不等于负样本，行为强度和训练/评估分离很重要。
+- Rendle et al., *BPR*, UAI 2009 / arXiv 2012：implicit 推荐的评估目标与训练信号不能混淆，eval label 不得反向参与候选生成。
 
 ## 当前 readiness
-- 状态：`DIAGNOSTIC_ONLY`
-- index：`INDEX_READY`
-- 输出：`DIAGNOSTIC_OUTPUT_READY`
-- 仅维持诊断态，不做状态升级或下游链路替换。
 
-## 治理契约
-- 只适用 `heavy_cf_eligible`。
-- 必须 batch 化、带 guard、带 memory limit。
-- builder 覆盖：`source_index_manifest` 以 `train_only` 的 source-positive 用户建边；本轮 `users_scanned=5992`、`users_with_source_items=5000`、`users_used=2133`，`target_user_limit_semantics=source_positive_builder_sequences_limit`。
-- profiled 覆盖：`null` / `unprofiled`，没有单独的用户质量 profile 过滤；当前 artifact 是 legacy unfiltered sidecar coverage audit，不把高质量用户索引误当 consumer universe。
-- consumer 覆盖：新增独立 `consumer_user_manifest.json` 和 `coverage_audit.json`；本轮 target500 train-only consumer 中 `consumer_users_with_edge_seed_hit=239`、`edge_item_out_of_universe_count=0`。
+- `source_status`: `READY_CANDIDATE`
+- `candidate_generation_allowed`: `true`（仅 route-gate candidate source 范围）
+- `ranking_input_replacement_allowed`: `false`
+- `promotion_allowed`: `false`
+- `pool1000_allowed`: `false`
+- `final_pool500_ready_claimed`: `false`
 
-## 适用用户
-- 有强正反馈或高置信行为序列。
-- seed item 能命中 strong item-item 边。
-- 适合作为高精度补充来源，不适合单独承担覆盖。
+## recent-2y train-only / eval-only 边界
 
-## 输入 artifact
-- source signature：`data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl`，`row_count=18103384`，`sha256=d47c9a3476f35f0c8bd88947b58f8a3f0ef83383f587d8d0e3102b6dbf1baf07`
-- clean manifest：`data/processed/amazon_2023_recall_clean_full/manifest.json`
+正式输入只允许来自：
 
-## 输出 artifact
-- readiness contract：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/readiness_contract.json`
-- source index manifest：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/source_index_manifest.json`
-- resource audit：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/resource_audit.json`
-- no-holdout audit：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/no_holdout_audit.json`
-- per-source candidate manifest：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/per_source_candidate_manifest.json`
-- weak/strong comparison：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/weak_strong_comparison.json`
-- edge sidecar：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/itemcf_strong_edges.jsonl`
-- consumer user manifest：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/consumer_user_manifest.json`
-- coverage audit：`outputs/recall/pool500_sidecar_fix/itemcf_strong_target500_guarded/coverage_audit.json`
-- custom dataset manifest：`configs/recall/full_data_pool500/itemcf_strong_custom_dataset_manifest.json`
-- recall-only target500 per-source：`outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/itemcf_strong/manifest.json`
+- `data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json`
+- `user_quality_profile.jsonl`
+- `item_quality_profile.jsonl`
+- `item_frequency_train.jsonl`
+- `user_sequences.train.jsonl`
 
-## 资源画像
-最近一次 target500 guarded diagnostic：
-- `edge_count` / `rows_written`：68432
-- `unique_pair_count`：34341
-- `unique_item_count`：9939
-- `candidate_user_count`：5000
-- `users_scanned`：5992
-- `users_used`：2133
-- `consumer_users_with_edge_seed_hit`：239 / 500
-- `edge_item_out_of_universe_count`：0
-- `peak_rss_mb`：35.695
-- `underfilled_user_coverage`：1.0
+禁止将以下内容用于 method dataset、source artifact 或候选生成：holdout、valid、test、LOPO、oracle、eval label、clean_10000、pool1000、旧 full-data-derived method dataset。valid/test 只允许在评估脚本中作为 evaluation-only label 使用。
 
-## 当前问题
-已经从 500 个 source-positive 用户扩大到 5000 个 train-only source-positive 用户建边，并补齐 consumer coverage audit 与 registry custom dataset manifest；但 `status` 仍是 `DIAGNOSTIC_ONLY`，`custom_dataset_policy_satisfied=false`，仍只保留诊断用途。strong 更适合作为高置信补充源，不适合单独承担补量。
+## 本轮 smoke/formal method dataset
+
+### smoke
+
+- 路径：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/smoke/itemcf_strong/method_dataset_manifest.json`
+- 用途：program/schema validation only
+- `status=PASS`
+- `row_count=30466`
+- `user_count=5000`
+- `item_count=24576`
+- `forbidden_scope_audit.status=PASS`
+
+### formal
+
+- 路径：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json`
+- 用途：official method logic dataset under recent-2y train-only governance
+- `status=PASS`
+- `row_count=514216`
+- `unique_pair_count=514216`
+- `edge_count=514216`
+- `user_count=82838`
+- `item_count=215713`
+- `weighted_cooc_sum_after_topk=237134.151762`
+- `forbidden_scope_audit.status=PASS`
+
+relaxed formal 口径：`sequence_sufficient_or_collaborative_rich` 用户、src 侧允许 hot seed、dst 侧限制 non-hot candidate、`min_pair_support=1`、active-user penalty、`weighted_cooc_cosine_normalized_v1`。这个口径比 strict 版更宽，恢复了覆盖，但仍然维持高置信 ItemCF 的方向性和 train-only 约束。
+
+## source artifact
+
+- source manifest：`outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json`
+- `status=PASS`
+- adapter manifest 内部仍保持 `source_status=DIAGNOSTIC_ONLY` / `diagnostic_only=true`，作为防误晋升边界
+- config / registry 层将其标记为 `READY_CANDIDATE` / `SUPPLEMENTAL_READY_CANDIDATE`，仅允许进入 route-gate candidate source 验证
+- `row_count=514216`
+- `edge_count=514216`
+- `train_only=true`
+- `candidate_generation_allowed=true`（config/registry route-gate 范围）
+- `ranking_input_replacement_allowed=false`
+- `promotion_allowed=false`
+
+## 验证结果
+
+### method dataset audit
+
+命令：
+
+```bash
+D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m rs_lab.experiments.recall.validate_pool500_method_dataset_audit_evidence \
+  --governance-manifest data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json \
+  --method-dataset outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/smoke/itemcf_strong/method_dataset_manifest.json \
+  --method-dataset outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json \
+  --output outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/audit_evidence.json
+```
+
+结果：`status=PASS`，`blocker_count=0`。
+
+### 单方法 source-level sanity eval
+
+- 报告：`outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/single_source_eval_10000.json`
+- target：前 10000 个拥有 recent-2y valid/test 正样本的 train 用户
+- 候选生成输入：train user sequences + relaxed source edges
+- evaluation label：recent-2y valid/test，仅 evaluation-only
+- `source_edge_count=514216`
+- `seed_hit_user_count=6141`
+- `user_coverage_count=6128`
+- `candidate_row_count=188494`
+- `Recall@500=0.000151`
+- `HitRate@500=0.0002`
+- `candidate_hot_share=0`
+- `strong_unique_share_vs_weak=0.999867`
+
+### 购买 / 强正反馈导向远程 eval
+
+- 报告：`outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/purchase_label_eval_remote_full.json`
+- 运行位置：`server:/home/luo/RS_agent_remote`，使用远程 `.venv/bin/python`
+- 候选生成输入：train `user_sequences.train.jsonl` + relaxed source edges；valid/test 只作为 evaluation-only label
+- target：拥有 purchase/strong/all-positive label 且存在 train sequence 的用户并集 `53653`
+- source：`edge_count=514216`、`src_item_count=159923`、`dst_item_count=72536`
+- `purchase_positive`（`verified_purchase=true and label_binary>0`）：`target_user_count=40043`、`seed_hit_rate=0.666409`、`user_coverage_rate=0.665410`、`label_in_dst_universe_ratio=0.016898`、`Recall@500=0.000211`、`HitRate@500=0.000275`、`in_universe_Recall@500=0.012514`
+- `strong_positive`（`label_strong>0`）：与 `purchase_positive` 在当前 label schema 下相同，`Recall@500=0.000211`、`HitRate@500=0.000275`、`in_universe_Recall@500=0.012514`
+- `all_positive`（`label_binary>0`）：`target_user_count=42394`、`user_coverage_rate=0.659905`、`Recall@500=0.000194`、`HitRate@500=0.000259`、`in_universe_Recall@500=0.010628`
+- `candidate_hot_share=0.0`
+
+结论：按“strong 方法应看购买/强正反馈目标”的口径复测后，覆盖仍能维持在约 66%，但 raw `Recall@500` 仍很低；主要受目标商品落在当前 non-hot dst universe 的比例很低影响（purchase/strong 的 `label_in_dst_universe_ratio=0.016898`）。因此该方法仍可作为高置信、长尾、低重复的 supplemental candidate source 保留，但不能单凭该报告宣称主路效果好，下一步必须在 route-level 验证它对购买目标的边际增益。
+
+### AugCF-lite 远程实验（KDD'19 AugCF 思路的轻量复刻）
+
+AugCF 原论文是 Conditional GAN / 生成式交互增强，并不是传统 `sim(item_i,item_j)` 显式公式。本阶段没有直接复刻完整 GAN，而是新增独立实验源 `itemcf_strong_augcf_lite_v1`：用 train-only 强正反馈共现、类目/主类目/store、train-only 强正/正反馈频次、item quality/hotness 等特征构造 `augcf_lite_score`，再输出兼容 ItemCF source adapter 的 `src_item_id -> dst_item_id` observed/pseudo edge rows。valid/test 仍只用于 evaluation-only。
+
+- 实现：`rs_lab/experiments/recall/pool500/methods/itemcf_strong/augcf_lite_builder.py`、`scripts/experiments/recall/pool500/build_itemcf_strong_augcf_lite_method_dataset.py`
+- source adapter 修正：`rs_lab/experiments/recall/pool500/method_dataset_to_itemcf_source.py` 对 `train_only=false` fail-closed，并从 manifest lineage 推导 `RECENT_2Y_DERIVED_INDEX`，避免 recent-2y artifact 被误写为 `FULL_DERIVED_INDEX`。
+- 远程运行：`server:/home/luo/RS_agent_remote`，重 artifact 写入 `/tmp/rs_agent_spill/...`，本地只拉回 manifest/audit/eval JSON。
+- 本地验证：`.venv/Scripts/python.exe -m py_compile ...` 通过；100-user smoke build/source/eval 链路通过；manifest/leakage/index_scope assertions 通过。
+
+结果对比：
+
+| variant | rows | observed / pseudo | purchase Recall@500 | HitRate@500 | in-universe Recall@500 | label_in_dst_universe | user_coverage | candidate_hot_share |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| relaxed baseline(non-hot dst) | 514216 | 514216 / 0 | 0.000211 | 0.000275 | 0.012514 | 0.016898 | 0.665410 | 0.0 |
+| AugCF-lite formal_50k hot-dst | 6174682 | 5010969 / 1163713 | 0.025721 | 0.031416 | 0.031212 | 0.824084 | 0.598706 | 0.960442 |
+| AugCF-lite formal_50k no-hot-dst | 2308758 | 311844 / 1996914 | 0.000192 | 0.000250 | 0.009921 | 0.019378 | 0.585471 | 0.0 |
+
+证据路径：
+
+- hot-dst method manifest：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_lite/v1/formal_50k/method_dataset_manifest.json`
+- hot-dst eval：`outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_augcf_lite_recent2y_eval/purchase_label_eval_remote_full.json`
+- no-hot method manifest：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_lite/v1/formal_50k_nohot/method_dataset_manifest.json`
+- no-hot eval：`outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_nohot_augcf_lite_recent2y_eval/purchase_label_eval_remote_full.json`
+
+结论：AugCF-lite 证明“扩大 dst universe + 生成式/学习式补边”确实能显著提高购买目标 raw recall，但收益主要来自允许 hot dst 后目标覆盖率从 `0.016898` 提升到 `0.824084`；一旦恢复 no-hot 控制，Recall@500 反而略低于 relaxed baseline。因此它目前只能作为 **experimental / diagnostic** 证据，不能替代现有 supplemental baseline，也不能直接并入主路。下一步如果继续这条路，应做 hotness 分桶预算、与 popular/category 的 overlap/marginal gain gate，以及 pseudo-only / observed-only 消融，避免把热门商品覆盖误判成 `itemcf_strong` 本身的可解释相似度提升。
+
+### AugCF-controlled v2：hotness 预算对照
+
+在确认 unrestricted hot-dst 增益主要来自热门商品覆盖后，新增 controlled v2 对照：在 source 边构建阶段启用 `--controlled-hot-budget` 和 `--max-hot-share-per-src`，对每个 `src_item` 的 hot dst 边数做上限约束；controlled 模式下不再用超预算 hot dst 回填空位。该实验仍然只读取 train-only 输入，valid/test 只用于 purchase/strong-positive evaluation-only。
+
+结果对比（remote formal_50k，`candidate_limit=500`）：
+
+| variant | rows | observed / pseudo | selected hot edges | purchase Recall@500 | HitRate@500 | in-universe Recall@500 | label_in_dst_universe | user_coverage | candidate_hot_share |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| controlled q10 | 1096254 | 1032205 / 64049 | 750000 | 0.005037 | 0.006418 | 0.006993 | 0.720237 | 0.598706 | 0.440016 |
+| controlled q20 | 1845069 | 1733341 / 111728 | 1499996 | 0.010688 | 0.013510 | 0.013633 | 0.784021 | 0.598706 | 0.618814 |
+| controlled q30 | 2592359 | 2374633 / 217726 | 2248768 | 0.015129 | 0.018755 | 0.018825 | 0.803687 | 0.598706 | 0.717320 |
+| controlled q50 | 3995662 | 3454114 / 541548 | 3656705 | 0.019608 | 0.024124 | 0.023948 | 0.818797 | 0.598706 | 0.823463 |
+
+证据路径：
+
+- q10 manifest/eval：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q10/formal_50k/method_dataset_manifest.json`、`outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q10_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json`
+- q20 manifest/eval：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q20/formal_50k/method_dataset_manifest.json`、`outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q20_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json`
+- q30 manifest/eval：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q30/formal_50k/method_dataset_manifest.json`、`outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q30_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json`
+- q50 manifest/eval：`outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q50/formal_50k/method_dataset_manifest.json`、`outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q50_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json`
+
+结论：controlled v2 证明 AugCF-lite 路线可以在 purchase Recall 与热门候选占比之间形成连续 tradeoff：q10 到 q50 的 `Recall@500` 从 `0.005037` 增至 `0.019608`，`candidate_hot_share` 从 `0.440016` 增至 `0.823463`。但 per-src hot quota 不等同于最终 user-level candidate hot share，因为候选生成会聚合多个 seed，热门 dst 在多条边中重复出现后仍会被放大。当前更合理的下一步是把 q20/q30 作为 route-gate 诊断候选，继续测 popular/category overlap、边际 Recall、source share cap 和分桶预算，而不是直接替换 relaxed baseline 或自动并入主路。
+
+### Route-level AugCF 预算门控实现
+
+为避免 controlled v2 只在 source 边阶段控制 per-src hot quota、但最终用户候选池仍被多 seed 聚合放大，本轮在 pool500 recall route 增加诊断级 user-level hot/pseudo cap：
+
+- 实现：`rs_lab/experiments/recall/run_full_data_pool500_recall_only.py`
+- 触发条件：仅当 `itemcf_strong` source manifest 同时满足 `diagnostic_only=true`，且 `source_variant` / `diagnostic_policy` 中包含 `augcf_lite` 或 `augcf_controlled`。
+- 生效位置：`_enforce_popular_category_cap(...)` 之后、fallback completion 之前，避免 cap 后缺口被误写成方法本身覆盖。
+- 预算：读取 `max_final_hot_share_per_user`（缺省 `0.3`）和 `max_pseudo_per_user`（缺省 `100`）。
+- 删除优先级：只删除 AugCF diagnostic `itemcf_strong` 候选，优先删 pseudo、hot、单源 `itemcf_strong`、低分候选；不删除 relaxed baseline `itemcf_strong` 或非 AugCF 候选。
+- 审计输出：`diagnostic_hot_budget_audit.json`，记录 before/after hot share、pseudo count、`itemcf_strong` row count、removed hot/pseudo count、cap 后 underfill，并在 route manifest 的 required artifacts 中挂载。
+- offline route eval 入口：`rs_lab/experiments/recall/run_pool500_offline_eval_baseline.py` 新增通用 `--source-manifest itemcf_strong=/path/to/source_index_manifest.json`，用于 q20/q30/no-hot 在固定 eval users 上复跑 route-level evidence。
+
+本地验证：`.venv/Scripts/python.exe -m py_compile` 覆盖两个 route 脚本和相关测试；`pytest tests/test_full_data_pool500_recall_only.py tests/test_pool500_offline_eval_baseline.py -q` 结果为 `26 passed`。该实现只补齐 route-gate 能力，不改变 relaxed baseline latest artifact，也不授权 AugCF-lite/controlled 晋升。
+
+### 晋升判断
+
+这个版本不再是 strict diagnostic：它已经是可用的 supplemental candidate source。与此同时，它也还不是 main-route READY，原因不是覆盖不足，而是它仍然需要在 pool500 route 级别上完成边际贡献、source overlap 和编排收口后，才能决定是否进入更高层级的主路结论。
+
+当前判断：`READY_CANDIDATE` / `SUPPLEMENTAL_READY_CANDIDATE`。
+
+## 当前路线更新：记录 strong/RPA-like 结果并舍弃增强方向
+
+用户已决定舍弃当前 `strongRPA`/strong 侧 RPA-like、AugCF-lite/controlled 等生成增强或递归增强方向，后续回到传统 ItemCF。当前 strong 侧结果保留如下，作为历史消融与路线取舍证据：
+
+- relaxed strong baseline（non-hot dst，train-only strong seed → positive dst）：purchase/strong-positive `Recall@500=0.000211`、`HitRate@500=0.000275`、`in_universe_Recall@500=0.012514`、`user_coverage_rate=0.665410`、`label_in_dst_universe_ratio=0.016898`、`candidate_hot_share=0.0`。结论是覆盖尚可，但由于 dst universe 对 purchase/strong labels 覆盖很低，raw recall 很弱。
+- AugCF-lite formal_50k hot-dst：purchase `Recall@500=0.025721`、`HitRate@500=0.031416`、`in_universe_Recall@500=0.031212`，但 `candidate_hot_share=0.960442`、`label_in_dst_universe_ratio=0.824084`。收益主要来自 hot dst universe 扩张，不应归因于纯 ItemCF 相似度，也不适合作为传统 ItemCF 晋升依据。
+- AugCF-lite formal_50k no-hot-dst：purchase `Recall@500=0.000192`、`HitRate@500=0.000250`、`in_universe_Recall@500=0.009921`，低于 relaxed baseline，说明去掉热门扩张后增强信号没有胜出。
+- AugCF-controlled v2 quota 曲线：q10/q20/q30/q50 的 purchase `Recall@500` 分别为 `0.005037` / `0.010688` / `0.015129` / `0.019608`，但 `candidate_hot_share` 同步从 `0.440016` 升到 `0.823463`。这是一条“召回提升—热门偏置上升”的预算曲线，不是可直接沉淀的 strong ItemCF 主路。
+
+结论：strong 侧增强方向仅保留历史记录，不进入继续优化、不打开 candidate generation / ranking input replacement / promotion、不据此更新 registry READY。后续如果保留 strong 信号，只按传统 ItemCF 的 train-only 共现/weighted cooc cosine、src/dst 热度边界和 route-level source budget 重新设计。对应 AugCF-lite / AugCF-controlled 生成产物已清理，清理审计见 `outputs/cleanup_records/itemcf_strong_augcf_cleanup_20260606.json`。
 
 ## 下一步
-与 weak ItemCF 一起比较覆盖和边际贡献：本轮 guarded sidecar 中 strong `rows_written=68432`、target500 consumer seed-hit 用户 239；weak `rows_written=74662`、target500 consumer seed-hit 用户 250，weak 更适合补量，strong 更适合作为高置信补充。若治理上必须满足高质量 custom dataset policy，需要另跑 quality-builder sidecar，并继续用独立 consumer_user_manifest / coverage_audit 校验 pool500 consumer 覆盖。
 
-## 专项优化 Agent 调用说明
-后续单独调用 Agent 优化本方法时，目标应是围绕 `heavy_cf_eligible` 用户扩展 strong ItemCF 的高置信 item-pair 数据集，重点比较 strong/weak 的精度、覆盖、重复率和资源成本。Agent 必须保留 batch/guard/memory limit，并输出 source index manifest、resource audit 和诊断候选 manifest；不得因为 strong 边更可信就跳过诊断门槛或直接宣称可晋升状态。
+1. 不再继续 strongRPA / AugCF-lite / controlled hot quota 方向；相关产物只作为历史诊断与消融记录。
+2. 回到传统 ItemCF：重新梳理 strong seed、positive dst、support、weighted cooc cosine、active-user penalty、src/dst hotness boundary 与 per-seed topK。
+3. 继续保持 valid/test 只做 evaluation-only，不进入训练、候选生成、scoring rule selection、variant selection 或 promotion。
+4. 等传统 ItemCF 重新跑出同口径 source/eval/overlap 证据后，再决定是否把 strong 作为 supplemental source 纳入 pool500 route 的正式候选编排。
 
-## P2 method_dataset 数据清洗与筛选方案
+## 后续可回看论文参考
 
-- 数据来源：只读取 `governance_train_only` 的用户质量、item 质量、train item frequency 与 `user_sequences.train.jsonl`。
-- 筛选单位：`user_positive_sequence_to_item_pairs`。先保留高质量用户序列，再构造高置信 item-pair。
-- 适用桶：用户桶 `collaborative_rich`；item 侧使用 `cf_ready`。
-- 清洗规则：过滤弱行为用户、非 `cf_ready` item、过热 item 的过量边；优先短窗口/强支持 pair，不让单次偶然共现进入 strong 主路。
-- 规模参数：`max_output_users=200000`、`max_items_per_user=50`、`max_item_user_freq=3000`、`min_pair_support=2`。
-
-## P2 method_dataset 特征与打分口径
-
-- builder 新增 `weighted_cooc`、`supporting_user_count`、`score_policy`、`itemcf_score_formula`、`active_user_penalty_policy`。
-- `itemcf_score = round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)`。
-- `active_user_penalty_policy` 是效果导向抑制超活跃用户和长序列随机共现，不是流程优化。
-- 这里记录的是 `method_dataset` / diagnostic evidence，不是 source/candidate/ranking/promotion 替换口径。
-
-### 规模档位
-
-| 档位 | max_output_users | max_items_per_user | max_item_user_freq | min_pair_support |
-| --- | ---: | ---: | ---: | ---: |
-| smoke | 1000 | 50 | 3000 | 2 |
-| diagnostic | 80000 | 50 | 3000 | 2 |
-| local_formal | 200000 | 50 | 3000 | 2 |
-
-- 泄漏边界：不读取 valid/test/holdout/LOPO/eval_label/oracle，不用诊断命中结果反向筛边，不声明 READY、promotion、ranking input replacement 或 pool1000。
-- 维护检查：strong 必须比 weak 更严格；修改后同步检查 registry、builder manifest、测试中的 `itemcf_strong_edges_v1`。
-
-## P2 smoke / diagnostic / formal method_dataset 构建验证（2026-05-25）
-
-- smoke 构建命令：`.venv/Scripts/python.exe -m rs_lab.experiments.recall.build_pool500_method_dataset --governance-manifest outputs/recall/data_governance/train_only_v1_smoke/manifest.json --source-method itemcf_strong --scale-tier smoke --output-root outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1 --overwrite`
-- smoke 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_smoke_v1/itemcf_strong/`；`status=PASS`，但 `row_count=0`、`unique_pair_count=0`，只能证明链路和 audit 边界。
-- strict diagnostic 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_diagnostic_v1/itemcf_strong/`；`row_count=0`、`unique_pair_count=0`、`edge_count=0`、`user_count=28`、`pair_below_min_support=41`，audit PASS。
-- strict local_formal 输出目录：`outputs/recall/pool500_method_datasets/itemcf_weighted_formal_v1/itemcf_strong/`；`row_count=208`、`unique_pair_count=104`、`edge_count=208`、`user_count=15511`、`item_count=71`、`weighted_cooc_sum_after_topk=212.532068`，audit PASS。
-- strong 仍坚持高置信口径：`collaborative_rich` 用户、`cf_ready + non-over_hot` item、`max_item_user_freq=3000`、`min_pair_support=2`。这导致 formal 边数极少，但它的定位是高置信补充，不承担 weak coverage 的广覆盖职责。
-- 与 weak coverage formal 的关系：coverage formal 只对 `itemcf_weak` 放宽用户桶和 item 桶，用于解决弱召回补量；strong 不跟随放宽，否则会破坏 strong 的 high-confidence 语义。
-- 特征摘要：`weighted_cooc`、`supporting_user_count`、`score_policy=weighted_cooc_cosine_normalized_v1`、`active_user_penalty_policy=round(1 / log1p(filtered_sequence_len), 6)` 已进入 builder；`itemcf_score = round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)`；排序策略为 `source_method + src_item_id` 内按 `itemcf_score desc, cooc_cnt desc, dst_item_id asc`。
-- 边界说明：这些输出仍是 `method_dataset` / diagnostic evidence，不是 source index、candidate、ranking input、promotion 或 final pool500 ready；audit validator 使用 method manifest 的 `upstream_governance_manifest_path`，不硬编码 default governance。
-
-## relaxed seed-src v3 诊断口径（2026-05-26）
-
-strict strong formal 只有 208 条方向边，初版 relaxed/support=1 虽增加到 56,518 条边，但前 100 用户 strong seed 与 source src 仍 0 命中。定位后发现 strong 查询 seed 大多是 `embedding_ready` 且 178/179 为 hot item；如果把 hot item 完全排除，strong seed 无法作为查询锚点。
-
-v3 口径把 strong 的 seed 侧和 candidate 侧拆开：
-
-- 用户桶：`sequence_sufficient`、`collaborative_rich`，不放开到 `medium_behavior`，仍比 weak coverage 严格。
-- 构边方向：`recent_strong_positive_item_sequence -> recent_positive_item_sequence` 的有向边，只用 strong seed 发边。
-- src 侧：允许 `cf_ready` / `embedding_ready`，且允许 hot，解决强交互热门 seed 无法查询的问题。
-- dst 侧：允许 `cf_ready` / `embedding_ready`，但排除 hot，避免把热门 item 作为候选输出放大。
-- 参数：`max_output_users=160000`、`max_items_per_user=60`、`max_item_user_freq=8000`、`min_pair_support=1`、`top_k_per_seed=150`。
-- 边界：`train_only=true`、`DIAGNOSTIC_ONLY`、`candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`、`pool1000_allowed=false`。
-
-验证产物：
-
-- method_dataset：`outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_smoke_v3/itemcf_strong/method_dataset_manifest.json`，`row_count=1,536,320`、`directed_edge_count_after_topk=1,536,320`。
-- source index：`outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/smoke_sharded/source_index_manifest.json`，`shard_count=128`、`row_count=1,536,320`、`diagnostic_only=true`。
-- 100 用户主路 smoke：`itemcf_strong.row_count=1,557`、`user_coverage_count=68/100`、`marginal_candidate_share=0.033384`。
-- 500 用户受控验证：`itemcf_strong.row_count=8,198`、`user_coverage_count=369/500`、`marginal_candidate_share=0.03469`。
-
-结论：v3 已把 strong 从 0 贡献恢复为可用的高置信补充源，但它仍是 diagnostic source，不得据此声明 READY、替换 ranking input 或进入 pool1000。
-
-## relaxed seed-src v3 三档独立重建与 formal 分片主路验证（2026-05-26）
-
-三档数据集不是从 formal 边表抽样得到，而是分别从 train-only 原始序列和 governance profile 独立重建；每档都会重新计算 pair support、`weighted_cooc`、`itemcf_score` 和 per-seed topK。这样避免“抽掉一个用户导致所有共现边统计失效”的问题。
-
-| 档位 | 输出目录 | max_output_users | row_count | user_count | item_count |
-| --- | --- | ---: | ---: | ---: | ---: |
-| smoke | `outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_smoke_v3_real/itemcf_strong/` | 5,000 | 47,615 | 5,000 | 36,068 |
-| diagnostic | `outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_diagnostic_v3/itemcf_strong/` | 80,000 | 784,463 | 80,000 | 317,624 |
-| local_formal | `outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_local_formal_v3/itemcf_strong/` | 160,000 | 1,536,320 | 160,000 | 494,449 |
-
-formal source index：`outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json`，`row_count=1,536,320`、`shard_count=128`、`sharded=true`、`diagnostic_only=true`；已作为 pool500 recall-only 主路默认 `itemcf_strong` source manifest。
-
-formal 分片 source 主路验证：
-
-- 100 用户 smoke：`outputs/recall/full_data_pool500_recall_only/itemcf_strong_relaxed_seedsrc_formal_sharded_smoke100/`，`itemcf_strong.row_count=1,557`、`user_coverage_count=68/100`、`marginal_candidate_share=0.033384`、`final_resource_audit.status=PASS`。
-- 500 用户受控验证：`outputs/recall/full_data_pool500_recall_only/itemcf_strong_relaxed_seedsrc_formal_sharded_smoke500/`，`itemcf_strong.row_count=8,198`、`user_coverage_count=369/500`、`marginal_candidate_share=0.03469`、`final_resource_audit.status=PASS`。
-
-边界保持：`train_only=true`、`readiness_status=DIAGNOSTIC_ONLY`、`promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。formal 分片 source 只证明 strong 可作为高置信补充源进入诊断主路，不声明 READY 或替换排序输入。
-
-默认主路接入验证：`rs_lab/experiments/recall/run_full_data_pool500_recall_only.py` 的默认 `itemcf_strong` manifest 已切到上述 `formal_sharded/source_index_manifest.json`。不传 `--source-manifest itemcf_strong=...` 的 100 用户默认主路 smoke 输出 `outputs/recall/full_data_pool500_recall_only/itemcf_strong_formal_default_route_smoke100/`，其中 `itemcf_strong.row_count=941`、`user_coverage_count=68/100`、`marginal_candidate_share=0.019991`、`final_resource_audit.status=PASS`；`per_source_output_manifests.json` 记录的 `itemcf_strong.source_index_manifest_path` 指向 formal sharded source，且 `source_status=DIAGNOSTIC_ONLY`、`promotion_allowed=false`、`ranking_input_replacement_allowed=false`、`pool1000_allowed=false`。
+- **AugCF / 生成增强方向**：Wang et al., *Enhancing Collaborative Filtering with Generative Augmentation*, KDD 2019. 该方向对应 strong 侧 `itemcf_strong_augcf_lite_v1` 与 controlled v2 诊断，核心思想是为 inactive/sparse users 做生成式交互增强；本项目实验显示 hot-dst 扩张会显著提高 purchase Recall，但也同步放大热门偏置。
+- **strongRPA / RPA-index 递归协同过滤方向**：Zhang and Pu, *A Recursive Prediction Algorithm for Collaborative Filtering Recommender Systems*, RecSys 2007. 该方向对应后续跑过的 strongRPA / paper-binary Top500 / index-backed replay 思路，核心思想是通过相似用户、邻域递归预测和 path-support 证据补全 sparse/medium 用户的 missing preference。

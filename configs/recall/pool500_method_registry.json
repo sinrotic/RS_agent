@@ -1,39 +1,50 @@
 {
-  "schema_version": "pool500_method_registry_v1",
-  "updated_at": "2026-05-18",
-  "scope": "pool500_recall_methods",
-  "latest_diagnostic_batch": {
-    "limit_users": 500,
-    "manifest_path": "outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/manifest.json",
-    "ready_source_stoploss_audit_path": "outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/ready_source_stoploss_audit.json",
-    "diagnostic_source_contribution_path": "outputs/recall/pool500_readiness_gate_diagnostic_500_with_sidecars/diagnostic_source_contribution.json",
-    "decision": "STOP",
-    "processed_users": 500,
-    "candidate_rows": 111983,
-    "underfilled_user_count": 500,
-    "underfilled_user_ratio": 1.0,
-    "ranking_input_replacement_allowed": false,
-    "pool1000_allowed": false
+  "schema_version": "pool500_method_registry_v2_recent_2y_smoke_formal",
+  "updated_at": "2026-06-07",
+  "scope": "pool500_recall_methods_current_recent_2y",
+  "current_method_dataset_policy": {
+    "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+    "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+    "allowed_scale_tiers": [
+      "smoke",
+      "formal"
+    ],
+    "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+    "full_data_dataset_status": "sealed_archived_not_current_method_dataset_origin",
+    "current_registry_excludes_historical_artifact_paths": true,
+    "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
   },
   "sources": {
     "category": {
       "status": "READY",
       "method_doc": "dic/recall_methods/category/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/category/manifest.json",
-      "latest_row_count": 30193,
-      "eligible_user_policy": "medium_behavior_or_fallback",
-      "role": "stable_category_coverage",
+      "role": "train_only_category_index_fallback",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "50k_local_formal_train_only_category_profile_source_artifact",
+        "formal_quantity_policy": "local_formal_50k_slice_full_route_requires_global_gate_or_server_batch",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "default_dataset_policy",
-        "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/default_train_only_stats_manifest.json",
+        "policy_type": "recent_2y_train_only_category_profile_dataset",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "unified_train_only_stats",
-          "unified_item_metadata"
+          "recent_2y_train_only_governance",
+          "canonical_items",
+          "user_sequences_train",
+          "train_only_user_quality_profile",
+          "train_only_item_frequency",
+          "train_only_category_top_items",
+          "train_only_category_recall_items"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -41,79 +52,95 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Scan full train-only unified statistics and metadata for lightweight coverage; no method-specific custom dataset and no input size cap are required. Output volume and per-user share remain controlled downstream.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical category source identity, and artifact gate evidence.",
-        "eligible_user_policy": "medium_behavior_or_fallback",
-        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "500 train-only eligible users",
+            "artifact": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_smoke_v1/source_index_manifest.json"
+          },
+          "formal": {
+            "purpose": "eval_only_materialized_50k_slice",
+            "quantity_policy": "50000 train-only eligible users with materialized candidates for Recall@K evidence",
+            "artifact": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_formal_50k_v1/source_index_manifest.json"
+          },
+          "all_eligible": {
+            "purpose": "route_formal_index_artifact",
+            "quantity_policy": "all 1558964 recent-2y category eligible users as index; candidates generated on demand",
+            "artifact": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/source_index_manifest.json",
+            "candidate_materialization": "none",
+            "remote_manifest_dir": "server:/home/luo/RS_agent_remote/outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
-          "pool1000_allowed": false
+          "pool1000_allowed": false,
+          "main_route_merge_requires_global_gate": true
         },
-        "readiness_artifacts": [
-          "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/category/manifest.json"
-        ],
         "status": "READY",
-        "notes": "Default coverage method; readiness means available for governed pool500 recall diagnostics, not promotion authority. Full train-only statistics scans are allowed for this lightweight method; only output/per-user share caps are downstream controls.",
-        "input_scale_policy": {
-          "input_scope": "train_only_full_stats",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "full_train_only_statistics_with_output_caps_v1",
-            "sampling_unit": "train_only_full_statistics",
-            "input_size_cap_required": false,
-            "output_controls": [
-              "output_cap",
-              "per_user_share_cap",
-              "source_share_cap",
-              "category_share_cap"
-            ]
-          },
-          "train_only_full_statistics_scan_allowed": true,
-          "input_size_cap_required": false,
-          "downstream_controls": [
-            "output_cap",
-            "per_user_share_cap"
-          ],
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "input_size_cap_required": false,
-              "batch_user_limit": 500
-            },
-            "diagnostic": {
-              "input_size_cap_required": false,
-              "batch_user_limit": 5000
-            },
-            "local_formal": {
-              "input_size_cap_required": false,
-              "batch_user_limit": "full_pool500_scope"
-            }
-          }
-        }
+        "notes": "Recent-2y category source now has a remote-built all-eligible index artifact. The 50k materialized artifact remains eval-only evidence; route usage should generate candidates on demand from eligible_users, user_category_profile, and category_top_items_index."
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/source_index_manifest.json",
+      "latest_row_count": 1558964,
+      "eligible_user_policy": "fallback_only_medium_behavior_sequence_sufficient_collaborative_rich_recent2y_category_index",
+      "recent2y_artifacts": {
+        "smoke_source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_smoke_v1/source_index_manifest.json",
+        "formal_source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_formal_50k_v1/source_index_manifest.json",
+        "formal_method_dataset_manifest": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_formal_50k_v1/method_dataset_manifest.json",
+        "formal_evaluation_report": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_formal_50k_v1/evaluation_report.json",
+        "formal_candidate_row_count": 3976451,
+        "formal_target_user_count": 50000,
+        "formal_user_coverage_ratio": 1.0,
+        "formal_recall_at_80_valid": 0.012225,
+        "formal_recall_at_80_test": 0.010989,
+        "all_eligible_source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/source_index_manifest.json",
+        "all_eligible_method_dataset_manifest": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/method_dataset_manifest.json",
+        "all_eligible_remote_manifest_dir": "server:/home/luo/RS_agent_remote/outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1",
+        "all_eligible_candidate_materialization": "none",
+        "all_eligible_target_user_count": 1558964,
+        "all_eligible_user_coverage_count": 1558964,
+        "all_eligible_user_coverage_ratio": 1.0,
+        "all_eligible_profile_row_count": 1558964,
+        "all_eligible_runtime_seconds_remote": 213.18248,
+        "all_eligible_no_holdout_audit": "PASS",
+        "all_eligible_local_manifest_revalidation": "PASS",
+        "all_eligible_remote_provenance": "outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/remote_provenance.json"
+      },
+      "promotion_recommendation": {
+        "decision": "ready_as_all_eligible_index_source_not_auto_main_route_merge",
+        "reason": "all eligible train-only index artifact passed, but route merge still requires on-demand candidate expansion, source overlap, contribution, underfill, and pool500 route gate evidence"
       }
     },
     "popular": {
       "status": "READY",
       "method_doc": "dic/recall_methods/popular/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/popular/manifest.json",
-      "latest_row_count": 81289,
-      "eligible_user_policy": "fallback_only",
-      "role": "coverage_backfill",
+      "role": "pool500_main_route_budgeted_popular_fallback_source",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "default_dataset_policy",
+        "policy_type": "recent_2y_train_only_current_dataset_policy",
         "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/default_train_only_stats_manifest.json",
+        "dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/popular/formal/popular_recent2y_formal_v1/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "unified_train_only_stats",
-          "unified_item_metadata"
+          "recent_2y_train_only_governance",
+          "item_frequency_train"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -121,80 +148,89 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Scan full train-only unified statistics and metadata for lightweight coverage; no method-specific custom dataset and no input size cap are required. Output volume and per-user share remain controlled downstream.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical popular source identity, and artifact gate evidence.",
-        "eligible_user_policy": "fallback_only",
-        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "small_bounded_smoke",
+            "manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/popular/smoke/popular_recent2y_smoke_v1/method_dataset_manifest.json"
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+            "manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/popular/formal/popular_recent2y_formal_v1/method_dataset_manifest.json"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
           "pool1000_allowed": false
         },
-        "readiness_artifacts": [
-          "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/popular/manifest.json"
-        ],
         "status": "READY",
-        "notes": "Default fallback method; readiness means available for governed pool500 recall diagnostics, not promotion authority. Full train-only statistics scans are allowed for this lightweight method; only output/per-user share caps are downstream controls.",
-        "input_scale_policy": {
-          "input_scope": "train_only_full_stats",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "full_train_only_statistics_with_output_caps_v1",
-            "sampling_unit": "train_only_full_statistics",
-            "input_size_cap_required": false,
-            "output_controls": [
-              "output_cap",
-              "per_user_share_cap",
-              "source_share_cap",
-              "category_share_cap"
-            ]
-          },
-          "train_only_full_statistics_scan_allowed": true,
-          "input_size_cap_required": false,
-          "downstream_controls": [
-            "output_cap",
-            "per_user_share_cap"
-          ],
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "input_size_cap_required": false,
-              "batch_user_limit": 500
-            },
-            "diagnostic": {
-              "input_size_cap_required": false,
-              "batch_user_limit": 5000
-            },
-            "local_formal": {
-              "input_size_cap_required": false,
-              "batch_user_limit": "full_pool500_scope"
-            }
-          }
-        }
+        "notes": "Recent-2y formal popular source built directly from train-only item_frequency_train.jsonl. It is merged into the pool500 main route as a budgeted fallback/backfill candidate source, while registry-level auto-promotion, ranking replacement, and pool1000 remain forbidden."
+      },
+      "route_integration": {
+        "main_route_merge_status": "MERGED_AS_BUDGETED_FALLBACK_SOURCE",
+        "main_route_candidate_source_allowed": true,
+        "main_route_role": "backfill_after_semantic_cf_category",
+        "candidate_fill_order_position": "last",
+        "source_budget_policy": "budgeted_fallback_cap",
+        "popular_per_user_cap": 50,
+        "max_source_share_recommended": 0.2,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "final_pool500_ready_claimed": false
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources/recent_2y/popular/formal/popular_recent2y_formal_v1/source_index_manifest.json",
+      "latest_row_count": 762622,
+      "eligible_user_policy": "all_users_main_route_fallback_budgeted",
+      "formal_result": {
+        "source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/popular/formal/popular_recent2y_formal_v1/source_index_manifest.json",
+        "evaluation_report": "outputs/recall/pool500_method_sources/recent_2y/popular/formal/popular_recent2y_formal_v1/evaluation_report.json",
+        "candidate_row_count": 762622,
+        "eval_user_count": 234485,
+        "positive_event_count": 308281,
+        "recall_at_500": 0.078068,
+        "hit_rate_at_500": 0.09836,
+        "in_universe_recall_at_500": 0.086917,
+        "long_tail_recall_at_500": 0.0,
+        "no_holdout_audit": "PASS"
       }
     },
     "swing_recall": {
       "status": "READY",
       "method_doc": "dic/recall_methods/swing_recall/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/swing_recall_v2/source_index_manifest.json",
-      "latest_row_count": 3668,
-      "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
       "role": "behavioral_item_expansion",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "guarded_ready_policy",
-        "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/swing_recall_ready_sidecar_manifest.json",
+        "policy_type": "recent_2y_train_only_current_dataset_policy",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/swing_recall/formal/swing_method_dataset/method_dataset_manifest.json",
+        "smoke_dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/swing_recall/smoke/swing_method_dataset/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "ready_sidecar",
-          "behavior_graph",
-          "guarded_budgeted_generation"
+          "recent_2y_train_only_governance",
+          "train_only_user_quality_profile",
+          "train_only_item_quality_profile",
+          "train_only_item_frequency",
+          "user_sequences_train",
+          "formal_train_user_sequences"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -202,90 +238,118 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Use READY swing sidecar or train-only behavior graph under stoploss and budget guards; method-specific custom dataset is optional, not mandatory. P2 method dataset must use governance_train_only inputs with local_formal_default resource boundaries before any downstream source artifact step.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical swing_recall source identity, artifact gate evidence, and guard compliance.",
-        "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
-        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and guard checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "small_bounded_smoke",
+            "manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/swing_recall/smoke/swing_method_dataset/method_dataset_manifest.json",
+            "row_count": 4205,
+            "source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/smoke/run_20260603_smoke_train_only_v1/source_index_manifest.json",
+            "source_edge_count": 1082
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+            "manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/swing_recall/formal/swing_method_dataset/method_dataset_manifest.json",
+            "row_count": 15,
+            "source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json",
+            "source_edge_count": 457372
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
           "pool1000_allowed": false
         },
-        "readiness_artifacts": [
-          "outputs/recall/pool500_sidecar_fix/swing_recall_v2/source_index_manifest.json"
-        ],
         "status": "READY",
-        "notes": "READY sidecar is allowed only through guarded/budgeted pool500 recall diagnostics; replacement remains forbidden. P2 resource boundary metadata is dataset-scale governance only and remains dataset-contract-only.",
-        "method_specific_resource_boundary": {
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "swing_graph_v1",
-            "sampling_unit": "bipartite_user_item_graph_to_pair_support",
-            "eligible_user_buckets": [
-              "medium_behavior",
-              "collaborative_rich"
-            ],
-            "min_user_items": 2,
-            "eligible_item_bucket": "cf_ready",
-            "hot_item_control": "strict_cap"
-          },
-          "max_graph_users": 120000,
-          "max_items_per_user": 80,
-          "max_item_user_freq": 600,
+        "readiness_semantics": "READY_GUARDED",
+        "notes": "Recent-2y formal Swing F1 source is fixed as the selected Swing route artifact: Datawhale standard scoring, pre-user-first filtering, src>=2/dst>=2, and no hard post-item user filter. Keep artifact-level promotion/ranking/pool1000 flags closed; route usage must remain explicit and auditable."
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json",
+      "latest_row_count": 457372,
+      "eligible_user_policy": "pre_user_first_min_user_items_2_src2_dst2_no_post_user_hard_filter",
+      "readiness_note": "READY_GUARDED: F1 is fixed as the current Swing main-route artifact by user decision; graph construction remains train-only and artifact-level candidate_generation/ranking replacement/pool1000/promotion flags remain closed until route-level gates explicitly open them.",
+      "recent2y_artifacts": {
+        "smoke_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/swing_recall/smoke/swing_method_dataset/method_dataset_manifest.json",
+        "formal_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/swing_recall/formal/swing_method_dataset/method_dataset_manifest.json",
+        "smoke_source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/smoke/run_20260603_smoke_train_only_v1/source_index_manifest.json",
+        "formal_source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json",
+        "formal_eval_report": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_raw_eval_report.json",
+        "formal_funnel_diagnostic_report": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_funnel_diagnostic.json",
+        "formal_edge_count": 457372,
+        "formal_seed_count": 65693,
+        "formal_valid_hit_rate_at_500": 0.008044,
+        "formal_valid_recall_at_500": 0.006821,
+        "formal_test_hit_rate_at_500": 0.002163,
+        "formal_test_recall_at_500": 0.001892,
+        "formal_test_candidate_user_coverage_rate": 0.063765,
+        "funnel_valid_missing_train_sequence_users": 70623,
+        "funnel_test_missing_train_sequence_users": 115624,
+        "funnel_test_users_without_graph_seed_but_hot_dropped_seed": 522,
+        "funnel_next_experiment_priority": "route_level_overlap_and_marginal_lift_gate_for_selected_f1_artifact",
+        "no_holdout_audit": "PASS",
+        "selected_variant": "F1_datawhale_pre_user_src2_dst2_no_post_user_filter",
+        "selected_variant_parameters": {
+          "score_mode": "datawhale_standard",
+          "alpha": 1.0,
+          "min_user_items": 2,
+          "max_item_user_freq": 1000,
+          "max_user_items": 50,
           "min_pair_support": 2,
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_graph_users": 2000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 1000,
-              "min_pair_support": 1
-            },
-            "diagnostic": {
-              "max_graph_users": 50000,
-              "max_items_per_user": 80,
-              "max_item_user_freq": 1000,
-              "min_pair_support": 1
-            },
-            "local_formal": {
-              "max_graph_users": 120000,
-              "max_items_per_user": 80,
-              "max_item_user_freq": 600,
-              "min_pair_support": 2
-            }
-          }
+          "per_seed_top_k": 100,
+          "min_score": 0.0,
+          "pre_filter_users_before_item_count": true,
+          "min_src_item_positive_user_count": 2,
+          "min_dst_item_positive_user_count": 2,
+          "disable_post_item_user_filter": true
         }
+      },
+      "promotion_blockers": [
+        "artifact_fixed_as_swing_route_default_but_auto_promotion_remains_closed",
+        "source_overlap_against_current_ready_methods_not_computed",
+        "candidate_generation_allowed_remains_false_until_explicit_route_gate_open",
+        "valid_metric_tiny_dip_vs_B_requires_route_level_monitoring"
+      ],
+      "governance": {
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "main_route_merge_requires_global_gate": true
       }
     },
     "usercf_recall": {
-      "status": "READY",
+      "status": "DIAGNOSTIC_ONLY",
       "method_doc": "dic/recall_methods/usercf_recall/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json",
-      "latest_readiness_contract": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/readiness_contract.json",
-      "latest_row_count": 17509,
-      "latest_candidate_total_count": 17509,
-      "latest_peak_rss_mb": 56,
-      "eligible_user_policy": "heavy_cf_eligible",
-      "role": "heavy_user_neighbor_recall",
+      "role": "heavy_user_neighbor_recall_diagnostic",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "custom_dataset_policy",
-        "custom_dataset_required": true,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/usercf_recall_custom_dataset_manifest.json",
+        "policy_type": "recent_2y_clean_train_item_first_usercf_full_diagnostic",
+        "custom_dataset_required": false,
+        "dataset_manifest_path": null,
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "method_specific_eligible_users",
-          "heavy_cf_eligible",
-          "guarded_batched_generation",
-          "memory_managed_generation"
+          "recent_2y_train_only_governance",
+          "canonical_train_interactions",
+          "canonical_items",
+          "user_sequences_train"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -293,94 +357,131 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Use P2 method dataset formal train-only UserCF input mode artifact for heavy collaborative users as a pool500 recall-only READY source; it still cannot replace ranking input.",
-        "readiness_evaluation_scope": "Evaluate as recall-only main-route source contribution in the pool500 route; no promotion, ranking replacement, larger-pool expansion, or final ready claim is authorized.",
-        "eligible_user_policy": "heavy_cf_eligible",
-        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "small_bounded_smoke"
+          },
+          "full_diagnostic": {
+            "purpose": "selected_recent_2y_full_train_only_usercf_diagnostic",
+            "quantity_policy": "all train users satisfying src>=2,dst>=3,user_after_src_filter>=3,keep_hot=true,iuf_cosine",
+            "artifact": "outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
           "pool1000_allowed": false
         },
-        "readiness_artifacts": [
-          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json",
-          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/readiness_contract.json",
-          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/method_dataset_manifest.json",
-          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/no_holdout_audit.json",
-          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/coverage_audit.json",
-          "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/resource_audit.json"
-        ],
-        "status": "READY",
-        "notes": "Formal method_dataset sidecar is connected to the recall-only main route as a READY source. Boundary/loadability evidence does not imply recall lift, ranking replacement, or final pool500 ready claim.",
-        "method_specific_resource_boundary": {
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "usercf_neighbors_v1",
-            "sampling_unit": "connected_user_item_subgraph",
-            "eligible_user_buckets": [
-              "collaborative_rich",
-              "sequence_sufficient"
-            ],
-            "min_shared_items_policy": "required",
-            "hot_item_influence_control": "cap",
-            "shard_unit": "ego_network",
-            "record_orphan_counts": true
-          },
-          "max_output_users": 120000,
-          "max_items_per_user": 80,
-          "max_item_user_freq": 5000,
-          "similar_users_top_k": 200,
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_output_users": 1000,
-              "max_items_per_user": 80,
-              "max_item_user_freq": 5000,
-              "similar_users_top_k": 50
-            },
-            "diagnostic": {
-              "max_output_users": 60000,
-              "max_items_per_user": 80,
-              "max_item_user_freq": 5000,
-              "similar_users_top_k": 100
-            },
-            "local_formal": {
-              "max_output_users": 120000,
-              "max_items_per_user": 80,
-              "max_item_user_freq": 5000,
-              "similar_users_top_k": 200
-            }
-          }
+        "status": "DIAGNOSTIC_ONLY",
+        "notes": "UserCF full diagnostic now reads clean train sequences directly: train-only item positive user counts define src>=2/dst>=3 item filters, then user_after_src_filter>=3 selects target users. No formal flat method dataset is required; valid/test labels are evaluation-only.",
+        "future_promotion_status": "DIAGNOSTIC_ONLY_NOT_READY"
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json",
+      "latest_row_count": 651046,
+      "eligible_user_policy": "item_first_src2_dst3_user3_keep_hot_iuf_cosine_clean_train_diagnostic",
+      "future_promotion_status": "DIAGNOSTIC_ONLY_NOT_READY",
+      "latest_formal_method_dataset": null,
+      "latest_formal_evaluation_summary": "outputs/recall/pool500_method_evals/recent_2y/usercf_threshold_shard_eval_summary.json",
+      "latest_metrics": {
+        "target_user_count": 651099,
+        "candidate_user_count": 651046,
+        "candidate_total_count": 64327024,
+        "candidate_row_count": 651046,
+        "underfilled_user_coverage": 0.999919,
+        "candidate_top_k_per_user": 100,
+        "valid_recall_at_100": 0.001882,
+        "valid_hit_rate_at_100": 0.002463,
+        "valid_served_hit_rate_at_100": 0.0626,
+        "test_recall_at_100": 0.000373,
+        "test_hit_rate_at_100": 0.000516,
+        "test_served_hit_rate_at_100": 0.04765,
+        "combined_recall_at_100": 0.00095,
+        "combined_hit_rate_at_100": 0.001305,
+        "combined_served_hit_rate_at_100": 0.060403,
+        "selection_note": "Selected user>=3 as the best coverage/quality trade-off. user>=2 keeps best global Recall@100 but includes many low-signal two-item users; user>=4/5/6/10 lose too much coverage."
+      },
+      "promotion_blockers": [
+        "status_remains_diagnostic_only_not_ready",
+        "global_valid_test_metrics_remain_weak_vs_ready_sources",
+        "source_overlap_popular_overlap_marginal_lift_and_route_gate_audits_still_missing",
+        "artifact_selected_for_usercf_threshold_not_ready_promotion_or_ranking_input_replacement"
+      ],
+      "governance": {
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false,
+        "main_route_merge_requires_global_gate": true
+      },
+      "online_exposure": {
+        "online_exposure_mode": "artifact_backed_pool500_only",
+        "serving_artifact_backed_allowed": true,
+        "serving_online_candidate_generation_allowed": false,
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false,
+        "evidence_artifact": "outputs/recall/pool500_main_route_direct_recall_cold_start_fallback_v5/pool500_candidates.jsonl"
+      },
+      "recent2y_artifacts": {
+        "selected_full_source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json",
+        "selected_threshold": "user_after_src_filter>=3",
+        "selected_threshold_eval_summary": "outputs/recall/pool500_method_evals/recent_2y/usercf_threshold_shard_eval_summary.json",
+        "selected_remote_manifest_dir": "server:/home/luo/RS_agent_remote/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1",
+        "threshold_sweep": {
+          "tested_min_src_filtered_items_per_user": [
+            2,
+            3,
+            4,
+            5,
+            6,
+            10
+          ],
+          "selected": 3,
+          "selection_reason": "best balance among full coverage, served-user quality, and test stability"
         }
-      }
+      },
+      "readiness_note": "å›ºå®š user_after_src_filter>=3 çš„ recent-2y full diagnostic artifactï¼›å…¨å±€æŒ‡æ ‡ä½ŽäºŽ user>=2 ä½† served-user test HitRate@100 æœ€ç¨³ï¼Œä»�ä¿�æŒ� DIAGNOSTIC_ONLYï¼Œä¸�è¿›å…¥ READY stoploss sourcesã€‚"
     },
     "itemcf_weak": {
-      "status": "DIAGNOSTIC_ONLY",
+      "status": "READY_GUARDED_SOURCE_ADAPTER_READY",
       "method_doc": "dic/recall_methods/itemcf_weak/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_guarded/source_index_manifest.json",
-      "latest_row_count": 345,
-      "latest_peak_rss_mb": 38,
-      "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
-      "role": "broad_item_neighbor_recall",
+      "role": "broad_item_neighbor_recall_src3_dst3_user2_keep_hot_cosine_source",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_train_only_selected_itemcf_edge_rows_for_source_adapter",
+        "formal_quantity_policy": "selected_valid_best_src3_dst3_user2_rows",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "custom_dataset_policy",
+        "policy_type": "recent_2y_train_only_src3_dst3_user2_keep_hot_cosine_source",
         "custom_dataset_required": true,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/itemcf_weak_custom_dataset_manifest.json",
+        "dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_weak_cold_filtered_valgrid_20260606c/cold_u2_i3_cosine_seed200/itemcf_weak/method_dataset_manifest.json",
+        "smoke_dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/collab_v1_smoke/itemcf_weak/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "method_specific_eligible_users",
-          "heavy_cf_eligible_or_medium_behavior",
-          "guarded_batched_generation",
-          "memory_managed_generation"
+          "recent_2y_train_only_governance",
+          "canonical_train_interactions",
+          "canonical_items",
+          "user_sequences_train",
+          "train_only_user_quality_profile",
+          "train_only_item_quality_profile",
+          "train_only_item_frequency"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -388,97 +489,163 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Use method-specific train-only custom dataset for heavy_cf_eligible_or_medium_behavior users with guarded batching and memory management. P2 method dataset must use governance_train_only inputs with local_formal_default resource boundaries before any downstream source artifact step.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_weak source identity, artifact gate evidence, and resource guard evidence.",
-        "eligible_user_policy": "heavy_cf_eligible_or_medium_behavior",
-        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_schema_gate_validation_only",
+            "quantity_policy": "small_bounded_smoke",
+            "promotion_allowed": false
+          },
+          "formal": {
+            "purpose": "official_train_only_selected_itemcf_edge_rows_for_source_adapter",
+            "quantity_policy": "selected_valid_best_src3_dst3_user2_rows",
+            "artifact": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
           "pool1000_allowed": false
         },
-        "readiness_artifacts": [
-          "outputs/recall/pool500_sidecar_fix/itemcf_weak_target500_guarded/source_index_manifest.json"
+        "status": "READY_GUARDED_SOURCE_ADAPTER_READY",
+        "notes": "Selected src3/dst3/user2 keep-hot cosine ItemCF weak source adapter is built from train-only method rows and attached as the default itemcf_weak source manifest for recall-only smoke/main-route loading. The source manifest intentionally remains DIAGNOSTIC_ONLY with candidate_generation_allowed=false, ranking replacement=false, pool1000=false, and promotion=false; route contribution is audited separately before any final promotion claim.",
+        "matrix_manifest_path": null,
+        "readiness_semantics": "SOURCE_ADAPTER_READY_DEFAULT_MANIFEST_ATTACHED_ROUTE_GATED",
+        "source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json"
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json",
+      "latest_row_count": 16454229,
+      "eligible_user_policy": "user_after_item_filter_min_items_2",
+      "latest_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_weak_cold_filtered_valgrid_20260606c/cold_u2_i3_cosine_seed200/itemcf_weak/method_dataset_manifest.json",
+      "latest_evaluation_report": "outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/src_dst_onepass_screen_20260606a/screen_report.json",
+      "readiness_evidence": {
+        "smoke_row_count": 4152,
+        "formal_row_count": 17866,
+        "formal_unique_pair_count": 8933,
+        "formal_candidate_user_rate": 0.004268,
+        "formal_raw_recall_at_500": 0.0,
+        "formal_in_universe_recall_at_500": 0.0,
+        "decision": "source_adapter_ready_default_manifest_attached_route_gated",
+        "blockers": [
+          "global_route_gate_not_final_promotion",
+          "ranking_input_replacement_forbidden",
+          "pool1000_forbidden"
         ],
-        "status": "DIAGNOSTIC_ONLY",
-        "notes": "Heavy resource item-CF method remains diagnostic-only; custom dataset and guard evidence do not permit ranking replacement. P2 resource boundary metadata is dataset-scale governance only and remains dataset-contract-only.",
-        "method_specific_resource_boundary": {
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "itemcf_weak_edges_v1",
-            "sampling_unit": "user_positive_sequence_to_item_pairs",
-            "eligible_user_buckets": [
-              "medium_behavior",
-              "collaborative_rich"
-            ],
-            "eligible_item_bucket": "cf_ready",
-            "over_hot_control": "cap_or_downweight",
-            "coverage_mode": "broad"
-          },
-          "max_output_users": 300000,
-          "max_items_per_user": 50,
-          "max_item_user_freq": 5000,
-          "min_pair_support": 1,
-          "score_policy": "weighted_cooc_cosine_normalized_v1",
-          "active_user_penalty_policy": "round(1 / log1p(filtered_sequence_len), 6)",
-          "itemcf_score_formula": "round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)",
-          "weighted_cooc_feature": "weighted_cooc",
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_output_users": 1000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 5000,
-              "min_pair_support": 1,
-              "top_k_per_seed": 100
-            },
-            "diagnostic": {
-              "max_output_users": 50000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 5000,
-              "min_pair_support": 1,
-              "top_k_per_seed": 100
-            },
-            "local_formal": {
-              "max_output_users": 300000,
-              "max_items_per_user": 50,
-              "max_item_user_freq": 5000,
-              "min_pair_support": 1,
-              "top_k_per_seed": 100
-            }
-          },
-          "itemcf_feature_schema": "itemcf_edge_features_v1",
-          "top_k_per_seed": 100
-        }
+        "rpa_lite_diagnostic_replay": {
+          "manifest": "outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/rpa_lite_replay_manifest.json",
+          "posthoc_eval_report": "outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/posthoc_eval/evaluation_report.json",
+          "no_eval_label_selection_audit": "outputs/recall/pool500_method_diagnostics/recent_2y/itemcf_weak/rpa_lite_diagnostic_replay_v1/no_eval_label_selection_audit.json",
+          "artifact_type": "diagnostic_replay_artifact",
+          "ready_source_artifact": false,
+          "candidate_generation_allowed": false,
+          "ranking_input_replacement_allowed": false,
+          "pool1000_allowed": false,
+          "promotion_allowed": false,
+          "raw_recall_at_500": 0.026407,
+          "in_universe_recall_at_500": 0.050346,
+          "candidate_user_rate": 0.928158,
+          "decision": "diagnostic_replay_artifact_only_not_ready_source"
+        },
+        "current_best_variant": "src3_dst3_user2_keep_hot_cosine",
+        "valid_quick_raw_recall_at_500": 0.034482,
+        "valid_quick_candidate_user_rate": 0.951935,
+        "formal_flat_dataset_required": true,
+        "flat_method_dataset_rows_written": true,
+        "source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json",
+        "source_row_count": 16454229,
+        "source_shard_count": 64
+      },
+      "latest_matrix_manifest": null,
+      "matrix_readiness": {
+        "status": "DELETED_HISTORICAL_NON_SELECTED_ARTIFACT",
+        "readiness_semantics": "CURRENT_ROUTE_USES_SOURCE_ADAPTER_NOT_MATRIX_ARTIFACT",
+        "artifact_type": "none_current_source_adapter_uses_sharded_item_pair_source_index",
+        "matrix_manifest": null,
+        "prior_matrix_manifest": "outputs/recall/itemcf_matrices/recent_2y/itemcf_weak_keep_hot_src2_dst3_filter_before_build_traditional_matrix_v1/matrix_manifest.json",
+        "cleanup_record": "dic/recall_methods/itemcf_weak/CLEANUP_RECORD_2026_06_07.md",
+        "dataset_variant": "src3_dst3_user2_keep_hot_cosine_v1",
+        "filter_timing": "before_cooccurrence_matrix_build",
+        "src_min_positive_user_count": 3,
+        "dst_min_positive_user_count": 3,
+        "user_after_item_filter_min_items": 2,
+        "allow_hot_dst": true,
+        "flat_method_dataset_rows_written": true,
+        "smoke_dataset_role": "program_schema_gate_validation_only",
+        "prior_src_item_count": 421365,
+        "prior_edge_count": 17141611,
+        "prior_max_neighbors_per_src": 200,
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false
+      },
+      "promotion_recommendation": {
+        "decision": "ready_guarded_as_source_adapter_and_default_manifest_attached",
+        "reason": "train-only src3/dst3/user2 keep-hot cosine source adapter is built and loadable; final promotion, ranking replacement, and pool1000 remain blocked by governance flags and require separate global route-gate evidence."
+      },
+      "governance": {
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false,
+        "main_route_merge_requires_global_gate": true
+      },
+      "latest_source_manifest": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json",
+      "source_readiness": {
+        "status": "READY_GUARDED_SOURCE_ADAPTER_READY",
+        "readiness_semantics": "SOURCE_ADAPTER_READY_DEFAULT_MANIFEST_ATTACHED_ROUTE_GATED",
+        "artifact_type": "sharded_item_pair_source_index",
+        "source_index_manifest": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json",
+        "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_weak_cold_filtered_valgrid_20260606c/cold_u2_i3_cosine_seed200/itemcf_weak/method_dataset_manifest.json",
+        "src_min_positive_user_count": 3,
+        "dst_min_positive_user_count": 3,
+        "user_after_item_filter_min_items": 2,
+        "allow_hot_dst": true,
+        "score_policy": "weighted_cooc_cosine_normalized_v1",
+        "row_count": 16454229,
+        "edge_count": 16454229,
+        "shard_count": 64,
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false
       }
     },
     "itemcf_strong": {
-      "status": "DIAGNOSTIC_ONLY",
+      "status": "READY_CANDIDATE",
       "method_doc": "dic/recall_methods/itemcf_strong/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json",
-      "latest_row_count": 1536320,
-      "latest_peak_rss_mb": 37,
-      "eligible_user_policy": "sequence_sufficient_or_collaborative_rich_for_relaxed_strong_itemcf",
-      "role": "high_confidence_item_neighbor_recall",
+      "role": "high_confidence_item_neighbor_supplemental_source",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "custom_dataset_policy",
+        "policy_type": "recent_2y_train_only_relaxed_strong_supplemental_itemcf_edges",
         "custom_dataset_required": true,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/itemcf_strong_custom_dataset_manifest.json",
+        "dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "method_specific_eligible_users",
-          "heavy_cf_eligible",
-          "guarded_batched_generation",
-          "memory_managed_generation"
+          "recent_2y_train_only_governance",
+          "train_only_user_quality_profile",
+          "train_only_item_quality_profile",
+          "train_only_item_frequency",
+          "user_sequences_train"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -486,109 +653,313 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Use independently rebuilt train-only relaxed seed-src v3 method datasets for sequence_sufficient/collaborative_rich users with guarded batching and memory management. P2 method dataset must use governance_train_only inputs and recompute pair support, weighted cooc, itemcf score, and per-seed topK per scale tier before any downstream source artifact step.",
-        "readiness_evaluation_scope": "Evaluate readiness only on pool500 eligible users with train-only inputs, canonical itemcf_strong source identity, formal sharded source artifact evidence, and resource guard evidence.",
-        "eligible_user_policy": "sequence_sufficient_or_collaborative_rich_for_relaxed_strong_itemcf",
-        "final_merge_scope": "Merge back only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate and resource guard checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "bounded_5000_user_smoke",
+            "row_count": 30466,
+            "user_count": 5000,
+            "item_count": 24576
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+            "row_count": 514216,
+            "user_count": 82838,
+            "item_count": 215713
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
+          "candidate_generation_allowed": true,
+          "candidate_generation_scope": "route_gate_candidate_only",
           "ranking_input_replacement_allowed": false,
-          "pool1000_allowed": false
+          "pool1000_allowed": false,
+          "promotion_allowed": false,
+          "main_route_merge_requires_global_gate": true
         },
-        "readiness_artifacts": [
-          "outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_smoke_v3_real/itemcf_strong/method_dataset_manifest.json",
-          "outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_diagnostic_v3/itemcf_strong/method_dataset_manifest.json",
-          "outputs/recall/pool500_method_datasets/itemcf_strong_relaxed_seedsrc_local_formal_v3/itemcf_strong/method_dataset_manifest.json",
-          "outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json"
-        ],
-        "status": "DIAGNOSTIC_ONLY",
-        "notes": "Heavy resource item-CF method remains diagnostic-only; relaxed seed-src v3 formal sharded evidence does not permit READY promotion or ranking replacement. P2 resource boundary metadata is dataset-scale governance only and remains dataset-contract-only.",
-        "method_specific_resource_boundary": {
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "itemcf_strong_relaxed_edges_v1",
-            "sampling_unit": "user_positive_sequence_to_item_pairs",
-            "eligible_user_buckets": [
-              "sequence_sufficient",
-              "collaborative_rich"
-            ],
-            "eligible_item_buckets": [
-              "cf_ready",
-              "embedding_ready"
-            ],
-            "eligible_src_item_buckets": [
-              "cf_ready",
-              "embedding_ready"
-            ],
-            "eligible_dst_item_buckets": [
-              "cf_ready",
-              "embedding_ready"
-            ],
-            "over_hot_control": "allow_hot_src_seed_but_exclude_hot_dst_item",
-            "pair_window_control": "strong_seed_to_positive_sequence_window",
-            "directed_seed_to_dst_only": true
-          },
-          "max_output_users": 160000,
-          "max_items_per_user": 60,
-          "max_item_user_freq": 8000,
-          "min_pair_support": 1,
-          "score_policy": "weighted_cooc_cosine_normalized_v1",
-          "active_user_penalty_policy": "round(1 / log1p(filtered_sequence_len), 6)",
-          "itemcf_score_formula": "round(weighted_cooc / sqrt(src_user_count * dst_user_count), 6)",
-          "weighted_cooc_feature": "weighted_cooc",
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_output_users": 5000,
-              "max_items_per_user": 60,
-              "max_item_user_freq": 8000,
-              "min_pair_support": 1,
-              "top_k_per_seed": 150
-            },
-            "diagnostic": {
-              "max_output_users": 80000,
-              "max_items_per_user": 60,
-              "max_item_user_freq": 8000,
-              "min_pair_support": 1,
-              "top_k_per_seed": 150
-            },
-            "local_formal": {
-              "max_output_users": 160000,
-              "max_items_per_user": 60,
-              "max_item_user_freq": 8000,
-              "min_pair_support": 1,
-              "top_k_per_seed": 150
-            }
-          },
-          "itemcf_feature_schema": "itemcf_edge_features_v1",
-          "top_k_per_seed": 150
+        "status": "READY_CANDIDATE",
+        "notes": "Recent-2y relaxed strong supplemental ItemCF restores source coverage under train-only governance. It is a supplemental-ready candidate source, not a strict diagnostic and not a main-route READY source yet.",
+        "latest_evidence": {
+          "smoke_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/smoke/itemcf_strong/method_dataset_manifest.json",
+          "formal_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json",
+          "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json",
+          "audit_evidence": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/audit_evidence.json",
+          "single_source_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/single_source_eval_10000.json",
+          "source_edge_count": 514216,
+          "single_source_eval_target_user_count": 10000,
+          "single_source_eval_seed_hit_count": 6141,
+          "single_source_eval_user_coverage_count": 6128,
+          "single_source_eval_candidate_row_count": 188494,
+          "recall_at_500": 0.000151,
+          "hit_rate_at_500": 0.0002,
+          "candidate_hot_share": 0.0,
+          "strong_unique_share_vs_weak": 0.999867,
+          "audit_status": "PASS",
+          "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/purchase_label_eval_remote_full.json",
+          "purchase_eval_target_user_count": 40043,
+          "purchase_eval_seed_hit_rate": 0.666409,
+          "purchase_eval_user_coverage_rate": 0.66541,
+          "purchase_eval_label_in_dst_universe_ratio": 0.016898,
+          "purchase_eval_recall_at_500": 0.000211,
+          "purchase_eval_hit_rate_at_500": 0.000275,
+          "purchase_eval_in_universe_recall_at_500": 0.012514,
+          "strong_positive_eval_target_user_count": 40043,
+          "strong_positive_eval_recall_at_500": 0.000211,
+          "strong_positive_eval_hit_rate_at_500": 0.000275,
+          "strong_positive_eval_in_universe_recall_at_500": 0.012514,
+          "augcf_lite_experiment_status": "EXPERIMENTAL_DIAGNOSTIC_ONLY_HOT_DST_GAIN_NOT_PROMOTED",
+          "augcf_lite_hot_dst_purchase_recall_at_500": 0.025721,
+          "augcf_lite_hot_dst_candidate_hot_share": 0.960442,
+          "augcf_lite_nohot_purchase_recall_at_500": 0.000192,
+          "augcf_lite_nohot_candidate_hot_share": 0.0,
+          "augcf_controlled_v2_experiment_status": "EXPERIMENTAL_DIAGNOSTIC_ONLY_Q20_Q30_ROUTE_GATE_CANDIDATES_NOT_PROMOTED",
+          "augcf_controlled_v2_q10_purchase_recall_at_500": 0.005037,
+          "augcf_controlled_v2_q10_candidate_hot_share": 0.440016,
+          "augcf_controlled_v2_q20_purchase_recall_at_500": 0.010688,
+          "augcf_controlled_v2_q20_candidate_hot_share": 0.618814,
+          "augcf_controlled_v2_q30_purchase_recall_at_500": 0.015129,
+          "augcf_controlled_v2_q30_candidate_hot_share": 0.71732,
+          "augcf_controlled_v2_q50_purchase_recall_at_500": 0.019608,
+          "augcf_controlled_v2_q50_candidate_hot_share": 0.823463
         }
-      }
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json",
+      "latest_row_count": 514216,
+      "recent2y_artifacts": {
+        "smoke_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/smoke/itemcf_strong/method_dataset_manifest.json",
+        "formal_method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/formal/itemcf_strong/method_dataset_manifest.json",
+        "formal_source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json",
+        "audit_evidence": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_relaxed_supplemental_v1/audit_evidence.json",
+        "single_source_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/single_source_eval_10000.json",
+        "formal_edge_count": 514216,
+        "formal_src_item_count": 159923,
+        "formal_dst_item_count": 72536,
+        "source_shard_count": 8,
+        "seed_hit_user_count_10k": 6141,
+        "seed_hit_rate_10k": 0.6141,
+        "user_coverage_count_10k": 6128,
+        "user_coverage_rate_10k": 0.6128,
+        "candidate_row_count_10k": 188494,
+        "recall_at_500_10k": 0.000151,
+        "hit_rate_at_500_10k": 0.0002,
+        "candidate_hot_share": 0.0,
+        "strong_unique_share_vs_weak": 0.999867,
+        "no_holdout_audit": "PASS",
+        "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y_eval/purchase_label_eval_remote_full.json",
+        "purchase_eval_remote_host": "server:/home/luo/RS_agent_remote",
+        "purchase_eval_actual_target_user_count_union": 53653,
+        "purchase_eval_target_user_count": 40043,
+        "purchase_eval_seed_hit_rate": 0.666409,
+        "purchase_eval_user_coverage_rate": 0.66541,
+        "purchase_eval_candidate_row_count": 840614,
+        "purchase_eval_recall_at_500": 0.000211,
+        "purchase_eval_hit_rate_at_500": 0.000275,
+        "purchase_eval_in_universe_recall_at_500": 0.012514,
+        "purchase_eval_label_in_dst_universe_ratio": 0.016898,
+        "strong_positive_eval_recall_at_500": 0.000211,
+        "strong_positive_eval_hit_rate_at_500": 0.000275,
+        "all_positive_eval_recall_at_500": 0.000194,
+        "all_positive_eval_hit_rate_at_500": 0.000259,
+        "augcf_lite_experiments": {
+          "status": "EXPERIMENTAL_DIAGNOSTIC_ONLY",
+          "remote_host": "server:/home/luo/RS_agent_remote",
+          "formal_50k_hot_dst": {
+            "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_lite/v1/formal_50k/method_dataset_manifest.json",
+            "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_augcf_lite_recent2y/source_index_manifest.json",
+            "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_augcf_lite_recent2y_eval/purchase_label_eval_remote_full.json",
+            "row_count": 6174682,
+            "observed_edge_count": 5010969,
+            "pseudo_edge_count": 1163713,
+            "purchase_eval_target_user_count": 40043,
+            "purchase_eval_user_coverage_rate": 0.598706,
+            "purchase_eval_label_in_dst_universe_ratio": 0.824084,
+            "purchase_eval_recall_at_500": 0.025721,
+            "purchase_eval_hit_rate_at_500": 0.031416,
+            "purchase_eval_in_universe_recall_at_500": 0.031212,
+            "candidate_hot_share": 0.960442,
+            "interpretation": "large raw gain but dominated by hot candidates; diagnostic only, requires hotness/route control before promotion"
+          },
+          "formal_50k_nohot_dst": {
+            "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_lite/v1/formal_50k_nohot/method_dataset_manifest.json",
+            "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_nohot_augcf_lite_recent2y/source_index_manifest.json",
+            "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_lite_v1/itemcf_strong/formal_50k_nohot_augcf_lite_recent2y_eval/purchase_label_eval_remote_full.json",
+            "row_count": 2308758,
+            "observed_edge_count": 311844,
+            "pseudo_edge_count": 1996914,
+            "purchase_eval_target_user_count": 40043,
+            "purchase_eval_user_coverage_rate": 0.585471,
+            "purchase_eval_label_in_dst_universe_ratio": 0.019378,
+            "purchase_eval_recall_at_500": 0.000192,
+            "purchase_eval_hit_rate_at_500": 0.00025,
+            "purchase_eval_in_universe_recall_at_500": 0.009921,
+            "candidate_hot_share": 0.0,
+            "interpretation": "hot-controlled ablation does not beat relaxed baseline; AugCF-lite gain mainly comes from expanding into hot dst universe"
+          },
+          "controlled_v2": {
+            "status": "EXPERIMENTAL_DIAGNOSTIC_ONLY",
+            "remote_host": "server:/home/luo/RS_agent_remote",
+            "source_variant": "itemcf_strong_augcf_controlled_v2",
+            "controlled_hot_budget": true,
+            "common": {
+              "max_src_items": 50000,
+              "top_k_per_src": 100,
+              "candidate_limit": 500,
+              "valid_test_role": "evaluation_only",
+              "promotion_allowed": false,
+              "ranking_input_replacement_allowed": false
+            },
+            "quota_grid": {
+              "q10": {
+                "max_hot_share_per_src": 0.1,
+                "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q10/formal_50k/method_dataset_manifest.json",
+                "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q10_formal_50k_recent2y/source_index_manifest.json",
+                "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q10_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json",
+                "row_count": 1096254,
+                "observed_edge_count": 1032205,
+                "pseudo_edge_count": 64049,
+                "selected_hot_edge_count": 750000,
+                "purchase_eval_target_user_count": 40043,
+                "purchase_eval_user_coverage_rate": 0.598706,
+                "purchase_eval_label_in_dst_universe_ratio": 0.720237,
+                "purchase_eval_recall_at_500": 0.005037,
+                "purchase_eval_hit_rate_at_500": 0.006418,
+                "purchase_eval_in_universe_recall_at_500": 0.006993,
+                "candidate_hot_share": 0.440016
+              },
+              "q20": {
+                "max_hot_share_per_src": 0.2,
+                "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q20/formal_50k/method_dataset_manifest.json",
+                "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q20_formal_50k_recent2y/source_index_manifest.json",
+                "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q20_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json",
+                "row_count": 1845069,
+                "observed_edge_count": 1733341,
+                "pseudo_edge_count": 111728,
+                "selected_hot_edge_count": 1499996,
+                "purchase_eval_target_user_count": 40043,
+                "purchase_eval_user_coverage_rate": 0.598706,
+                "purchase_eval_label_in_dst_universe_ratio": 0.784021,
+                "purchase_eval_recall_at_500": 0.010688,
+                "purchase_eval_hit_rate_at_500": 0.01351,
+                "purchase_eval_in_universe_recall_at_500": 0.013633,
+                "candidate_hot_share": 0.618814
+              },
+              "q30": {
+                "max_hot_share_per_src": 0.3,
+                "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q30/formal_50k/method_dataset_manifest.json",
+                "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q30_formal_50k_recent2y/source_index_manifest.json",
+                "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q30_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json",
+                "row_count": 2592359,
+                "observed_edge_count": 2374633,
+                "pseudo_edge_count": 217726,
+                "selected_hot_edge_count": 2248768,
+                "purchase_eval_target_user_count": 40043,
+                "purchase_eval_user_coverage_rate": 0.598706,
+                "purchase_eval_label_in_dst_universe_ratio": 0.803687,
+                "purchase_eval_recall_at_500": 0.015129,
+                "purchase_eval_hit_rate_at_500": 0.018755,
+                "purchase_eval_in_universe_recall_at_500": 0.018825,
+                "candidate_hot_share": 0.71732
+              },
+              "q50": {
+                "max_hot_share_per_src": 0.5,
+                "method_dataset_manifest": "outputs/recall/pool500_method_datasets/recent_2y/itemcf_strong_augcf_controlled_v2/q50/formal_50k/method_dataset_manifest.json",
+                "source_index_manifest": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q50_formal_50k_recent2y/source_index_manifest.json",
+                "purchase_label_eval_report": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_augcf_controlled_v2/itemcf_strong/q50_formal_50k_recent2y_eval/purchase_label_eval_remote_full.json",
+                "row_count": 3995662,
+                "observed_edge_count": 3454114,
+                "pseudo_edge_count": 541548,
+                "selected_hot_edge_count": 3656705,
+                "purchase_eval_target_user_count": 40043,
+                "purchase_eval_user_coverage_rate": 0.598706,
+                "purchase_eval_label_in_dst_universe_ratio": 0.818797,
+                "purchase_eval_recall_at_500": 0.019608,
+                "purchase_eval_hit_rate_at_500": 0.024124,
+                "purchase_eval_in_universe_recall_at_500": 0.023948,
+                "candidate_hot_share": 0.823463
+              }
+            },
+            "interpretation": "per-src hot budget creates a continuous recall/hotness tradeoff, but user-level candidate hot share remains elevated after multi-seed aggregation; q20/q30 are route-gate diagnostic candidates only",
+            "decision": "not_promoted_keep_relaxed_baseline_as_latest_artifact",
+            "route_gate_support": {
+              "route_level_augcf_hot_budget_status": "IMPLEMENTED_DIAGNOSTIC_ONLY",
+              "implementation": "rs_lab/experiments/recall/run_full_data_pool500_recall_only.py",
+              "offline_eval_override_cli": "rs_lab/experiments/recall/run_pool500_offline_eval_baseline.py --source-manifest itemcf_strong=source_index_manifest.json",
+              "trigger_policy": "diagnostic_only_true_and_source_variant_contains_augcf_lite_or_augcf_controlled",
+              "max_final_hot_share_per_user_default": 0.3,
+              "max_pseudo_per_user_default": 100,
+              "cap_stage": "after_popular_category_cap_before_fallback_completion",
+              "deletion_scope": "augcf_diagnostic_itemcf_strong_candidates_only",
+              "audit_output": "diagnostic_hot_budget_audit.json",
+              "validation": {
+                "py_compile": "PASS",
+                "targeted_pytest": "tests/test_full_data_pool500_recall_only.py tests/test_pool500_offline_eval_baseline.py -q => 26 passed"
+              },
+              "promotion_allowed": false,
+              "ranking_input_replacement_allowed": false
+            }
+          }
+        }
+      },
+      "eligible_user_policy": "sequence_sufficient_or_collaborative_rich_for_relaxed_strong_itemcf",
+      "promotion_recommendation": "KEEP_AS_READY_CANDIDATE_FOR_ROUTE_GATE",
+      "readiness_note": "SUPPLEMENTAL_READY_CANDIDATE: source coverage recovered, but route-level marginal lift and overlap gate are still required before main-route merge.",
+      "governance": {
+        "candidate_generation_allowed": true,
+        "candidate_generation_scope": "route_gate_candidate_only",
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "main_route_merge_requires_global_gate": true,
+        "source_adapter_manifest_remains_diagnostic_boundary": true
+      },
+      "blockers": [
+        "route_level_marginal_gain_not_yet_measured",
+        "route_level_source_overlap_gate_not_yet_completed",
+        "single_source_recall_at_500_low_0_000151",
+        "source_adapter_manifest_still_fail_closed_for_auto_promotion",
+        "purchase_or_strong_positive_single_source_recall_low_0_000211",
+        "purchase_label_dst_universe_ratio_low_0_016898",
+        "augcf_lite_hot_dst_gain_requires_popularity_and_route_overlap_control",
+        "augcf_lite_nohot_ablation_does_not_improve_baseline",
+        "augcf_controlled_v2_requires_popular_category_overlap_gate",
+        "augcf_controlled_v2_requires_marginal_recall_and_source_share_cap_gate"
+      ]
     },
     "semantic": {
-      "status": "DEFERRED",
+      "status": "READY_CANDIDATE",
       "method_doc": "dic/recall_methods/semantic/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/semantic/manifest.json",
-      "latest_row_count": 0,
-      "eligible_user_policy": "metadata_rich_or_behavior_sparse",
-      "role": "semantic_metadata_recall",
+      "role": "semantic_description_guarded_candidate_recall",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "bounded_target_slice_10000_users_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "deferred_evidence_policy",
+        "policy_type": "recent_2y_train_only_current_dataset_policy",
         "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/semantic_required_artifacts_manifest.json",
+        "dataset_manifest_path": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "train_only_item_metadata",
-          "future_guarded_semantic_artifacts"
+          "recent_2y_train_only_governance",
+          "canonical_items",
+          "user_sequences_train",
+          "semantic_recall_inputs",
+          "semantic_inverted_index",
+          "semantic_recent2y_eligible_user_manifest"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -596,93 +967,151 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Deferred until train-only semantic artifacts exist; no READY generation dataset is claimed. Future P2 dataset must use bounded semantic_seed_metadata_v1 inputs with max_metadata_rows, seed_window, and per_token_item_limit; it is not a lightweight full-statistics route.",
-        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical semantic source identity, and artifact gate evidence.",
-        "eligible_user_policy": "metadata_rich_or_behavior_sparse",
-        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "small_bounded_smoke",
+            "artifact": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_smoke_v1/source_index_manifest.json",
+            "candidate_row_count": 16000,
+            "target_user_count": 200
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+            "artifact": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/source_index_manifest.json",
+            "candidate_row_count": 800000,
+            "target_user_count": 10000,
+            "scope_note": "bounded target slice; not full 50k or no-cap formal"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
-          "pool1000_allowed": false
+          "pool1000_allowed": false,
+          "candidate_generation_allowed": false,
+          "promotion_allowed": false,
+          "final_pool500_ready_claimed": false
         },
-        "readiness_artifacts": [
-          "missing: train-only semantic embedding/index artifact",
-          "missing: pool500 source readiness contract",
-          "required: artifact gate evidence before any READY claim"
+        "status": "READY_CANDIDATE",
+        "notes": "Recent-2y semantic source is now allowed only as a guarded candidate source for description-driven same-type retrieval. Random6 description evidence passes the guard; strict_v2 remains a stress diagnostic. This does not permit ranking replacement, pool1000, promotion, or final pool500 READY."
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/source_index_manifest.json",
+      "latest_row_count": 800000,
+      "eligible_user_policy": "metadata_rich_or_behavior_sparse_recent2y_target_slice",
+      "latest_artifact_scope": "bounded_target_slice_10000_guarded_candidate_source_not_final_ready",
+      "latest_evidence": {
+        "sciomc_research_path": "dic/recall_methods/semantic/RECENT2Y_SCIOMC_RESEARCH.md",
+        "ralplan_path": "dic/recall_methods/semantic/RECENT2Y_REBUILD_PLAN.md",
+        "smoke_source_index_manifest": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_smoke_v1/source_index_manifest.json",
+        "formal_source_index_manifest": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/source_index_manifest.json",
+        "formal_method_dataset_manifest": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/method_dataset_manifest.json",
+        "formal_evaluation_report": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/evaluation_report.json",
+        "formal_target_user_count": 10000,
+        "formal_user_coverage_count": 10000,
+        "formal_candidate_row_count": 800000,
+        "formal_unique_item_count": 18452,
+        "formal_no_holdout_audit": "PASS",
+        "formal_resource_runtime_seconds": 154.504036,
+        "candidate_file_size_bytes": 2904229937
+      },
+      "promotion_recommendation": {
+        "decision": "guarded_candidate_source_only",
+        "reason": "description-based same-type retrieval has passed random guarded evidence, but strict stress cases and full route evidence still block final READY/promotion.",
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false
+      },
+      "promotion_blockers": [
+        "bounded_target_slice_10k_is_not_full_50k_or_no_cap_formal",
+        "strict_stress_fixture_still_has_bad_intent_cases",
+        "route_gate_evidence_is_guarded_candidate_only",
+        "ranking_input_replacement_not_allowed",
+        "final_pool500_ready_not_claimed"
+      ],
+      "candidate_storage_policy": {
+        "mode": "lean_reference",
+        "reason": "avoid repeating recent-2y item metadata in every user-item candidate row",
+        "candidate_row_keeps": [
+          "user_id",
+          "item_id",
+          "source",
+          "canonical_source",
+          "sources",
+          "source_scores",
+          "score",
+          "rank",
+          "semantic_token_overlap",
+          "semantic_category_overlap"
         ],
-        "status": "DEFERRED",
-        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness. Bounded semantic seed metadata policy remains deferred and remains dataset-contract-only.",
-        "method_specific_data_definition": {
-          "dataset_name": "semantic_seed_metadata_v1",
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "semantic_seed_metadata_v1",
-            "sampling_unit": "user_seed_item_metadata_buckets",
-            "seed_source": "train_only_history",
-            "metadata_scope": "train_only_static_allowed",
-            "require_usable_title_or_category": true,
-            "generic_token_control": "filter_by_token_df"
-          },
-          "max_metadata_rows": 300000,
-          "seed_window": 80,
-          "per_token_item_limit": 200,
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_metadata_rows": 20000,
-              "max_target_users": 500,
-              "seed_window": 20,
-              "max_seed_items_per_user": 20,
-              "per_token_item_limit": 500,
-              "max_category_items": 1000
-            },
-            "diagnostic": {
-              "max_metadata_rows": 150000,
-              "max_target_users": 500,
-              "seed_window": 50,
-              "max_seed_items_per_user": 50,
-              "per_token_item_limit": 1000,
-              "max_category_items": 3000
-            },
-            "local_formal": {
-              "max_metadata_rows": 300000,
-              "max_target_users": 500,
-              "seed_window": 80,
-              "max_seed_items_per_user": 80,
-              "per_token_item_limit": 200,
-              "max_category_items": 5000
-            }
-          },
-          "max_target_users": 500,
-          "max_seed_items_per_user": 80,
-          "max_category_items": 5000
+        "item_metadata_ref": "data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_recall_inputs.jsonl",
+        "semantic_index_ref": "data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_inverted_index.jsonl"
+      },
+      "route_integration": {
+        "main_route_merge_status": "MERGED_AS_GUARDED_CANDIDATE_SOURCE",
+        "main_route_candidate_source_allowed": true,
+        "main_route_role": "description_relevance_semantic_candidate_source",
+        "evidence_role": "description_relevance_guard_not_final_promotion",
+        "description_evidence_gate": "outputs/recall/full_data_pool500_recall_only_semantic_guarded_smoke_100/semantic_description_evidence_gate.json",
+        "random6_diagnostic_report": "outputs/diagnostics/semantic_description_random6_20260608/semantic_description_recall_strict_report.json",
+        "strict_stress_diagnostic_report": "outputs/diagnostics/semantic_description_recall_strict_v2_20260608/semantic_description_recall_strict_report.json",
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false
+      },
+      "description_retrieval_evidence": {
+        "guarded_random6": {
+          "report": "outputs/diagnostics/semantic_description_random6_20260608/semantic_description_recall_strict_report.json",
+          "query_count": 6,
+          "avg_strict_precision_at_10": 0.9,
+          "avg_required_precision_at_10": 1.0,
+          "avg_bad_intent_rate_at_10": 0.1,
+          "label_inputs_role": "not_used",
+          "oracle_label_injection": false
+        },
+        "strict_stress_v2": {
+          "report": "outputs/diagnostics/semantic_description_recall_strict_v2_20260608/semantic_description_recall_strict_report.json",
+          "query_count": 12,
+          "avg_strict_precision_at_10": 0.483,
+          "avg_bad_intent_rate_at_10": 0.267,
+          "role": "stress_diagnostic_and_optimization_backlog_not_single_promotion_veto"
         }
       }
     },
     "semantic_title_category_expansion": {
       "status": "DEFERRED",
       "method_doc": "dic/recall_methods/semantic_title_category_expansion/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/semantic_title_category_expansion/manifest.json",
-      "latest_row_count": 0,
-      "eligible_user_policy": "metadata_rich_or_behavior_sparse",
-      "role": "semantic_category_expansion",
+      "role": "merged_into_semantic_live_not_independent_online_source",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "server_required_for_50000_user_formal_build",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "deferred_evidence_policy",
-        "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/semantic_title_category_expansion_required_artifacts_manifest.json",
+        "policy_type": "recent_2y_train_only_current_dataset_policy",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "train_only_title_category_metadata",
-          "future_guarded_semantic_artifacts"
+          "recent_2y_train_only_governance",
+          "canonical_train_interactions",
+          "canonical_items",
+          "user_sequences_train"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -690,93 +1119,77 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Deferred until train-only title/category semantic expansion artifacts exist; no READY generation dataset is claimed. Future P2 dataset must use bounded semantic_seed_metadata_v1 inputs with max_metadata_rows, seed_window, and per_token_item_limit; it is not a lightweight full-statistics route.",
-        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical semantic_title_category_expansion source identity, and artifact gate evidence.",
-        "eligible_user_policy": "metadata_rich_or_behavior_sparse",
-        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "small_bounded_smoke"
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
           "pool1000_allowed": false
         },
-        "readiness_artifacts": [
-          "missing: train-only title/category semantic expansion artifact",
-          "missing: pool500 source readiness contract",
-          "required: artifact gate evidence before any READY claim"
-        ],
         "status": "DEFERRED",
-        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness. Bounded semantic seed metadata policy remains deferred and remains dataset-contract-only.",
-        "method_specific_data_definition": {
-          "dataset_name": "semantic_seed_metadata_v1",
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "semantic_seed_metadata_v1",
-            "sampling_unit": "user_seed_item_metadata_buckets",
-            "seed_source": "train_only_history",
-            "metadata_scope": "train_only_static_allowed",
-            "require_usable_title_or_category": true,
-            "generic_token_control": "filter_by_token_df"
-          },
-          "max_metadata_rows": 300000,
-          "seed_window": 80,
-          "per_token_item_limit": 200,
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_metadata_rows": 20000,
-              "max_target_users": 500,
-              "seed_window": 20,
-              "max_seed_items_per_user": 20,
-              "per_token_item_limit": 500,
-              "max_category_items": 1000
-            },
-            "diagnostic": {
-              "max_metadata_rows": 150000,
-              "max_target_users": 500,
-              "seed_window": 50,
-              "max_seed_items_per_user": 50,
-              "per_token_item_limit": 1000,
-              "max_category_items": 3000
-            },
-            "local_formal": {
-              "max_metadata_rows": 300000,
-              "max_target_users": 500,
-              "seed_window": 80,
-              "max_seed_items_per_user": 80,
-              "per_token_item_limit": 200,
-              "max_category_items": 5000
-            }
-          },
-          "max_target_users": 500,
-          "max_seed_items_per_user": 80,
-          "max_category_items": 5000
-        }
+        "notes": "Historical semantic title/category expansion artifacts are retained for provenance only. The independent source is retired from online registration because the capability is covered by semantic live description recall; it must not enter online_route.allowed_sources, promotion, ranking replacement, pool1000, or final-ready claims.",
+        "formal_blocker": "merged_into_semantic_live_not_independent_online_source"
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/source_index_manifest.json",
+      "latest_row_count": 15526,
+      "eligible_user_policy": "retired_independent_source_covered_by_semantic_live_description_recall",
+      "current_artifacts": {
+        "smoke_source_index_manifest": "outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/source_index_manifest.json",
+        "smoke_eval_report": "outputs/eval/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/method_source_eval_report.json",
+        "formal_source_index_manifest": null,
+        "formal_status": "blocked_local_resource_requires_server",
+        "formal_partial_checkpoint": "outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_formal_v1/checkpoint.json"
+      },
+      "promotion_recommendation": {
+        "decision": "do_not_promote_to_main_route_yet",
+        "reason": "formal artifact, source overlap, route gate, and marginal contribution evidence are missing",
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false
       }
     },
     "co_visit_fallback_repair": {
       "status": "DEFERRED",
       "method_doc": "dic/recall_methods/co_visit_fallback_repair/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/co_visit_fallback_repair/manifest.json",
-      "latest_row_count": 0,
-      "eligible_user_policy": "cf_weak_connection_repair",
-      "role": "fallback_repair",
+      "role": "fallback_underfill_repair_guarded_task_source",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "deferred_evidence_policy",
-        "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/co_visit_fallback_repair_required_artifacts_manifest.json",
+        "policy_type": "recent_2y_train_only_current_dataset_policy",
+        "custom_dataset_required": true,
+        "dataset_manifest_path": "outputs/recall/pool500_method_sources_newdata/co_visit_recent2y_formal_dataset_v1/manifest.json",
+        "smoke_dataset_manifest_path": "outputs/recall/pool500_method_sources_newdata/co_visit_recent2y_smoke_dataset_v1/manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "train_only_co_visit_graph",
-          "future_guarded_repair_artifacts"
+          "recent_2y_train_only_governance",
+          "canonical_train_interactions",
+          "canonical_items",
+          "user_sequences_train",
+          "train_scope_metadata_views"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -784,106 +1197,114 @@
           "test",
           "clean_10000",
           "LOPO",
+          "oracle",
+          "eval_label",
+          "pool1000",
           "youtube_dnn",
-          "pool1000"
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Deferred until train-only co-visit repair artifacts exist; no READY generation dataset is claimed. Future P2 dataset must use bounded co_visit_fallback_repair_v1 inputs with seed_window, candidate_per_seed, per_user, and max_bucket_candidates; it is not a lightweight full-statistics route.",
-        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical co_visit_fallback_repair source identity, and artifact gate evidence.",
-        "eligible_user_policy": "cf_weak_connection_repair",
-        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "stratified_10000_resource_validation_only",
+            "target_user_count": 10000
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+            "target_user_count": 1558964
+          }
+        },
+        "source_artifact_contract": {
+          "algorithm_scope": "train_transition_metadata_repair_v0",
+          "complete_co_visit_graph_claimed": false,
+          "required_outputs": [
+            "method_dataset_manifest.json",
+            "source_index_manifest.json",
+            "candidates.jsonl",
+            "coverage_audit.json",
+            "undercoverage_audit.json",
+            "resource_audit.json",
+            "no_holdout_audit.json"
+          ],
+          "formal_artifact_status": "blocked_until_sharded_or_remote_formal_build"
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
+          "candidate_generation_allowed": false,
           "ranking_input_replacement_allowed": false,
-          "pool1000_allowed": false
+          "pool1000_allowed": false,
+          "promotion_allowed": false,
+          "final_pool500_ready_claimed": false
         },
-        "readiness_artifacts": [
-          "missing: train-only co-visit repair artifact",
-          "missing: pool500 source readiness contract",
-          "required: artifact gate evidence before any READY claim"
-        ],
         "status": "DEFERRED",
-        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness. Bounded co-visit repair policy remains deferred and remains dataset-contract-only.",
-        "method_specific_data_definition": {
-          "dataset_name": "co_visit_fallback_repair_v1",
-          "input_scope": "governance_train_only",
-          "scale_tier": "local_formal_default",
-          "selection_policy_version": "p2_method_dataset_policy_v1",
-          "selection_strategy": {
-            "policy_name": "co_visit_fallback_repair_v1",
-            "sampling_unit": "user_seed_item_to_bounded_co_visit_edges",
-            "edge_scope": "train_only_co_visit_edges",
-            "min_pair_support_policy": "required",
-            "distinct_user_support_policy": "required",
-            "metadata_repair_constraints": "required",
-            "hot_noise_control": "strict_cap"
-          },
-          "seed_window": 80,
-          "items_per_seed": 100,
-          "items_per_user": 500,
-          "max_bucket_items": 5000,
-          "p2_contract_scope": "method_dataset_only",
-          "default_tier": "local_formal",
-          "scale_tiers": {
-            "smoke": {
-              "max_target_users": 500,
-              "seed_window": 20,
-              "max_seed_items_per_user": 20,
-              "items_per_seed": 40,
-              "items_per_user": 120,
-              "max_bucket_items": 1000,
-              "min_pair_support": 1,
-              "min_distinct_user_support": 1,
-              "max_item_user_frequency": 3000
-            },
-            "diagnostic": {
-              "max_target_users": 500,
-              "seed_window": 50,
-              "max_seed_items_per_user": 50,
-              "items_per_seed": 80,
-              "items_per_user": 300,
-              "max_bucket_items": 3000,
-              "min_pair_support": 2,
-              "min_distinct_user_support": 2,
-              "max_item_user_frequency": 3000
-            },
-            "local_formal": {
-              "max_target_users": 500,
-              "seed_window": 80,
-              "max_seed_items_per_user": 80,
-              "items_per_seed": 100,
-              "items_per_user": 500,
-              "max_bucket_items": 5000,
-              "min_pair_support": 2,
-              "min_distinct_user_support": 2,
-              "max_item_user_frequency": 3000
-            }
-          },
-          "max_target_users": 500,
-          "max_seed_items_per_user": 80,
-          "min_pair_support": 2,
-          "min_distinct_user_support": 2,
-          "max_item_user_frequency": 3000
-        }
+        "notes": "Task gate now evaluates fallback completion: target count, duplicate safety, contribution from fallback_seed_metadata_neighbor mapped to co_visit_fallback_repair, popular ratio, and governance flags. This remains guarded fallback repair, not READY promotion."
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources_newdata/co_visit_fallback_repair/co_visit_recent2y_smoke_dataset_20260602/source_index_manifest.json",
+      "latest_row_count": 398326,
+      "eligible_user_policy": "non_cold_start_train_sequence_users_requiring_repair",
+      "latest_artifact_scope": "smoke_program_schema_plus_guarded_fallback_task_audit_not_formal_effect",
+      "readiness_notes": "co_visit_fallback_repair is judged as fallback/underfill repair, not by single-source HitRate/Recall. It may participate in guarded route fallback only when co_visit_fallback_repair_task_audit passes; no final READY or promotion is claimed.",
+      "research_doc": "dic/recall_methods/co_visit_fallback_repair/RECENT2Y_SCIOMC_RESEARCH.md",
+      "rebuild_plan": "dic/recall_methods/co_visit_fallback_repair/RECENT2Y_REBUILD_PLAN.md",
+      "evaluation_report": "outputs/recall/pool500_method_sources_newdata/co_visit_fallback_repair/co_visit_recent2y_evaluation_report_20260603.md",
+      "task_readiness": "FALLBACK_REPAIR_GUARDED_CANDIDATE",
+      "route_integration": {
+        "main_route_merge_status": "MERGED_AS_FALLBACK_REPAIR_TASK_SOURCE_IF_TASK_GATE_PASSES",
+        "main_route_candidate_source_allowed": true,
+        "main_route_role": "underfill_completion_and_metadata_neighbor_repair",
+        "primary_acceptance_metric": "fallback_underfill_repair_completion",
+        "not_primary_metrics": [
+          "HitRate",
+          "Recall"
+        ],
+        "task_audit": "outputs/recall/full_data_pool500_recall_only_semantic_guarded_smoke_100/co_visit_fallback_repair_task_audit.json",
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false
+      },
+      "online_exposure": {
+        "online_exposure_mode": "artifact_backed_pool500_only",
+        "serving_artifact_backed_allowed": true,
+        "serving_online_candidate_generation_allowed": false,
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false,
+        "batch_scoped_evidence_only": true,
+        "evidence_artifact": "outputs/recall/pool500_main_route_direct_recall_cold_start_fallback_v5/pool500_candidates.jsonl"
       }
     },
     "two_tower": {
-      "status": "DEFERRED",
+      "status": "DIAGNOSTIC_ONLY",
       "method_doc": "dic/recall_methods/two_tower/METHOD.md",
-      "latest_artifact": "outputs/recall/pool500_sidecar_fix/recall_only_target500_with_sidecars/sources/two_tower/manifest.json",
-      "latest_row_count": 0,
-      "eligible_user_policy": "future_embedding_recall",
       "role": "embedding_ann_recall",
+      "current_dataset_policy": {
+        "dataset_root": "data/processed/amazon_2023_recall_recent_2y_1m_3m",
+        "governance_manifest_path": "data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json",
+        "train_only": true,
+        "allowed_scale_tiers": [
+          "smoke",
+          "formal"
+        ],
+        "smoke_scope": "program_and_schema_validation_only",
+        "formal_scope": "official_method_logic_dataset_under_recent_2y_train_only_governance",
+        "formal_quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+        "full_data_derived_method_datasets": "archived_not_current",
+        "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
+      },
       "dataset_contract": {
-        "contract_role": "Governance/readiness contract only; it documents allowed dataset scope and does not authorize promotion, ranking input replacement, or pool1000 expansion.",
-        "policy_type": "deferred_evidence_policy",
-        "custom_dataset_required": false,
-        "dataset_manifest_path": "configs/recall/full_data_pool500/two_tower_required_artifacts_manifest.json",
+        "policy_type": "recent_2y_train_only_current_dataset_policy",
+        "custom_dataset_required": true,
+        "smoke_dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/two_tower/smoke/method_dataset_manifest.json",
+        "dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/two_tower/formal/method_dataset_manifest.json",
         "allowed_input_scopes": [
-          "pool500_eligible_users",
-          "train_only_interactions",
-          "canonical_pool500_source",
-          "future_train_only_two_tower_embeddings",
-          "future_guarded_ann_index"
+          "recent_2y_train_only_governance",
+          "canonical_train_interactions",
+          "canonical_items",
+          "user_sequences_train"
         ],
         "forbidden_input_scopes": [
           "holdout",
@@ -891,88 +1312,232 @@
           "test",
           "clean_10000",
           "LOPO",
-          "youtube_dnn",
-          "pool1000"
+          "oracle",
+          "eval_label",
+          "pool1000",
+          "full_data_derived_method_dataset"
         ],
-        "generation_dataset_scope": "Deferred until train-only two-tower embedding and ANN artifacts exist; no READY generation dataset is claimed.",
-        "readiness_evaluation_scope": "When evidence exists, evaluate readiness only on pool500 eligible users with train-only inputs, canonical two_tower source identity, and artifact gate evidence.",
-        "eligible_user_policy": "future_embedding_recall",
-        "final_merge_scope": "Future merge may return only into pool500 eligible-user recall candidates from train-only canonical source artifacts after artifact gate checks.",
+        "scale_tiers": {
+          "smoke": {
+            "purpose": "program_validity_check",
+            "quantity_policy": "small_bounded_smoke",
+            "manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/two_tower/smoke/method_dataset_manifest.json"
+          },
+          "formal": {
+            "purpose": "official_method_logic_dataset",
+            "quantity_policy": "agent_managed_no_method_side_fixed_quantity_caps",
+            "manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/two_tower/formal/method_dataset_manifest.json",
+            "preflight_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_source/source_index_manifest.json",
+            "preflight_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_evaluation_report.json",
+            "queryv2_candidate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_candidates_queryv2/source_index_manifest.json",
+            "queryv2_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_evaluation_report_queryv2.json"
+          },
+          "sparse_aware_formal_selected": {
+            "purpose": "stable_sparse_aware_youtube_dnn_checkpoint_selected_by_valid_only_direct_eval",
+            "quantity_policy": "remote_full_sparse_aware_formal_serial_checkpoint_sweep",
+            "checkpoint_epoch": 5,
+            "local_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json",
+            "remote_source_index_manifest_path": "/mnt/data/luo/RS_agent_remote_storage/outputs/two_tower_sparse_aware_serial_checkpoints/direct_eval_comparison/source_index/epoch_5/source_index_manifest.json",
+            "local_mirror_audit_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/mirror_audit.json",
+            "status": "sparse_aware_epoch5_stable_diagnostic_selected_not_ready"
+          }
+        },
         "promotion_policy": {
           "auto_promotion_allowed": false,
           "ranking_input_replacement_allowed": false,
-          "pool1000_allowed": false
+          "pool1000_allowed": false,
+          "candidate_generation_allowed": false,
+          "promotion_allowed": false,
+          "final_pool500_ready_claimed": false
         },
-        "readiness_artifacts": [
-          "missing: train-only two-tower model/embedding artifact",
-          "missing: train-only ANN index artifact",
-          "missing: pool500 source readiness contract",
-          "required: artifact gate evidence before any READY claim"
+        "status": "DIAGNOSTIC_ONLY",
+        "notes": "Sparse-aware epoch5 is mirrored locally and used as the default diagnostic two_tower source; archived formal/queryv2 evidence remains reference only.",
+        "allowed_scale_tiers": [
+          "sparse_aware_formal_selected"
+        ]
+      },
+      "latest_artifact": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json",
+      "latest_row_count": 448282,
+      "eligible_user_policy": "two_tower_train_eligible_or_above_with_hot_item_universe",
+      "readiness_note": "sparse-aware formal epoch5 is now the default two_tower diagnostic source for the pool500 recall-only route. It was selected by valid-only direct eval, with valid10000 Recall@500=0.067054 and HitRate@500=0.0846, but remains DIAGNOSTIC_ONLY; no READY, promotion, ranking replacement, or pool1000 gate is opened.",
+      "latest_evidence": {
+        "sciomc_research_path": "dic/recall_methods/two_tower/RECENT2Y_SCIOMC_RESEARCH.md",
+        "ralplan_path": "dic/recall_methods/two_tower/RECENT2Y_REBUILD_PLAN.md",
+        "smoke_method_dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/two_tower/smoke/method_dataset_manifest.json",
+        "smoke_train_sample_count": 1999,
+        "formal_method_dataset_manifest_path": "outputs/recall/pool500_method_datasets/recent_2y/two_tower/formal/method_dataset_manifest.json",
+        "formal_train_sample_count": 2812780,
+        "formal_eligible_user_count": 687147,
+        "smoke_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/smoke_source/source_index_manifest.json",
+        "smoke_source_row_count": 4820,
+        "smoke_candidate_check_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/smoke_candidates/two_tower/smoke_candidate_check_20/source_index_manifest.json",
+        "smoke_candidate_rows": 20,
+        "formal_source_status": "FULL_687K_EPOCH5_QUERYV2_DIAGNOSTIC_AVAILABLE_NOT_READY",
+        "formal_training_item_vocab_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_training_item_vocab_manifest.json",
+        "formal_preflight_artifact_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_training_run/artifact_manifest.json",
+        "formal_preflight_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_source/source_index_manifest.json",
+        "formal_preflight_candidate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_candidates/source_index_manifest.json",
+        "formal_preflight_eval_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_eval/raw_two_tower_direct_eval_manifest.json",
+        "formal_preflight_overlap_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_overlap/source_overlap_report.json",
+        "formal_preflight_route_gate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_route_gate/manifest.json",
+        "formal_preflight_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_preflight_20k_evaluation_report.json",
+        "formal_preflight_training_input_users": 20000,
+        "formal_preflight_users_with_training_rows": 19429,
+        "formal_preflight_source_row_count": 499566,
+        "formal_preflight_eval_user_count": 500,
+        "formal_preflight_query_user_count": 405,
+        "formal_preflight_candidate_rows": 202500,
+        "formal_preflight_recall_at_20": 0.00289,
+        "formal_preflight_recall_at_50": 0.00578,
+        "formal_preflight_recall_at_100": 0.008671,
+        "formal_preflight_recall_at_500": 0.021676,
+        "formal_preflight_hit_rate_at_500": 0.028,
+        "formal_preflight_route_gate_decision": "DIAGNOSTIC_ONLY",
+        "formal_full_artifact_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_training_run_epoch5/artifact_manifest.json",
+        "formal_full_train_metrics_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_training_run_epoch5/train_metrics.json",
+        "formal_full_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_source_epoch5/source_index_manifest.json",
+        "formal_full_candidate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_candidates_queryv2/source_index_manifest.json",
+        "formal_full_eval_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_eval_queryv2_local_verify/raw_two_tower_direct_eval_manifest.json",
+        "formal_full_overlap_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_overlap_queryv2/source_overlap_report.json",
+        "formal_full_route_gate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_route_gate_queryv2/manifest.json",
+        "formal_full_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_evaluation_report_queryv2.json",
+        "formal_full_training_input_users": 687147,
+        "formal_full_users_with_training_rows": 667734,
+        "formal_full_training_examples": 2069609,
+        "formal_full_source_row_count": 499566,
+        "formal_full_eval_user_count": 500,
+        "formal_full_query_user_count": 484,
+        "formal_full_candidate_rows": 242000,
+        "formal_full_recall_at_20": 0.021676,
+        "formal_full_recall_at_50": 0.027457,
+        "formal_full_recall_at_100": 0.036127,
+        "formal_full_recall_at_500": 0.070809,
+        "formal_full_hit_rate_at_500": 0.092,
+        "formal_full_route_gate_decision": "DIAGNOSTIC_ONLY",
+        "formal_full_epoch5_artifact_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_training_run_epoch5/artifact_manifest.json",
+        "formal_full_epoch5_train_metrics_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_training_run_epoch5/train_metrics.json",
+        "formal_full_epoch5_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_source_epoch5/source_index_manifest.json",
+        "formal_full_epoch5_candidate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_candidates_epoch5/source_index_manifest.json",
+        "formal_full_epoch5_eval_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_eval_epoch5_local_verify/raw_two_tower_direct_eval_manifest.json",
+        "formal_full_epoch5_overlap_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_overlap_epoch5/source_overlap_report.json",
+        "formal_full_epoch5_route_gate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_route_gate_epoch5/manifest.json",
+        "formal_full_epoch5_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_evaluation_report_epoch5.json",
+        "formal_full_epoch5_training_input_users": 687147,
+        "formal_full_epoch5_users_with_training_rows": 667734,
+        "formal_full_epoch5_training_examples": 2069609,
+        "formal_full_epoch5_epochs": 5,
+        "formal_full_epoch5_loss_history": [
+          1.723716,
+          1.6206,
+          1.553363,
+          1.50874,
+          1.477235
         ],
-        "status": "DEFERRED",
-        "notes": "Deferred evidence policy forbids using holdout/valid/test/clean_10000/LOPO/youtube_dnn evidence and does not claim readiness."
-      }
-    }
-  },
-  "user_quality": {
-    "status": "DIAGNOSTIC_POLICY_READY",
-    "method_doc": "dic/recall_methods/user_quality/METHOD.md",
-    "script_path": "rs_lab/experiments/recall/build_pool500_user_quality_profile.py",
-    "planned_output_dir": "outputs/recall/pool500_user_quality/",
-    "planned_manifest_name": "eligible_user_quality_manifest.json",
-    "artifact_names": [
-      "eligible_user_quality_manifest.json",
-      "quality_bucket_summary.json",
-      "resource_audit.json"
-    ],
-    "quality_buckets": [
-      "heavy_cf_eligible",
-      "medium_behavior",
-      "fallback_only"
-    ],
-    "dataset_contract": {
-      "contract_role": "Eligibility policy contract only; user_quality is not a recall source and does not authorize promotion, ranking input replacement, pool1000 expansion, or final pool500 readiness.",
-      "policy_type": "batch_scoped_train_only_policy",
-      "custom_dataset_required": false,
-      "allowed_input_scopes": [
-        "pool500_eligible_users",
-        "train_only_user_sequences",
-        "unified_item_metadata"
+        "formal_full_epoch5_source_row_count": 499566,
+        "formal_full_epoch5_eval_user_count": 500,
+        "formal_full_epoch5_query_user_count": 405,
+        "formal_full_epoch5_queryless_user_count": 95,
+        "formal_full_epoch5_candidate_rows": 202500,
+        "formal_full_epoch5_recall_at_20": 0.015896,
+        "formal_full_epoch5_recall_at_50": 0.021676,
+        "formal_full_epoch5_recall_at_100": 0.028902,
+        "formal_full_epoch5_recall_at_500": 0.057803,
+        "formal_full_epoch5_hit_rate_at_500": 0.076,
+        "formal_full_epoch5_unique_positive_hits": 40,
+        "formal_full_epoch5_route_gate_decision": "DIAGNOSTIC_ONLY",
+        "formal_full_epoch5_remote_spill_storage": "server:/tmp/rs_agent_spill/two_tower with symlinks under canonical outputs path",
+        "formal_full_epoch1_artifact_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_training_run_epoch1/artifact_manifest.json",
+        "formal_full_epoch1_train_metrics_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_training_run_epoch1/train_metrics.json",
+        "formal_full_epoch1_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_source_epoch1/source_index_manifest.json",
+        "formal_full_epoch1_candidate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_candidates_epoch1/source_index_manifest.json",
+        "formal_full_epoch1_eval_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_eval_epoch1_local_verify/raw_two_tower_direct_eval_manifest.json",
+        "formal_full_epoch1_overlap_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_overlap_epoch1/source_overlap_report.json",
+        "formal_full_epoch1_route_gate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_route_gate_epoch1/manifest.json",
+        "formal_full_epoch1_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_evaluation_report_epoch1.json",
+        "formal_full_epoch1_training_input_users": 687147,
+        "formal_full_epoch1_users_with_training_rows": 667734,
+        "formal_full_epoch1_training_examples": 2069609,
+        "formal_full_epoch1_source_row_count": 499566,
+        "formal_full_epoch1_eval_user_count": 500,
+        "formal_full_epoch1_query_user_count": 405,
+        "formal_full_epoch1_candidate_rows": 202500,
+        "formal_full_epoch1_recall_at_20": 0.00578,
+        "formal_full_epoch1_recall_at_50": 0.00578,
+        "formal_full_epoch1_recall_at_100": 0.017341,
+        "formal_full_epoch1_recall_at_500": 0.044798,
+        "formal_full_epoch1_hit_rate_at_500": 0.054,
+        "formal_full_epoch1_route_gate_decision": "DIAGNOSTIC_ONLY",
+        "formal_full_epochs": 5,
+        "formal_full_loss_history": [
+          1.723716,
+          1.6206,
+          1.553363,
+          1.50874,
+          1.477235
+        ],
+        "formal_full_queryless_user_count": 16,
+        "formal_full_unique_positive_hits": 49,
+        "formal_full_scale_tier": "formal_full_687k_queryv2_target_slice",
+        "formal_full_query_source_counts": {
+          "recent_positive_item_sequence_average_vectors": 405,
+          "recent_item_sequence_average_vectors": 79
+        },
+        "formal_full_queryless_reason_counts": {
+          "seed_items_missing_item_vectors": 16
+        },
+        "formal_full_underfilled_user_rate": 0.032,
+        "formal_full_positive_denominator_at_500": 692,
+        "formal_full_primary_unique_item_count": 43748,
+        "formal_full_primary_underfilled_user_count": 0,
+        "formal_full_overlap_popular_item_union_overlap_ratio_vs_primary": 1.0,
+        "formal_full_overlap_category_comparable_user_count": 1,
+        "formal_full_queryv2_candidate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_candidates_queryv2/source_index_manifest.json",
+        "formal_full_queryv2_eval_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_eval_queryv2_local_verify/raw_two_tower_direct_eval_manifest.json",
+        "formal_full_queryv2_overlap_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_overlap_queryv2/source_overlap_report.json",
+        "formal_full_queryv2_route_gate_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_route_gate_queryv2/manifest.json",
+        "formal_full_queryv2_evaluation_report_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/formal_full_687k_evaluation_report_queryv2.json",
+        "sparse_aware_selected_config_status": "STABLE_DIAGNOSTIC_SELECTED_NOT_READY",
+        "sparse_aware_selected_checkpoint_epoch": 5,
+        "sparse_aware_local_source_index_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json",
+        "sparse_aware_local_artifact_manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/artifact_manifest.json",
+        "sparse_aware_local_valid10000_summary_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/epoch5_valid10000_valid_only_summary.json",
+        "sparse_aware_remote_provenance_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/remote_provenance.json",
+        "sparse_aware_mirror_audit_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/mirror_audit.json",
+        "sparse_aware_source_row_count": 448282,
+        "sparse_aware_valid10000_user_count": 10000,
+        "sparse_aware_valid10000_query_user_count": 9712,
+        "sparse_aware_valid10000_queryless_user_count": 288,
+        "sparse_aware_valid10000_positive_denominator_at_500": 13258,
+        "sparse_aware_valid10000_unique_positive_hits": 889,
+        "sparse_aware_valid10000_recall_at_20": 0.009127,
+        "sparse_aware_valid10000_recall_at_50": 0.017122,
+        "sparse_aware_valid10000_recall_at_100": 0.024815,
+        "sparse_aware_valid10000_recall_at_500": 0.067054,
+        "sparse_aware_valid10000_hit_rate_at_20": 0.0118,
+        "sparse_aware_valid10000_hit_rate_at_50": 0.0218,
+        "sparse_aware_valid10000_hit_rate_at_100": 0.0315,
+        "sparse_aware_valid10000_hit_rate_at_500": 0.0846,
+        "sparse_aware_eval_selection_role": "valid_only_direct_eval_checkpoint_selection_no_train_or_candidate_label_injection"
+      },
+      "blockers": [
+        "formal_full_queryv2_metrics_improved_but_still_target_slice_diagnostic_only",
+        "queryless_user_rate_0_032_on_500_eval_users_still_has_16_missing_seed_vector_users",
+        "source_overlap_comparable_user_evidence_insufficient",
+        "route_gate_decision_diagnostic_only_without_full_pool500_candidate_quality_audit",
+        "no_ready_promotion_without_route_level_marginal_lift_against_ready_sources",
+        "sparse_aware_epoch5_selected_by_valid_direct_eval_but_still_diagnostic_without_route_level_marginal_lift"
       ],
-      "forbidden_input_scopes": [
-        "holdout",
-        "valid",
-        "test",
-        "clean_10000",
-        "LOPO",
-        "youtube_dnn",
-        "pool1000"
-      ],
-      "generation_dataset_scope": "Use clean manifest train_user_sequences_path and canonical_items_path only for batch-scoped user quality profiling.",
-      "readiness_evaluation_scope": "No final recall readiness evaluation is claimed; artifact verifies schema, bucket policy, and no-holdout boundary only.",
-      "promotion_policy": {
-        "auto_promotion_allowed": false,
+      "notes": "Sparse-aware formal epoch5 is now the default two_tower diagnostic source path for recall-only main route loading. The selected checkpoint is preserved as DIAGNOSTIC_ONLY and does not open promotion/ranking/pool1000/final-ready permissions.",
+      "latest_artifact_scope": "sparse_aware_formal_epoch5_selected_diagnostic_source_not_ready",
+      "governance": {
+        "candidate_generation_allowed": false,
         "ranking_input_replacement_allowed": false,
         "pool1000_allowed": false,
-        "final_pool500_ready_claimed": false
-      },
-      "eligible_user_policy_mapping": {
-        "usercf_recall": "heavy_cf_eligible",
-        "itemcf_strong": "heavy_cf_eligible",
-        "itemcf_weak": "heavy_cf_eligible_or_medium_behavior",
-        "swing_recall": "heavy_cf_eligible_or_medium_behavior",
-        "category": "medium_behavior_or_fallback",
-        "popular": "fallback_only"
+        "promotion_allowed": false,
+        "final_pool500_ready_claimed": false,
+        "main_route_merge_requires_global_gate": true,
+        "ranking_replacement_allowed": false
       }
-    }
-  },
-  "safety_policy": {
-    "diagnostic_sources_must_not_replace_ranking_input": true,
-    "pool1000_requires_full_pool500_ready": true,
-    "heavy_jobs_require_guarded_process": true,
-    "default_guard": {
-      "min_free_mb": 8192,
-      "max_rss_mb": 4096
     }
   }
 }

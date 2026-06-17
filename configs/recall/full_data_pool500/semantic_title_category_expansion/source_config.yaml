@@ -1,68 +1,80 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v2_recent_2y
 source: semantic_title_category_expansion
 canonical_source: semantic_title_category_expansion
 source_status: TARGET_SLICE_DIAGNOSTIC
+default_tier: smoke
 tier_aliases:
-  dam: diagnostic
-  dam(diagnostic): diagnostic
-  最终数据集: local_formal
-  最终数据集(local_formal): local_formal
+  recent2y_smoke: smoke
+  recent2y_formal: formal
+  dam(diagnostic): smoke
+  最终数据集(local_formal): formal
 defaults:
-  output_root: outputs/recall/pool500_method_sources
+  output_root: outputs/recall/pool500_method_sources_newdata
   run_id: null
   input_contract:
-    clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
-    lightweight_views_manifest: data/processed/amazon_2023_recall_views_full_lightweight/manifest.json
-    eligible_user_manifest: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
+    clean_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+    lightweight_views_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json
+    eligible_user_manifest: outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json
     train_only: true
+    valid_used: false
+    test_used: false
+    holdout_used: false
+    lopo_used: false
+    oracle_used: false
+    eval_label_used: false
+    use_existing_recall_views_with_audit_first: true
   resource_guard:
     batch_size: 500
     checkpoint_enabled: true
     heavy_job: false
   method_config:
-    limit_users: 500
-    seed_window: 20
-    per_user: 80
-    per_seed: 40
-    per_token_item_limit: 2000
-    max_candidate_items: 80000
-    selection_mode: title_category_scorer
+    checkpoint_every_users: 500
+    target_user_offset: 0
+    target_user_limit: null
+    shard_id: null
+    shard_count: null
+    selection_mode: semantic_title_category_channel
+    channel_status: folded_into_semantic_bm25f_title_category_channel
+    independent_expansion_enabled: false
 tiers:
   smoke:
     method_config:
-      limit_users: 20
-      seed_window: 10
-      per_user: 40
-      per_seed: 20
-      per_token_item_limit: 500
-      max_candidate_items: 10000
-    resource_guard:
-      batch_size: 20
-      heavy_job: false
-  diagnostic:
-    alias: dam(diagnostic)
-    method_config:
-      limit_users: 500
+      limit_users: 200
       seed_window: 20
       per_user: 80
       per_seed: 40
-      per_token_item_limit: 2000
-      max_candidate_items: 80000
+      per_token_item_limit: 1000
+      max_candidate_items: 30000
+      selection_mode: semantic_title_category_channel
     resource_guard:
-      batch_size: 500
+      batch_size: 50
       heavy_job: false
-  local_formal:
-    alias: 最终数据集(local_formal)
+  formal:
+    input_contract:
+      eligible_user_manifest: outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_formal_v1/eligible_user_manifest.json
     method_config:
-      limit_users: 500
-      seed_window: 30
+      limit_users: 50000
+      target_user_offset: 0
+      target_user_limit: 50000
+      shard_id: null
+      shard_count: null
+      checkpoint_every_users: 500
+      seed_window: 50
       per_user: 120
       per_seed: 60
-      per_token_item_limit: 5000
-      max_candidate_items: 120000
+      per_token_item_limit: 2000
+      max_candidate_items: 200000
+      selection_mode: semantic_title_category_channel
     resource_guard:
       batch_size: 500
+      checkpoint_enabled: true
       heavy_job: false
+current_artifacts:
+  smoke_source_index_manifest: outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/source_index_manifest.json
+  smoke_eval_report: outputs/eval/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/method_source_eval_report.json
+  formal_source_index_manifest: null
+  formal_status: blocked_local_resource_requires_server
+  formal_partial_checkpoint: outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_formal_v1/checkpoint.json
 manifest_contract:
   method_dataset_manifest: method_dataset_manifest.json
   source_index_manifest: source_index_manifest.json

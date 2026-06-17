@@ -16,12 +16,26 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import read_json, write_json
 from rs_core.common.runtime import enforce_project_venv
+from rs_lab.experiments.recall.pool500.governance.itemcf_p0_contracts import (
+    FORBIDDEN_ITEMCF_INPUT_TOKENS,
+    build_pool_ranking_freeze_assertions,
+    reject_forbidden_itemcf_input,
+)
 
 SCHEMA_VERSION = "pool500_itemcf_method_dataset_source_adapter_v1"
 DEFAULT_OUTPUT_ROOT = ROOT / "outputs" / "recall" / "pool500_method_sources" / "itemcf_formal_from_method_dataset_v1"
 VALID_SOURCES = {"itemcf_weak", "itemcf_strong"}
-FORBIDDEN_PATH_TOKENS = {"holdout", "valid", "test", "lopo", "oracle", "eval_label"}
 SHARD_KEY = "src_item_sha256_mod"
+DIAGNOSTIC_POLICY_PASSTHROUGH_KEYS = (
+    "variant",
+    "source_variant",
+    "hot_budget_policy",
+    "controlled_hot_budget",
+    "max_final_hot_share_per_user",
+    "max_hot_share_per_src",
+    "source_status",
+    "diagnostic_only",
+)
 
 
 def build_itemcf_source_from_method_dataset(
@@ -49,6 +63,11 @@ def build_itemcf_source_from_method_dataset(
     method_dataset_manifest_path = method_dataset_manifest_path.resolve()
     _reject_forbidden_path(method_dataset_manifest_path)
     method_dataset_manifest = read_json(method_dataset_manifest_path)
+    if method_dataset_manifest.get("train_only") is not True:
+        raise ValueError("ItemCF source adapter requires method dataset manifest train_only=true")
+    labels_role = str(method_dataset_manifest.get("labels_role") or "")
+    if labels_role and labels_role not in {"none_in_training_or_candidate_generation", "none_in_candidate_generation"}:
+        raise ValueError(f"unsupported labels_role for ItemCF source adapter: {labels_role}")
     method_dataset_rows_path = (method_dataset_rows_path or _default_rows_path(method_dataset_manifest_path, method_dataset_manifest)).resolve()
     _reject_forbidden_path(method_dataset_rows_path)
     if not method_dataset_rows_path.is_file():
@@ -84,14 +103,23 @@ def build_itemcf_source_from_method_dataset(
 
     manifest_signature = _file_signature(method_dataset_manifest_path)
     rows_signature = _file_signature(method_dataset_rows_path)
+    declared_row_count = _declared_row_count(method_dataset_manifest)
+    row_count_audit = _build_row_count_audit(
+        method_dataset_manifest=method_dataset_manifest,
+        declared_row_count=declared_row_count,
+        rows_signature=rows_signature,
+        converted_row_count=conversion["row_count"],
+        limit_rows=limit_rows,
+    )
+    diagnostic_policy = _diagnostic_policy_passthrough(method_dataset_manifest)
     source_index_manifest = {
         "schema_version": SCHEMA_VERSION,
         "status": "PASS",
         "source": source,
         "canonical_source": source,
-        "source_status": "DIAGNOSTIC_ONLY",
-        "diagnostic_only": True,
-        "index_scope": "FULL_DERIVED_INDEX",
+        "source_status": diagnostic_policy.get("source_status", "DIAGNOSTIC_ONLY"),
+        "diagnostic_only": diagnostic_policy.get("diagnostic_only", True),
+        "index_scope": _derive_index_scope(method_dataset_manifest),
         "train_only": method_dataset_manifest.get("train_only", True) is not False,
         "run_id": run_id,
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -117,16 +145,17 @@ def build_itemcf_source_from_method_dataset(
         "diagnostic_boundary": {
             "label_usage": "none_in_candidate_generation",
             "post_hoc_label_diagnostic_only": True,
-            "forbidden_inputs": sorted(FORBIDDEN_PATH_TOKENS),
+            "forbidden_inputs": sorted(FORBIDDEN_ITEMCF_INPUT_TOKENS),
+            "in_universe_denominator_usage": "evaluation_only_not_training_or_candidate_generation",
         },
+        "diagnostic_policy": diagnostic_policy,
+        "row_count_audit": row_count_audit,
         "input": {
             "method_dataset_manifest_path": str(method_dataset_manifest_path),
             "method_dataset_rows_path": str(method_dataset_rows_path),
             "method_dataset_manifest_sha256": manifest_signature["sha256"],
             "method_dataset_rows_sha256": rows_signature["sha256"],
-            "declared_manifest_row_count": method_dataset_manifest.get("row_count")
-            or method_dataset_manifest.get("candidate_row_count")
-            or method_dataset_manifest.get("edge_count"),
+            "declared_manifest_row_count": declared_row_count,
             "limit_rows": limit_rows,
         },
         "edge_signature": conversion.get("edge_signature"),
@@ -140,10 +169,29 @@ def build_itemcf_source_from_method_dataset(
         "promotion_allowed": False,
         "pool1000_allowed": False,
         "final_pool500_ready_claimed": False,
+        "pool_ranking_freeze_assertions": build_pool_ranking_freeze_assertions(),
         "runtime_seconds": round(perf_counter() - started, 6),
     }
     write_json(output_dir / "source_index_manifest.json", source_index_manifest)
     return source_index_manifest
+
+
+def _derive_index_scope(method_dataset_manifest: dict[str, Any]) -> str:
+    for key in ("index_scope", "dataset_scope", "data_scope"):
+        value = str(method_dataset_manifest.get(key) or "")
+        if "RECENT_2Y" in value.upper() or "recent_2y" in value.lower():
+            return "RECENT_2Y_DERIVED_INDEX"
+    variant = str(method_dataset_manifest.get("variant") or "")
+    output_dir = str(method_dataset_manifest.get("output_dir") or "")
+    rows_path = str(method_dataset_manifest.get("method_dataset_rows_path") or "")
+    data_root = str(method_dataset_manifest.get("data_root") or "")
+    read_files = " ".join(str(path) for path in method_dataset_manifest.get("read_files", []))
+    feature_sources = method_dataset_manifest.get("feature_audit", {}).get("feature_sources", {})
+    feature_text = " ".join(str(path) for path in feature_sources.values()) if isinstance(feature_sources, dict) else ""
+    lineage_text = " ".join((variant, output_dir, rows_path, data_root, read_files, feature_text)).replace("\\", "/").lower()
+    if "recent_2y" in lineage_text or "recent2y" in lineage_text:
+        return "RECENT_2Y_DERIVED_INDEX"
+    return "FULL_DERIVED_INDEX"
 
 
 def _default_rows_path(manifest_path: Path, manifest: dict[str, Any]) -> Path:
@@ -167,6 +215,83 @@ def _resolve_path(manifest_path: Path, value: Any) -> Path:
         return path
     manifest_relative = manifest_path.parent / path
     return manifest_relative if manifest_relative.exists() else ROOT / path
+
+
+def _diagnostic_policy_passthrough(method_dataset_manifest: dict[str, Any]) -> dict[str, Any]:
+    policy = {key: method_dataset_manifest[key] for key in DIAGNOSTIC_POLICY_PASSTHROUGH_KEYS if key in method_dataset_manifest}
+    feature_summary = method_dataset_manifest.get("feature_audit", {}).get("feature_summary", {})
+    resource_config = method_dataset_manifest.get("resource_audit", {}).get("config", {})
+    for source_key, target_key in (
+        ("controlled_hot_budget", "controlled_hot_budget"),
+        ("max_hot_share_per_src", "hot_budget_policy"),
+        ("max_hot_share_per_src", "max_final_hot_share_per_user"),
+    ):
+        if target_key not in policy and isinstance(feature_summary, dict) and source_key in feature_summary:
+            policy[target_key] = feature_summary[source_key]
+        if target_key not in policy and isinstance(resource_config, dict) and source_key in resource_config:
+            policy[target_key] = resource_config[source_key]
+    if "source_variant" not in policy and "variant" in policy:
+        policy["source_variant"] = policy["variant"]
+    return policy
+
+
+def _declared_row_count(method_dataset_manifest: dict[str, Any]) -> int | None:
+    value = (
+        method_dataset_manifest.get("row_count")
+        or method_dataset_manifest.get("candidate_row_count")
+        or method_dataset_manifest.get("edge_count")
+    )
+    if value is None:
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"invalid declared method dataset row_count: {value!r}") from exc
+
+
+def _build_row_count_audit(
+    *,
+    method_dataset_manifest: dict[str, Any],
+    declared_row_count: int | None,
+    rows_signature: dict[str, Any],
+    converted_row_count: int,
+    limit_rows: int | None,
+) -> dict[str, Any]:
+    file_row_count = int(rows_signature["row_count"])
+    reasons: list[str] = []
+    if limit_rows is not None:
+        if declared_row_count != converted_row_count:
+            reasons.append("limit_rows_truncated_converted_rows_before_full_manifest_count")
+        if file_row_count != converted_row_count:
+            reasons.append("limit_rows_truncated_converted_rows_before_full_file_count")
+    else:
+        if declared_row_count is not None and declared_row_count != converted_row_count:
+            raise ValueError(
+                f"method dataset row_count mismatch: declared={declared_row_count} converted={converted_row_count}"
+            )
+        if file_row_count != converted_row_count:
+            raise ValueError(f"method dataset file row_count mismatch: file={file_row_count} converted={converted_row_count}")
+    formal_full_scope = _is_formal_full_scope(method_dataset_manifest)
+    if formal_full_scope and declared_row_count is None:
+        raise ValueError("formal/full method dataset requires declared row_count or edge_count")
+    return {
+        "status": "PASS",
+        "declared_manifest_row_count": declared_row_count,
+        "method_dataset_rows_file_row_count": file_row_count,
+        "converted_row_count": converted_row_count,
+        "limit_rows": limit_rows,
+        "mismatch_allowed": bool(limit_rows is not None and reasons),
+        "mismatch_reasons": reasons,
+        "formal_full_scope": formal_full_scope,
+    }
+
+
+def _is_formal_full_scope(method_dataset_manifest: dict[str, Any]) -> bool:
+    text = " ".join(
+        str(method_dataset_manifest.get(key) or "")
+        for key in ("variant", "run_id", "dataset_scope", "output_dir", "method_dataset_rows_path")
+    ).lower()
+    return "formal" in text or "full" in text
 
 
 def _write_single_edges(*, source: str, input_path: Path, output_dir: Path, limit_rows: int | None) -> dict[str, Any]:
@@ -232,12 +357,11 @@ def _edge_from_line(source: str, input_path: Path, line_number: int, line: str, 
     if not line:
         return None
     row = json.loads(line)
-    src_item = str(row.get("src_item_id") or "")
-    dst_item = str(row.get("dst_item_id") or "")
-    if not src_item or not dst_item:
-        raise ValueError(f"missing src_item_id or dst_item_id in row {line_number}: {input_path}")
+    _validate_method_dataset_row(source, input_path, line_number, row)
+    src_item = str(row["src_item_id"])
+    dst_item = str(row["dst_item_id"])
     try:
-        score = float(row.get("itemcf_score", 0.0) or 0.0)
+        score = float(row["itemcf_score"])
     except (TypeError, ValueError) as exc:
         raise ValueError(f"invalid itemcf_score in row {line_number}: {input_path}") from exc
     return {
@@ -245,13 +369,30 @@ def _edge_from_line(source: str, input_path: Path, line_number: int, line: str, 
         "src_item": src_item,
         "dst_item": dst_item,
         "score": score,
-        "rank": int(row.get("edge_rank", fallback_rank + 1) or fallback_rank + 1),
+        "rank": int(row["edge_rank"]),
         "metadata": {
             key: value
             for key, value in row.items()
             if key not in {"src_item_id", "dst_item_id", "itemcf_score", "edge_rank"}
         },
     }
+
+
+def _validate_method_dataset_row(source: str, input_path: Path, line_number: int, row: dict[str, Any]) -> None:
+    required = ("src_item_id", "dst_item_id", "itemcf_score", "edge_rank", "train_only", "source_method")
+    missing = [field for field in required if field not in row]
+    if missing:
+        raise ValueError(f"missing required method dataset row fields {missing} in row {line_number}: {input_path}")
+    if not str(row.get("src_item_id") or "") or not str(row.get("dst_item_id") or ""):
+        raise ValueError(f"missing src_item_id or dst_item_id in row {line_number}: {input_path}")
+    if row.get("train_only") is not True:
+        raise ValueError(f"method dataset row train_only must be true in row {line_number}: {input_path}")
+    if str(row.get("source_method") or "") != source:
+        raise ValueError(f"method dataset row source_method mismatch in row {line_number}: {input_path}")
+    try:
+        int(row["edge_rank"])
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"invalid edge_rank in row {line_number}: {input_path}") from exc
 
 
 def stable_itemcf_shard_id(src_item: str, shard_count: int) -> int:
@@ -272,9 +413,7 @@ def _file_signature(path: Path) -> dict[str, Any]:
 
 
 def _reject_forbidden_path(path: Path) -> None:
-    lowered_parts = {part.lower() for part in path.parts}
-    if lowered_parts & FORBIDDEN_PATH_TOKENS:
-        raise ValueError(f"Forbidden label/eval path for source adapter: {path}")
+    reject_forbidden_itemcf_input(path)
 
 
 def _default_run_id(source: str, limit_rows: int | None, shard_count: int) -> str:

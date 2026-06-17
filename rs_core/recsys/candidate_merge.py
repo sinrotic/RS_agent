@@ -9,8 +9,9 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.io import iter_jsonl, read_json
+from rs_core.recsys.two_tower_query import apply_user_tower_projection, build_two_tower_query_for_user
 from rs_core.recsys.types import MergedCandidate, RecallCandidate
-from rs_core.recsys.vector_index import VectorIndex, average_vectors, load_vector_index_artifact
+from rs_core.recsys.vector_index import VectorIndex, load_vector_index_artifact
 
 
 _SEMANTIC_SEED_CONTEXT_CACHE_LIMIT = 4
@@ -19,6 +20,53 @@ _SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE_LIMIT = 4
 _SEMANTIC_TITLE_CATEGORY_CONTEXT_CACHE: dict[tuple[int, tuple[str, ...], int], dict[str, Any]] = {}
 _METADATA_NEIGHBOR_INDEX_CACHE_LIMIT = 4
 _METADATA_NEIGHBOR_INDEX_CACHE: dict[tuple[int, tuple[str, ...]], dict[str, Any]] = {}
+_SWING_SIDECAR_SCHEMA_VERSION = "full_train_swing_sidecar_v1"
+_SWING_FORBIDDEN_SOURCE_STATUSES = {"TARGET_SLICE_DIAGNOSTIC", "PARTIAL", "FAILED", "BLOCKED"}
+_SWING_FORBIDDEN_TRUE_FLAGS = {
+    "agent_allowed",
+    "agent_exposure_allowed",
+    "agent_tool_allowed",
+    "candidate_generation_allowed",
+    "final_pool500_ready_claimed",
+    "pool1000_allowed",
+    "promotion_allowed",
+    "ranking_input_replacement_allowed",
+    "ranking_replacement_allowed",
+    "serving_allowed",
+    "serving_candidate_source_allowed",
+}
+_SWING_FORBIDDEN_INPUT_TOKENS = {
+    "/all_window/",
+    "/holdout/",
+    "/label/",
+    "/labels/",
+    "/test/",
+    "/valid/",
+    "all_interactions.jsonl",
+    "canonical_interactions.jsonl",
+    "canonical_interactions.test.jsonl",
+    "canonical_interactions.valid.jsonl",
+    "holdout.jsonl",
+    "labels.jsonl",
+    "user_sequences.jsonl",
+    "user_sequences.test.jsonl",
+    "user_sequences.valid.jsonl",
+}
+_SWING_REQUIRED_PARTIAL_INVALIDATION_KEYS = [
+    "provenance.clean_manifest_signature.sha256",
+    "provenance.train_user_sequences_signature.sha256",
+    "parameters",
+]
+_CO_VISIT_TRANSITION_GRAPH_SOURCE_STATUS = "UNDERFILL_REPAIR_INDEX_READY"
+_CO_VISIT_FORBIDDEN_TRUE_FLAGS = {
+    "candidate_generation_allowed",
+    "final_pool500_ready_claimed",
+    "pool1000_allowed",
+    "promotion_allowed",
+    "ranking_input_replacement_allowed",
+    "ranking_replacement_allowed",
+    "serving_candidate_source_allowed",
+}
 
 
 def unique_recent_items(items: list[str], max_items_per_user: int) -> list[str]:
@@ -61,6 +109,38 @@ def load_itemcf_by_source(
     allowed_src_items: set[str] | None = None,
 ) -> dict[str, list[RecallCandidate]]:
     return _load_item_pair_recall(path, source, allowed_src_items)
+
+
+def load_co_visit_transition_graph_manifest(
+    manifest_path: str | Path,
+    allowed_src_items: set[str] | None = None,
+) -> dict[str, list[RecallCandidate]]:
+    manifest_path = Path(manifest_path)
+    manifest = read_json(manifest_path)
+    _validate_co_visit_transition_graph_manifest(manifest)
+    outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
+    shard_values = _itemcf_manifest_shard_values(manifest, outputs)
+    if shard_values:
+        shard_count = int(manifest.get("shard_count") or len(shard_values))
+        if manifest.get("shard_key") != "src_item_sha256_mod":
+            raise ValueError(f"unsupported co_visit_fallback_repair shard_key: {manifest.get('shard_key')!r}")
+        selected_shards = shard_values
+        if allowed_src_items:
+            selected_ids = {stable_itemcf_shard_id(item, shard_count) for item in allowed_src_items}
+            selected_shards = [value for shard_id, value in enumerate(shard_values) if shard_id in selected_ids]
+        by_source: dict[str, list[RecallCandidate]] = defaultdict(list)
+        for shard_value in selected_shards:
+            shard_path = _resolve_manifest_path(manifest_path, shard_value)
+            for src_item, rows in _load_item_pair_recall(shard_path, "co_visit_fallback_repair", allowed_src_items).items():
+                by_source[src_item].extend(rows)
+        for rows in by_source.values():
+            rows.sort(key=lambda item: (-item.score, item.item_id))
+        return by_source
+    edges_path = outputs.get("edges_path") or manifest.get("edges_path")
+    if not edges_path:
+        raise ValueError("co_visit_fallback_repair transition graph requires edges_shards or edges_path")
+    return _load_item_pair_recall(_resolve_manifest_path(manifest_path, edges_path), "co_visit_fallback_repair", allowed_src_items)
+
 
 
 def load_itemcf_source_manifest(
@@ -120,6 +200,32 @@ def load_item_graph_recall(
     return _load_item_pair_recall(path, "item_graph", allowed_src_items)
 
 
+def _validate_co_visit_transition_graph_manifest(manifest: dict[str, Any]) -> None:
+    if manifest.get("source") != "co_visit_fallback_repair":
+        raise ValueError(f"invalid co_visit_fallback_repair manifest source: {manifest.get('source')!r}")
+    if manifest.get("source_status") != _CO_VISIT_TRANSITION_GRAPH_SOURCE_STATUS:
+        raise ValueError(f"invalid co_visit_fallback_repair source_status: {manifest.get('source_status')!r}")
+    if manifest.get("index_scope") != "FULL_DERIVED_INDEX":
+        raise ValueError(f"invalid co_visit_fallback_repair index_scope: {manifest.get('index_scope')!r}")
+    if manifest.get("train_only") is not True:
+        raise ValueError("co_visit_fallback_repair transition graph must be train_only")
+    if manifest.get("candidate_materialization") != "none":
+        raise ValueError("co_visit_fallback_repair transition graph must declare candidate_materialization='none'")
+    if manifest.get("underfill_repair_allowed") is not True:
+        raise ValueError("co_visit_fallback_repair transition graph must allow underfill repair")
+    if manifest.get("batch_scoped_evidence_only") is True or manifest.get("status") == "TARGET_SLICE_DIAGNOSTIC":
+        raise ValueError("target-slice co_visit_fallback_repair artifact cannot be used as transition graph")
+    if manifest.get("candidates_path") is not None:
+        raise ValueError("co_visit_fallback_repair transition graph must not expose candidates_path")
+    outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
+    if outputs.get("candidates") is not None or outputs.get("candidates_path") is not None:
+        raise ValueError("co_visit_fallback_repair transition graph must not expose candidate outputs")
+    for flag in sorted(_CO_VISIT_FORBIDDEN_TRUE_FLAGS):
+        if manifest.get(flag) is not False:
+            raise ValueError(f"co_visit_fallback_repair transition graph must set {flag}=false")
+
+
+
 def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[RecallCandidate]]:
     manifest_path = Path(manifest_path)
     manifest = read_json(manifest_path)
@@ -131,12 +237,13 @@ def load_usercf_recall_sidecar(manifest_path: str | Path) -> dict[str, list[Reca
         raise ValueError("usercf_recall manifest must be train_only")
     source_status = manifest.get("source_status")
     diagnostic_only = manifest.get("diagnostic_only")
-    if source_status not in (None, "DIAGNOSTIC_ONLY", "READY"):
+    promoted_statuses = {"READY", "POOL500_RECALL_ONLY_SUPPLEMENTAL_READY"}
+    if source_status not in (None, "DIAGNOSTIC_ONLY", *promoted_statuses):
         raise ValueError(f"invalid usercf_recall source_status: {source_status!r}")
-    if diagnostic_only is False and source_status != "READY":
-        raise ValueError("route-ready usercf_recall manifest must declare source_status READY")
-    if diagnostic_only is not False and source_status == "READY":
-        raise ValueError("READY usercf_recall manifest must set diagnostic_only false")
+    if diagnostic_only is False and source_status not in promoted_statuses:
+        raise ValueError("promoted usercf_recall manifest must declare a promoted source_status")
+    if diagnostic_only is not False and source_status in promoted_statuses:
+        raise ValueError("promoted usercf_recall manifest must set diagnostic_only false; DIAGNOSTIC_ONLY manifests cannot use promoted status")
     if manifest.get("candidate_generation_allowed") is not False:
         raise ValueError("usercf_recall manifest must not authorize candidate generation")
     if manifest.get("ranking_input_replacement_allowed") is not False:
@@ -208,17 +315,111 @@ def _append_usercf_candidate(
 def load_swing_recall_sidecar(manifest_path: str | Path) -> dict[str, list[RecallCandidate]]:
     manifest_path = Path(manifest_path)
     manifest = read_json(manifest_path)
+    _validate_swing_recall_manifest(manifest)
+    edges_path = _validate_swing_required_edges_path(manifest_path, manifest)
+    return _load_item_pair_recall(edges_path, "swing_recall")
+
+
+def _validate_swing_recall_manifest(manifest: dict[str, Any]) -> None:
+    strict_contract = _looks_like_strict_swing_contract(manifest)
+    if strict_contract and manifest.get("schema_version") != _SWING_SIDECAR_SCHEMA_VERSION:
+        raise ValueError(f"invalid swing_recall schema_version: {manifest.get('schema_version')!r}")
+    if manifest.get("status") != "PASS":
+        raise ValueError(f"invalid swing_recall status: {manifest.get('status')!r}")
     if manifest.get("source") != "swing_recall":
         raise ValueError(f"invalid swing_recall manifest source: {manifest.get('source')!r}")
+    if manifest.get("source_status") in _SWING_FORBIDDEN_SOURCE_STATUSES:
+        raise ValueError(f"invalid swing_recall source_status: {manifest.get('source_status')!r}")
     if manifest.get("index_scope") != "FULL_DERIVED_INDEX":
         raise ValueError(f"invalid swing_recall index_scope: {manifest.get('index_scope')!r}")
     if manifest.get("train_only") is not True:
         raise ValueError("swing_recall manifest must be train_only")
+    for flag in sorted(_SWING_FORBIDDEN_TRUE_FLAGS):
+        if manifest.get(flag) is True:
+            raise ValueError(f"swing_recall manifest must not authorize {flag}")
+    if not strict_contract:
+        return
+    if manifest.get("lifecycle_stage") != "builder_complete":
+        raise ValueError(f"invalid swing_recall lifecycle_stage: {manifest.get('lifecycle_stage')!r}")
+    input_contract = manifest.get("input_contract")
+    if not isinstance(input_contract, dict):
+        raise ValueError("swing_recall manifest missing input_contract")
+    if input_contract.get("allowed_inputs") != ["clean_manifest.train_user_sequences_path"]:
+        raise ValueError("swing_recall manifest must use clean_manifest.train_user_sequences_path only")
+    train_path = str(input_contract.get("train_user_sequences_path") or manifest.get("train_user_sequences_path") or "")
+    declared_inputs = [str(item) for item in _as_manifest_list(input_contract.get("declared_inputs")) if item]
+    actual_input_values = [
+        manifest.get("clean_manifest_path"),
+        manifest.get("train_user_sequences_path"),
+        input_contract.get("clean_manifest_path"),
+        input_contract.get("train_user_sequences_path"),
+        *declared_inputs,
+    ]
+    for value in actual_input_values:
+        if _is_forbidden_swing_manifest_value(value):
+            raise ValueError(f"forbidden swing_recall manifest value: {value!r}")
+    if not train_path or Path(train_path).name != "user_sequences.train.jsonl":
+        raise ValueError(f"swing_recall manifest must declare user_sequences.train.jsonl, got: {train_path!r}")
+    if declared_inputs != [train_path]:
+        raise ValueError(f"swing_recall manifest declared_inputs must match train path: {declared_inputs!r}")
+    provenance = manifest.get("provenance") if isinstance(manifest.get("provenance"), dict) else {}
+    train_signature = provenance.get("train_user_sequences_signature") if isinstance(provenance.get("train_user_sequences_signature"), dict) else {}
+    clean_signature = provenance.get("clean_manifest_signature") if isinstance(provenance.get("clean_manifest_signature"), dict) else {}
+    if not train_signature.get("sha256") or not clean_signature.get("sha256"):
+        raise ValueError("swing_recall manifest missing train-only provenance signatures")
+    if manifest.get("partial_invalidation_keys") != _SWING_REQUIRED_PARTIAL_INVALIDATION_KEYS:
+        raise ValueError("swing_recall manifest missing partial invalidation contract")
+
+
+def _validate_swing_required_edges_path(manifest_path: Path, manifest: dict[str, Any]) -> Path:
+    strict_contract = _looks_like_strict_swing_contract(manifest)
     artifacts = manifest.get("required_artifacts") if isinstance(manifest.get("required_artifacts"), dict) else {}
-    edges_path = artifacts.get("swing_recall_edges") or manifest.get("edges_path")
-    if not edges_path:
+    edges_value = artifacts.get("swing_recall_edges") or (None if strict_contract else manifest.get("edges_path"))
+    if not edges_value:
         raise ValueError("swing_recall manifest missing required_artifacts.swing_recall_edges")
-    return _load_item_pair_recall(_resolve_manifest_path(manifest_path, edges_path), "swing_recall")
+    if strict_contract and Path(str(edges_value)).name != "swing_recall_edges.jsonl":
+        raise ValueError(f"invalid swing_recall edges artifact path: {edges_value!r}")
+    if strict_contract and _is_forbidden_swing_artifact_path(edges_value):
+        raise ValueError(f"forbidden swing_recall edges artifact path: {edges_value!r}")
+    resolved = _resolve_manifest_path(manifest_path, edges_value).resolve()
+    if strict_contract:
+        try:
+            resolved.relative_to(manifest_path.parent.resolve())
+        except ValueError as exc:
+            raise ValueError(f"swing_recall edges artifact path must stay under manifest directory: {edges_value!r}") from exc
+    return resolved
+
+
+def _looks_like_strict_swing_contract(manifest: dict[str, Any]) -> bool:
+    return bool(
+        manifest.get("schema_version") == _SWING_SIDECAR_SCHEMA_VERSION
+        or manifest.get("input_contract")
+        or manifest.get("lifecycle_stage")
+        or manifest.get("provenance")
+        or manifest.get("partial_invalidation_keys")
+    )
+
+
+def _is_forbidden_swing_manifest_value(value: Any) -> bool:
+    normalized = str(value).replace("\\", "/").lower()
+    return any(token in normalized for token in _SWING_FORBIDDEN_INPUT_TOKENS)
+
+
+def _is_forbidden_swing_artifact_path(value: Any) -> bool:
+    normalized = str(value).replace("\\", "/").lower()
+    parts = [part for part in normalized.split("/") if part]
+    forbidden_parts = {"all_window", "holdout", "label", "labels", "test", "valid"}
+    return normalized.startswith("/") or ":" in normalized or ".." in parts or bool(set(parts) & forbidden_parts) or _is_forbidden_swing_manifest_value(value)
+
+
+def _as_manifest_list(value: Any) -> list[Any]:
+    if value is None:
+        return []
+    if isinstance(value, dict):
+        return list(value.values())
+    if isinstance(value, (list, tuple, set)):
+        return list(value)
+    return [value]
 
 
 def load_graph_walk_seed_recall(
@@ -321,10 +522,23 @@ def _validate_graph_walk_seed_manifest(manifest_path: str | Path, sidecar_path: 
 
 
 def _resolve_manifest_path(manifest_path: Path, value: Any) -> Path:
-    path = Path(str(value))
+    raw_value = str(value)
+    path = Path(raw_value)
     if path.is_absolute() or path.exists():
         return path
+    normalized_value = raw_value.replace("\\", "/")
+    manifest_dir_name = manifest_path.parent.name
+    marker = f"/{manifest_dir_name}/"
+    if marker in normalized_value:
+        candidate = manifest_path.parent / normalized_value.split(marker, 1)[1]
+        if candidate.exists():
+            return candidate
     return manifest_path.parent / path
+
+
+def _manifest_output(manifest: dict[str, Any], key: str) -> Any:
+    outputs = manifest.get("outputs") if isinstance(manifest.get("outputs"), dict) else {}
+    return outputs.get(key)
 
 
 def _itemcf_manifest_shard_values(manifest: dict[str, Any], outputs: dict[str, Any]) -> list[Any]:
@@ -395,6 +609,45 @@ def load_category_candidates(path: str | Path) -> dict[str, list[RecallCandidate
             if item.get("parent_asin")
         ]
     return by_bucket
+
+
+def load_category_profile_index(path: str | Path, target_user_ids: set[str] | None = None) -> dict[str, list[dict[str, Any]]]:
+    profiles: dict[str, list[dict[str, Any]]] = {}
+    remaining = set(target_user_ids or [])
+    for row in iter_jsonl(path):
+        user_id = str(row.get("user_id") or "")
+        if not user_id:
+            continue
+        if target_user_ids is not None and user_id not in remaining:
+            continue
+        buckets = row.get("top_profile_buckets") or []
+        if not isinstance(buckets, list):
+            buckets = []
+        profiles[user_id] = [dict(bucket) for bucket in buckets if isinstance(bucket, dict) and bucket.get("bucket")]
+        if target_user_ids is not None:
+            remaining.discard(user_id)
+            if not remaining:
+                break
+    return profiles
+
+
+def load_category_index_source_manifest(
+    manifest_path: str | Path,
+    target_user_ids: set[str] | None = None,
+) -> tuple[dict[str, list[RecallCandidate]], dict[str, list[dict[str, Any]]]]:
+    manifest_path = Path(manifest_path)
+    manifest = read_json(manifest_path)
+    if manifest.get("source") != "category":
+        raise ValueError(f"invalid category manifest source: {manifest.get('source')!r}")
+    if manifest.get("train_only") is not True:
+        raise ValueError("category manifest must be train_only")
+    if manifest.get("candidate_materialization") != "none":
+        raise ValueError("category index manifest must declare candidate_materialization='none'")
+    if manifest.get("candidates_path") is not None:
+        raise ValueError("category index manifest must not require candidates_path")
+    category_top_path = _resolve_manifest_path(manifest_path, manifest.get("category_top_items_index_path") or _manifest_output(manifest, "category_top_items_index"))
+    profile_path = _resolve_manifest_path(manifest_path, manifest.get("user_category_profile_path") or _manifest_output(manifest, "user_category_profile"))
+    return load_category_candidates(category_top_path), load_category_profile_index(profile_path, target_user_ids)
 
 
 def load_semantic_index(path: str | Path, token_fields: list[str] | None = None) -> dict[str, dict[str, Any]]:
@@ -632,24 +885,28 @@ def _two_tower_vector_candidates_for_user(
     two_tower_index: VectorIndex,
     config: dict,
 ) -> list[RecallCandidate]:
-    seen_items = set(user_sequence.get("recent_item_sequence", []))
     limit = int(config.get("two_tower_per_user", 20))
     seed_window = int(config.get("two_tower_seed_window", 10))
     recency_decay = float(config.get("two_tower_recency_decay", 0.85))
-    seed_items = _recent_unique_seeds(user_sequence.get("recent_positive_item_sequence", []), seed_window)
-    if not seed_items:
-        return []
-    query_vector = average_vectors([two_tower_index.get_item_vector(item_id) for item_id in seed_items], recency_decay)
-    if query_vector:
-        query_vector = _apply_user_tower_projection(query_vector, two_tower_index)
-    if not query_vector:
+    query = build_two_tower_query_for_user(
+        user_sequence,
+        two_tower_index,
+        seed_window=seed_window,
+        recency_decay=recency_decay,
+        artifact_user_embedding_first=bool(config.get("two_tower_artifact_user_embedding_first", True)),
+        project_seed_average=bool(config.get("two_tower_project_seed_average", True)),
+    )
+    if not query.has_query:
         return []
     rows = []
-    for result in two_tower_index.search(query_vector, limit=limit, excluded_items=seen_items):
+    for result in two_tower_index.search(query.query_vector, limit=limit, excluded_items=query.excluded_items):
         metadata = dict(result.metadata)
         metadata.update(two_tower_index.model_metadata)
         metadata.setdefault("two_tower_source_name", two_tower_index.source_name)
         metadata.setdefault("two_tower_score_mode", "vector_dot")
+        metadata.setdefault("two_tower_query_source", query.query_source)
+        metadata.setdefault("two_tower_seed_item_count", query.seed_item_count)
+        metadata.setdefault("two_tower_seed_vector_count", query.seed_vector_count)
         rows.append(
             RecallCandidate(
                 item_id=result.item_id,
@@ -663,31 +920,7 @@ def _two_tower_vector_candidates_for_user(
 
 
 def _apply_user_tower_projection(query_vector: list[float], index: VectorIndex) -> list[float]:
-    params = index.model_metadata.get("model_parameters", {})
-    if not isinstance(params, dict) or not params:
-        return query_vector
-    w1 = params.get("user_tower.0.weight")
-    b1 = params.get("user_tower.0.bias")
-    w2 = params.get("user_tower.2.weight")
-    b2 = params.get("user_tower.2.bias")
-    if not w1 or not w2:
-        return query_vector
-    try:
-        import numpy as np
-
-        x0 = np.asarray(query_vector, dtype=np.float32)
-        w1_array = np.asarray(w1, dtype=np.float32)
-        b1_array = np.asarray(b1 if b1 is not None else np.zeros(w1_array.shape[0]), dtype=np.float32)
-        w2_array = np.asarray(w2, dtype=np.float32)
-        b2_array = np.asarray(b2 if b2 is not None else np.zeros(w2_array.shape[0]), dtype=np.float32)
-        x1 = np.maximum(w1_array @ x0 + b1_array, 0.0)
-        out = w2_array @ x1 + b2_array + x0
-        norm = float(np.linalg.norm(out))
-        if norm <= 1e-9:
-            return []
-        return (out / norm).astype(float).tolist()
-    except (ImportError, TypeError, ValueError):
-        return query_vector
+    return apply_user_tower_projection(query_vector, index)
 
 
 def merge_for_user(
@@ -907,6 +1140,55 @@ def _candidate_group_sources(group: str) -> set[str]:
     if group == "itemcf":
         return {"itemcf_weak", "itemcf_strong"}
     return {group}
+
+
+def co_visit_transition_candidates_for_user(
+    user_sequence: dict[str, Any],
+    transition_graph: dict[str, list[RecallCandidate]],
+    config: dict,
+    *,
+    exclude_items: set[str] | None = None,
+) -> list[RecallCandidate]:
+    if not transition_graph:
+        return []
+    seed_window = int(config.get("co_visit_seed_window", config.get("co_visit_underfill_seed_window", 30)))
+    per_seed = int(config.get("co_visit_per_seed", config.get("co_visit_underfill_per_seed", 50)))
+    limit = int(config.get("co_visit_per_user", config.get("co_visit_underfill_per_user", 100)))
+    seed_values = user_sequence.get("recent_positive_item_sequence", []) or user_sequence.get("recent_item_sequence", [])
+    seeds = _recent_unique_seeds(seed_values, seed_window)
+    seen_items = {str(item_id) for item_id in user_sequence.get("recent_item_sequence", []) if item_id}
+    if exclude_items:
+        seen_items.update(exclude_items)
+    by_item: dict[str, RecallCandidate] = {}
+    for seed_rank, seed in enumerate(seeds, start=1):
+        recency_weight = 1.0 / math.sqrt(seed_rank)
+        for source_rank, candidate in enumerate(transition_graph.get(seed, [])[:per_seed], start=1):
+            if candidate.item_id in seen_items:
+                continue
+            score = float(candidate.score) * recency_weight
+            metadata = dict(candidate.metadata)
+            metadata.update({
+                "reason": "train_interaction_sequence_transition",
+                "seed_item_id": seed,
+                "source_rank": source_rank,
+                "sequence_transition_seed_rank": seed_rank,
+                "sequence_transition_recency_weighted_score": score,
+                "sequence_transition_index_mode": "train_only_full_item_transition_graph",
+            })
+            row = RecallCandidate(
+                item_id=candidate.item_id,
+                source="co_visit_fallback_repair",
+                score=score,
+                category=candidate.category or str(metadata.get("category") or metadata.get("main_category") or ""),
+                metadata=metadata,
+            )
+            current = by_item.get(row.item_id)
+            if current is None or row.score > current.score:
+                by_item[row.item_id] = row
+    rows = list(by_item.values())
+    rows.sort(key=lambda item: (-item.score, item.item_id))
+    return rows[:limit]
+
 
 
 def item_graph_candidates_for_user(

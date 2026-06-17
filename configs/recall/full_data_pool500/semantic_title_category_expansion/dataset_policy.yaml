@@ -1,22 +1,71 @@
-schema_version: pool500_method_dataset_policy_v1
+schema_version: pool500_method_dataset_policy_v1_recent_2y
 source: semantic_title_category_expansion
 canonical_source: semantic_title_category_expansion
 source_status: TARGET_SLICE_DIAGNOSTIC
+readiness: DEFERRED
 role: title/category metadata expansion source
-dataset_policy: method_specific_metadata_coverage_dataset
+dataset_policy: recent2y_train_only_semantic_title_category_dataset
 semantic_title_category_input_dataset: true
 train_only: true
+use_existing_recall_views_with_audit_first: true
+research_doc: dic/recall_methods/semantic_title_category_expansion/RECENT2Y_SCIOMC_RESEARCH.md
+rebuild_plan: dic/recall_methods/semantic_title_category_expansion/RECENT2Y_REBUILD_PLAN.md
+preprocessing_checklist:
+  - train_only_user_sequences_and_item_universe
+  - clean_title_category_attribute_fields
+  - preserve_brand_model_numbers_specs
+  - preserve_category_hierarchy_path_and_categories_flat
+  - require_category_overlap_to_control_title_token_drift
+  - cap_high_frequency_token_buckets
+  - forbid_valid_test_holdout_lopo_oracle_eval_label_inputs
 allowed_inputs:
-  - data/processed/amazon_2023_recall_clean_full/user_sequences.train.jsonl
-  - data/processed/amazon_2023_recall_clean_full/canonical_items.jsonl
-  - data/processed/amazon_2023_recall_views_full_lightweight/semantic_recall_inputs.jsonl
-  - data/processed/amazon_2023_recall_views_full_lightweight/semantic_inverted_index.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/user_quality_profile.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_recall_inputs.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_inverted_index.jsonl
+  - outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json
+  - outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_formal_v1/eligible_user_manifest.json
 forbidden_data_sources:
-  - holdout
   - valid
   - test
+  - holdout
   - LOPO
+  - oracle
+  - label
+  - eval_label
   - clean_10000
+  - full_lightweight
+  - full_data_derived_method_dataset
+  - youtube_dnn
+  - pool1000
+  - old_10k
+scale_tiers:
+  smoke:
+    purpose: program_and_schema_validation_only
+    promotion_allowed: false
+    eligible_manifest: outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json
+    target_user_count: 200
+    method_config:
+      selection_mode: title_category_scorer
+      seed_window: 20
+      per_user: 80
+      per_seed: 40
+      per_token_item_limit: 1000
+      max_candidate_items: 30000
+  formal:
+    purpose: official_method_logic_dataset_under_recent_2y_train_only_governance
+    promotion_allowed: false
+    eligible_manifest: outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_formal_v1/eligible_user_manifest.json
+    target_user_count: 50000
+    method_config:
+      selection_mode: title_category_scorer
+      seed_window: 50
+      per_user: 120
+      per_seed: 60
+      per_token_item_limit: 2000
+      max_candidate_items: 200000
 outputs_required:
   - method_dataset_manifest.json
   - source_index_manifest.json
@@ -32,13 +81,30 @@ required_coverage_audits:
   - seed_item_metadata_coverage
   - user_coverage_count
   - candidate_row_count
-  - candidate_count_min
   - candidate_count_p50
   - candidate_count_p90
   - candidate_count_max
+current_artifacts:
+  smoke_source_index_manifest: outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/source_index_manifest.json
+  smoke_eval_report: outputs/eval/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_smoke_v1/method_source_eval_report.json
+  formal_source_index_manifest: null
+  formal_status: blocked_local_resource_requires_server
+  formal_partial_checkpoint: outputs/recall/pool500_method_sources_newdata/semantic_title_category_expansion/semantic_title_category_recent2y_formal_v1/checkpoint.json
+formal_blocker:
+  reason: local formal 50000-user build exceeded interactive/resource boundary after target_sequences_loaded; server execution required
+  required_return_artifacts:
+    - source_index_manifest.json
+    - method_dataset_manifest.json
+    - candidates.jsonl
+    - coverage_audit.json
+    - undercoverage_audit.json
+    - resource_audit.json
+    - no_holdout_audit.json
+    - method_source_eval_report.json
 governance:
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
   full_pool500_ready_declared: false
+  final_pool500_ready_claimed: false

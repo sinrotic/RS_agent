@@ -23,8 +23,8 @@ def make_agent_decision(user_id: str, ranking: RankingResult, config: dict, diag
         limitations.append("Qwen inference is constrained to bounded rerank signals over existing candidates; it cannot create products.")
         explanation = "Applies hybrid recall and deterministic feedback constraints, then uses Qwen-generated bounded rerank signals over existing candidates before final ranking."
     else:
-        limitations.append("Deterministic policy stub only; no LLM reasoning or autonomous planning is used.")
-        explanation = "Applies fixed weights to merged popular, ItemCF, and category recall candidates; this is a transparent baseline, not LLM intelligence."
+        limitations.append("Deterministic policy stub only; no autonomous model planning is used.")
+        explanation = "Applies fixed weights to available candidate providers and your feedback constraints; this is a transparent deterministic baseline."
     limitations.append("Small-sample demo quality depends on available recall-clean smoke artifacts.")
     risk_flags: list[str] = []
     if ranking.fallback_used:

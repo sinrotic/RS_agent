@@ -67,6 +67,41 @@ def make_user_quality_manifest(tmp_path: Path, profiles: list[dict], scope: str 
     return path
 
 
+def make_rpa_like_method_dataset_manifest(tmp_path: Path, rows: list[dict], manifest_patch: dict | None = None) -> Path:
+    method_dir = tmp_path / "rpa_like_method_dataset"
+    rows_path = method_dir / "method_dataset_rows.jsonl"
+    write_jsonl(rows_path, rows)
+    manifest = {
+        "schema_version": "rpa_like_recent2y_method_dataset_v1",
+        "row_schema_version": "rpa_like_eligible_sequence_v1",
+        "status": "PASS",
+        "dataset_tier": "smoke",
+        "source_method": "rpa_like_recursive_cf",
+        "source_variant": "recursive_cf_lite_zhang_pu_2007_dataset_v1",
+        "source_status": "DIAGNOSTIC_ONLY",
+        "diagnostic_only": True,
+        "train_only": True,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "pool1000_allowed": False,
+        "promotion_allowed": False,
+        "final_pool500_ready_claimed": False,
+        "ready_source_artifact": False,
+        "label_backflow_allowed": False,
+        "row_count": len(rows),
+        "outputs": {
+            "method_dataset_rows": str(rows_path),
+            "method_dataset_manifest": str(method_dir / "method_dataset_manifest.json"),
+        },
+        "labels_role": "none_in_dataset_build_or_candidate_generation",
+    }
+    if manifest_patch:
+        manifest.update(manifest_patch)
+    manifest_path = method_dir / "method_dataset_manifest.json"
+    write_json(manifest_path, manifest)
+    return manifest_path
+
+
 def profile(user_id: str, bucket: str = "heavy_cf_eligible") -> dict:
     return {
         "user_id": user_id,
@@ -87,8 +122,14 @@ def build_for_test(manifest_path: Path, output_dir: Path, **kwargs) -> dict:
         clean_manifest=manifest_path,
         output_dir=output_dir,
         eligible_user_quality_manifest=kwargs.pop("eligible_user_quality_manifest", None),
+        method_dataset_manifest=kwargs.pop("method_dataset_manifest", None),
+        target_users_path=kwargs.pop("target_users_path", None),
         max_items_per_user=kwargs.pop("max_items_per_user", 10),
         max_item_user_freq=kwargs.pop("max_item_user_freq", 10),
+        src_min_positive_user_count=kwargs.pop("src_min_positive_user_count", 1),
+        dst_min_positive_user_count=kwargs.pop("dst_min_positive_user_count", 1),
+        min_src_filtered_items_per_user=kwargs.pop("min_src_filtered_items_per_user", 1),
+        keep_hot=kwargs.pop("keep_hot", False),
         similar_users_top_k=kwargs.pop("similar_users_top_k", 2),
         candidate_top_k_per_user=kwargs.pop("candidate_top_k_per_user", 3),
         shard_count=kwargs.pop("shard_count", 3),
@@ -195,6 +236,46 @@ def test_usercf_sidecar_accepts_target500_slice_policy_without_heavy_label(tmp_p
 
 
 
+def test_usercf_sidecar_accepts_rpa_like_manifest_seed_sequence_and_target_users(tmp_path: Path) -> None:
+    clean_manifest = make_clean_manifest(tmp_path / "clean", [{"user_id": "unused", "recent_positive_item_sequence": ["z"]}])
+    method_manifest = make_rpa_like_method_dataset_manifest(
+        tmp_path,
+        [
+            {"user_id": "target", "seed_item_sequence": ["a", "b"], "candidate_generation_allowed": False},
+            {"user_id": "neighbor", "seed_item_sequence": ["a", "c"], "candidate_generation_allowed": False},
+            {"user_id": "other", "seed_item_sequence": ["x", "y"], "candidate_generation_allowed": False},
+        ],
+    )
+    target_users_path = tmp_path / "target_users.jsonl"
+    write_jsonl(target_users_path, [{"user_id": "target"}, {"user_id": "missing"}])
+
+    manifest = build_for_test(
+        clean_manifest,
+        tmp_path / "out",
+        method_dataset_manifest=method_manifest,
+        target_users_path=target_users_path,
+    )
+
+    rows = collect_shard_rows(manifest)
+    resource = read_json(tmp_path / "out" / "resource_audit.json")
+    no_holdout = read_json(tmp_path / "out" / "no_holdout_audit.json")
+    selection = read_json(tmp_path / "out" / "custom_index_selection_manifest.json")
+    assert manifest["resolved_paths"]["method_dataset_manifest"] == str(method_manifest.resolve())
+    assert manifest["resolved_paths"]["target_users_path"] == str(target_users_path.resolve())
+    assert manifest["source_status"] == "DIAGNOSTIC_ONLY"
+    assert manifest["candidate_generation_allowed"] is False
+    assert manifest["promotion_allowed"] is False
+    assert manifest["target_user_count"] == 1
+    assert rows == [{"user_id": "target", "candidates": [{"item_id": "c", "score": 0.5, "rank": 1, "source": "usercf_recall"}]}]
+    assert resource["source_signature"]["field"] == "seed_item_sequence"
+    assert resource["source_signature"]["dataset_schema"] == "rpa_like_eligible_sequence_v1"
+    assert resource["explicit_target_user_count"] == 2
+    assert resource["missing_explicit_target_user_count"] == 1
+    assert no_holdout["target_users_role"] == "materialization_targets_only"
+    assert no_holdout["train_sequence_field"] == "seed_item_sequence"
+    assert "method_dataset_rows.seed_item_sequence" in selection["allowed_inputs"]
+
+
 def test_usercf_sidecar_empty_heavy_manifest_does_not_fall_back_to_full_matrix(tmp_path: Path) -> None:
     manifest_path = make_clean_manifest(
         tmp_path,
@@ -239,7 +320,47 @@ def test_usercf_sidecar_writes_batch_checkpoints_for_resume(tmp_path: Path) -> N
     assert manifest["peak_rss_mb"] == resource["peak_rss_mb"]
 
 
-def test_usercf_sidecar_drops_hot_items_from_similarity_graph(tmp_path: Path) -> None:
+def test_usercf_sidecar_iuf_cosine_downweights_common_overlap_and_records_policy(tmp_path: Path) -> None:
+    manifest_path = make_clean_manifest(
+        tmp_path,
+        [
+            {"user_id": "u1", "recent_positive_item_sequence": ["common", "common_2", "rare_a"]},
+            {"user_id": "u2", "recent_positive_item_sequence": ["common", "common_2", "hot_candidate"]},
+            {"user_id": "u3", "recent_positive_item_sequence": ["rare_a", "rare_candidate"]},
+            {"user_id": "u4", "recent_positive_item_sequence": ["common", "filler_1"]},
+            {"user_id": "u5", "recent_positive_item_sequence": ["common", "filler_2"]},
+            {"user_id": "u6", "recent_positive_item_sequence": ["common_2", "filler_3"]},
+        ],
+    )
+    eligible = make_user_quality_manifest(tmp_path, [profile("u1")])
+
+    cosine = build_for_test(
+        manifest_path,
+        tmp_path / "cosine",
+        eligible_user_quality_manifest=eligible,
+        scoring_policy="cosine_overlap",
+        target_user_limit=1,
+    )
+    iuf = build_for_test(
+        manifest_path,
+        tmp_path / "iuf",
+        eligible_user_quality_manifest=eligible,
+        scoring_policy="iuf_cosine",
+        target_user_limit=1,
+    )
+
+    cosine_rows = collect_shard_rows(cosine)
+    iuf_rows = collect_shard_rows(iuf)
+    assert cosine_rows[0]["candidates"][0]["item_id"] == "hot_candidate"
+    assert iuf_rows[0]["candidates"][0]["item_id"] == "rare_candidate"
+    assert iuf["scoring_policy"] == "iuf_cosine"
+    assert iuf["config_caps"]["scoring_policy"] == "iuf_cosine"
+    assert read_json(tmp_path / "iuf" / "resource_audit.json")["config_caps"]["scoring_policy"] == "iuf_cosine"
+    assert read_json(tmp_path / "iuf" / "per_source_candidate_manifest.json")["scoring_policy"] == "iuf_cosine"
+
+
+
+def test_usercf_sidecar_drops_hot_items_from_similarity_graph_when_keep_hot_false(tmp_path: Path) -> None:
     manifest_path = make_clean_manifest(
         tmp_path,
         [
@@ -259,6 +380,57 @@ def test_usercf_sidecar_drops_hot_items_from_similarity_graph(tmp_path: Path) ->
     resource_audit = read_json(tmp_path / "out" / "resource_audit.json")
     assert resource_audit["dropped_hot_item_count"] == 1
     assert resource_audit["candidate_total_count"] == 0
+
+
+def test_usercf_sidecar_item_first_filters_src_users_dst_candidates_and_keeps_hot(tmp_path: Path) -> None:
+    manifest_path = make_clean_manifest(
+        tmp_path,
+        [
+            {"user_id": "target", "recent_positive_item_sequence": ["hot", "src", "seen", "rare"]},
+            {"user_id": "n1", "recent_positive_item_sequence": ["hot", "src", "seen", "dst"]},
+            {"user_id": "n2", "recent_positive_item_sequence": ["hot", "src", "dst", "filler"]},
+            {"user_id": "weak", "recent_positive_item_sequence": ["rare", "dst"]},
+        ],
+    )
+    eligible = make_user_quality_manifest(tmp_path, [profile("target"), profile("weak")])
+
+    manifest = build_full_train_usercf_sidecar(
+        clean_manifest=manifest_path,
+        output_dir=tmp_path / "item_first",
+        eligible_user_quality_manifest=eligible,
+        max_items_per_user=10,
+        max_item_user_freq=2,
+        src_min_positive_user_count=2,
+        dst_min_positive_user_count=3,
+        min_src_filtered_items_per_user=2,
+        keep_hot=True,
+        similar_users_top_k=3,
+        candidate_top_k_per_user=5,
+        shard_count=2,
+        target_batch_size=2,
+        min_free_bytes=0,
+        max_rss_mb=4096,
+        enforce_venv=False,
+    )
+
+    rows_by_user = {row["user_id"]: row for row in collect_shard_rows(manifest)}
+    resource = read_json(tmp_path / "item_first" / "resource_audit.json")
+    dropped = read_json(tmp_path / "item_first" / "dropped_hot_items.json")
+    assert set(rows_by_user) == {"target", "weak"}
+    assert [candidate["item_id"] for candidate in rows_by_user["target"]["candidates"]] == ["dst"]
+    assert all(candidate["item_id"] != "seen" for candidate in rows_by_user["weak"]["candidates"])
+    assert manifest["target_user_count"] == 2
+    assert resource["src_min_positive_user_count"] == 2
+    assert resource["dst_min_positive_user_count"] == 3
+    assert resource["min_src_filtered_items_per_user"] == 2
+    assert resource["keep_hot"] is True
+    assert resource["hot_item_hard_drop_enabled"] is False
+    assert resource["dropped_hot_item_count"] == 0
+    assert resource["observed_over_freq_item_count"] == 3
+    assert dropped["keep_hot"] is True
+    assert dropped["hot_item_hard_drop_enabled"] is False
+    assert dropped["dropped_item_count"] == 0
+    assert dropped["observed_over_freq_item_count"] == 3
 
 
 def test_usercf_sidecar_target_user_limit_keeps_diagnostic_scope_bounded(tmp_path: Path) -> None:
@@ -454,6 +626,24 @@ def test_usercf_sidecar_rejects_forbidden_10k_pool1000_and_non_train_paths(tmp_p
     good_manifest = make_clean_manifest(tmp_path / "good", [{"user_id": "u1", "recent_positive_item_sequence": ["a"]}])
     with pytest.raises(ValueError, match="Forbidden holdout/10k/pool1000 path"):
         build_for_test(good_manifest, tmp_path / "pool1000" / "out")
+
+
+def test_usercf_sidecar_rejects_forbidden_target_users_path(tmp_path: Path) -> None:
+    clean_manifest = make_clean_manifest(tmp_path / "clean", [{"user_id": "unused", "recent_positive_item_sequence": ["z"]}])
+    method_manifest = make_rpa_like_method_dataset_manifest(
+        tmp_path,
+        [{"user_id": "target", "seed_item_sequence": ["a", "b"], "candidate_generation_allowed": False}],
+    )
+    target_users_path = tmp_path / "valid" / "target_users.jsonl"
+    write_jsonl(target_users_path, [{"user_id": "target"}])
+
+    with pytest.raises(ValueError, match="Forbidden holdout/valid/test/LOPO/oracle/eval path"):
+        build_for_test(
+            clean_manifest,
+            tmp_path / "out",
+            method_dataset_manifest=method_manifest,
+            target_users_path=target_users_path,
+        )
 
 
 def test_usercf_sidecar_rejects_user_quality_manifest_that_authorizes_generation(tmp_path: Path) -> None:

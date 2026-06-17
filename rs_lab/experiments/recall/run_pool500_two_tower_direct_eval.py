@@ -14,9 +14,9 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, write_json
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.candidate_merge import _apply_user_tower_projection, _recent_unique_seeds
+from rs_core.recsys.two_tower_query import build_two_tower_query_for_user
 from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
-from rs_core.recsys.vector_index import average_vectors, load_vector_index_artifact
+from rs_core.recsys.vector_index import load_vector_index_artifact
 
 SCHEMA_VERSION = "raw_two_tower_direct_eval_v1"
 POSITIVE_FIELDS = ("label_binary", "label", "holdout_hit", "is_hit", "clicked", "purchased")
@@ -86,18 +86,32 @@ def run_two_tower_direct_eval(
 
     query_vectors: dict[str, list[float]] = {}
     excluded_items: dict[str, set[str]] = {}
+    query_sources: dict[str, str] = {}
     queryless_users: list[str] = []
+    queryless_reasons: Counter[str] = Counter()
+    seed_item_counts: list[int] = []
+    seed_vector_counts: list[int] = []
+    projected_seed_query_count = 0
     for user_id in eval_user_ids:
-        sequence = sequences[user_id]
-        seed_items = _recent_unique_seeds(sequence.get("recent_positive_item_sequence", []), seed_window)
-        query_vector = average_vectors([index.get_item_vector(item_id) for item_id in seed_items], recency_decay)
-        if query_vector:
-            query_vector = _apply_user_tower_projection(query_vector, index)
-        if query_vector:
-            query_vectors[user_id] = query_vector
-            excluded_items[user_id] = set(sequence.get("recent_item_sequence", []))
+        query = build_two_tower_query_for_user(
+            sequences[user_id],
+            index,
+            seed_window=seed_window,
+            recency_decay=recency_decay,
+            artifact_user_embedding_first=True,
+            project_seed_average=True,
+        )
+        seed_item_counts.append(query.seed_item_count)
+        seed_vector_counts.append(query.seed_vector_count)
+        if query.applied_projection:
+            projected_seed_query_count += 1
+        if query.has_query:
+            query_vectors[user_id] = query.query_vector
+            excluded_items[user_id] = query.excluded_items
+            query_sources[user_id] = query.query_source
         else:
             queryless_users.append(user_id)
+            queryless_reasons[query.queryless_reason or "unknown"] += 1
 
     search_started = perf_counter()
     results_by_user = {}
@@ -128,6 +142,11 @@ def run_two_tower_direct_eval(
         "user_count": len(eval_user_ids),
         "query_user_count": len(query_vectors),
         "queryless_user_count": len(queryless_users),
+        "query_source_counts": dict(sorted(Counter(query_sources.values()).items())),
+        "queryless_reason_counts": dict(sorted(queryless_reasons.items())),
+        "seed_item_count_stats": _count_stats(seed_item_counts),
+        "seed_vector_count_stats": _count_stats(seed_vector_counts),
+        "projected_seed_query_count": projected_seed_query_count,
         "item_count": len(index.items),
         "candidate_rows": candidate_rows,
         "underfilled_user_count": underfilled_user_count,
@@ -147,6 +166,9 @@ def run_two_tower_direct_eval(
             "recency_decay": recency_decay,
             "batch_size": batch_size,
             "item_block_size": item_block_size,
+            "artifact_user_embedding_first": True,
+            "project_seed_average": True,
+            "seed_sequence_keys": ["recent_positive_item_sequence", "recent_strong_positive_item_sequence", "recent_item_sequence"],
             "user_tower_projection": bool(source_manifest.get("model_parameters")),
         },
     }
@@ -169,6 +191,23 @@ def _parse_metric_ks(values: Iterable[int] | str) -> list[int]:
 def _resolve_manifest_path(manifest_path: Path, value: Any) -> Path:
     path = Path(str(value))
     return path if path.is_absolute() else manifest_path.resolve().parent / path
+
+
+def _count_stats(values: list[int]) -> dict[str, float | int]:
+    if not values:
+        return {"min": 0, "p50": 0, "p90": 0, "max": 0}
+    ordered = sorted(values)
+    return {"min": ordered[0], "p50": _percentile(ordered, 0.5), "p90": _percentile(ordered, 0.9), "max": ordered[-1]}
+
+
+def _percentile(values: list[int], q: float) -> float:
+    if len(values) == 1:
+        return float(values[0])
+    pos = (len(values) - 1) * q
+    lower = int(pos)
+    upper = min(lower + 1, len(values) - 1)
+    weight = pos - lower
+    return round(values[lower] * (1 - weight) + values[upper] * weight, 6)
 
 
 def _load_eval_users(path: Path) -> list[dict[str, Any]]:

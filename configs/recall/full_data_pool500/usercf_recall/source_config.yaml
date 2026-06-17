@@ -1,32 +1,57 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v2_recent_2y
 source: usercf_recall
-output_root: outputs/recall/pool500_usercf_method_train
-run_id: usercf_v1_formal_route_ready
-source_index_manifest: outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json
-readiness_contract: outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/readiness_contract.json
-input_mode: method_dataset
-method_dataset_manifest: outputs/recall/pool500_method_datasets/usercf_v1_local_formal/usercf_method_dataset/method_dataset_manifest.json
-target_user_limit: 90686
-candidate_top_k_per_user: 500
+output_root: outputs/recall/pool500_method_sources/recent_2y
+run_id: usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1
+source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json
+readiness_contract: outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/readiness_contract.json
+input_mode: clean_train_sequences
+clean_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+method_dataset_manifest: null
+formal_quantity_policy: train_only_item_first_full_diagnostic_not_ready
+candidate_top_k_per_user: 100
 generation_config_overrides:
-  usercf_per_user: 500
-similar_users_top_k: 200
-target_batch_size: 2000
-shard_count: 16
+  usercf_per_user: 100
+scoring_policy: iuf_cosine
+similar_users_top_k: 50
+similar_users_top_k_semantics: diagnostic_user_neighbor_cap_from_item_first_clean_train_policy
 max_items_per_user: 80
+max_items_per_user_semantics: train_user_history_cap_from_recent_positive_item_sequence
 max_item_user_freq: 5000
-max_rss_mb: 4096
+max_item_user_freq_semantics: observed_hot_item_frequency_audit_threshold_no_hard_drop_when_keep_hot
+item_filter_policy:
+  input_field: recent_positive_item_sequence
+  train_only_positive_user_count: true
+  src_min_positive_user_count: 2
+  dst_min_positive_user_count: 3
+  keep_hot: true
+  hot_item_hard_drop_enabled: false
+user_filter_policy:
+  min_src_filtered_items_per_user: 3
+  selection_reason: best coverage-quality tradeoff in user>=2/3/4/5/6/10 threshold sweep; user>=3 improves served-user test HitRate@100 while retaining usable coverage.
+target_user_limit: 0
+target_batch_size: 200
+shard_count: 64
+max_rss_mb: 8192
+scale_tiers:
+  smoke:
+    purpose: program_validity_check
+    quantity_policy: small_bounded_smoke
+  full_diagnostic:
+    purpose: selected_recent_2y_train_only_item_first_usercf_diagnostic
+    quantity_policy: all train users satisfying src>=2,dst>=3,user_after_src_filter>=3,keep_hot=true,iuf_cosine
 resource_guard:
-  batch_size: 2000
+  batch_size: 200
   checkpoint_enabled: true
   heavy_job: true
 manifest_contract:
   source_index_manifest: source_index_manifest.json
-  method_dataset_manifest: method_dataset_manifest.json
   readiness_contract: readiness_contract.json
-  candidates: candidates.jsonl
+  candidate_shards: shards/*.jsonl
+  resource_audit: resource_audit.json
+  no_holdout_audit: no_holdout_audit.json
 governance:
-  source_status: READY
+  source_status: DIAGNOSTIC_ONLY
+  current_artifact_note: UserCF selected full diagnostic artifact uses src>=2,dst>=3,user3,keep_hot,iuf_cosine; not READY.
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false

@@ -1,25 +1,107 @@
-schema_version: pool500_method_dataset_policy_v1
+schema_version: pool500_method_dataset_policy_v2_recent_2y
 source: swing_recall
-source_status: TARGET_SLICE_DIAGNOSTIC
-role: Swing behavioral item graph source
+source_status: READY_GUARDED
+role: Swing behavioral item-item graph source
 dataset_policy: method_specific_swing_pair_graph_dataset
 train_only: true
+upstream_governance_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+sciomc_preprocess_root: data/processed/amazon_2023_sciomc_swing_recent2y
 forbidden_data_sources:
   - holdout
   - valid
   - test
   - LOPO
+  - oracle
+  - eval_label
   - clean_10000
+  - pool1000
+  - full_data_derived_method_dataset
+allowed_train_only_inputs:
+  - train_only_governance/manifest.json
+  - train_only_governance/user_quality_profile.jsonl
+  - train_only_governance/item_quality_profile.jsonl
+  - train_only_governance/item_frequency_train.jsonl
+  - user_sequences.train.jsonl
+scale_tiers:
+  smoke:
+    purpose: program_schema_path_validation_only
+    manifest: outputs/recall/pool500_method_datasets/recent_2y/swing_recall/smoke/swing_method_dataset/method_dataset_manifest.json
+    status: PASS
+    row_count: 4205
+    user_count: 2000
+    item_count: 4738
+    min_pair_support: 1
+    max_graph_users: 2000
+    promotion_allowed: false
+  formal:
+    purpose: official_recent_2y_train_only_method_dataset_governance_evidence
+    manifest: outputs/recall/pool500_method_datasets/recent_2y/swing_recall/formal/swing_method_dataset/method_dataset_manifest.json
+    status: PASS
+    row_count: 15
+    user_count: 4313
+    item_count: 16
+    min_pair_support: 2
+    eligible_user_buckets:
+      - medium_behavior
+      - collaborative_rich
+    eligible_item_policy: item_quality_profile.cf_ready=true and over_hot=false for swing collaborative pairs
+    promotion_allowed: false
+source_artifacts:
+  smoke:
+    source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/swing_recall/smoke/run_20260603_smoke_train_only_v1/source_index_manifest.json
+    edge_count: 1082
+    seed_count: 232
+  formal:
+    source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json
+    eval_report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_raw_eval_report.json
+    funnel_diagnostic_report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_funnel_diagnostic.json
+    edge_count: 457372
+    seed_count: 65693
+    status: PASS
 outputs_required:
-  - method_dataset_manifest.json
-  - source_index_manifest.json
-  - candidates.jsonl
-  - coverage_audit.json
-  - undercoverage_audit.json
-  - resource_audit.json
-  - no_holdout_audit.json
+  method_dataset:
+    - method_dataset_manifest.json
+    - method_dataset_rows.jsonl
+  source_artifact:
+    - source_index_manifest.json
+    - swing_recall_edges.jsonl
+    - custom_index_selection_manifest.json
+    - dropped_hot_items.json
+    - resource_audit.json
+    - no_holdout_audit.json
+  evaluation_only:
+    - swing_recent2y_formal_eval_report.json
+    - swing_recent2y_funnel_diagnostic.json
+readiness_semantics:
+  status: READY_GUARDED
+  registry_status: READY
+  guarded_reason: F1 fixed as selected Swing route artifact by user decision; artifact-level promotion and replacement flags remain closed
+  direct_main_route_merge_allowed: true
 governance:
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
+  main_route_merge_requires_global_gate: true
+formal_eval_summary:
+  selected_variant: F1_datawhale_pre_user_src2_dst2_no_post_user_filter
+  valid:
+    candidate_user_coverage_rate: 0.139671
+    hit_rate_at_500: 0.008044
+    recall_at_500: 0.006821
+  test:
+    candidate_user_coverage_rate: 0.063765
+    hit_rate_at_500: 0.002163
+    recall_at_500: 0.001892
+funnel_diagnostic_summary:
+  report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_funnel_diagnostic.json
+  valid_missing_train_sequence_users: 70623
+  test_missing_train_sequence_users: 115624
+  valid_users_without_graph_seed_but_hot_dropped_seed: 732
+  test_users_without_graph_seed_but_hot_dropped_seed: 522
+  next_experiment_priority: route_level_overlap_and_marginal_lift_gate_for_selected_f1_artifact
+promotion_blockers:
+  - artifact_fixed_as_swing_route_default_but_auto_promotion_remains_closed
+  - source_overlap_against_current_ready_methods_not_computed
+  - candidate_generation_allowed_remains_false_until_explicit_route_gate_open
+  - valid_metric_tiny_dip_vs_B_requires_route_level_monitoring

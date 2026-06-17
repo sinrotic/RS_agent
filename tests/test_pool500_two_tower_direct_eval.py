@@ -54,6 +54,10 @@ def test_two_tower_direct_eval_scores_without_using_labels_for_generation(tmp_pa
     assert manifest["label_paths"] == [str(labels)]
     assert manifest["query_user_count"] == 1
     assert manifest["queryless_user_count"] == 1
+    assert manifest["query_source_counts"] == {"recent_positive_item_sequence_average_vectors": 1}
+    assert manifest["queryless_reason_counts"] == {"seed_items_missing_item_vectors": 1}
+    assert manifest["search_config"]["artifact_user_embedding_first"] is True
+    assert manifest["search_config"]["project_seed_average"] is True
     assert manifest["underfilled_user_count"] == 1
     assert manifest["metrics"]["recall_at_1"] == 0.5
     assert manifest["metrics"]["hit_rate_at_1"] == 0.5

@@ -1,68 +1,133 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v2_recent_2y
 source: semantic
 canonical_source: semantic
-source_status: TARGET_SLICE_DIAGNOSTIC
+source_status: READY_CANDIDATE
+route_integration_status: GUARDED_CANDIDATE_SOURCE
+default_tier: smoke
 tier_aliases:
-  dam: diagnostic
-  dam(diagnostic): diagnostic
-  最终数据集: local_formal
-  最终数据集(local_formal): local_formal
+  recent2y_smoke: smoke
+  recent2y_formal: formal
+  dam(diagnostic): smoke
+  最终数据集(local_formal): formal
 defaults:
-  output_root: outputs/recall/pool500_method_sources
+  output_root: outputs/recall/pool500_method_sources_newdata
   run_id: null
   input_contract:
-    clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
-    lightweight_views_manifest: data/processed/amazon_2023_recall_views_full_lightweight/manifest.json
-    eligible_user_manifest: outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json
+    clean_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+    lightweight_views_manifest: data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json
+    eligible_user_manifest: outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json
     train_only: true
+    valid_used: false
+    test_used: false
+    holdout_used: false
+    lopo_used: false
+    oracle_used: false
+    eval_label_used: false
+    use_existing_recall_views_with_audit_first: true
   resource_guard:
     batch_size: 500
     checkpoint_enabled: true
     heavy_job: false
   method_config:
-    limit_users: 500
-    seed_window: 20
-    per_user: 80
-    per_seed: 40
-    per_token_item_limit: 2000
-    max_candidate_items: 80000
-    selection_mode: full_metadata_overlap
+    selection_mode: bm25f_field_weighted
+    semantic_score_mode: bm25f
+    bm25_k1: 1.2
+    bm25_b: 0.75
+    semantic_max_df_ratio: 0.5
+    generic_tokens: [and, the, with, for, from, item, product]
+    field_weights:
+      title_clean: 3.0
+      main_category: 2.5
+      category: 2.0
+      categories_flat: 1.5
+      description_text: 0.5
+      features_text: 0.5
+      item_text: 0.25
+    candidate_metadata_policy: lean_reference
 tiers:
   smoke:
     method_config:
-      limit_users: 20
-      seed_window: 10
-      per_user: 40
-      per_seed: 20
-      per_token_item_limit: 500
-      max_candidate_items: 10000
-    resource_guard:
-      batch_size: 20
-      heavy_job: false
-  diagnostic:
-    alias: dam(diagnostic)
-    method_config:
-      limit_users: 500
+      limit_users: 200
       seed_window: 20
       per_user: 80
       per_seed: 40
-      per_token_item_limit: 2000
-      max_candidate_items: 80000
+      per_token_item_limit: 1000
+      max_candidate_items: 30000
+      selection_mode: bm25f_field_weighted
+      semantic_score_mode: bm25f
+      bm25_k1: 1.2
+      bm25_b: 0.75
+      semantic_max_df_ratio: 0.5
+      generic_tokens: [and, the, with, for, from, item, product]
+      field_weights:
+        title_clean: 3.0
+        main_category: 2.5
+        category: 2.0
+        categories_flat: 1.5
+        description_text: 0.5
+        features_text: 0.5
+        item_text: 0.25
+      candidate_metadata_policy: lean_reference
     resource_guard:
-      batch_size: 500
+      batch_size: 50
       heavy_job: false
-  local_formal:
-    alias: 最终数据集(local_formal)
+  formal:
+    input_contract:
+      eligible_user_manifest: outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_formal_v1/eligible_user_manifest.json
     method_config:
-      limit_users: 500
-      seed_window: 30
-      per_user: 120
-      per_seed: 60
-      per_token_item_limit: 5000
-      max_candidate_items: 120000
+      limit_users: 10000
+      seed_window: 50
+      per_user: 80
+      per_seed: 40
+      per_token_item_limit: 300
+      max_candidate_items: 5000
+      per_user_candidate_pool_limit: 300
+      selection_mode: bm25f_field_weighted
+      semantic_score_mode: bm25f
+      bm25_k1: 1.2
+      bm25_b: 0.75
+      semantic_max_df_ratio: 0.5
+      generic_tokens: [and, the, with, for, from, item, product]
+      field_weights:
+        title_clean: 3.0
+        main_category: 2.5
+        category: 2.0
+        categories_flat: 1.5
+        description_text: 0.5
+        features_text: 0.5
+        item_text: 0.25
+      candidate_metadata_policy: lean_reference
     resource_guard:
       batch_size: 500
+      checkpoint_enabled: true
       heavy_job: false
+current_artifacts:
+  smoke_source_index_manifest: outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_smoke_v1/source_index_manifest.json
+  formal_source_index_manifest: outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/source_index_manifest.json
+  formal_evaluation_report: outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/evaluation_report.json
+  formal_status: diagnostic_only_target_slice_10k
+  formal_blocker: full_50k_or_no_cap_formal_requires_server_and_route_gate_evidence
+
+route_integration:
+  main_route_merge_status: MERGED_AS_GUARDED_CANDIDATE_SOURCE
+  main_route_candidate_source_allowed: true
+  main_route_role: description_relevance_semantic_candidate_source
+  semantic_title_category_channel: folded_into_semantic_bm25f_title_category_channel
+  evidence_role: description_relevance_guard_not_final_promotion
+  default_description_evidence: outputs/diagnostics/semantic_description_random6_20260608/semantic_description_recall_strict_report.json
+  strict_stress_diagnostic: outputs/diagnostics/semantic_description_recall_strict_v2_20260608/semantic_description_recall_strict_report.json
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false
+description_evidence_summary:
+  random6_avg_strict_precision_at_10: 0.9
+  random6_avg_required_precision_at_10: 1.0
+  random6_avg_bad_intent_rate_at_10: 0.1
+  strict_v2_avg_strict_precision_at_10: 0.483
+  strict_v2_avg_bad_intent_rate_at_10: 0.267
+  label_inputs_role: not_used
+  oracle_label_injection: false
 manifest_contract:
   method_dataset_manifest: method_dataset_manifest.json
   source_index_manifest: source_index_manifest.json

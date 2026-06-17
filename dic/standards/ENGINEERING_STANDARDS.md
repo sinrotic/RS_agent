@@ -41,8 +41,9 @@
 - `experiment`：实验性评估，不作为普通提交的默认门禁。
 - `serving`：服务 API、session、chat、feedback 等接口验证。
 - `frontend`：前端构建、类型检查或端到端演示相关验证。
-- 所有 `tests/test_*.py` 必须声明文件级 `pytestmark`；普通 CI 通过 `scripts/ci/select_tests_by_marker.py --marker unit --marker smoke` 自动选择快速门禁测试，避免维护测试文件白名单。
-- v1.3 开始允许组合 marker：服务冒烟可同时标记 `serving + smoke`，服务运行时单测可标记 `unit + serving`，GPU 训练实验标记 `experiment + gpu`，长耗时离线实验标记 `experiment + slow`。默认 CI 仍只跑 `unit or smoke`，serving 作为专项门禁单独选择；`gpu`、`slow`、`experiment` 不进入默认门禁。
+- 以上 marker 与 `pyproject.toml` 保持一致；所有 `tests/test_*.py` 必须声明文件级 `pytestmark`。
+- `scripts/ci/select_tests_by_marker.py` 支持按 marker 选择测试，普通 CI 的默认快速门禁是 `unit` + `smoke`，避免维护测试文件白名单。
+- v1.3 开始允许组合 marker：服务冒烟可同时标记 `serving + smoke`，服务运行时单测可标记 `unit + serving`，GPU 训练实验标记 `experiment + gpu`，长耗时离线实验标记 `experiment + slow`。默认门禁仍只跑 `unit` / `smoke`，`serving` 作为专项门禁单独选择；`gpu`、`slow`、`experiment` 不进入默认门禁。
 
 ## 5. 日志与异常
 

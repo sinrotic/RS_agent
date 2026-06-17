@@ -1,9 +1,80 @@
 schema_version: pool500_method_dataset_policy_v1
 source: usercf_recall
 source_status: DIAGNOSTIC_ONLY
+future_promotion_status: DIAGNOSTIC_ONLY_NOT_READY
+promotion_matrix_required: contract_audit_full_diagnostic_formal_promotion
 role: user-neighbor collaborative filtering source
-dataset_policy: method_specific_high_behavior_user_overlap_dataset
+dataset_policy: clean_train_sequences_item_first_usercf_recent_2y_diagnostic
+preprocessing_policy: usercf_train_only_item_positive_user_count_v1
+input_dataset: data/processed/amazon_2023_recall_recent_2y_1m_3m
+input_mode: clean_train_sequences
+method_dataset_manifest: null
+formal_source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json
+formal_evaluation_summary: outputs/recall/pool500_method_evals/recent_2y/usercf_threshold_shard_eval_summary.json
+old_three_tier_quantity_limits_ignored: true
 train_only: true
+scoring_policy: iuf_cosine
+item_filter_policy:
+  input_field: recent_positive_item_sequence
+  count_scope: train_only_positive_users
+  src_min_positive_user_count: 2
+  dst_min_positive_user_count: 3
+  keep_hot: true
+  hot_item_hard_drop_enabled: false
+user_filter_policy:
+  min_src_filtered_items_per_user: 3
+  selected_by_threshold_sweep: true
+  tested_thresholds:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 10
+  selection_reason: user>=3 balances coverage, cost, and served-user test HitRate@100 better than user>=2/4/5/6/10.
+diagnostic_scope:
+  target_user_limit: 0
+  target_user_count: 651099
+  row_count: 651046
+  candidate_user_count: 651046
+  candidate_total_count: 64327024
+  readiness: DIAGNOSTIC_ONLY
+  ready_claimed: false
+  note: full diagnostic artifact only; valid/test labels were evaluation-only and not used for candidate generation.
+threshold_sweep_summary:
+  summary_path: outputs/recall/pool500_method_evals/recent_2y/usercf_threshold_shard_eval_summary.json
+  combined_recall_at_100:
+    user2: 0.00187
+    user3: 0.00095
+    user4: 0.000492
+    user5: 0.000285
+    user6: 0.000183
+    user10: 0.000044
+  served_hit_rate_at_100:
+    user2:
+      valid: 0.055192
+      test: 0.037368
+      combined: 0.050566
+    user3:
+      valid: 0.0626
+      test: 0.04765
+      combined: 0.060403
+    user4:
+      valid: 0.065429
+      test: 0.039394
+      combined: 0.061987
+    user5:
+      valid: 0.070225
+      test: 0.021944
+      combined: 0.064575
+    user6:
+      valid: 0.068599
+      test: 0.017241
+      combined: 0.064236
+    user10:
+      valid: 0.059701
+      test: 0.021277
+      combined: 0.059794
 forbidden_data_sources:
   - holdout
   - valid
@@ -11,11 +82,9 @@ forbidden_data_sources:
   - LOPO
   - clean_10000
 outputs_required:
-  - method_dataset_manifest.json
   - source_index_manifest.json
-  - candidates.jsonl
-  - coverage_audit.json
-  - undercoverage_audit.json
+  - readiness_contract.json
+  - shards/*.jsonl
   - resource_audit.json
   - no_holdout_audit.json
 governance:

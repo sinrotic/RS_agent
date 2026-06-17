@@ -236,6 +236,27 @@ def test_method_dataset_audit_blocks_missing_v2_bucket_dependency(tmp_path: Path
     assert report["diagnostics"]["p1_governance"]["artifacts"]["user_quality_profile"]["missing_quality_bucket_v2_rows"] == 1
 
 
+def test_two_tower_audit_blocks_recent_window_sample_time_contract(tmp_path: Path) -> None:
+    paths = _write_fixture(tmp_path)
+    two_tower_dir = tmp_path / "two_tower_dataset"
+    _build_two_tower_fixture_dataset(paths, two_tower_dir, negative_ratio=1)
+    samples_path = two_tower_dir / "two_tower_train_samples.jsonl"
+    samples = _read_jsonl(samples_path)
+    samples[0]["history_times"] = [samples[0]["target_time"]]
+    _write_jsonl(samples_path, samples)
+
+    report = validate_pool500_method_dataset_audit_evidence(
+        governance_manifest_path=paths["governance_manifest"],
+        method_dataset_paths=[two_tower_dir],
+        output_path=None,
+        enforce_venv=False,
+    )
+
+    assert report["status"] == "BLOCKED"
+    blockers = report["audited_manifests"][0]["blockers"]
+    assert "two_tower_recent_window_sample_time_contract_invalid" in blockers
+
+
 def test_two_tower_audit_blocks_negative_universe_without_p1_provenance(tmp_path: Path) -> None:
     paths = _write_fixture(tmp_path)
     two_tower_dir = tmp_path / "two_tower_dataset"
@@ -408,6 +429,71 @@ def test_two_tower_audit_blocks_negative_leakage(tmp_path: Path) -> None:
     assert "two_tower_train_sample_negative_leakage" in report["audited_manifests"][0]["blockers"]
 
 
+def test_two_tower_audit_blocks_negative_source_hash_and_policy_gaps(tmp_path: Path) -> None:
+    paths = _write_fixture(tmp_path)
+    two_tower_dir = tmp_path / "two_tower_dataset"
+    _build_two_tower_fixture_dataset(paths, two_tower_dir, negative_ratio=1)
+    manifest_path = two_tower_dir / "method_dataset_manifest.json"
+    manifest = _read_json(manifest_path)
+    manifest["negative_universe_source_hash"] = "bad_hash"
+    manifest["negative_sampling_policy"].pop("excludes_items_after_target_window_boundary")
+    _write_json(manifest_path, manifest)
+
+    report = validate_pool500_method_dataset_audit_evidence(
+        governance_manifest_path=paths["governance_manifest"],
+        method_dataset_paths=[two_tower_dir],
+        output_path=None,
+        enforce_venv=False,
+    )
+
+    blockers = "\n".join(report["audited_manifests"][0]["blockers"])
+    assert report["status"] == "BLOCKED"
+    assert "two_tower_negative_universe_source_hash_mismatch" in blockers
+    assert "two_tower_negative_sampling_policy_incomplete:excludes_items_after_target_window_boundary" in blockers
+
+
+def test_two_tower_audit_migrates_legacy_target_item_source_diagnostically(tmp_path: Path) -> None:
+    paths = _write_fixture(tmp_path)
+    two_tower_dir = tmp_path / "two_tower_dataset"
+    _build_two_tower_fixture_dataset(paths, two_tower_dir, negative_ratio=1)
+    samples_path = two_tower_dir / "two_tower_train_samples.jsonl"
+    samples = _read_jsonl(samples_path)
+    samples[0]["target_item_source"] = "train_only_user_sequence"
+    _write_jsonl(samples_path, samples)
+
+    report = validate_pool500_method_dataset_audit_evidence(
+        governance_manifest_path=paths["governance_manifest"],
+        method_dataset_paths=[two_tower_dir],
+        output_path=None,
+        enforce_venv=False,
+    )
+
+    diagnostics = report["audited_manifests"][0]["diagnostics"]["two_tower_train_sample_quality"]
+    assert report["status"] == "PASS"
+    assert diagnostics["legacy_target_item_source_count"] == 1
+    assert diagnostics["target_item_source_counts"] == {"train_positive": len(samples)}
+
+
+def test_two_tower_audit_blocks_forbidden_target_item_source(tmp_path: Path) -> None:
+    paths = _write_fixture(tmp_path)
+    two_tower_dir = tmp_path / "two_tower_dataset"
+    _build_two_tower_fixture_dataset(paths, two_tower_dir, negative_ratio=1)
+    samples_path = two_tower_dir / "two_tower_train_samples.jsonl"
+    samples = _read_jsonl(samples_path)
+    samples[0]["target_item_source"] = "manual_debug"
+    _write_jsonl(samples_path, samples)
+
+    report = validate_pool500_method_dataset_audit_evidence(
+        governance_manifest_path=paths["governance_manifest"],
+        method_dataset_paths=[two_tower_dir],
+        output_path=None,
+        enforce_venv=False,
+    )
+
+    assert report["status"] == "BLOCKED"
+    assert "two_tower_target_item_source_forbidden_in_p2" in report["audited_manifests"][0]["blockers"]
+
+
 def test_two_tower_audit_blocks_empty_train_samples(tmp_path: Path) -> None:
     paths = _write_fixture(tmp_path)
     two_tower_dir = tmp_path / "two_tower_dataset"
@@ -549,9 +635,9 @@ def _write_fixture(tmp_path: Path) -> dict[str, Path]:
     _write_jsonl(
         train_sequences,
         [
-            {"user_id": "u_heavy", "recent_item_sequence": ["pos_a", "neg_a"], "recent_positive_item_sequence": ["cf_mid", "pos_a"]},
-            {"user_id": "u_medium", "recent_item_sequence": ["pos_b"], "recent_positive_item_sequence": ["cf_mid", "pos_b"]},
-            {"user_id": "u_fallback", "recent_item_sequence": ["pos_c"], "recent_positive_item_sequence": ["cf_mid"]},
+            {"user_id": "u_heavy", "recent_item_sequence": ["pos_a", "neg_a"], "recent_timestamp_sequence": [10, 20], "recent_positive_item_sequence": ["cf_mid", "pos_a"], "recent_positive_timestamp_sequence": [10, 20]},
+            {"user_id": "u_medium", "recent_item_sequence": ["pos_b"], "recent_timestamp_sequence": [30], "recent_positive_item_sequence": ["cf_mid", "pos_b"], "recent_positive_timestamp_sequence": [30, 40]},
+            {"user_id": "u_fallback", "recent_item_sequence": ["pos_c"], "recent_timestamp_sequence": [50], "recent_positive_item_sequence": ["cf_mid"], "recent_positive_timestamp_sequence": [50]},
         ],
     )
     canonical_items = clean_dir / "canonical_items.jsonl"

@@ -31,6 +31,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-name", default=DEFAULT_OUTPUT_NAME)
     parser.add_argument("--update-candidate-manifest", action="store_true")
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument("--streaming", action="store_true", help="Build labels without materializing candidate rows; use for large pool500 shards.")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
 
@@ -111,6 +112,159 @@ def build_pool500_label_artifact(
     write_json(manifest_path, manifest)
     if update_candidate_manifest and candidate_manifest_path is not None:
         _update_candidate_manifest(candidate_manifest_path, output_path, manifest_path, label_artifact)
+    return manifest
+
+
+def build_pool500_label_artifact_streaming(
+    *,
+    pool500_candidates_path: Path,
+    interaction_labels_path: Path,
+    output_dir: Path,
+    output_name: str = DEFAULT_OUTPUT_NAME,
+    overwrite: bool = False,
+    enforce_venv: bool = True,
+) -> dict[str, Any]:
+    if enforce_venv:
+        enforce_project_venv(ROOT)
+    pool500_candidates_path = pool500_candidates_path.resolve()
+    interaction_labels_path = interaction_labels_path.resolve()
+    output_dir = output_dir.resolve()
+    output_path = output_dir / output_name
+    manifest_path = output_dir / "pool500_label_artifact_manifest.json"
+    _precheck(pool500_candidates_path, interaction_labels_path, output_path, manifest_path, overwrite, None, False)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    candidate_pairs: set[tuple[str, str]] = set()
+    candidate_users: set[str] = set()
+    candidate_source_counts: Counter[str] = Counter()
+    duplicate_candidate_count = 0
+    for row_number, row in enumerate(iter_jsonl(pool500_candidates_path), start=1):
+        user_id = str(row.get("user_id") or "")
+        parent_asin = str(row.get("parent_asin") or row.get("item_id") or "")
+        if not user_id or not parent_asin:
+            raise ValueError(f"Candidate row {row_number} is missing user_id or item_id/parent_asin")
+        pair = (user_id, parent_asin)
+        if pair in candidate_pairs:
+            duplicate_candidate_count += 1
+            continue
+        candidate_pairs.add(pair)
+        candidate_users.add(user_id)
+        candidate_source_counts[str(row.get("source") or "")] += 1
+    if not candidate_pairs:
+        raise ValueError(f"Candidate file has no usable rows: {pool500_candidates_path}")
+
+    positive_pairs: set[tuple[str, str]] = set()
+    positive_pair_splits: dict[tuple[str, str], str] = {}
+    split_counts: Counter[str] = Counter()
+    row_count = 0
+    usable_count = 0
+    skipped_missing_key_count = 0
+    skipped_non_positive_count = 0
+    positive_source_pair_count = 0
+    for row in iter_jsonl(interaction_labels_path):
+        row_count += 1
+        user_id = str(row.get("user_id") or "")
+        parent_asin = str(row.get("parent_asin") or row.get("item_id") or "")
+        split = str(row.get("split") or row.get("label_split") or "unknown")
+        split_counts[split] += 1
+        if not user_id or not parent_asin:
+            skipped_missing_key_count += 1
+            continue
+        usable_count += 1
+        if not _label_row_positive(row):
+            skipped_non_positive_count += 1
+            continue
+        positive_source_pair_count += 1
+        pair = (user_id, parent_asin)
+        if pair in candidate_pairs:
+            positive_pairs.add(pair)
+            positive_pair_splits[pair] = split
+    default_split = next(iter(split_counts)) if len(split_counts) == 1 else None
+    label_source_summary = {
+        "schema": "hit_style_jsonl",
+        "row_count": row_count,
+        "usable_join_key_row_count": usable_count,
+        "positive_pair_count": positive_source_pair_count,
+        "candidate_matched_positive_pair_count": len(positive_pairs),
+        "split_counts": dict(sorted(split_counts.items())),
+        "default_split": default_split,
+        "skipped_missing_join_key_count": skipped_missing_key_count,
+        "skipped_non_positive_count": skipped_non_positive_count,
+        "positive_default_when_label_field_absent": True,
+        "streaming_candidate_filtered": True,
+    }
+
+    positive_count = 0
+    labeled_users: set[str] = set()
+    row_output_count = 0
+    seen: set[tuple[str, str]] = set()
+    with output_path.open("w", encoding="utf-8") as handle:
+        for row_number, row in enumerate(iter_jsonl(pool500_candidates_path), start=1):
+            user_id = str(row.get("user_id") or "")
+            parent_asin = str(row.get("parent_asin") or row.get("item_id") or "")
+            if not user_id or not parent_asin:
+                raise ValueError(f"Candidate row {row_number} is missing user_id or item_id/parent_asin")
+            pair = (user_id, parent_asin)
+            if pair in seen:
+                continue
+            seen.add(pair)
+            label_row = _label_row({"user_id": user_id, "parent_asin": parent_asin, "source": row.get("source"), "rank": row.get("rank")}, positive_pairs, positive_pair_splits, default_split)
+            if label_row["label_binary"] == 1:
+                positive_count += 1
+                labeled_users.add(user_id)
+            row_output_count += 1
+            handle.write(json.dumps(label_row, ensure_ascii=False) + "\n")
+
+    coverage_diagnostics = {
+        "positive_overlap_count": len(positive_pairs),
+        "positive_overlap_user_count": len({user_id for user_id, _ in positive_pairs}),
+        "candidate_hit_rate": round(len(positive_pairs) / positive_source_pair_count, 6) if positive_source_pair_count else 0.0,
+        "missing_reason_counts": {"not_materialized_in_streaming_mode": max(positive_source_pair_count - len(positive_pairs), 0)},
+    }
+    label_artifact = {
+        "schema_version": SCHEMA_VERSION,
+        "path": str(output_path),
+        "sha256": _sha256_file(output_path),
+        "row_count": row_output_count,
+        "positive_count": positive_count,
+        "negative_count": row_output_count - positive_count,
+        "user_count": len(candidate_users),
+        "labeled_user_count": len(labeled_users),
+        "candidate_coverage": 1.0 if row_output_count else 0.0,
+        "user_coverage": round(len(labeled_users) / len(candidate_users), 6) if candidate_users else 0.0,
+        "positive_coverage": round(positive_count / row_output_count, 6) if row_output_count else 0.0,
+        "positive_overlap_count": coverage_diagnostics["positive_overlap_count"],
+        "positive_overlap_user_count": coverage_diagnostics["positive_overlap_user_count"],
+        "candidate_hit_rate": coverage_diagnostics["candidate_hit_rate"],
+        "missing_reason_counts": coverage_diagnostics["missing_reason_counts"],
+        "duplicate_candidate_count": duplicate_candidate_count,
+        "join_key": "user_id,parent_asin",
+        "label_source_path": str(interaction_labels_path),
+        "label_source_sha256": _sha256_file(interaction_labels_path),
+        "label_source_summary": label_source_summary,
+        "streaming": True,
+    }
+    manifest = {
+        "schema_version": MANIFEST_SCHEMA_VERSION,
+        "status": "PASS",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "pool500_candidates_path": str(pool500_candidates_path),
+        "pool500_candidates_sha256": _sha256_file(pool500_candidates_path),
+        "interaction_labels_path": str(interaction_labels_path),
+        "interaction_labels_sha256": _sha256_file(interaction_labels_path),
+        "label_artifact_path": str(output_path),
+        "label_artifact": label_artifact,
+        "candidate_source_counts": dict(sorted(candidate_source_counts.items())),
+        "diagnostic_only": True,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+        "final_pool500_ready_claimed": False,
+        "full_pool500_ready_declared": False,
+    }
+    write_json(manifest_path, manifest)
     return manifest
 
 
@@ -296,16 +450,26 @@ def _sha256_file(path: Path) -> str:
 
 def main() -> None:
     args = parse_args()
-    manifest = build_pool500_label_artifact(
-        pool500_candidates_path=Path(args.pool500_candidates),
-        interaction_labels_path=Path(args.interaction_labels),
-        output_dir=Path(args.output_dir),
-        candidate_manifest_path=Path(args.candidate_manifest) if args.candidate_manifest else None,
-        output_name=args.output_name,
-        update_candidate_manifest=args.update_candidate_manifest,
-        overwrite=args.overwrite,
-        enforce_venv=not args.skip_venv_check,
-    )
+    if args.streaming:
+        manifest = build_pool500_label_artifact_streaming(
+            pool500_candidates_path=Path(args.pool500_candidates),
+            interaction_labels_path=Path(args.interaction_labels),
+            output_dir=Path(args.output_dir),
+            output_name=args.output_name,
+            overwrite=args.overwrite,
+            enforce_venv=not args.skip_venv_check,
+        )
+    else:
+        manifest = build_pool500_label_artifact(
+            pool500_candidates_path=Path(args.pool500_candidates),
+            interaction_labels_path=Path(args.interaction_labels),
+            output_dir=Path(args.output_dir),
+            candidate_manifest_path=Path(args.candidate_manifest) if args.candidate_manifest else None,
+            output_name=args.output_name,
+            update_candidate_manifest=args.update_candidate_manifest,
+            overwrite=args.overwrite,
+            enforce_venv=not args.skip_venv_check,
+        )
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
 

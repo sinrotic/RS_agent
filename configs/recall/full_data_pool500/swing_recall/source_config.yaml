@@ -1,42 +1,78 @@
-schema_version: pool500_method_source_config_v1
+schema_version: pool500_method_source_config_v3_recent_2y
 source: swing_recall
 canonical_source: swing_recall
-source_status: TARGET_SLICE_DIAGNOSTIC
+source_status: READY_GUARDED
 algorithm_scope: train_item_item_swing_graph_v1
 complete_swing_graph_claimed: false
-tier_aliases:
-  dam: diagnostic
-  dam(diagnostic): diagnostic
-  最终数据集: local_formal
-  最终数据集(local_formal): local_formal
+default_tier: formal
+readiness_semantics:
+  method_status: READY_GUARDED
+  registry_status: READY
+  source_artifact_status: PASS
+  main_route_merge_status: SELECTED_AS_SWING_MAIN_ROUTE_ARTIFACT_GUARDED
+  guarded_reason: f1_selected_by_user_with_train_only_audit_but_global_candidate_generation_flags_remain_closed
+current_artifacts:
+  smoke:
+    method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/swing_recall/smoke/swing_method_dataset/method_dataset_manifest.json
+    source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/swing_recall/smoke/run_20260603_smoke_train_only_v1/source_index_manifest.json
+    edge_count: 1082
+    seed_count: 232
+  formal:
+    method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/swing_recall/formal/swing_method_dataset/method_dataset_manifest.json
+    source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json
+    eval_report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_raw_eval_report.json
+    funnel_diagnostic_report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_funnel_diagnostic.json
+    edge_count: 457372
+    seed_count: 65693
+    dropped_hot_item_count: 153
+    supported_pair_count: 492702
 defaults:
-  output_root: outputs/recall/pool500_method_sources
-  run_id: null
+  output_root: outputs/recall/pool500_method_sources/recent_2y/swing_recall
+  run_id: run_20260606_datawhale_f1_main_route_v1
   input_contract:
-    clean_manifest: data/processed/amazon_2023_recall_clean_full/manifest.json
-    baseline_dir: outputs/recall/pool500_main_route_direct_recall_full_promoted
+    clean_manifest: data/processed/amazon_2023_sciomc_swing_recent2y/formal/swing_builder_train_manifest.json
+    train_user_sequences: data/processed/amazon_2023_sciomc_swing_recent2y/formal/user_sequences.train.jsonl
+    baseline_dir: outputs/recall/pool500_method_sources/recent_2y/swing_recall
     train_only: true
+    allowed_inputs:
+      - clean_manifest.train_user_sequences_path
+    forbidden_inputs:
+      - holdout
+      - valid
+      - test
+      - LOPO
+      - oracle
+      - eval_label
+      - clean_10000
+      - pool1000
+      - full_data_derived_method_dataset
   resource_guard:
     batch_size: null
     checkpoint_enabled: true
     heavy_job: false
-    max_graph_users: 50000
-    max_items_per_user: 80
-    max_item_user_freq: 1000
-    min_free_bytes: 10737418240
+    min_free_bytes: 0
   swing_enhancement:
+    score_mode: datawhale_standard
     min_user_items: 2
-    min_pair_support: 1
-    per_seed_top_k: 120
-    seed_window: 40
-    per_user: 120
+    min_pair_support: 2
     swing_alpha: 1.0
-  diagnostics:
+    alpha: 1.0
+    max_item_user_freq: 1000
+    max_user_items: 50
+    per_seed_top_k: 100
+    min_score: 0.0
+    pre_filter_users_before_item_count: true
+    min_src_item_positive_user_count: 2
+    min_dst_item_positive_user_count: 2
+    disable_post_item_user_filter: true
+  quality_checks:
     hot_item_cap_check: true
     heavy_user_dampening_check: true
     common_user_support_check: true
+    no_holdout_audit_required: true
 tiers:
   smoke:
+    purpose: program_schema_path_validation_only
     resource_guard:
       batch_size: 20
       heavy_job: false
@@ -51,44 +87,73 @@ tiers:
       seed_window: 20
       per_user: 40
       swing_alpha: 1.0
-  diagnostic:
-    alias: dam(diagnostic)
+    artifacts:
+      method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/swing_recall/smoke/swing_method_dataset/method_dataset_manifest.json
+      source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/swing_recall/smoke/run_20260603_smoke_train_only_v1/source_index_manifest.json
+  formal:
+    purpose: official_recent_2y_train_only_source_artifact_evidence
     resource_guard:
       batch_size: null
       heavy_job: false
-      max_graph_users: 50000
-      max_items_per_user: 80
+      max_graph_users: 0
+      max_graph_users_semantics: no_fixed_user_count_cap_full_formal_train_sequence_input
+      max_items_per_user: 50
       max_item_user_freq: 1000
+      min_free_bytes: 0
     swing_enhancement:
-      min_user_items: 2
-      min_pair_support: 1
-      per_seed_top_k: 120
-      seed_window: 40
-      per_user: 120
-      swing_alpha: 1.0
-  local_formal:
-    alias: 最终数据集(local_formal)
-    resource_guard:
-      batch_size: null
-      heavy_job: false
-      max_graph_users: 120000
-      max_items_per_user: 80
-      max_item_user_freq: 600
-    swing_enhancement:
+      score_mode: datawhale_standard
       min_user_items: 2
       min_pair_support: 2
-      per_seed_top_k: 120
-      seed_window: 40
-      per_user: 120
+      per_seed_top_k: 100
+      seed_window: 0
+      seed_window_semantics: source_index_uses_train_graph_candidate_eval_uses_recent_train_seeds
+      per_user: 0
+      per_user_semantics: not_a_candidate_generation_manifest
       swing_alpha: 1.0
+      alpha: 1.0
+      min_score: 0.0
+      pre_filter_users_before_item_count: true
+      min_src_item_positive_user_count: 2
+      min_dst_item_positive_user_count: 2
+      disable_post_item_user_filter: true
+    artifacts:
+      method_dataset_manifest: outputs/recall/pool500_method_datasets/recent_2y/swing_recall/formal/swing_method_dataset/method_dataset_manifest.json
+      source_index_manifest: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json
+      eval_report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_raw_eval_report.json
+      funnel_diagnostic_report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_funnel_diagnostic.json
 manifest_contract:
   source_index_manifest: source_index_manifest.json
-  method_dataset_manifest: method_dataset_manifest.json
-  candidates: candidates.jsonl
-  coverage_audit: coverage_audit.json
-  undercoverage_audit: undercoverage_audit.json
+  swing_recall_edges: swing_recall_edges.jsonl
+  custom_index_selection_manifest: custom_index_selection_manifest.json
+  dropped_hot_items: dropped_hot_items.json
   resource_audit: resource_audit.json
   no_holdout_audit: no_holdout_audit.json
+formal_eval_summary:
+  selected_variant: F1_datawhale_pre_user_src2_dst2_no_post_user_filter
+  valid:
+    candidate_user_coverage_rate: 0.139671
+    hit_rate_at_500: 0.008044
+    recall_at_500: 0.006821
+  test:
+    candidate_user_coverage_rate: 0.063765
+    hit_rate_at_500: 0.002163
+    recall_at_500: 0.001892
+  medium_behavior_4_9:
+    valid_hit_rate_at_500: 0.08039
+    test_hit_rate_at_500: 0.054334
+funnel_diagnostic_summary:
+  report: outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/eval/swing_recent2y_f1_funnel_diagnostic.json
+  valid:
+    missing_train_sequence_users: 70623
+    generated_candidate_user_count: 12537
+    users_without_graph_seed_but_hot_dropped_seed: 732
+    target_exists_as_any_dst_rate: 0.620136
+  test:
+    missing_train_sequence_users: 115624
+    generated_candidate_user_count: 8283
+    users_without_graph_seed_but_hot_dropped_seed: 522
+    target_exists_as_any_dst_rate: 0.637642
+  next_experiment_priority: route_level_overlap_and_marginal_lift_gate_for_selected_f1_artifact
 governance:
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
@@ -97,3 +162,9 @@ governance:
   full_pool500_ready_declared: false
   final_pool500_ready_claimed: false
   complete_swing_graph_claimed: false
+  main_route_merge_requires_global_gate: true
+promotion_blockers:
+  - artifact_fixed_as_swing_route_default_but_auto_promotion_remains_closed
+  - source_overlap_against_current_ready_methods_not_computed
+  - candidate_generation_allowed_remains_false_until_explicit_route_gate_open
+  - valid_metric_tiny_dip_vs_B_requires_route_level_monitoring

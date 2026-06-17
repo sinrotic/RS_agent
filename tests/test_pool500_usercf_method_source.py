@@ -101,6 +101,13 @@ def make_source_config(tmp_path: Path, output_root: Path) -> Path:
                 "shard_count: 2",
                 "max_items_per_user: 10",
                 "max_item_user_freq: 10",
+                "scoring_policy: iuf_cosine",
+                "item_filter_policy:",
+                "  src_min_positive_user_count: 2",
+                "  dst_min_positive_user_count: 3",
+                "  keep_hot: true",
+                "user_filter_policy:",
+                "  min_src_filtered_items_per_user: 2",
                 "max_rss_mb: 4096",
                 "governance:",
                 "  candidate_generation_allowed: false",
@@ -213,6 +220,10 @@ def build_method_source(tmp_path: Path, *, rows: list[dict] | None = None, eligi
         shard_count=2,
         max_items_per_user=10,
         max_item_user_freq=10,
+        src_min_positive_user_count=1,
+        dst_min_positive_user_count=1,
+        min_src_filtered_items_per_user=1,
+        keep_hot=False,
         min_free_bytes=0,
         max_rss_mb=4096,
         overwrite=True,
@@ -225,6 +236,19 @@ def assert_governance(payload: dict) -> None:
     assert payload["source"] == "usercf_recall"
     assert payload["canonical_source"] == "usercf_recall"
     assert payload["source_status"] == "DIAGNOSTIC_ONLY"
+    assert payload["diagnostic_only"] is True
+    assert payload["index_scope"] == "FULL_DERIVED_INDEX"
+    assert payload["train_only"] is True
+    for key in FORBIDDEN_SWITCHES:
+        assert payload[key] is False
+    assert "FULL_POOL500_READY" not in json.dumps(payload, ensure_ascii=False)
+
+
+def assert_recall_only_supplemental_governance(payload: dict) -> None:
+    assert payload["source"] == "usercf_recall"
+    assert payload["canonical_source"] == "usercf_recall"
+    assert payload["source_status"] == "POOL500_RECALL_ONLY_SUPPLEMENTAL_READY"
+    assert payload["diagnostic_only"] is False
     assert payload["index_scope"] == "FULL_DERIVED_INDEX"
     assert payload["train_only"] is True
     for key in FORBIDDEN_SWITCHES:
@@ -460,6 +484,10 @@ def test_usercf_method_source_method_dataset_input_writes_non_promoted_loadable_
         shard_count=2,
         max_items_per_user=10,
         max_item_user_freq=10,
+        src_min_positive_user_count=1,
+        dst_min_positive_user_count=1,
+        min_src_filtered_items_per_user=1,
+        keep_hot=False,
         min_free_bytes=0,
         max_rss_mb=4096,
         overwrite=True,
@@ -513,6 +541,10 @@ def test_usercf_method_source_route_ready_method_dataset_is_loadable_without_ran
         shard_count=2,
         max_items_per_user=10,
         max_item_user_freq=10,
+        src_min_positive_user_count=1,
+        dst_min_positive_user_count=1,
+        min_src_filtered_items_per_user=1,
+        keep_hot=False,
         min_free_bytes=0,
         max_rss_mb=4096,
         overwrite=True,
@@ -524,15 +556,12 @@ def test_usercf_method_source_route_ready_method_dataset_is_loadable_without_ran
     readiness = read_json(output_dir / "readiness_contract.json")
     usercf = load_usercf_recall_sidecar(output_dir / "source_index_manifest.json")
 
-    assert manifest["source_status"] == "READY"
-    assert manifest["diagnostic_only"] is False
-    assert readiness["status"] == "READY"
-    assert readiness["source_status"] == "READY"
+    assert_recall_only_supplemental_governance(manifest)
+    assert readiness["status"] == "POOL500_RECALL_ONLY_SUPPLEMENTAL_READY"
+    assert readiness["source_status"] == "POOL500_RECALL_ONLY_SUPPLEMENTAL_READY"
     assert readiness["full_output_status"] == "FULL_OUTPUT_READY"
-    assert readiness["diagnostic_only"] is False
+    assert_recall_only_supplemental_governance(readiness)
     assert set(usercf) == {"u1", "u2", "u3"}
-    assert all(manifest[key] is False for key in FORBIDDEN_SWITCHES)
-    assert all(readiness[key] is False for key in FORBIDDEN_SWITCHES)
 
     unsafe_manifest = dict(manifest)
     unsafe_manifest["ranking_input_replacement_allowed"] = True

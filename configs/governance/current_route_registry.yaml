@@ -2,14 +2,14 @@ schema_version: current_route_registry_v1
 routes:
   current_recall_route:
     role: recall
-    status: current
-    authority_refs: ["dic/ENGINEERING_NARRATIVE_LOG.md", "dic/experiments/recall/RECALL_METHODS_EXPERIMENT_LOG.md"]
-    config_paths: ["configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"]
-    workflow_paths: ["rs_core/workflow/ranking_experiments.py"]
-    script_paths: ["rs_lab/experiments/recall/phase_1_21_recall_coverage_experiments.py"]
-    required_output_paths: ["outputs/recall/phase_1_21_recall_coverage/current_main_route_pool200_source_balanced/manifest.json"]
+    status: deprecated
+    authority_refs: ["dic/decisions/POOL200_RETIREMENT_RECORD_2026_06_08.md", "dic/ENGINEERING_NARRATIVE_LOG.md", "dic/experiments/recall/RECALL_METHODS_EXPERIMENT_LOG.md"]
+    config_paths: []
+    workflow_paths: []
+    script_paths: []
+    required_output_paths: []
     promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#recall-route-promotion
-    notes: Current pool200 source-balanced recall route; pool500 extends this route rather than selecting methods again.
+    notes: Pool200 source-balanced recall route retired on 2026-06-08; only historical records remain.
   current_ranking_route:
     role: ranking
     status: current
@@ -24,17 +24,32 @@ routes:
     role: agent_demo
     status: provisional_current
     authority_refs: ["dic/README.md", "dic/PROJECT_STRUCTURE.md"]
-    config_paths: ["configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml"]
+    config_paths: ["configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml"]
     workflow_paths: ["rs_core/serving/service.py", "rs_core/rsagent/runtime.py"]
     script_paths: ["scripts/serving/run_service.py", "scripts/evaluation/run_simulation_evaluation.py"]
     required_output_paths: []
     promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion
     notes: Provisional local Agent demo route; runtime should not embed governance details directly.
+  current_online_service_route:
+    role: online_serving
+    status: provisional_current
+    authority_refs: ["dic/README.md", "dic/architecture/ARCHITECTURE.md", "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"]
+    config_paths: ["configs/serving/online_service.yaml"]
+    workflow_paths: ["rs_core/serving/service.py", "rs_core/workflow/online_recommendation.py", "rs_core/workflow/hybrid_environment.py"]
+    script_paths: ["scripts/serving/run_service.py"]
+    required_output_paths: ["outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl"]
+    promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion
+    candidate_generation_allowed: true
+    ranking_input_replacement_allowed: false
+    pool1000_allowed: false
+    promotion_allowed: false
+    full_pool500_ready_semantics: recall_artifact_readiness_only
+    notes: Provisional online serving route lets service and Agent tools read prepared pool500 candidates, but does not authorize ranking-route replacement or promotion.
   pool500_recall_continuation_route:
     role: recall
     status: continuation_only
-    authority_refs: ["dic/ENGINEERING_NARRATIVE_LOG.md", "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"]
-    config_paths: ["configs/recall/phase_1_21/phase_1_21_recall_coverage_pool200_experimental.yaml"]
+    authority_refs: ["dic/decisions/POOL200_RETIREMENT_RECORD_2026_06_08.md", "dic/ENGINEERING_NARRATIVE_LOG.md", "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"]
+    config_paths: []
     workflow_paths: ["rs_core/workflow/pool500_route_gate.py", "rs_core/workflow/full_data_pool500_route_gate.py#full_data_pool500_artifact_gate"]
     script_paths: ["rs_lab/experiments/recall/run_p7_full_pool500_route_gate.py", "rs_lab/experiments/recall/run_full_data_pool500_batch01_dry_run.py"]
     required_output_paths: ["outputs/recall/p7_full_pool500_main_route_continuation/route_precheck_gate/manifest.json"]
@@ -47,4 +62,4 @@ routes:
     shadow_mode: read_only_shadow_evidence
     full_pool500_ready_semantics: recall_artifact_readiness_only
     public_display_forbidden_fields: ["agent_runtime_trace", "diagnostics_path", "ranking_evidence_path", "raw_export_trace_path", "trace_ref"]
-    notes: Recall-only continuation candidate. FULL_POOL500_READY only means recall artifact ready; it does not authorize ranking input replacement.
+    notes: Recall-only continuation candidate. FULL_POOL500_READY only means recall artifact ready; it does not authorize ranking input replacement. Pool200 input artifacts were retired on 2026-06-08 and must be retargeted before rerunning the P7 bridge gate.

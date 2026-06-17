@@ -54,22 +54,25 @@ from rs_lab.experiments.recall.pool500.fallback_completion import (
     complete_pool500_for_user,
 )
 from rs_lab.experiments.recall.pool500.governance.fallback_completion_contract import FallbackSource
+from scripts.experiments.recall.pool500.audit_co_visit_fallback_repair_task import build_co_visit_fallback_repair_task_audit
+from scripts.experiments.recall.pool500.audit_semantic_description_evidence_gate import build_semantic_description_evidence_gate
 
 SCHEMA_VERSION = "full_data_pool500_recall_only_generation_v1"
 DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_clean_full" / "manifest.json"
 DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_views_full_lightweight" / "manifest.json"
 DEFAULT_OUTPUT_DIR = ROOT / "outputs" / "recall" / "full_data_pool500_recall_only"
 DEFAULT_SOURCE_MANIFESTS = {
-    "itemcf_weak": ROOT / "outputs" / "recall" / "pool500_method_sources" / "itemcf_weak" / "target500_train_weak_edges_v1" / "source_index_manifest.json",
-    "itemcf_strong": ROOT / "outputs" / "recall" / "pool500_method_sources" / "itemcf_strong_relaxed_seedsrc_v3_from_method_dataset" / "itemcf_strong" / "formal_sharded" / "source_index_manifest.json",
-    "usercf_recall": ROOT / "outputs" / "recall" / "pool500_usercf_method_train" / "usercf_recall" / "usercf_v1_formal_route_ready" / "source_index_manifest.json",
-    "swing_recall": ROOT / "outputs" / "recall" / "pool500_method_sources" / "swing_recall" / "local_formal_swing_recall_20260525" / "source_index_manifest.json",
-    "semantic": ROOT / "outputs" / "recall" / "pool500_method_sources" / "semantic" / "local_formal_semantic_20260525" / "source_index_manifest.json",
+    "itemcf_weak": ROOT / "outputs" / "recall" / "pool500_method_sources" / "recent_2y" / "itemcf_weak" / "src3_dst3_user2_keep_hot_cosine_v1" / "source_index_manifest.json",
+    "itemcf_strong": ROOT / "outputs" / "recall" / "pool500_method_sources_newdata" / "itemcf_strong_relaxed_supplemental_v1" / "itemcf_strong" / "formal_relaxed_from_recent2y" / "source_index_manifest.json",
+    "usercf_recall": ROOT / "outputs" / "recall" / "pool500_method_sources" / "recent_2y" / "usercf_recall" / "usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1" / "source_index_manifest.json",
+    "swing_recall": ROOT / "outputs" / "recall" / "pool500_method_sources" / "recent_2y" / "swing_recall" / "formal" / "run_20260606_datawhale_f1_main_route_v1" / "source_index_manifest.json",
+    "semantic": ROOT / "outputs" / "recall" / "pool500_method_sources_newdata" / "semantic" / "semantic_recent2y_formal_target10k_v1" / "source_index_manifest.json",
     "semantic_title_category_expansion": ROOT / "outputs" / "recall" / "pool500_method_sources" / "semantic_title_category_expansion" / "local_formal_semantic_title_category_20260525" / "source_index_manifest.json",
     "co_visit_fallback_repair": ROOT / "outputs" / "recall" / "pool500_method_sources" / "co_visit_fallback_repair" / "local_formal_co_visit_repair_20260525" / "source_index_manifest.json",
-    "two_tower": ROOT / "outputs" / "recall" / "pool500_full_sources" / "two_tower" / "index" / "source_index_manifest.json",
+    "two_tower": ROOT / "outputs" / "recall" / "pool500_method_sources" / "recent_2y" / "two_tower" / "sparse_aware_formal_epoch5_selected" / "source_index_manifest.json",
 }
 DEFAULT_USERCF_SIDECAR_MANIFEST = DEFAULT_SOURCE_MANIFESTS["usercf_recall"]
+DEFAULT_SEMANTIC_DESCRIPTION_DIAGNOSTIC = ROOT / "outputs" / "diagnostics" / "semantic_description_random6_20260608"
 DEFAULT_SMOKE_LIMIT_USERS = 1000
 FILL_ORDER = [
     "two_tower",
@@ -102,8 +105,9 @@ SOURCE_ALIASES = {
     "category_top_items": "category",
     "category_long_tail_recall": "category",
 }
-READY_STOPLOSS_SOURCES = ("category", "popular", "swing_recall", "usercf_recall")
-DIAGNOSTIC_CONTRIBUTION_SOURCES = ("itemcf_weak", "itemcf_strong")
+READY_STOPLOSS_SOURCES = ("category", "popular", "swing_recall")
+DIAGNOSTIC_CONTRIBUTION_SOURCES = ("itemcf_weak", "itemcf_strong", "usercf_recall")
+GUARDED_CANDIDATE_CONTRIBUTION_SOURCES = ("semantic",)
 BATCH_SCOPED_DEFERRED_SOURCES = {"semantic", "semantic_title_category_expansion", "co_visit_fallback_repair"}
 PREGENERATED_RECALL_SOURCES = {"semantic", "semantic_title_category_expansion", "co_visit_fallback_repair"}
 GENERATION_SOURCE_CONFIG = {
@@ -165,9 +169,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--usercf-sidecar-manifest", default=str(DEFAULT_USERCF_SIDECAR_MANIFEST))
     parser.add_argument("--source-manifest", action="append", default=[], help="Override source manifest as source=path; may be repeated.")
     parser.add_argument("--limit-users", type=int, default=DEFAULT_SMOKE_LIMIT_USERS)
+    parser.add_argument("--priority-user-allowlist", default="", help="Optional newline/jsonl user_id allowlist to prioritize a diagnostic eval-user batch.")
     parser.add_argument("--full-run", action="store_true", help="Allow processing all train users by setting limit-users to 0.")
     parser.add_argument("--enable-semantic", action="store_true", help="Load batch-scoped semantic metadata index; off by default for safe smoke runs.")
     parser.add_argument("--semantic-max-rows", type=int, default=200000, help="Maximum semantic rows to retain for a diagnostic batch-scoped index.")
+    parser.add_argument("--semantic-description-diagnostic", type=str, default=str(DEFAULT_SEMANTIC_DESCRIPTION_DIAGNOSTIC), help="Description diagnostic report or directory used as semantic guarded-candidate evidence.")
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--skip-venv-check", action="store_true")
     return parser.parse_args()
@@ -184,6 +190,8 @@ def run_full_data_pool500_recall_only(
     full_run: bool = False,
     enable_semantic: bool = False,
     semantic_max_rows: int = 200000,
+    semantic_description_diagnostic_path: Path = DEFAULT_SEMANTIC_DESCRIPTION_DIAGNOSTIC,
+    priority_user_allowlist_path: Path | None = None,
     overwrite: bool = False,
     enforce_venv: bool = True,
 ) -> dict[str, Any]:
@@ -203,9 +211,11 @@ def run_full_data_pool500_recall_only(
     sequence_path = _resolve_repo_path(clean_manifest["train_user_sequences_path"])
     source_manifest_paths = _source_manifest_paths(source_manifest_paths, usercf_sidecar_manifest_path)
     source_artifacts = _load_source_artifacts(source_manifest_paths)
+    augcf_route_budget_policy = _augcf_route_budget_policy(source_artifacts.get("itemcf_strong"))
 
     available_artifacts = _available_source_artifacts(view_outputs) | {source: artifact["path"].is_file() for source, artifact in source_artifacts.items()}
-    batch_sequences = _load_batch_sequences(sequence_path, limit_users)
+    priority_user_ids = _read_priority_user_allowlist(priority_user_allowlist_path) if priority_user_allowlist_path else None
+    batch_sequences = _load_batch_sequences(sequence_path, limit_users, priority_user_ids=priority_user_ids)
     generation_config = dict(GENERATION_SOURCE_CONFIG)
     if not enable_semantic:
         generation_config.update({
@@ -251,6 +261,7 @@ def run_full_data_pool500_recall_only(
     source_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
     semantic_candidate_diagnostics: dict[str, dict[str, Any]] = {}
     fallback_audit_inputs: list[dict[str, Any]] = []
+    diagnostic_hot_budget_audit_inputs: list[dict[str, Any]] = []
     users: list[str] = []
     underfilled_user_count = 0
     source_coverage: Counter[str] = Counter()
@@ -299,6 +310,8 @@ def run_full_data_pool500_recall_only(
             pregenerated_recall=pregenerated_recall,
         )
         candidates = _enforce_popular_category_cap(candidates)
+        candidates, diagnostic_hot_budget_audit = _apply_augcf_route_budget_cap(candidates, augcf_route_budget_policy)
+        diagnostic_hot_budget_audit_inputs.append({"user_id": user_id, **diagnostic_hot_budget_audit})
         completion = complete_pool500_for_user(
             sequence=sequence,
             existing_candidates=candidates,
@@ -371,6 +384,10 @@ def run_full_data_pool500_recall_only(
     ready_source_stoploss_audit_path = output_dir / "ready_source_stoploss_audit.json"
     diagnostic_source_contribution = _diagnostic_source_contribution(users, rows, source_rows, underfilled_user_count)
     diagnostic_source_contribution_path = output_dir / "diagnostic_source_contribution.json"
+    semantic_description_evidence_gate = _semantic_description_evidence_gate(semantic_description_diagnostic_path)
+    semantic_description_evidence_gate_path = output_dir / "semantic_description_evidence_gate.json"
+    diagnostic_hot_budget_audit = _diagnostic_hot_budget_audit(diagnostic_hot_budget_audit_inputs, augcf_route_budget_policy)
+    diagnostic_hot_budget_audit_path = output_dir / "diagnostic_hot_budget_audit.json"
     semantic_input_manifest_path = output_dir / "semantic_input_manifest.json"
     diagnostic_candidate_manifest = _diagnostic_candidate_manifest(
         users,
@@ -388,10 +405,19 @@ def run_full_data_pool500_recall_only(
     final_merge_manifest_path = output_dir / "final_merge_manifest.json"
     underfill_audit = _underfill_audit(users, rows, underfilled_user_count)
     underfill_audit_path = output_dir / "underfill_audit.json"
-    source_contribution_audit = _source_contribution_audit(users, rows, source_rows, underfilled_user_count)
+    source_contribution_audit = _source_contribution_audit(users, rows, source_rows, underfilled_user_count, source_artifacts)
     source_contribution_audit_path = output_dir / "source_contribution_audit.json"
     source_overlap_audit = _source_overlap_audit(source_rows)
     source_overlap_audit_path = output_dir / "source_overlap_audit.json"
+    co_visit_fallback_repair_task_audit = build_co_visit_fallback_repair_task_audit(
+        fallback_completion_audit=fallback_completion_audit,
+        fallback_completion_validation=fallback_completion_validation,
+        underfill_audit=underfill_audit,
+        source_contribution_audit=source_contribution_audit,
+        source_overlap_audit=source_overlap_audit,
+        route_manifest={},
+    )
+    co_visit_fallback_repair_task_audit_path = output_dir / "co_visit_fallback_repair_task_audit.json"
     final_resource_audit = _final_resource_audit(users, rows, source_rows, semantic_resource_audit, limit_users, full_run, semantic_max_rows)
     final_resource_audit_path = output_dir / "final_resource_audit.json"
     route_input_manifest = _route_input_manifest(clean_manifest_path, lightweight_views_manifest_path, clean_manifest, views_manifest, view_outputs)
@@ -471,9 +497,27 @@ def run_full_data_pool500_recall_only(
             "status": diagnostic_source_contribution["status"],
             "audit_path": str(diagnostic_source_contribution_path),
             "sources": diagnostic_source_contribution["diagnostic_sources"],
+            "guarded_candidate_sources": diagnostic_source_contribution["guarded_candidate_sources"],
             "row_total": diagnostic_source_contribution["diagnostic_row_total"],
             "marginal_candidate_share": diagnostic_source_contribution["diagnostic_marginal_candidate_share"],
             "promotion_allowed": diagnostic_source_contribution["promotion_allowed"],
+        },
+        "semantic_description_evidence_gate": {
+            "decision": semantic_description_evidence_gate["decision"],
+            "status": semantic_description_evidence_gate["status"],
+            "audit_path": str(semantic_description_evidence_gate_path),
+            "promotion_allowed": semantic_description_evidence_gate["promotion_allowed"],
+            "ranking_input_replacement_allowed": semantic_description_evidence_gate["ranking_input_replacement_allowed"],
+        },
+        "diagnostic_hot_budget_audit": {
+            "status": diagnostic_hot_budget_audit["status"],
+            "enabled": diagnostic_hot_budget_audit["enabled"],
+            "audit_path": str(diagnostic_hot_budget_audit_path),
+            "removed_count": diagnostic_hot_budget_audit["removed_count"],
+            "removed_hot_count": diagnostic_hot_budget_audit["removed_hot_count"],
+            "removed_pseudo_count": diagnostic_hot_budget_audit["removed_pseudo_count"],
+            "underfilled_after_cap_user_count": diagnostic_hot_budget_audit["underfilled_after_cap_user_count"],
+            "promotion_allowed": diagnostic_hot_budget_audit["promotion_allowed"],
         },
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
@@ -487,6 +531,8 @@ def run_full_data_pool500_recall_only(
             "audit_path": str(fallback_completion_audit_path),
             "validation_path": str(fallback_completion_validation_path),
             "resource_audit_path": str(fallback_completion_resource_audit_path),
+            "co_visit_task_audit_path": str(co_visit_fallback_repair_task_audit_path),
+            "co_visit_task_decision": co_visit_fallback_repair_task_audit["decision"],
             "promotion_allowed": False,
             "ranking_input_replacement_allowed": False,
             "pool1000_allowed": False,
@@ -504,6 +550,8 @@ def run_full_data_pool500_recall_only(
             "route_input_manifest": str(output_dir / "route_input_manifest.json"),
             "ready_source_stoploss_audit": str(ready_source_stoploss_audit_path),
             "diagnostic_source_contribution": str(diagnostic_source_contribution_path),
+            "semantic_description_evidence_gate": str(semantic_description_evidence_gate_path),
+            "diagnostic_hot_budget_audit": str(diagnostic_hot_budget_audit_path),
             "semantic_input_manifest": str(semantic_input_manifest_path),
             "diagnostic_candidate_manifest": str(diagnostic_candidate_manifest_path),
             "semantic_no_holdout_audit": str(semantic_no_holdout_audit_path),
@@ -521,6 +569,7 @@ def run_full_data_pool500_recall_only(
             "fallback_completion_audit": str(fallback_completion_audit_path),
             "fallback_completion_validation": str(fallback_completion_validation_path),
             "fallback_completion_resource_audit": str(fallback_completion_resource_audit_path),
+            "co_visit_fallback_repair_task_audit": str(co_visit_fallback_repair_task_audit_path),
         },
         "pool500_shadow_evidence_validation": shadow_evidence_validation,
         "blockers": readiness_result["blockers"],
@@ -544,6 +593,8 @@ def run_full_data_pool500_recall_only(
     write_json(output_dir / "route_input_manifest.json", route_input_manifest)
     write_json(ready_source_stoploss_audit_path, ready_source_stoploss_audit)
     write_json(diagnostic_source_contribution_path, diagnostic_source_contribution)
+    write_json(semantic_description_evidence_gate_path, semantic_description_evidence_gate)
+    write_json(diagnostic_hot_budget_audit_path, diagnostic_hot_budget_audit)
     write_json(semantic_input_manifest_path, semantic_input_manifest)
     write_json(diagnostic_candidate_manifest_path, diagnostic_candidate_manifest)
     write_json(semantic_no_holdout_audit_path, semantic_no_holdout_audit)
@@ -557,6 +608,7 @@ def run_full_data_pool500_recall_only(
     write_json(fallback_completion_audit_path, fallback_completion_audit)
     write_json(fallback_completion_validation_path, fallback_completion_validation)
     write_json(fallback_completion_resource_audit_path, fallback_context.resource_audit)
+    write_json(co_visit_fallback_repair_task_audit_path, co_visit_fallback_repair_task_audit)
     write_json(output_dir / "quality_audit.json", quality_audit)
     write_json(output_dir / "readiness_bundle.json", readiness_bundle)
     write_json(output_dir / "readiness_result.json", readiness_result)
@@ -614,6 +666,13 @@ def _artifact_data_path(artifact: dict[str, Any] | None, key: str) -> Path | Non
     return manifest_relative if manifest_relative.exists() else _resolve_repo_path(path)
 
 
+def _artifact_declares_diagnostic_only(artifact: dict[str, Any] | None) -> bool:
+    manifest = (artifact or {}).get("manifest") or {}
+    if not isinstance(manifest, dict):
+        return False
+    return manifest.get("diagnostic_only") is True or manifest.get("source_status") == "DIAGNOSTIC_ONLY"
+
+
 def _parse_source_manifest_overrides(values: list[str]) -> dict[str, Path]:
     overrides = {}
     for value in values:
@@ -622,6 +681,23 @@ def _parse_source_manifest_overrides(values: list[str]) -> dict[str, Path]:
         source, path = value.split("=", 1)
         overrides[source.strip()] = Path(path.strip())
     return overrides
+
+
+def _read_priority_user_allowlist(path: Path) -> list[str]:
+    users: list[str] = []
+    seen: set[str] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        value = line.strip()
+        if not value:
+            continue
+        if value.startswith("{"):
+            payload = json.loads(value)
+            value = str(payload.get("user_id") or "").strip()
+        if value and value not in seen:
+            users.append(value)
+            seen.add(value)
+    return users
+
 
 
 def _load_batch_sequences(sequence_path: Path, limit_users: int, priority_user_ids: list[str] | None = None) -> list[dict[str, Any]]:
@@ -1031,6 +1107,37 @@ def _semantic_forbidden_path(path: Path, forbidden_tokens: tuple[str, ...]) -> b
     return False
 
 
+def _semantic_description_evidence_gate(diagnostic_path: Path) -> dict[str, Any]:
+    try:
+        return build_semantic_description_evidence_gate(diagnostic_path=diagnostic_path)
+    except FileNotFoundError:
+        return {
+            "schema_version": "semantic_description_evidence_gate_v1",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "decision": "DIAGNOSTIC_ONLY",
+            "status": "DIAGNOSTIC_ONLY",
+            "source": "semantic",
+            "evidence_role": "description_relevance_guard_not_final_promotion",
+            "diagnostic_report_path": str(diagnostic_path),
+            "summary": {},
+            "thresholds": {
+                "min_query_count": 1,
+                "min_avg_strict_precision_at_10": 0.8,
+                "max_avg_bad_intent_rate_at_10": 0.2,
+            },
+            "forbidden_scope_audit": {"status": "NOT_RUN", "forbidden_tokens": [], "forbidden_inputs": []},
+            "blockers": [],
+            "diagnostics": ["semantic_description_diagnostic_report_missing"],
+            "candidate_generation_allowed": False,
+            "ranking_input_replacement_allowed": False,
+            "ranking_replacement_allowed": False,
+            "promotion_allowed": False,
+            "pool1000_allowed": False,
+            "final_pool500_ready_claimed": False,
+        }
+
+
+
 def _semantic_resource_audit(semantic_input_manifest: dict[str, Any], diagnostic_candidate_manifest: dict[str, Any]) -> dict[str, Any]:
     return {
         "schema_version": f"{SCHEMA_VERSION}.semantic_resource_audit",
@@ -1070,6 +1177,197 @@ def _enforce_popular_category_cap(candidates: list[Any], cap: int = 175) -> list
             popular_category_count += 1
         capped.append(candidate)
     return capped
+
+
+def _augcf_route_budget_policy(artifact: dict[str, Any] | None) -> dict[str, Any]:
+    manifest = artifact.get("manifest") if artifact else {}
+    if not isinstance(manifest, dict):
+        manifest = {}
+    diagnostic_policy = manifest.get("diagnostic_policy") if isinstance(manifest.get("diagnostic_policy"), dict) else {}
+    policy_text = json.dumps(
+        {
+            "source_variant": manifest.get("source_variant") or diagnostic_policy.get("source_variant") or manifest.get("variant") or diagnostic_policy.get("variant"),
+            "diagnostic_policy": diagnostic_policy,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+    ).lower()
+    enabled = manifest.get("diagnostic_only") is True and any(token in policy_text for token in ("augcf_lite", "augcf_controlled"))
+    return {
+        "enabled": enabled,
+        "source_manifest_path": str(artifact.get("path")) if artifact else None,
+        "source_variant": manifest.get("source_variant") or diagnostic_policy.get("source_variant") or manifest.get("variant") or diagnostic_policy.get("variant"),
+        "diagnostic_only": manifest.get("diagnostic_only"),
+        "max_final_hot_share_per_user": _float_policy_value(manifest, diagnostic_policy, "max_final_hot_share_per_user", 0.3),
+        "max_pseudo_per_user": _int_policy_value(manifest, diagnostic_policy, "max_pseudo_per_user", 100),
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
+    }
+
+
+def _float_policy_value(manifest: dict[str, Any], diagnostic_policy: dict[str, Any], key: str, default: float) -> float:
+    for payload in (diagnostic_policy, manifest):
+        value = payload.get(key)
+        if value is not None:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return default
+    return default
+
+
+def _int_policy_value(manifest: dict[str, Any], diagnostic_policy: dict[str, Any], key: str, default: int) -> int:
+    for payload in (diagnostic_policy, manifest):
+        value = payload.get(key)
+        if value is not None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return default
+    return default
+
+
+def _apply_augcf_route_budget_cap(candidates: list[Any], policy: dict[str, Any]) -> tuple[list[Any], dict[str, Any]]:
+    before_hot_count = sum(1 for candidate in candidates if _candidate_is_hot(candidate))
+    before_itemcf_strong_count = sum(1 for candidate in candidates if "itemcf_strong" in _canonical_sources(candidate.sources))
+    before_pseudo_count = sum(1 for candidate in candidates if _candidate_is_augcf_pseudo(candidate))
+    if not policy.get("enabled"):
+        return candidates, _augcf_route_budget_user_audit(policy, candidates, candidates, [], before_hot_count, before_itemcf_strong_count, before_pseudo_count)
+
+    capped = list(candidates)
+    removed: list[Any] = []
+    max_hot_share = max(0.0, float(policy.get("max_final_hot_share_per_user", 0.3)))
+    max_pseudo = max(0, int(policy.get("max_pseudo_per_user", 100)))
+    while True:
+        hot_count = sum(1 for candidate in capped if _candidate_is_hot(candidate))
+        pseudo_count = sum(1 for candidate in capped if _candidate_is_augcf_pseudo(candidate))
+        hot_budget = math.floor(len(capped) * max_hot_share)
+        needs_pseudo_cap = pseudo_count > max_pseudo
+        needs_hot_cap = hot_count > hot_budget
+        if not needs_pseudo_cap and not needs_hot_cap:
+            break
+        removal_pool = [candidate for candidate in capped if _candidate_is_augcf_diagnostic(candidate)]
+        if needs_pseudo_cap:
+            removal_pool = [candidate for candidate in removal_pool if _candidate_is_augcf_pseudo(candidate)] or removal_pool
+        if needs_hot_cap:
+            hot_pool = [candidate for candidate in removal_pool if _candidate_is_hot(candidate)]
+            if hot_pool:
+                removal_pool = hot_pool
+        if not removal_pool:
+            break
+        victim = max(removal_pool, key=_augcf_removal_priority)
+        capped.remove(victim)
+        removed.append(victim)
+    return capped, _augcf_route_budget_user_audit(policy, candidates, capped, removed, before_hot_count, before_itemcf_strong_count, before_pseudo_count)
+
+
+def _candidate_is_augcf_diagnostic(candidate: Any) -> bool:
+    if "itemcf_strong" not in _canonical_sources(candidate.sources):
+        return False
+    metadata = candidate.metadata if isinstance(candidate.metadata, dict) else {}
+    text = json.dumps(metadata, ensure_ascii=False, sort_keys=True).lower()
+    return "augcf_lite" in text or "augcf_controlled" in text
+
+
+def _candidate_is_augcf_pseudo(candidate: Any) -> bool:
+    if not _candidate_is_augcf_diagnostic(candidate):
+        return False
+    metadata = candidate.metadata if isinstance(candidate.metadata, dict) else {}
+    text = json.dumps(metadata, ensure_ascii=False, sort_keys=True).lower()
+    return "pseudo_augcf" in text or str(metadata.get("edge_type") or "").startswith("pseudo")
+
+
+def _candidate_is_hot(candidate: Any) -> bool:
+    metadata = candidate.metadata if isinstance(candidate.metadata, dict) else {}
+    nested_metadata = metadata.get("metadata") if isinstance(metadata.get("metadata"), dict) else {}
+    hotness_values = (
+        metadata.get("dst_hotness_bucket"),
+        metadata.get("hotness_bucket"),
+        metadata.get("item_hotness_bucket"),
+        nested_metadata.get("dst_hotness_bucket"),
+        nested_metadata.get("hotness_bucket"),
+        nested_metadata.get("item_hotness_bucket"),
+    )
+    return any(str(value or "").lower() == "hot" for value in hotness_values)
+
+
+def _augcf_removal_priority(candidate: Any) -> tuple[int, int, int, float, str]:
+    sources = _canonical_sources(candidate.sources)
+    return (
+        int(_candidate_is_augcf_pseudo(candidate)),
+        int(_candidate_is_hot(candidate)),
+        int(sources == ["itemcf_strong"]),
+        -float(sum(candidate.source_scores.values())),
+        str(candidate.item_id),
+    )
+
+
+def _augcf_route_budget_user_audit(
+    policy: dict[str, Any],
+    before: list[Any],
+    after: list[Any],
+    removed: list[Any],
+    before_hot_count: int,
+    before_itemcf_strong_count: int,
+    before_pseudo_count: int,
+) -> dict[str, Any]:
+    after_hot_count = sum(1 for candidate in after if _candidate_is_hot(candidate))
+    after_itemcf_strong_count = sum(1 for candidate in after if "itemcf_strong" in _canonical_sources(candidate.sources))
+    after_pseudo_count = sum(1 for candidate in after if _candidate_is_augcf_pseudo(candidate))
+    return {
+        "enabled": bool(policy.get("enabled")),
+        "before_candidate_count": len(before),
+        "after_candidate_count": len(after),
+        "before_hot_share": round(before_hot_count / len(before), 6) if before else 0.0,
+        "after_hot_share": round(after_hot_count / len(after), 6) if after else 0.0,
+        "before_itemcf_strong_row_count": before_itemcf_strong_count,
+        "after_itemcf_strong_row_count": after_itemcf_strong_count,
+        "before_pseudo_count": before_pseudo_count,
+        "after_pseudo_count": after_pseudo_count,
+        "removed_count": len(removed),
+        "removed_hot_count": sum(1 for candidate in removed if _candidate_is_hot(candidate)),
+        "removed_pseudo_count": sum(1 for candidate in removed if _candidate_is_augcf_pseudo(candidate)),
+        "underfilled_after_cap": len(after) < 500,
+    }
+
+
+def _diagnostic_hot_budget_audit(per_user: list[dict[str, Any]], policy: dict[str, Any]) -> dict[str, Any]:
+    removed_count = sum(int(item.get("removed_count", 0)) for item in per_user)
+    after_hot_shares = [float(item.get("after_hot_share", 0.0)) for item in per_user]
+    after_itemcf_shares = [
+        float(item.get("after_itemcf_strong_row_count", 0)) / float(item.get("after_candidate_count", 1) or 1)
+        for item in per_user
+    ]
+    after_pseudo_shares = [
+        float(item.get("after_pseudo_count", 0)) / float(item.get("after_candidate_count", 1) or 1)
+        for item in per_user
+    ]
+    return {
+        "schema_version": f"{SCHEMA_VERSION}.diagnostic_hot_budget_audit",
+        "status": "DIAGNOSTIC_ROUTE_CAP_APPLIED" if policy.get("enabled") else "DISABLED",
+        "enabled": bool(policy.get("enabled")),
+        "policy": policy,
+        "user_count": len(per_user),
+        "removed_count": removed_count,
+        "removed_hot_count": sum(int(item.get("removed_hot_count", 0)) for item in per_user),
+        "removed_pseudo_count": sum(int(item.get("removed_pseudo_count", 0)) for item in per_user),
+        "underfilled_after_cap_user_count": sum(int(bool(item.get("underfilled_after_cap"))) for item in per_user),
+        "users_with_removed_candidates": sum(1 for item in per_user if int(item.get("removed_count", 0)) > 0),
+        "final_candidate_hot_share_p50": _float_percentile(after_hot_shares, 0.5),
+        "final_candidate_hot_share_p90": _float_percentile(after_hot_shares, 0.9),
+        "final_candidate_hot_share_p95": _float_percentile(after_hot_shares, 0.95),
+        "final_candidate_hot_share_max": round(max(after_hot_shares), 6) if after_hot_shares else 0.0,
+        "augcf_candidate_share_p50": _float_percentile(after_itemcf_shares, 0.5),
+        "augcf_pseudo_candidate_share_p50": _float_percentile(after_pseudo_shares, 0.5),
+        "per_user": per_user,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+    }
 
 
 def _would_exceed_source_maximum(candidate_sources: list[str], group_counts: Counter[str], maximums: dict[str, int]) -> bool:
@@ -1149,17 +1447,24 @@ def _write_source_manifests(
         readiness_contract = read_json(readiness_path) if readiness_path and readiness_path.is_file() else {}
         source_path = output_dir / "sources" / source / "candidates.jsonl"
         write_jsonl(source_path, rows)
-        status = "BATCH_SCOPED_DIAGNOSTIC" if source in BATCH_SCOPED_DEFERRED_SOURCES and rows else READY if rows else "DEFERRED"
+        status = "DIAGNOSTIC_ONLY" if _artifact_declares_diagnostic_only(artifact) else "READY_CANDIDATE" if source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES and rows else "BATCH_SCOPED_DIAGNOSTIC" if source in BATCH_SCOPED_DEFERRED_SOURCES and rows else READY if rows else "DEFERRED"
+        ready_manifest = bool(rows) and source not in BATCH_SCOPED_DEFERRED_SOURCES and not _artifact_declares_diagnostic_only(artifact)
         manifest = {
             "schema_version": f"{SCHEMA_VERSION}.source_output_manifest",
             "source": source,
             "status": status,
-            "final_sources": [source] if rows and source not in BATCH_SCOPED_DEFERRED_SOURCES else [],
+            "final_sources": [source] if ready_manifest and source not in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES else [],
             "output_path": str(source_path),
             "row_count": len(rows),
-            "manifest_sha256": canonical_manifest_sha256({"source": source, "ready": bool(rows) and source not in BATCH_SCOPED_DEFERRED_SOURCES}),
+            "manifest_sha256": canonical_manifest_sha256(
+                {"source": source, "ready": ready_manifest, "ready_candidate": True}
+                if bool(rows) and source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES
+                else {"source": source, "ready": ready_manifest}
+            ),
             "available_artifacts": available_artifacts,
-            "batch_scoped_evidence_only": source in BATCH_SCOPED_DEFERRED_SOURCES,
+            "batch_scoped_evidence_only": source in BATCH_SCOPED_DEFERRED_SOURCES and source not in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES,
+            "guarded_candidate_source": source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES,
+            "diagnostic_only": _artifact_declares_diagnostic_only(artifact),
             "promotion_allowed": False,
             "ranking_input_replacement_allowed": False,
             "pool1000_allowed": False,
@@ -1250,8 +1555,11 @@ def _source_readiness_contracts(
         readiness_path = _artifact_data_path(artifact, "readiness_contract") if artifact else None
         readiness_contract = read_json(readiness_path) if readiness_path and readiness_path.is_file() else {}
         ready = source_coverage.get(source, 0) > 0
-        status = READY if ready else "DEFERRED"
-        if source in BATCH_SCOPED_DEFERRED_SOURCES and ready:
+        diagnostic_only = _artifact_declares_diagnostic_only(artifact)
+        status = "DIAGNOSTIC_ONLY" if diagnostic_only else READY if ready else "DEFERRED"
+        if source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES and ready and not diagnostic_only:
+            status = "READY_CANDIDATE"
+        elif source in BATCH_SCOPED_DEFERRED_SOURCES and ready and not diagnostic_only:
             status = "BATCH_SCOPED_DIAGNOSTIC"
         if readiness_contract.get("status") and readiness_contract.get("status") != READY:
             status = str(readiness_contract["status"])
@@ -1274,7 +1582,7 @@ def _artifact_readiness_fields(source: str, artifact: dict[str, Any], readiness_
         "canonical_source": manifest.get("canonical_source") or source,
         "index_status": readiness_contract.get("index_status") or ("INDEX_READY" if ready and manifest.get("index_scope") == "FULL_DERIVED_INDEX" else None),
         "diagnostic_output_status": readiness_contract.get("diagnostic_output_status"),
-        "full_output_status": readiness_contract.get("full_output_status") or ("FULL_OUTPUT_READY" if ready else None),
+        "full_output_status": readiness_contract.get("full_output_status") or (None if _artifact_declares_diagnostic_only(artifact) else "FULL_OUTPUT_READY" if ready else None),
         "index_manifest_sha256": readiness_contract.get("index_manifest_sha256") or manifest.get("index_manifest_sha256") or manifest.get("manifest_sha256") or canonical_manifest_sha256(manifest),
         "output_manifest_sha256": readiness_contract.get("output_manifest_sha256"),
         "candidate_shards_sha256": readiness_contract.get("candidate_shards_sha256"),
@@ -1332,8 +1640,10 @@ def _full_derived_index_manifests(
             or artifact["path"]
         )
         index_available = bool(index_path and Path(index_path).is_file())
-        status = READY if index_available else "DEFERRED"
-        if source in BATCH_SCOPED_DEFERRED_SOURCES and index_available:
+        status = "DIAGNOSTIC_ONLY" if _artifact_declares_diagnostic_only(artifact) else READY if index_available else "DEFERRED"
+        if source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES and index_available and not _artifact_declares_diagnostic_only(artifact):
+            status = "READY_CANDIDATE"
+        elif source in BATCH_SCOPED_DEFERRED_SOURCES and index_available and not _artifact_declares_diagnostic_only(artifact):
             status = "BATCH_SCOPED_DIAGNOSTIC"
         manifests[source] = {
             "source": source,
@@ -1482,6 +1792,7 @@ def _diagnostic_source_contribution(
 ) -> dict[str, Any]:
     underfilled_users = _underfilled_users(users, rows)
     diagnostic_sources: dict[str, dict[str, Any]] = {}
+    guarded_candidate_sources: dict[str, dict[str, Any]] = {}
     diagnostic_row_total = 0
     diagnostic_user_ids: set[str] = set()
     for source in DIAGNOSTIC_CONTRIBUTION_SOURCES:
@@ -1504,15 +1815,35 @@ def _diagnostic_source_contribution(
             "promotion_allowed": False,
             "ranking_input_replacement_allowed": False,
         }
+    for source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES:
+        source_candidates = source_rows.get(source, [])
+        source_users = {str(row.get("user_id")) for row in source_candidates if row.get("user_id")}
+        source_items = {str(row.get("item_id")) for row in source_candidates if row.get("item_id")}
+        guarded_candidate_sources[source] = {
+            "row_count": len(source_candidates),
+            "unique_item_count": len(source_items),
+            "user_coverage_count": len(source_users),
+            "user_coverage_ratio": round(len(source_users) / len(users), 6) if users else 0.0,
+            "underfilled_user_coverage_count": len(source_users & underfilled_users),
+            "underfilled_user_coverage_ratio": round(len(source_users & underfilled_users) / underfilled_user_count, 6) if underfilled_user_count else 0.0,
+            "marginal_candidate_share": round(len(source_candidates) / len(rows), 6) if rows else 0.0,
+            "readiness_status": "READY_CANDIDATE",
+            "evidence_role": "description_relevance_guard_not_final_promotion",
+            "promotion_allowed": False,
+            "ranking_input_replacement_allowed": False,
+            "pool1000_allowed": False,
+        }
     return {
         "schema_version": f"{SCHEMA_VERSION}.diagnostic_source_contribution",
         "status": "DIAGNOSTIC_ONLY_AUDIT",
         "diagnostic_sources": list(DIAGNOSTIC_CONTRIBUTION_SOURCES),
+        "guarded_candidate_sources": list(GUARDED_CANDIDATE_CONTRIBUTION_SOURCES),
         "diagnostic_row_total": diagnostic_row_total,
         "diagnostic_user_coverage_count": len(diagnostic_user_ids),
         "diagnostic_user_coverage_ratio": round(len(diagnostic_user_ids) / len(users), 6) if users else 0.0,
         "diagnostic_marginal_candidate_share": round(diagnostic_row_total / len(rows), 6) if rows else 0.0,
         "sources": diagnostic_sources,
+        "guarded_candidate_source_details": guarded_candidate_sources,
         "promotion_allowed": False,
         "ranking_input_replacement_allowed": False,
         "pool1000_allowed": False,
@@ -1559,14 +1890,29 @@ def _underfill_audit(users: list[str], rows: list[dict[str, Any]], underfilled_u
     }
 
 
-def _source_contribution_audit(users: list[str], rows: list[dict[str, Any]], source_rows: dict[str, list[dict[str, Any]]], underfilled_user_count: int) -> dict[str, Any]:
+def _source_contribution_audit(
+    users: list[str],
+    rows: list[dict[str, Any]],
+    source_rows: dict[str, list[dict[str, Any]]],
+    underfilled_user_count: int,
+    source_artifacts: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
     underfilled_users = _underfilled_users(users, rows)
     sources = {}
     for source in sorted(CANONICAL_SOURCES):
         candidates = source_rows.get(source, [])
         user_ids = {str(row.get("user_id")) for row in candidates if row.get("user_id")}
         items = {str(row.get("item_id")) for row in candidates if row.get("item_id")}
-        status = "READY" if source in READY_STOPLOSS_SOURCES else "DIAGNOSTIC_ONLY" if source in DIAGNOSTIC_CONTRIBUTION_SOURCES else "DEFERRED"
+        artifact = (source_artifacts or {}).get(source)
+        status = (
+            "READY_CANDIDATE"
+            if source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES
+            else "DIAGNOSTIC_ONLY"
+            if _artifact_declares_diagnostic_only(artifact) or source in DIAGNOSTIC_CONTRIBUTION_SOURCES
+            else "READY"
+            if source in READY_STOPLOSS_SOURCES
+            else "DEFERRED"
+        )
         sources[source] = {
             "row_count": len(candidates),
             "unique_item_count": len(items),
@@ -1588,7 +1934,9 @@ def _source_contribution_audit(users: list[str], rows: list[dict[str, Any]], sou
         "sources": sources,
         "ready_sources": list(READY_STOPLOSS_SOURCES),
         "diagnostic_sources": list(DIAGNOSTIC_CONTRIBUTION_SOURCES),
-        "deferred_sources": sorted(CANONICAL_SOURCES - set(READY_STOPLOSS_SOURCES) - set(DIAGNOSTIC_CONTRIBUTION_SOURCES)),
+        "guarded_candidate_sources": list(GUARDED_CANDIDATE_CONTRIBUTION_SOURCES),
+        "guarded_candidate_source_details": {source: sources[source] for source in GUARDED_CANDIDATE_CONTRIBUTION_SOURCES if source in sources},
+        "deferred_sources": sorted(CANONICAL_SOURCES - set(READY_STOPLOSS_SOURCES) - set(DIAGNOSTIC_CONTRIBUTION_SOURCES) - set(GUARDED_CANDIDATE_CONTRIBUTION_SOURCES)),
         "promotion_allowed": False,
         "ranking_input_replacement_allowed": False,
         "pool1000_allowed": False,
@@ -1697,6 +2045,14 @@ def _percentile(values: list[int], percentile: float) -> int:
     return ordered[index]
 
 
+def _float_percentile(values: list[float], percentile: float) -> float:
+    if not values:
+        return 0.0
+    ordered = sorted(values)
+    index = min(len(ordered) - 1, max(0, math.ceil(len(ordered) * percentile) - 1))
+    return round(ordered[index], 6)
+
+
 def _underfilled_users(users: list[str], rows: list[dict[str, Any]]) -> set[str]:
     per_user_counts = Counter(str(row.get("user_id")) for row in rows)
     return {user_id for user_id in users if per_user_counts.get(user_id, 0) < 500}
@@ -1791,6 +2147,8 @@ def main() -> None:
         enable_semantic=args.enable_semantic,
         overwrite=args.overwrite,
         semantic_max_rows=args.semantic_max_rows,
+        semantic_description_diagnostic_path=Path(args.semantic_description_diagnostic),
+        priority_user_allowlist_path=Path(args.priority_user_allowlist) if args.priority_user_allowlist else None,
         enforce_venv=not args.skip_venv_check,
     )
     print(json.dumps({"status": manifest["status"], "decision": manifest["decision"], "manifest_path": str(Path(args.output_dir) / "manifest.json")}, ensure_ascii=False, indent=2))

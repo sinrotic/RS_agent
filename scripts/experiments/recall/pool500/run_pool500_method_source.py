@@ -4,6 +4,8 @@ import argparse
 import json
 import sys
 from copy import deepcopy
+
+import yaml
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -22,9 +24,9 @@ from rs_lab.experiments.recall.pool500.common.source_layout import (
 
 DEFAULT_OUTPUT_ROOT = Path("outputs/recall/pool500_method_sources")
 CONFIG_ROOT = Path("configs/recall/full_data_pool500")
-DEFAULT_CLEAN_MANIFEST = Path("data/processed/amazon_2023_recall_clean_full/manifest.json")
-DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST = Path("data/processed/amazon_2023_recall_views_full_lightweight/manifest.json")
-DEFAULT_ELIGIBLE_USER_MANIFEST = Path("outputs/recall/pool500_main_route_direct_recall_full_promoted/eligible_user_manifest.json")
+DEFAULT_CLEAN_MANIFEST = Path("data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json")
+DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST = Path("data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json")
+DEFAULT_ELIGIBLE_USER_MANIFEST = Path("outputs/recall/pool500_method_sources_newdata/eligible_users_train_only_recent_2y_1m_3m/eligible_user_manifest.json")
 RUNNER_METHOD_SOURCES = tuple(dict.fromkeys((*POOL500_METHOD_SOURCES, "semantic")))
 CONFIG_STRUCTURAL_KEYS = {"defaults", "tiers", "tier_aliases"}
 
@@ -47,12 +49,15 @@ def main() -> None:
     source = args.source or raw_config.get("source") or source
     if source not in RUNNER_METHOD_SOURCES:
         raise ValueError(f"unknown pool500 method source: {source}")
-    tier = _resolve_tier_alias(raw_config, args.tier or raw_config.get("tier") or raw_config.get("default_tier"))
+    requested_tier = args.tier or raw_config.get("tier") or raw_config.get("default_tier")
+    tier = _resolve_tier_alias(raw_config, requested_tier)
     cli_overrides = _cli_overrides(args)
     config = _merge_runner_config(raw_config, tier, cli_overrides)
     config["source"] = source
+    if requested_tier is not None:
+        config["requested_tier"] = str(requested_tier)
     if tier is not None:
-        config["tier"] = tier
+        config["tier"] = str(tier)
     config["config_path"] = str(config_path)
 
     run_id = str(config.get("run_id") or _default_run_id(source))
@@ -60,20 +65,21 @@ def main() -> None:
     output_dir = _resolve_method_output_dir(output_root, source, run_id)
 
     if args.dry_run:
-        print(json.dumps(_contract_payload(source, tier, run_id, output_dir, config_path, config), ensure_ascii=False, indent=2))
+        print(json.dumps(_contract_payload(source, requested_tier, run_id, output_dir, config_path, config), ensure_ascii=False, indent=2))
         return
 
     manifest = _build_source(
         source=source,
         config=config,
         config_path=config_path,
+        tier=tier,
         run_id=run_id,
         output_root=output_root,
         output_dir=output_dir,
         overwrite=args.overwrite,
         route_ready=args.route_ready,
     )
-    print(json.dumps({"status": manifest["status"], "source": source, "tier": tier, "run_id": run_id, "output_dir": str(output_dir)}, ensure_ascii=False, indent=2))
+    print(json.dumps({"status": manifest["status"], "source": source, "tier": str(requested_tier) if requested_tier is not None else tier, "run_id": run_id, "output_dir": str(output_dir)}, ensure_ascii=False, indent=2))
 
 
 def _resolve_source(cli_source: str | None, config_path: Path | None) -> str:
@@ -98,7 +104,10 @@ def _load_runner_config(config_path: Path | None) -> dict[str, Any]:
     path = config_path if config_path.is_absolute() else ROOT / config_path
     if not path.is_file():
         return {}
-    loaded = load_config(path)
+    try:
+        loaded = load_config(path)
+    except ValueError:
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
     return loaded if isinstance(loaded, dict) else {}
 
 
@@ -156,6 +165,7 @@ def _build_source(
     source: str,
     config: dict[str, Any],
     config_path: Path,
+    tier: str | None,
     run_id: str,
     output_root: Path,
     output_dir: Path,
@@ -173,12 +183,15 @@ def _build_source(
         )
 
     if source == "popular":
-        from rs_lab.experiments.recall.pool500.methods.popular import build_popular_method_source
+        from rs_lab.experiments.recall.build_pool500_popular_recent2y import build_popular_recent2y
 
-        return build_popular_method_source(
-            config=config,
+        recent_2y_governance = config.get("recent_2y_governance") if isinstance(config.get("recent_2y_governance"), dict) else {}
+        return build_popular_recent2y(
+            scale_tier=_popular_scale_tier(tier, config),
+            governance_manifest_path=_config_path(recent_2y_governance, Path("data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json"), "governance_manifest", "governance_manifest_path"),
+            dataset_output_root=_config_path(config, Path("outputs/recall/pool500_method_datasets/recent_2y/popular"), "dataset_output_root"),
+            source_output_root=output_root,
             run_id=run_id,
-            output_dir=output_dir,
             overwrite=overwrite,
         )
 
@@ -206,6 +219,11 @@ def _build_source(
             candidate_top_k_per_user=_config_optional_int(config, "candidate_top_k_per_user"),
             generation_usercf_per_user=_config_optional_nested_int(config, "generation_config_overrides", "usercf_per_user"),
             similar_users_top_k=_config_optional_int(config, "similar_users_top_k"),
+            scoring_policy=str(config.get("scoring_policy")) if config.get("scoring_policy") is not None else None,
+            src_min_positive_user_count=_config_optional_nested_int(config, "item_filter_policy", "src_min_positive_user_count"),
+            dst_min_positive_user_count=_config_optional_nested_int(config, "item_filter_policy", "dst_min_positive_user_count"),
+            min_src_filtered_items_per_user=_config_optional_nested_int(config, "user_filter_policy", "min_src_filtered_items_per_user"),
+            keep_hot=_config_optional_nested_bool(config, "item_filter_policy", "keep_hot"),
             target_batch_size=_config_optional_int(config, "target_batch_size"),
             shard_count=_config_optional_int(config, "shard_count"),
             max_items_per_user=_config_optional_int(config, "max_items_per_user"),
@@ -253,19 +271,27 @@ def _build_source(
         from rs_lab.experiments.recall.pool500.methods.semantic_title_category_expansion import build_semantic_title_category_expansion_source
 
         input_contract = config.get("input_contract") if isinstance(config.get("input_contract"), dict) else {}
-        resource_guard = config.get("resource_guard") if isinstance(config.get("resource_guard"), dict) else {}
+        method_config = config.get("method_config") if isinstance(config.get("method_config"), dict) else {}
         return build_semantic_title_category_expansion_source(
+            config_path=config_path,
+            tier=tier,
             clean_manifest_path=_config_path(input_contract, DEFAULT_CLEAN_MANIFEST, "clean_manifest", "clean_manifest_path"),
             lightweight_views_manifest_path=_config_path(input_contract, DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST, "lightweight_views_manifest", "lightweight_views_manifest_path"),
             eligible_user_manifest_path=_config_path(input_contract, DEFAULT_ELIGIBLE_USER_MANIFEST, "eligible_user_manifest", "eligible_user_manifest_path"),
             output_root=output_root,
             run_id=run_id,
-            seed_window=_config_int(resource_guard, "seed_window", 20),
-            per_user=_config_int(resource_guard, "per_user", 80),
-            per_seed=_config_int(resource_guard, "per_seed", 40),
-            per_token_item_limit=_config_int(resource_guard, "per_token_item_limit", 2000),
-            max_candidate_items=_config_int(resource_guard, "max_candidate_items", 80000),
-            selection_mode=str(config.get("selection_mode") or resource_guard.get("selection_mode") or "title_category_scorer"),
+            limit_users=_config_int(method_config, "limit_users", 500),
+            seed_window=_config_int(method_config, "seed_window", 20),
+            per_user=_config_int(method_config, "per_user", 80),
+            per_seed=_config_int(method_config, "per_seed", 40),
+            per_token_item_limit=_config_int(method_config, "per_token_item_limit", 2000),
+            max_candidate_items=_config_int(method_config, "max_candidate_items", 80000),
+            selection_mode=str(method_config.get("selection_mode") or config.get("selection_mode") or "title_category_scorer"),
+            checkpoint_every_users=_config_optional_int(method_config, "checkpoint_every_users"),
+            target_user_offset=_config_optional_int(method_config, "target_user_offset"),
+            target_user_limit=_config_optional_int(method_config, "target_user_limit"),
+            shard_id=_config_optional_int(method_config, "shard_id"),
+            shard_count=_config_optional_int(method_config, "shard_count"),
             overwrite=overwrite,
         )
 
@@ -275,12 +301,13 @@ def _build_source(
         input_contract = config.get("input_contract") if isinstance(config.get("input_contract"), dict) else {}
         method_config = config.get("method_config") if isinstance(config.get("method_config"), dict) else {}
         return build_co_visit_fallback_repair_source(
+            config_path=config_path,
+            tier=tier,
             clean_manifest_path=_config_path(input_contract, DEFAULT_CLEAN_MANIFEST, "clean_manifest", "clean_manifest_path"),
             lightweight_views_manifest_path=_config_path(input_contract, DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST, "lightweight_views_manifest", "lightweight_views_manifest_path"),
             eligible_user_manifest_path=_config_path(input_contract, DEFAULT_ELIGIBLE_USER_MANIFEST, "eligible_user_manifest", "eligible_user_manifest_path"),
             output_root=output_root,
             run_id=run_id,
-            config_path=config_path,
             max_metadata_rows=_config_int(method_config, "max_metadata_rows", 250_000),
             candidate_per_user=_config_int(method_config, "candidate_per_user", 120),
             candidate_per_seed=_config_int(method_config, "candidate_per_seed", 40),
@@ -288,6 +315,10 @@ def _build_source(
             transition_window=_config_int(method_config, "transition_window", 5),
             transition_per_seed=_config_int(method_config, "transition_per_seed", 200),
             checkpoint_every_users=_config_int(method_config, "checkpoint_every_users", 50),
+            target_user_offset=_config_optional_int(method_config, "target_user_offset"),
+            target_user_limit=_config_optional_int(method_config, "target_user_limit"),
+            shard_id=_config_optional_int(method_config, "shard_id"),
+            shard_count=_config_optional_int(method_config, "shard_count"),
             overwrite=overwrite,
         )
 
@@ -311,6 +342,16 @@ def _config_float(config: dict[str, Any], key: str, default: float) -> float:
     return float(config.get(key, default))
 
 
+def _popular_scale_tier(tier: str | None, config: dict[str, Any]) -> str:
+    value = str(tier or config.get("scale_tier") or config.get("tier") or "formal")
+    normalized = value.strip().lower()
+    if normalized in {"smoke", "recent2y_smoke"}:
+        return "smoke"
+    if normalized in {"formal", "recent2y_formal", "local_formal", "all_eligible"}:
+        return "formal"
+    raise ValueError(f"unsupported popular scale tier: {value}; expected smoke or formal")
+
+
 def _config_optional_path(config: dict[str, Any], *keys: str) -> Path | None:
     for key in keys:
         value = config.get(key)
@@ -327,6 +368,11 @@ def _config_optional_int(config: dict[str, Any], key: str) -> int | None:
 def _config_optional_nested_int(config: dict[str, Any], section: str, key: str) -> int | None:
     payload = config.get(section) if isinstance(config.get(section), dict) else {}
     return int(payload[key]) if key in payload and payload[key] is not None else None
+
+
+def _config_optional_nested_bool(config: dict[str, Any], section: str, key: str) -> bool | None:
+    payload = config.get(section) if isinstance(config.get(section), dict) else {}
+    return bool(payload[key]) if key in payload and payload[key] is not None else None
 
 
 def _resolve_method_output_dir(output_root: Path, source: str, run_id: str) -> Path:
@@ -360,9 +406,17 @@ def _contract_summary(config: dict[str, Any]) -> dict[str, Any]:
         "source": config.get("source"),
         "canonical_source": config.get("canonical_source"),
         "source_status": config.get("source_status"),
+        "algorithm_scope": config.get("algorithm_scope"),
+        "time_window_policy": config.get("time_window_policy"),
         "manifest_contract": config.get("manifest_contract", {}),
         "governance": config.get("governance", {}),
+        "recent_2y_governance": config.get("recent_2y_governance", {}),
+        "route_integration": config.get("route_integration", {}),
         "input_contract": config.get("input_contract", {}),
+        "resource_guard": config.get("resource_guard", {}),
+        "method_config": config.get("method_config", {}),
+        "dataset_manifests": config.get("dataset_manifests", {}),
+        "current_artifacts": config.get("current_artifacts", {}),
     }
 
 

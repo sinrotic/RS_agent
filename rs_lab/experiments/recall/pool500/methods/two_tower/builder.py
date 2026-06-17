@@ -18,9 +18,10 @@ if str(ROOT) not in sys.path:
 from rs_core.common.config import load_config
 from rs_core.common.io import iter_jsonl, read_json, write_json
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.candidate_merge import load_two_tower_index, unique_recent_items
+from rs_core.recsys.candidate_merge import load_two_tower_index
+from rs_core.recsys.two_tower_query import build_two_tower_query_for_user, is_seed_average_source
 from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
-from rs_core.recsys.vector_index import VectorIndex, average_vectors
+from rs_core.recsys.vector_index import VectorIndex
 from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir
 
 SCHEMA_VERSION = "pool500_two_tower_method_source_v1"
@@ -101,6 +102,10 @@ def build_two_tower_method_source(
         "per_user_candidate_limit": per_user_candidate_limit,
         "seed_window": seed_window,
         "recency_decay": recency_decay,
+        "query_vector_policy": "artifact_user_embedding_first_then_projected_train_sequence_seed_average_vectors",
+        "artifact_user_embedding_first": True,
+        "project_seed_average": True,
+        "seed_sequence_keys": ["recent_positive_item_sequence", "recent_strong_positive_item_sequence", "recent_item_sequence"],
         "source": SOURCE,
     }
     config_hash = _sha256_json(config_hash_payload)
@@ -281,7 +286,7 @@ def build_two_tower_method_source(
         "row_count": candidate_row_count,
         "vector_index_item_count": len(artifact_index.items),
         "artifact_user_embedding_count": len(artifact_index.user_embeddings),
-        "query_vector_policy": "artifact_user_embedding_first_then_recent_positive_item_sequence_average_vectors",
+        "query_vector_policy": "artifact_user_embedding_first_then_projected_train_sequence_seed_average_vectors",
         "generation_config_overrides": {
             "two_tower_enabled": True,
             "two_tower_per_user": per_user_candidate_limit,
@@ -352,28 +357,28 @@ def _write_candidate_shards(
         query_sources: dict[str, str] = {}
         seed_counts: dict[str, int] = {}
         seed_vector_counts: dict[str, int] = {}
+        queryless_reasons: dict[str, str] = {}
+        projected_seed_queries: set[str] = set()
         for sequence in batch:
             user_id = str(sequence.get("user_id") or "")
-            seen_items = {str(item) for item in sequence.get("recent_item_sequence", []) if item}
-            excluded_items[user_id] = seen_items
-            user_vector = vector_index.get_user_vector(user_id)
-            if user_vector:
-                query_vectors[user_id] = user_vector
-                query_sources[user_id] = "artifact_user_embedding"
-                continue
-            seed_items = unique_recent_items([str(item) for item in sequence.get("recent_positive_item_sequence", []) if item], seed_window)
-            seed_counts[user_id] = len(seed_items)
-            seed_vectors = [vector_index.get_item_vector(item_id) for item_id in seed_items]
-            seed_vectors = [vector for vector in seed_vectors if vector]
-            seed_vector_counts[user_id] = len(seed_vectors)
-            fallback_vector = average_vectors(seed_vectors, recency_decay=recency_decay)
-            if fallback_vector:
-                query_vectors[user_id] = fallback_vector
-                query_sources[user_id] = "recent_positive_item_sequence_average_vectors"
-                excluded_items[user_id] = set(excluded_items[user_id]) | set(seed_items)
+            query = build_two_tower_query_for_user(
+                sequence,
+                vector_index,
+                seed_window=seed_window,
+                recency_decay=recency_decay,
+                artifact_user_embedding_first=True,
+                project_seed_average=True,
+            )
+            excluded_items[user_id] = query.excluded_items
+            seed_counts[user_id] = query.seed_item_count
+            seed_vector_counts[user_id] = query.seed_vector_count
+            if query.applied_projection:
+                projected_seed_queries.add(user_id)
+            if query.has_query:
+                query_vectors[user_id] = query.query_vector
+                query_sources[user_id] = query.query_source
             else:
-                seed_counts.setdefault(user_id, len(seed_items))
-                seed_vector_counts.setdefault(user_id, len(seed_vectors))
+                queryless_reasons[user_id] = query.queryless_reason or "unknown"
         search_results = vector_index.search_many(query_vectors, per_user_candidate_limit, excluded_items) if query_vectors else {}
         batch_result = _write_candidate_batch(
             batch=batch,
@@ -384,6 +389,8 @@ def _write_candidate_shards(
             query_sources=query_sources,
             seed_counts=seed_counts,
             seed_vector_counts=seed_vector_counts,
+            queryless_reasons=queryless_reasons,
+            projected_seed_queries=projected_seed_queries,
             per_user_candidate_limit=per_user_candidate_limit,
             source_index_manifest_path=source_index_manifest_path,
             config_hash=config_hash,
@@ -422,6 +429,8 @@ def _write_candidate_batch(
     query_sources: dict[str, str],
     seed_counts: dict[str, int],
     seed_vector_counts: dict[str, int],
+    queryless_reasons: dict[str, str],
+    projected_seed_queries: set[str],
     per_user_candidate_limit: int,
     source_index_manifest_path: Path,
     config_hash: str,
@@ -437,12 +446,7 @@ def _write_candidate_batch(
             count = len(results)
             batch_counts.append(count)
             if user_id not in query_vectors:
-                if seed_counts.get(user_id, 0) == 0:
-                    reason = "no_recent_positive_seed_items"
-                elif seed_vector_counts.get(user_id, 0) == 0:
-                    reason = "seed_items_missing_item_vectors"
-                else:
-                    reason = "average_seed_vector_empty"
+                reason = queryless_reasons.get(user_id, "unknown")
             elif count == 0:
                 reason = "vector_search_returned_no_candidates"
             elif count < per_user_candidate_limit:
@@ -463,7 +467,7 @@ def _write_candidate_batch(
             for rank, candidate in enumerate(results, start=1):
                 metadata = dict(candidate.metadata)
                 query_source = query_sources.get(user_id, "none")
-                query_vector_source = "seed_item_average" if query_source == "recent_positive_item_sequence_average_vectors" else query_source
+                query_vector_source = "seed_item_average" if is_seed_average_source(query_source) else query_source
                 metadata.update({
                     "canonical_source": SOURCE,
                     "source_status": SOURCE_STATUS,
@@ -471,6 +475,8 @@ def _write_candidate_batch(
                     "query_source": query_source,
                     "query_vector_source": query_vector_source,
                     "seed_item_count": seed_counts.get(user_id, 0),
+                    "seed_vector_count": seed_vector_counts.get(user_id, 0),
+                    "applied_query_projection": user_id in projected_seed_queries,
                     "source_index_manifest_path": str(source_index_manifest_path),
                     "config_hash": config_hash,
                 })
@@ -496,7 +502,7 @@ def _write_candidate_batch(
         "undercovered_users": batch_undercovered,
         "reason_counts": dict(sorted(batch_reasons.items())),
         "artifact_user_embedding_hit_count": sum(1 for row in batch if query_sources.get(str(row.get("user_id") or "")) == "artifact_user_embedding"),
-        "seed_vector_fallback_hit_count": sum(1 for row in batch if query_sources.get(str(row.get("user_id") or "")) == "recent_positive_item_sequence_average_vectors"),
+        "seed_vector_fallback_hit_count": sum(1 for row in batch if is_seed_average_source(query_sources.get(str(row.get("user_id") or ""), ""))),
         "query_vector_user_count": len(query_vectors),
     }
     write_json(checkpoint_path, result)
@@ -513,14 +519,6 @@ def _merge_shards(shard_dir: Path, candidates_path: Path) -> int:
                         output.write(line)
                         row_count += 1
     return row_count
-
-
-def _query_undercoverage_reason(seed_items: list[str], seed_vectors: list[list[float]]) -> str:
-    if not seed_items:
-        return "no_recent_positive_seed_items"
-    if not seed_vectors:
-        return "seed_items_missing_item_vectors"
-    return "average_seed_vector_empty"
 
 
 def _load_target_sequences(train_sequences_path: Path, eligible_user_manifest_path: Path | None, limit: int) -> list[dict[str, Any]]:

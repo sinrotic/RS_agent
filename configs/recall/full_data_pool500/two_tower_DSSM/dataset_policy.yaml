@@ -1,0 +1,99 @@
+schema_version: pool500_method_dataset_policy_v1_recent_2y_dssm
+source: two_tower_dssm
+canonical_source: two_tower_dssm
+source_status: DIAGNOSTIC_ONLY
+route_visibility: HIDDEN_FROM_ACTIVE_ROUTE
+hidden_from_active_route: true
+hidden_reason: single_source_recall_remains_weak_after_diagnostic_experiments
+role: DSSM/two-tower item-rich embedding retrieval diagnostic source
+dataset_policy: recent_2y_train_only_dssm_sequence_embedding_method_dataset
+train_only: true
+current_dataset_root: data/processed/amazon_2023_recall_recent_2y_1m_3m
+governance_manifest_path: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+allowed_inputs:
+- canonical_interactions.train.jsonl
+- user_sequences.train.jsonl
+- canonical_items.jsonl
+- train_only_governance/user_quality_profile.jsonl
+- train_only_governance/item_quality_profile.jsonl
+- train_only_governance/item_frequency_train.jsonl
+forbidden_data_sources:
+- holdout
+- valid_as_training_input
+- test_as_training_input
+- LOPO
+- clean_10000
+- pool1000
+- oracle
+- eval_label
+- full_data_derived_method_dataset
+scale_tiers:
+  smoke:
+    manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/smoke/method_dataset_manifest.json
+    purpose: program_and_schema_validation_only
+    promotion_allowed: false
+    limit_users: 500
+    max_samples: 20000
+    negative_ratio: 3
+  formal:
+    manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/formal/method_dataset_manifest.json
+    purpose: official_dssm_method_dataset_under_recent_2y_train_only_governance
+    quantity_policy: agent_managed_no_method_side_fixed_quantity_caps
+    limit_users: 0
+    max_samples: 0
+    negative_ratio: 5
+selection_strategy:
+  policy_name: two_tower_dssm_item_rich_sequence_v1
+  sampling_unit: user_sequence
+  sequence_contract: future_history_items_to_target_item
+  preserve_order: true
+  target_item_source: train_positive
+  eligible_user_buckets:
+  - sequence_sufficient
+  - collaborative_rich
+  - medium_behavior
+  default_negative_universe_policy: p1_item_quality_profile_v2_embedding_ready_joined_with_item_frequency_train
+  sparse_aware_negative_universe_policy: sparse_aware_v1_embedding_cf_mid_frequency_train_only
+  training_item_universe_policy: negative_universe_plus_sampled_train_sequence_targets
+  per_user_negative_universe_policy: global_negative_universe_minus_user_known_history_and_current_target
+  per_example_negative_universe_policy: deterministic_diversified_rotated_negatives_after_per_user_exclusions
+  user_tower_inputs:
+  - recent_positive_item_sequence
+  - recent_strong_positive_item_sequence
+  - recent_item_sequence
+  item_tower_text_fields:
+  - title_clean
+  - main_category
+  - category
+  - description_text
+  - features_text
+  - item_text
+  - categories_flat
+  item_tower_side_feature_fields:
+  - item_quality_token
+  - item_pop_bucket_token
+  - item_user_count_bucket_token
+outputs_required:
+- method_dataset_manifest.json
+- two_tower_train_samples.jsonl
+- negative_item_universe.jsonl
+- training_item_universe.jsonl
+- two_tower_dssm_item_vocab_manifest.json
+- leakage_audit.json
+governance:
+  route_visibility: HIDDEN_FROM_ACTIVE_ROUTE
+  hidden_from_active_route: true
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false
+current_evidence:
+  status: PARKED_HIDDEN_DIAGNOSTIC_ONLY
+  first_required_gate: smoke_dataset_plus_dssm_training_plus_source_index_plus_direct_eval
+  parked_decision: hide_from_active_route_and_keep_method_dataset_policy_as_reference_only
+blockers:
+- hidden_from_active_route_due_to_weak_single_source_recall
+- no_dssm_recent_2y_smoke_artifact_yet
+- no_dssm_direct_eval_evidence_yet
+- diagnostic_only_until_route_level_marginal_lift_is_verified

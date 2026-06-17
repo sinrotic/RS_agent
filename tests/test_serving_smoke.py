@@ -10,8 +10,13 @@ from fastapi.testclient import TestClient
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]
 
 from rs_core.common.io import write_jsonl
+from rs_core.recsys.semantic_description import build_sqlite_semantic_description_index
+from rs_core.rsagent.tools import AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
 from rs_core.serving import app as serving_app
-from rs_core.serving.service import RecommendationService
+from rs_core.serving.facades import FeedbackSessionFacade, RecommendationFacade, RecallFacade
+from rs_core.serving.schema import RecallRequest, RecommendFromSequenceRequest
+from rs_core.serving.service import RecommendationService, resolve_serving_config
+from rs_core.workflow.hybrid_demo import run_hybrid_demo
 
 BLOCKED_PUBLIC_KEYS = {
     "ranking",
@@ -29,6 +34,11 @@ BLOCKED_PUBLIC_KEYS = {
     "rank_movement",
     "training_samples",
     "tool_events",
+    "tool_call",
+    "tool_result",
+    "agent_tool_trace",
+    "agent_tool_events",
+    "agent_tool_summary",
     "constraint_filter_events",
     "scorecard",
     "judge_scores",
@@ -36,20 +46,32 @@ BLOCKED_PUBLIC_KEYS = {
 BLOCKED_PUBLIC_TERMS = {
     "agent_boost",
     "base_score",
+    "build_recommendation_slate",
     "coarse_score",
     "diagnostic",
+    "agent_tool_trace",
+    "catalog_constraint_search",
     "constraint_filter",
     "feedback_source",
     "fine_score",
     "final_score",
+    "get_item_evidence",
+    "get_user_context",
+    "holdout",
     "hybrid recall",
     "itemcf",
+    "label_binary",
+    "match_specific_need_in_pool",
+    "rank_candidates",
     "rank_weights",
     "ranked highest",
     "ranking",
     "rank_movement",
     "recall source",
+    "record_user_feedback",
+    "rerank_for_browsing",
     "rerank_score",
+    "retrieve_candidates",
     "score_trace",
     "reward",
     "reward_evidence",
@@ -57,6 +79,12 @@ BLOCKED_PUBLIC_TERMS = {
     "source",
     "training",
     "training_samples",
+}
+SERVING_GOVERNANCE = {
+    "promotion_allowed": False,
+    "pool1000_allowed": False,
+    "ranking_input_replacement_allowed": False,
+    "final_pool500_ready_claimed": False,
 }
 
 
@@ -69,15 +97,60 @@ def client(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         yield test_client
 
 
-def test_health_returns_demo_mode(client: TestClient):
+def test_health_returns_online_service_mode(client: TestClient):
     response = client.get("/health")
 
     assert response.status_code == 200
     assert response.json() == {
         "status": "ok",
         "service": "rs-agent-serving",
-        "mode": "single-process-demo",
+        "mode": "online-service",
+        "session_state": "single_process_in_memory",
     }
+
+
+
+def test_health_does_not_instantiate_service_or_readiness(monkeypatch: pytest.MonkeyPatch):
+    def fail_get_service():
+        raise AssertionError("/health must stay liveness-only")
+
+    monkeypatch.setattr(serving_app, "get_service", fail_get_service)
+    with TestClient(serving_app.app) as test_client:
+        response = test_client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+
+def test_default_online_service_config_resolution_is_not_cwd_relative(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.chdir(tmp_path)
+
+    resolved = Path(resolve_serving_config())
+
+    assert resolved.is_absolute()
+    assert resolved.name == "online_service.yaml"
+    assert resolved.exists()
+
+
+
+def test_ready_returns_coarse_public_readiness(client: TestClient):
+    response = client.get("/ready")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "ready"
+    assert payload["mode"] == "online-service"
+    assert payload["session_state"] == "single_process_in_memory"
+    assert payload["online_route"] == {
+        "mode": "online-service",
+        "session_state": "single_process_in_memory",
+        "complete_pool500_available": True,
+        "source_index_available_count": 0,
+        "source_index_configured_count": 0,
+        "pool500_artifact": {"enabled": True, "status": "ready"},
+    }
+    _assert_ready_no_internal_details(payload)
 
 
 def test_start_session_uses_unique_uuid_per_user(client: TestClient):
@@ -87,6 +160,37 @@ def test_start_session_uses_unique_uuid_per_user(client: TestClient):
     assert first["session_id"] != second["session_id"]
     assert _is_uuid(first["session_id"])
     assert _is_uuid(second["session_id"])
+
+
+def test_start_session_without_user_gets_independent_guest_identity(tmp_path: Path):
+    service = RecommendationService(str(_write_serving_fixture(tmp_path)), limit_users=1)
+
+    first_session = service.start_session()
+    second_session = service.start_session()
+    first = service.get_agent_session(first_session)
+    second = service.get_agent_session(second_session)
+
+    assert first.session_id != second.session_id
+    assert first.user_id != second.user_id
+    assert first.user_id == f"guest-{first_session}"
+    assert second.user_id == f"guest-{second_session}"
+    assert service.env.sequences_by_user[first.user_id] == _empty_sequence(first.user_id)
+    assert service.env.sequences_by_user[second.user_id] == _empty_sequence(second.user_id)
+    assert first.active_constraints.liked_item_ids == set()
+    assert second.active_constraints.liked_item_ids == set()
+
+
+def test_unknown_explicit_user_gets_cold_start_session_without_reusing_user_id(tmp_path: Path):
+    service = RecommendationService(str(_write_serving_fixture(tmp_path)), limit_users=1)
+
+    session_id = service.start_session("new-user-1")
+    result = service.chat(session_id, "For commute, prefer bluetooth and Audio")
+    session = service.get_agent_session(session_id)
+
+    assert session.user_id == "new-user-1"
+    assert service.env.sequences_by_user[session.user_id] == _empty_sequence("new-user-1")
+    assert result.display["user_id"] == "new-user-1"
+    assert result.display["items"]
 
 
 def test_chat_returns_display_response_without_internal_fields(client: TestClient):
@@ -120,12 +224,249 @@ def test_fixed_smoke_user_returns_public_display_items_without_recovery_diagnost
     _assert_no_blocked_public_terms(result.display)
 
 
+def test_public_serving_runtime_ignores_holdout_files(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    (tmp_path / "clean" / "canonical_interactions.valid.jsonl").write_text("not-json\n", encoding="utf-8")
+    (tmp_path / "clean" / "canonical_interactions.test.jsonl").write_text("not-json\n", encoding="utf-8")
+
+    service = RecommendationService(str(config_path))
+    session_id = service.start_session("u1")
+    result = service.chat(session_id, "For commute, prefer bluetooth and Audio")
+
+    assert service.env.holdout_records == []
+    assert result.display["items"]
+    _assert_no_blocked_keys(result.display)
+    _assert_no_blocked_public_terms(result.display)
+
+
+@pytest.mark.parametrize(
+    "config_overrides, message",
+    [
+        ({"evaluation_mode": "valid_test"}, "evaluation_mode"),
+        ({"role": "evaluation_only"}, "role:evaluation_only"),
+        ({"serving_allowed": False}, "serving_allowed:false"),
+    ],
+)
+def test_serving_rejects_evaluation_only_configs(tmp_path: Path, config_overrides: dict[str, Any], message: str):
+    config_path = _write_serving_fixture(tmp_path)
+
+    with pytest.raises(ValueError, match=message):
+        RecommendationService(str(config_path), config_overrides=config_overrides)
+
+
+@pytest.mark.parametrize(
+    "governance_field",
+    [
+        "promotion_allowed",
+        "pool1000_allowed",
+        "ranking_input_replacement_allowed",
+        "final_pool500_ready_claimed",
+    ],
+)
+def test_serving_rejects_online_route_governance_relaxation(tmp_path: Path, governance_field: str):
+    config_path = _write_serving_fixture(tmp_path)
+
+    governance = dict(SERVING_GOVERNANCE)
+    governance[governance_field] = True
+
+    with pytest.raises(ValueError, match=f"online_route.governance.{governance_field}:false"):
+        RecommendationService(
+            str(config_path),
+            config_overrides={"online_route": {"governance": governance}},
+        )
+
+
+def test_serving_rejects_online_candidate_route_without_governance(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    payload = json.loads(config_path.read_text(encoding="utf-8"))
+    payload["online_route"].pop("governance")
+    config_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="online_route.governance for online candidate routes"):
+        RecommendationService(str(config_path))
+
+
+
+def test_recommendation_service_holds_facades_and_delegates_public_methods(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    config_path = _write_serving_fixture(tmp_path)
+    service = RecommendationService(str(config_path), limit_users=1)
+
+    assert isinstance(service.feedback_session_facade, FeedbackSessionFacade)
+    assert isinstance(service.recall_facade, RecallFacade)
+    assert isinstance(service.recommendation_facade, RecommendationFacade)
+
+    calls: list[tuple[str, Any]] = []
+    monkeypatch.setattr(
+        service.feedback_session_facade,
+        "start_session",
+        lambda user_id=None: calls.append(("start_session", user_id)) or "session-1",
+    )
+    monkeypatch.setattr(
+        service.feedback_session_facade,
+        "chat",
+        lambda session_id, message: calls.append(("chat", session_id, message)) or type("Result", (), {"session_id": session_id, "display": {"items": []}})(),
+    )
+    monkeypatch.setattr(
+        service.feedback_session_facade,
+        "feedback",
+        lambda session_id, action_type, item_id=None, comment=None: calls.append(("feedback", session_id, action_type, item_id, comment)) or type("Result", (), {"session_id": session_id, "display": {"items": []}})(),
+    )
+    monkeypatch.setattr(
+        service.feedback_session_facade,
+        "export_session",
+        lambda session_id: calls.append(("export_session", session_id)) or {"session_id": session_id},
+    )
+    monkeypatch.setattr(
+        service.recall_facade,
+        "recall",
+        lambda request: calls.append(("recall", request)) or {"request_id": "recall-1"},
+    )
+    monkeypatch.setattr(
+        service.recommendation_facade,
+        "recommend_from_sequence",
+        lambda request: calls.append(("recommend_from_sequence", request)) or {"request_id": "recommend-1"},
+    )
+
+    recall_request = RecallRequest(user_sequence={"recent_item_sequence": ["seed_audio"]})
+    recommend_request = RecommendFromSequenceRequest(user_sequence={"recent_item_sequence": ["seed_audio"]})
+
+    assert service.start_session("u1") == "session-1"
+    assert service.chat("session-1", "hello").display == {"items": []}
+    assert service.feedback("session-1", "why", "speaker_1", "short").display == {"items": []}
+    assert service.export_session("session-1") == {"session_id": "session-1"}
+    assert service.recall(recall_request) == {"request_id": "recall-1"}
+    assert service.recommend_from_sequence(recommend_request) == {"request_id": "recommend-1"}
+    assert calls == [
+        ("start_session", "u1"),
+        ("chat", "session-1", "hello"),
+        ("feedback", "session-1", "why", "speaker_1", "short"),
+        ("export_session", "session-1"),
+        ("recall", recall_request),
+        ("recommend_from_sequence", recommend_request),
+    ]
+
+
+def test_hybrid_demo_public_serving_smoke_does_not_read_holdout_files(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    (tmp_path / "clean" / "canonical_interactions.valid.jsonl").write_text("not-json\n", encoding="utf-8")
+    (tmp_path / "clean" / "canonical_interactions.test.jsonl").write_text("not-json\n", encoding="utf-8")
+
+    result = run_hybrid_demo(str(config_path), limit_users=1, config_overrides={"evaluation_mode": "public_serving"})
+
+    assert result["metrics"]["evaluation_mode"] == "public_serving"
+    assert result["metrics"]["users_with_holdout"] == 0
+
+
+def test_chat_executes_internal_tool_without_public_leakage(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    service = RecommendationService(str(config_path), limit_users=1)
+    session_id = service.start_session("u1")
+
+    result = service.chat(session_id, "For commute, prefer bluetooth and Audio")
+    turn = service.get_agent_session(session_id).turns[-1]
+
+    tool_names = {event["tool_name"] for event in turn.diagnostics["agent_tool_events"]}
+    planner_contract = turn.diagnostics["_tool_planner_contract"]
+
+    assert service.env.tool_planner_system_prompt.startswith(AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT)
+    assert "retrieve_candidates" in service.env.tool_planner_system_prompt
+    assert "semantic_live is available to every user" in service.env.tool_planner_system_prompt
+    assert "never use query_rag as a replacement" in service.env.tool_planner_system_prompt
+    assert "tool traces" in service.env.tool_planner_system_prompt
+    assert planner_contract["sha256"] == service.env.tool_planner_contract_sha
+    assert planner_contract["prompt_length"] == len(service.env.tool_planner_system_prompt)
+    assert "_tool_planner_contract" not in result.display
+    assert "tool_planner_system_prompt" not in result.display
+    assert turn.diagnostics["agent_tool_trace"]
+    assert {
+        "get_user_context",
+        "retrieve_candidates",
+        "rank_candidates",
+        "get_item_evidence",
+        "build_recommendation_slate",
+    } <= tool_names
+    assert "record_user_feedback" not in tool_names
+    _assert_no_blocked_keys(result.display)
+    _assert_no_blocked_public_terms(result.display)
+
+
+def test_semantic_live_retrieval_feeds_serving_main_route_without_public_leakage(tmp_path: Path):
+    config_path = _write_serving_fixture(tmp_path)
+    semantic_inputs = tmp_path / "semantic_recall_inputs.jsonl"
+    inverted_index = tmp_path / "semantic_inverted_index.jsonl"
+    sqlite_index = tmp_path / "semantic_description.sqlite"
+    manifest_path = tmp_path / "semantic_description.sqlite.manifest.json"
+    write_jsonl(semantic_inputs, [
+        {
+            "parent_asin": "semantic_speaker_1",
+            "title_clean": "Portable Bluetooth Commute Speaker",
+            "main_category": "Audio",
+            "description_text": "compact wireless speaker for commute travel",
+        },
+        {
+            "parent_asin": "semantic_charger_1",
+            "title_clean": "USB Phone Charger",
+            "main_category": "Accessories",
+            "description_text": "wall charger adapter",
+        },
+    ])
+    write_jsonl(inverted_index, [
+        {"token": "bluetooth", "parent_asins": ["semantic_speaker_1"]},
+        {"token": "commute", "parent_asins": ["semantic_speaker_1"]},
+        {"token": "speaker", "parent_asins": ["semantic_speaker_1"]},
+        {"token": "charger", "parent_asins": ["semantic_charger_1"]},
+    ])
+    build_sqlite_semantic_description_index(
+        semantic_inputs_path=semantic_inputs,
+        inverted_index_path=inverted_index,
+        index_path=sqlite_index,
+        manifest_path=manifest_path,
+        overwrite=True,
+    )
+    service = RecommendationService(
+        str(config_path),
+        limit_users=1,
+        config_overrides={
+            "semantic_description_live": {
+                "enabled": True,
+                "semantic_inputs_path": str(semantic_inputs),
+                "inverted_index_path": str(inverted_index),
+                "sqlite_index_path": str(sqlite_index),
+                "candidate_limit": 1000,
+                "per_token_limit": 2000,
+            },
+            "rank_weights": {"semantic_live": 10.0, "itemcf_weak": 1.0, "category": 1.0, "popular": 1.0},
+        },
+    )
+    session_id = service.start_session("u1")
+
+    result = service.chat(session_id, "For commute, prefer bluetooth speaker and Audio")
+    turn = service.get_agent_session(session_id).turns[-1]
+
+    assert "semantic_speaker_1" in _display_item_ids(result.display)
+    retrieval = turn.diagnostics["retrieve_candidates"]
+    assert retrieval["candidate_count"] == 1
+    assert retrieval["diagnostics"]["semantic_mode"] == "hybrid_query_history"
+    assert retrieval["diagnostics"]["governance"] == {
+        "label_inputs_role": "not_used",
+        "oracle_label_injection": False,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+    }
+    assert any(
+        candidate["item_id"] == "semantic_speaker_1" and "semantic_live" in candidate["sources"]
+        for candidate in turn.candidates
+    )
+    _assert_no_blocked_keys(result.display)
+    _assert_no_blocked_public_terms(result.display)
+
+
 def test_service_smoke_completes_clarification_feedback_and_explanation_loop(tmp_path: Path):
     config_path = _write_serving_fixture(tmp_path)
     service = RecommendationService(str(config_path), limit_users=1)
     session_id = service.start_session("u1")
 
-    vague = service.chat(session_id, "I want headphones")
+    vague = service.chat(session_id, "I want something")
     assert vague.display["items"] == []
     assert service.get_agent_session(session_id).turns[-1].recommendation.trigger_reason == "clarification_needed"
 
@@ -144,8 +485,10 @@ def test_service_smoke_completes_clarification_feedback_and_explanation_loop(tmp
     recent = service.feedback(session_id, "why", changed_item_ids[0])
     assert changed_item_ids[0] in recent.display["assistant_message"]
     assert recent.display["items"] == []
-    _assert_no_blocked_keys(service.export_session(session_id))
-    _assert_no_blocked_public_terms(service.export_session(session_id))
+    exported = service.export_session(session_id)
+    exported.pop("agent_thoughts", None)
+    _assert_no_blocked_keys(exported)
+    _assert_no_blocked_public_terms(exported)
 
 
 def test_repeated_user_sessions_do_not_conflict(client: TestClient):
@@ -333,8 +676,24 @@ def test_session_export_returns_safe_turn_history(client: TestClient):
         ],
     }
     assert payload["display_responses"] == [chat["display"], feedback["display"]]
+    assert "agent_thoughts" not in payload
     _assert_no_blocked_keys(payload)
     _assert_no_blocked_public_terms(payload)
+
+
+def test_session_export_allows_user_message_with_internal_tool_terms(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+    message = "please use catalog_constraint_search for bluetooth"
+    chat = client.post("/chat", json={"session_id": session_id, "message": message}).json()
+
+    response = client.get(f"/session/{session_id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["public_timeline"]["events"][0]["user_message"] == message
+    assert payload["display_responses"] == [chat["display"]]
+    _assert_no_blocked_keys(payload["display_responses"])
+    _assert_no_blocked_public_terms(payload["display_responses"])
 
 
 def test_session_export_unknown_session_returns_stable_404_error(client: TestClient):
@@ -367,6 +726,26 @@ def _assert_no_blocked_public_terms(value):
             assert term not in lowered
 
 
+def _assert_ready_no_internal_details(value):
+    serialized = json.dumps(value).lower()
+    blocked_terms = {
+        "manifest_path",
+        "source_index_manifest",
+        "candidates_path",
+        "config_path",
+        "source_counts",
+        "itemcf_weak",
+        "itemcf_strong",
+        "two_tower",
+        "usercf_recall",
+        "co_visit_fallback_repair",
+        "/",
+        "\\\\",
+    }
+    for term in blocked_terms:
+        assert term not in serialized
+
+
 def _display_item_ids(display: dict[str, Any]) -> list[str]:
     return [str(item["parent_asin"]) for item in display["items"]]
 
@@ -379,6 +758,15 @@ def _is_uuid(value: str) -> bool:
     except ValueError:
         return False
     return True
+
+
+def _empty_sequence(user_id: str) -> dict[str, Any]:
+    return {
+        "user_id": user_id,
+        "recent_item_sequence": [],
+        "recent_positive_item_sequence": [],
+        "recent_strong_positive_item_sequence": [],
+    }
 
 
 def _write_serving_fixture(root: Path) -> Path:
@@ -407,6 +795,63 @@ def _write_serving_fixture(root: Path) -> Path:
     write_jsonl(views / "category_top_items.jsonl", [{"bucket": "main::Audio", "top_items": [
         {"parent_asin": "earbuds_1", "score": 1.0, "category": "Audio", "title_clean": "Wireless bluetooth earbuds"},
     ]}])
+    pool500 = root / "pool500_candidates.jsonl"
+    write_jsonl(pool500, [
+        {
+            "user_id": "u1",
+            "item_id": "speaker_1",
+            "source": "semantic",
+            "sources": ["semantic"],
+            "score": 9.0,
+            "rank": 1,
+            "metadata": {"category": "Audio", "title_clean": "Bluetooth speaker for commute"},
+        },
+        {
+            "user_id": "u1",
+            "item_id": "neighbor_online_1",
+            "source": "itemcf_weak",
+            "sources": ["itemcf_weak"],
+            "score": 8.0,
+            "rank": 2,
+            "metadata": {"category": "Audio", "title_clean": "Neighbor speaker for commute"},
+        },
+        {
+            "user_id": "u1",
+            "item_id": "embedding_online_1",
+            "source": "two_tower",
+            "sources": ["two_tower"],
+            "score": 7.0,
+            "rank": 3,
+            "metadata": {"category": "Audio", "title_clean": "Embedding headphones for commute"},
+        },
+        {
+            "user_id": "u1",
+            "item_id": "community_online_1",
+            "source": "usercf_recall",
+            "sources": ["usercf_recall"],
+            "score": 6.0,
+            "rank": 4,
+            "metadata": {"category": "Audio", "title_clean": "User neighbor headphones for commute"},
+        },
+        {
+            "user_id": "u1",
+            "item_id": "cohort_online_1",
+            "source": "co_visit_fallback_repair",
+            "sources": ["co_visit_fallback_repair"],
+            "score": 5.0,
+            "rank": 5,
+            "metadata": {"category": "Audio", "title_clean": "Co visit repair speaker accessory"},
+        },
+        {
+            "user_id": "u1",
+            "item_id": "legacy_semantic_title_1",
+            "source": "semantic_title_category_expansion",
+            "sources": ["semantic_title_category_expansion"],
+            "score": 99.0,
+            "rank": 1,
+            "metadata": {"category": "Audio", "title_clean": "Legacy semantic title source"},
+        },
+    ])
     config = root / "config.yaml"
     config.write_text(json.dumps({
         "clean_dir": str(clean),
@@ -419,11 +864,19 @@ def _write_serving_fixture(root: Path) -> Path:
         "rank_weights": {
             "popular": 1.0,
             "itemcf_weak": 1.0,
+            "two_tower": 1.0,
+            "usercf_recall": 1.0,
+            "co_visit_fallback_repair": 1.0,
             "category": 1.0,
             "feedback_category": 10.0,
             "feedback_keyword": 10.0,
         },
         "feedback_category_boost": 1.0,
         "feedback_keyword_boost": 1.0,
+        "online_route": {
+            "pool500_candidates_path": str(pool500),
+            "allowed_sources": ["semantic", "popular", "itemcf_weak", "two_tower", "usercf_recall", "co_visit_fallback_repair"],
+            "governance": SERVING_GOVERNANCE,
+        },
     }), encoding="utf-8")
     return config

@@ -20,8 +20,9 @@ from rs_core.common.io import iter_jsonl, read_json, write_json
 from rs_core.common.runtime import enforce_project_venv
 
 SCHEMA_VERSION = "train_only_data_governance_v1"
-DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_clean_full" / "manifest.json"
-DEFAULT_OUTPUT_DIR = ROOT / "outputs" / "recall" / "data_governance" / "train_only_v1"
+RECENT_2Y_DATASET_ROOT = ROOT / "data" / "processed" / "amazon_2023_recall_recent_2y_1m_3m"
+DEFAULT_CLEAN_MANIFEST = RECENT_2Y_DATASET_ROOT / "manifest.json"
+DEFAULT_OUTPUT_DIR = RECENT_2Y_DATASET_ROOT / "train_only_governance"
 FORBIDDEN_SCOPE_TOKENS = (
     "valid",
     "validation",
@@ -73,8 +74,7 @@ MIN_FREQ_UNIVERSES = (2, 3, 5, 10)
 TOP_K_UNIVERSES = (50_000, 100_000, 200_000)
 SCALE_TIERS = {
     "smoke": {"limit_users": 500, "limit_interactions": 20_000},
-    "diagnostic": {"limit_users": 50_000, "limit_interactions": 800_000},
-    "local_formal": {"limit_users": 0, "limit_interactions": 0},
+    "formal": {"limit_users": 0, "limit_interactions": 0},
 }
 DERIVED_DATASET_POLICIES = {
     "itemcf_strong": {
@@ -212,7 +212,7 @@ DERIVED_DATASET_POLICIES = {
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build train-only governance artifacts from clean full train split.")
+    parser = argparse.ArgumentParser(description="Build train-only governance artifacts from the recent 2y train split.")
     parser.add_argument("--clean-manifest", default=str(DEFAULT_CLEAN_MANIFEST))
     parser.add_argument("--output-dir", default=str(DEFAULT_OUTPUT_DIR))
     parser.add_argument("--cold-start-sequence-len-max", type=int, default=DEFAULT_THRESHOLDS["cold_start"]["sequence_len_max"])
@@ -226,7 +226,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--two-tower-unique-item-count-min", type=int, default=DEFAULT_THRESHOLDS["two_tower_train_eligible"]["unique_item_count_min"])
     parser.add_argument("--two-tower-hot-item-min-freq", type=int, default=DEFAULT_THRESHOLDS["two_tower_train_eligible"]["hot_item_min_freq"])
     parser.add_argument("--long-tail-frequency-lt", type=int, default=DEFAULT_THRESHOLDS["long_tail_item"]["frequency_lt"])
-    parser.add_argument("--scale-tier", choices=tuple(SCALE_TIERS), default="local_formal")
+    parser.add_argument("--scale-tier", choices=tuple(SCALE_TIERS), default="smoke")
     parser.add_argument("--limit-users", type=int, default=None, help="Optional smoke limit over user_sequences.train.jsonl rows; 0 means full train users.")
     parser.add_argument("--limit-interactions", type=int, default=None, help="Optional smoke limit over canonical_interactions.train.jsonl rows; 0 means full train interactions.")
     parser.add_argument("--min-free-bytes", type=int, default=0)
@@ -240,7 +240,7 @@ def build_train_only_data_governance(
     clean_manifest_path: Path = DEFAULT_CLEAN_MANIFEST,
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     thresholds: dict[str, dict[str, int]] | None = None,
-    scale_tier: str = "local_formal",
+    scale_tier: str = "smoke",
     limit_users: int | None = None,
     limit_interactions: int | None = None,
     min_free_bytes: int = 0,
@@ -305,9 +305,9 @@ def build_train_only_data_governance(
 
     generated_at = datetime.now(timezone.utc).isoformat()
     lineage = {
-        "source_layer": "clean_full",
-        "derived_layer": "governance_train_only_v1",
-        "mutation_policy": "clean_full_is_read_only; governance artifacts are derived outputs",
+        "source_layer": "recent_2y",
+        "derived_layer": "recent_2y_train_only_governance",
+        "mutation_policy": "recent_2y_dataset_is_read_only; governance artifacts are derived outputs",
         "input_files": {
             "clean_manifest": str(clean_manifest_path),
             "canonical_interactions_train": str(train_interactions_path),
@@ -354,6 +354,7 @@ def build_train_only_data_governance(
         "lopo_used": False,
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
+        "recent_2y_modified": False,
         "clean_full_modified": False,
         "thresholds": thresholds,
         "lineage": lineage,
@@ -362,7 +363,7 @@ def build_train_only_data_governance(
         "item_universe_summary": item_summary,
         "item_quality_summary": item_summary,
         "derived_dataset_policies": DERIVED_DATASET_POLICIES,
-        "resource_scale_policy": {"scale_tier": scale_tier, "default_tier": "local_formal", "scale_tiers": SCALE_TIERS},
+        "resource_scale_policy": {"scale_tier": scale_tier, "default_tier": "formal", "scale_tiers": SCALE_TIERS},
         "limits": limits,
         "resource_summary": {
             "disk_free_bytes_start": disk_free_start,
@@ -706,7 +707,7 @@ def _item_quality_record(
         "bucket_reason": bucket_reason,
         "dropped_reasons": dropped_reasons,
         "train_only": True,
-        "source_layer": "governance_train_only_v1",
+        "source_layer": "recent_2y_train_only_governance",
     }
 
 
@@ -898,6 +899,7 @@ def _leakage_audit(
         "read_files": read_files,
         "forbidden_inputs": forbidden_inputs,
         "forbidden_path_scan": {"scanned_path_count": len(scanned_paths), "hits": []},
+        "recent_2y_modified": False,
         "clean_full_modified": False,
     }
 
@@ -913,6 +915,9 @@ def _forbidden_scope_hits(value: Any, context: str) -> Iterable[str]:
         for key, nested in value.items():
             key_context = f"{context}.{key}"
             if context == "clean_manifest.split_paths" and str(key) != "train":
+                continue
+            if context in {"clean_manifest.window_policy.splits", "clean_manifest.counts.interactions"}:
+                yield from _forbidden_scope_hits(nested, key_context)
                 continue
             if _text_has_forbidden_scope(str(key)):
                 yield key_context

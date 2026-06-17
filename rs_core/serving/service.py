@@ -1,23 +1,27 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-from uuid import uuid4
 
-from rs_core.display import build_display_record, build_public_timeline
+from rs_core.common.config import load_config
+from rs_core.rsagent.long_memory import LongMemoryConfig, LongMemoryStore, build_long_memory_store
 from rs_core.rsagent.schema import AgentSession
-from rs_core.serving.schema import RecommendFromSequenceRequest
+from rs_core.serving.facades import (
+    SERVING_GOVERNANCE_GUARDRAILS,
+    FeedbackSessionFacade,
+    RecommendationFacade,
+    RecallFacade,
+    feedback_prompt as _facade_feedback_prompt,
+)
+from rs_core.serving.schema import RecallRequest, RecommendFromSequenceRequest
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 from rs_core.workflow.online_recommendation import OnlinePool500Recommender
 
-DEFAULT_CONFIG = "configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml"
-FEEDBACK_PROMPTS = {
-    "like": "I like this item, show me more like this.",
-    "dislike": "I don't like this item, try a different direction.",
-    "show_different": "show me something different",
-    "why": "why?",
-}
+DEFAULT_CONFIG = "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml"
+SERVING_CONFIG_ENV = "RS_SERVING_CONFIG"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass
@@ -46,68 +50,65 @@ class RecommendationService:
         config: str | Path = DEFAULT_CONFIG,
         limit_users: int | None = None,
         config_overrides: dict[str, Any] | None = None,
+        long_memory_config: LongMemoryConfig | None = None,
+        long_memory_store: LongMemoryStore | None = None,
     ) -> None:
-        self.env = HybridRecommendationEnvironment.from_config(config, limit_users=limit_users, config_overrides=config_overrides)
+        resolved_config = resolve_serving_config(config)
+        effective_config = load_config(resolved_config)
+        if config_overrides:
+            effective_config = _merge_nested(effective_config, config_overrides)
+        _validate_serving_config(effective_config)
+        self.env = HybridRecommendationEnvironment.from_config(resolved_config, limit_users=limit_users, config_overrides=config_overrides)
         self.online_recommender = OnlinePool500Recommender.from_environment(self.env)
+        self.env.online_recommender = self.online_recommender
+        self.long_memory_config = long_memory_config or LongMemoryConfig(enabled=False)
+        self.long_memory_store = long_memory_store or build_long_memory_store(self.long_memory_config)
         self.sessions: dict[str, AgentSession] = {}
         self.session_events: dict[str, list[dict[str, Any]]] = {}
+        self.feedback_session_facade = FeedbackSessionFacade(
+            self.env,
+            self.sessions,
+            self.session_events,
+            self.long_memory_config,
+            self.long_memory_store,
+            not_found_error=SessionNotFoundError,
+        )
+        self.recall_facade = RecallFacade(self.online_recommender)
+        self.recommendation_facade = RecommendationFacade(self.online_recommender)
 
     def start_session(self, user_id: str | None = None) -> str:
-        session_id = str(uuid4())
-        session = self.env.start_session(user_id=user_id, session_id=session_id)
-        self.sessions[session_id] = session
-        self.session_events[session_id] = []
-        return session_id
+        return self.feedback_session_facade.start_session(user_id)
 
     def chat(self, session_id: str, message: str) -> ChatResult:
-        session = self._session(session_id)
-        turn = self.env.converse(session, message)
-        self.session_events[session_id].append({"type": "chat"})
-        return ChatResult(session_id=session_id, display=build_display_record(turn, session))
+        result = self.feedback_session_facade.chat(session_id, message)
+        return ChatResult(session_id=result.session_id, display=result.display)
 
     def feedback(self, session_id: str, action_type: str, item_id: str | None = None, comment: str | None = None) -> ChatResult:
-        session = self._session(session_id)
-        prompt = feedback_prompt(action_type, item_id, comment)
-        turn = self.env.converse(session, prompt, explanation_item_id=item_id if action_type.strip().lower() == "why" else None)
-        self.session_events[session_id].append({
-            "type": "feedback",
-            "action_type": action_type.strip().lower(),
-            "item_id": item_id,
-            "comment": comment,
-        })
-        return ChatResult(session_id=session_id, display=build_display_record(turn, session))
+        result = self.feedback_session_facade.feedback(session_id, action_type, item_id, comment)
+        return ChatResult(session_id=result.session_id, display=result.display)
 
     def get_agent_session(self, session_id: str) -> AgentSession:
         return self._session(session_id)
 
-    def recommend_from_sequence(self, request: RecommendFromSequenceRequest) -> dict[str, Any]:
-        result = self.online_recommender.recommend(
-            request.user_sequence,
-            user_id=request.user_id,
-            feedback_text=request.feedback_text,
-            top_k=request.top_k,
-            candidate_pool_size=request.candidate_pool_size,
-            complete_pool500=request.complete_pool500,
-        )
+    def readiness(self) -> dict[str, Any]:
+        online = self.online_recommender.readiness()
+        public_route = _public_online_route_readiness(online)
         return {
-            "request_id": result.request_id,
-            "display": result.display,
-            "items": result.items,
-            "item_count": len(result.items),
-            "candidate_count": result.candidate_count,
-            "fallback_used": result.fallback_used,
+            "status": "ready" if public_route.get("complete_pool500_available") else "degraded",
+            "service": "rs-agent-serving",
+            "mode": public_route.get("mode", "demo-compatible"),
+            "session_state": "single_process_in_memory",
+            "online_route": public_route,
         }
 
+    def recommend_from_sequence(self, request: RecommendFromSequenceRequest) -> dict[str, Any]:
+        return self.recommendation_facade.recommend_from_sequence(request)
+
+    def recall(self, request: RecallRequest) -> dict[str, Any]:
+        return self.recall_facade.recall(request)
+
     def export_session(self, session_id: str) -> dict[str, Any]:
-        session = self._session(session_id)
-        display_responses = [build_display_record(turn, session) for turn in session.turns]
-        return {
-            "session_id": session.session_id,
-            "user_id": session.user_id,
-            "turn_count": len(session.turns),
-            "public_timeline": build_public_timeline(session, self.session_events[session_id]),
-            "display_responses": display_responses,
-        }
+        return self.feedback_session_facade.export_session(session_id)
 
     def run_demo_roundtrip(
         self,
@@ -129,22 +130,102 @@ class RecommendationService:
         )
 
     def _session(self, session_id: str) -> AgentSession:
-        session = self.sessions.get(session_id)
-        if session is None:
-            raise SessionNotFoundError(session_id)
-        return session
+        return self.feedback_session_facade.session(session_id)
+
+
+def resolve_serving_config(config: str | Path = DEFAULT_CONFIG) -> str | Path:
+    env_config = os.environ.get(SERVING_CONFIG_ENV)
+    if env_config:
+        return env_config
+    if str(config) == DEFAULT_CONFIG:
+        registry_config = _current_online_service_config()
+        if registry_config:
+            return registry_config
+    return config
+
+
+def _current_online_service_config() -> str | None:
+    registry_path = PROJECT_ROOT / "configs/governance/current_route_registry.yaml"
+    if not registry_path.exists():
+        return None
+    try:
+        registry = load_config(registry_path)
+    except Exception:
+        return None
+    routes = registry.get("routes") if isinstance(registry.get("routes"), dict) else {}
+    route = routes.get("current_online_service_route") if isinstance(routes.get("current_online_service_route"), dict) else {}
+    config_paths = route.get("config_paths")
+    if isinstance(config_paths, list) and config_paths:
+        path = Path(str(config_paths[0]))
+        return str(path if path.is_absolute() else PROJECT_ROOT / path)
+    return None
+
+
+def _validate_serving_config(config: dict[str, Any]) -> None:
+    evaluation_mode = config.get("evaluation_mode")
+    if evaluation_mode not in (None, "", "none", "public_serving"):
+        raise ValueError(f"Serving runtime requires evaluation_mode public_serving or omitted, got: {evaluation_mode}")
+    if str(config.get("role", "")).strip().lower() == "evaluation_only":
+        raise ValueError("Serving runtime rejects role:evaluation_only")
+    if config.get("serving_allowed") is False:
+        raise ValueError("Serving runtime rejects serving_allowed:false")
+    _validate_serving_governance_guardrails(config)
+
+
+def _validate_serving_governance_guardrails(config: dict[str, Any]) -> None:
+    online_route = config.get("online_route")
+    if not isinstance(online_route, dict):
+        return
+    governance = online_route.get("governance")
+    if _online_route_has_candidate_inputs(online_route) and not isinstance(governance, dict):
+        raise ValueError("Serving runtime requires online_route.governance for online candidate routes")
+    if not isinstance(governance, dict):
+        return
+    for field, expected in SERVING_GOVERNANCE_GUARDRAILS.items():
+        if governance.get(field) is not expected:
+            raise ValueError(f"Serving runtime requires online_route.governance.{field}:{str(expected).lower()}")
+
+
+def _online_route_has_candidate_inputs(online_route: dict[str, Any]) -> bool:
+    return any(
+        online_route.get(field)
+        for field in (
+            "pool500_candidates_path",
+            "source_indexes",
+            "online_source_indexes",
+            "source_manifests",
+        )
+    )
+
+
+def _merge_nested(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(base)
+    for key, value in overrides.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _merge_nested(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _public_online_route_readiness(online: dict[str, Any]) -> dict[str, Any]:
+    source_indexes = online.get("online_source_indexes") if isinstance(online.get("online_source_indexes"), dict) else {}
+    artifact = online.get("pool500_artifact") if isinstance(online.get("pool500_artifact"), dict) else {}
+    return {
+        "mode": online.get("mode", "demo-compatible"),
+        "session_state": "single_process_in_memory",
+        "complete_pool500_available": bool(online.get("complete_pool500_available")),
+        "source_index_available_count": sum(1 for status in source_indexes.values() if isinstance(status, dict) and status.get("available")),
+        "source_index_configured_count": len(source_indexes),
+        "pool500_artifact": {
+            "enabled": bool(artifact.get("enabled")),
+            "status": str(artifact.get("status", "not_configured")),
+        },
+    }
 
 
 def feedback_prompt(action_type: str, item_id: str | None = None, comment: str | None = None) -> str:
-    action = action_type.strip().lower()
-    if action not in FEEDBACK_PROMPTS:
-        raise ValueError(f"Unsupported feedback action_type: {action_type}")
-    parts = [FEEDBACK_PROMPTS[action]]
-    if item_id:
-        parts.append(f"item_id={item_id}")
-    if comment:
-        parts.append(comment.strip())
-    return " ".join(part for part in parts if part)
+    return _facade_feedback_prompt(action_type, item_id, comment)
 
 
 def first_item_id(display: dict[str, Any]) -> str | None:

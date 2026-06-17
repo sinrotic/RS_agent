@@ -1,0 +1,32 @@
+# GPT SFT API smoke 配置。
+# 默认 dry-run，只校验配置、SFT contract 并输出 message 摘要；只有 --execute 且配置显式启用时才发起 API 调用。
+experiment_name: gpt_sft_generation_smoke
+stage: sft_data_generation
+dry_run: true
+seed: 20260614
+
+data:
+  source: training_signals
+  input_path: null
+  output_path: outputs/training/gpt_sft_generation_smoke/sft_samples.jsonl
+  sft_schema: rs_agent_sft_sample_v1
+  max_samples: 3
+
+gpt_sft:
+  enabled: false
+  provider: openai_compatible
+  api_base: https://api.openai.com
+  api_key_env: RS_AGENT_GPT_SFT_API_KEY
+  model: gpt-4o-mini
+  timeout_seconds: 60
+  temperature: 0.2
+  max_tokens: 1200
+  response_format:
+    type: json_object
+  strict: true
+  system_prompt: "你是推荐系统 SFT 数据生成助手。请基于用户输入、反馈约束、候选商品和目标动作，返回一个符合 rs_agent_sft_sample_v1.sample 结构的 JSON object；不得选择候选池外商品。"
+
+safety:
+  must_select_from_candidates: true
+  reject_unknown_item_ids: true
+  require_schema_validation: true

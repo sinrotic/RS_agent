@@ -8,6 +8,8 @@ from rs_core.rsagent.schema import AgentSession, AgentTurn
 
 NO_PRIOR_RECOMMENDATION_TEXT = "我现在还没有可以解释的最近推荐。你可以先让我推荐一些商品，然后再问为什么推荐其中某一件。"
 STALE_RECOMMENDATION_TEXT = "我只能解释最近一次推荐列表里的商品。"
+RAG_EXPLANATION_MAX_EVIDENCE = 2
+RAG_EXPLANATION_MAX_TEXT_CHARS = 120
 
 
 def build_recommendation_explanation(session: AgentSession, item_id: str | None = None) -> str:
@@ -23,7 +25,7 @@ def build_recommendation_explanation(session: AgentSession, item_id: str | None 
 
     title = _clean_text(item.get("title"))
     item_label = f"{title}（{item['parent_asin']}）" if title else f"商品 {item['parent_asin']}"
-    rag_reason = _rag_reason(turn, item["parent_asin"])
+    rag_reason = _rag_reason(turn, item["parent_asin"], item)
     if rag_reason:
         return f"最近一次推荐列表里推荐{item_label}，主要因为{rag_reason}。"
     reasons = _public_reasons(item)
@@ -71,23 +73,40 @@ def _first_item_id(items: list[dict[str, Any]]) -> str | None:
     return str(parent_asin) if parent_asin else None
 
 
-def _rag_reason(turn: AgentTurn, item_id: str) -> str | None:
+def _rag_reason(turn: AgentTurn, item_id: str, display_item: dict[str, Any]) -> str | None:
     context = turn.rag_context or {}
     metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
     if metadata.get("evidence_mode") != "explain":
         return None
     evidence = context.get("evidence") if isinstance(context.get("evidence"), list) else []
-    texts = [
-        _clean_text(row.get("text"))
+    evidence_fields = {
+        str(row.get("field") or "")
         for row in evidence
-        if isinstance(row, dict) and row.get("item_id") == item_id and row.get("field") in {"title", "category", "description", "summary"}
-    ]
-    texts = [text for text in texts if text]
-    if not texts:
+        if isinstance(row, dict) and row.get("item_id") == item_id and row.get("field") in {"title", "category", "category_path", "description", "summary"}
+    }
+    if not evidence_fields:
         return None
-    metadata["consumed_by_explanation"] = True
-    turn.diagnostics.setdefault("rag", {})["consumed_by_explanation"] = True
-    return "商品信息显示" + "，".join(texts[:2])
+    public_reasons = _public_reasons_for_fields(display_item, evidence_fields)
+    if not public_reasons:
+        return None
+    return "商品信息显示" + "，".join(public_reasons[:RAG_EXPLANATION_MAX_EVIDENCE])
+
+
+def _public_reasons_for_fields(item: dict[str, Any], evidence_fields: set[str]) -> list[str]:
+    reasons: list[str] = []
+    if "category" in evidence_fields or "category_path" in evidence_fields:
+        category = _clean_text(item.get("category"))
+        if category:
+            reasons.append(f"它属于你正在浏览的{category}类目")
+    if "summary" in evidence_fields or "description" in evidence_fields:
+        summary = _clean_text(item.get("summary")) or _clean_text(item.get("description"))
+        if summary:
+            reasons.append(_truncate_text(summary, RAG_EXPLANATION_MAX_TEXT_CHARS))
+    if "title" in evidence_fields:
+        title = _clean_text(item.get("title"))
+        if title:
+            reasons.append(f"标题信息与需求相关：{_truncate_text(title, RAG_EXPLANATION_MAX_TEXT_CHARS)}")
+    return reasons
 
 
 def _public_reasons(item: dict[str, Any]) -> list[str]:
@@ -120,3 +139,7 @@ def _clean_text(value: Any) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _truncate_text(value: str, max_chars: int) -> str:
+    return value if len(value) <= max_chars else value[:max_chars] + "..."

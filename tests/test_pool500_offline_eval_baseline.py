@@ -8,6 +8,7 @@ import pytest
 
 from rs_core.common.io import read_json
 from rs_core.workflow.full_data_pool500_route_gate import canonical_user_set_hash
+from rs_lab.experiments.recall.run_itemcf_strong_augcf_route_gate_matrix import run_itemcf_strong_augcf_route_gate_matrix
 from rs_lab.experiments.recall.run_pool500_offline_eval_baseline import (
     _evaluate_candidates,
     run_pool500_offline_eval_baseline,
@@ -114,6 +115,39 @@ def test_offline_eval_baseline_writes_metrics_and_audits(tmp_path: Path) -> None
     assert source_audit["popular_category_contribution_ratio"] == pytest.approx(0.6)
 
 
+def test_offline_eval_baseline_passes_generic_source_manifest_override(tmp_path: Path) -> None:
+    eval_manifest_path, users_path = _write_fixed_eval_artifact(tmp_path)
+    output_dir = tmp_path / "baseline_override"
+    source_manifest_path = tmp_path / "itemcf_strong_source_index_manifest.json"
+    source_manifest_path.write_text(json.dumps({"source": "itemcf_strong"}, ensure_ascii=False), encoding="utf-8")
+
+    def fake_candidate_runner(**kwargs: Any) -> dict[str, Any]:
+        assert kwargs["source_manifest_paths"] == {"itemcf_strong": source_manifest_path}
+        _write_jsonl(
+            Path(kwargs["output_dir"]) / "pool500_candidates.jsonl",
+            [
+                {"user_id": "u_hot", "item_id": "i_hit_hot", "rank": 1, "source": "itemcf_strong", "sources": ["itemcf_strong"]},
+                {"user_id": "u_warm", "item_id": "i_hit_warm", "rank": 1, "source": "popular", "sources": ["popular"]},
+                {"user_id": "u_cold", "item_id": "i_other_cold", "rank": 1, "source": "category", "sources": ["category"]},
+            ],
+        )
+        return {"schema_version": "fake_generation_v1", "status": "PASS"}
+
+    manifest = run_pool500_offline_eval_baseline(
+        eval_manifest_path=eval_manifest_path,
+        eval_users_path=users_path,
+        output_dir=output_dir,
+        overwrite=True,
+        enforce_venv=False,
+        source_manifest_paths={"itemcf_strong": source_manifest_path},
+        candidate_runner=fake_candidate_runner,
+    )
+
+    assert manifest["source_manifest_overrides"] == {"itemcf_strong": str(source_manifest_path)}
+    assert manifest["no_oracle"] is True
+    assert manifest["no_oracle_semantics"]["source_manifest_overrides_do_not_authorize_oracle_candidates"] is True
+
+
 def _write_two_tower_source_manifest(tmp_path: Path) -> Path:
     path = tmp_path / "source_index_manifest.json"
     path.write_text(json.dumps({"schema_version": "two_tower_source_index_v1", "source": "two_tower"}, ensure_ascii=False), encoding="utf-8")
@@ -200,6 +234,98 @@ def test_two_tower_ablation_reports_marginal_and_overlap_hits(tmp_path: Path) ->
     assert persisted["marginal_unique_positive_hits"] == 1
     assert persisted["overlap_positive_hits"] == 1
     assert persisted["pool_budget_decision"] == "include"
+
+
+def test_itemcf_strong_augcf_route_gate_matrix_runs_variants_and_keeps_no_oracle(tmp_path: Path) -> None:
+    eval_manifest_path, users_path = _write_fixed_eval_artifact(tmp_path)
+    q20_source_manifest_path = tmp_path / "q20" / "source_index_manifest.json"
+    q20_source_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    q20_source_manifest_path.write_text(json.dumps({"source": "itemcf_strong", "variant": "q20"}, ensure_ascii=False), encoding="utf-8")
+    seen_overrides: dict[str, Any] = {}
+
+    def fake_candidate_runner(**kwargs: Any) -> dict[str, Any]:
+        output_dir = Path(kwargs["output_dir"])
+        variant_name = output_dir.name
+        seen_overrides[variant_name] = kwargs["source_manifest_paths"]
+        rows = [
+            {"user_id": "u_hot", "item_id": "i_hit_hot", "rank": 1, "source": "popular", "sources": ["popular"]},
+            {"user_id": "u_warm", "item_id": "i_other_warm", "rank": 1, "source": "category", "sources": ["category"]},
+            {"user_id": "u_cold", "item_id": "i_other_cold", "rank": 1, "source": "category", "sources": ["category"]},
+        ]
+        if variant_name == "q20":
+            rows[1] = {"user_id": "u_warm", "item_id": "i_hit_warm", "rank": 1, "source": "itemcf_strong", "sources": ["itemcf_strong"]}
+        _write_jsonl(output_dir / "pool500_candidates.jsonl", rows)
+        return {"schema_version": "fake_generation_v1", "status": "PASS", "diagnostic_hot_budget_audit": {"variant": variant_name}}
+
+    manifest = run_itemcf_strong_augcf_route_gate_matrix(
+        variants={"relaxed": "relaxed", "q20": q20_source_manifest_path},
+        eval_manifest_path=eval_manifest_path,
+        eval_users_path=users_path,
+        output_dir=tmp_path / "route_gate_matrix",
+        overwrite=True,
+        enforce_venv=False,
+        candidate_runner=fake_candidate_runner,
+    )
+
+    persisted = read_json(tmp_path / "route_gate_matrix" / "route_gate_evidence_manifest.json")
+    assert manifest == persisted
+    assert set(persisted["variants"]) == {"baseline", "relaxed", "q20"}
+    assert seen_overrides["baseline"] is None
+    assert seen_overrides["relaxed"] is None
+    assert seen_overrides["q20"] == {"itemcf_strong": q20_source_manifest_path}
+    assert persisted["no_oracle"] is True
+    assert persisted["eval_only"] is True
+    assert persisted["diagnostic_only"] is True
+    assert persisted["label_backflow_allowed"] is False
+    assert persisted["variants"]["q20"]["source_manifest_overrides"] == {"itemcf_strong": str(q20_source_manifest_path)}
+    assert persisted["variants"]["q20"]["delta_vs_baseline"]["Recall@500"] == pytest.approx(0.333333, abs=1e-6)
+    assert persisted["variants"]["q20"]["delta_vs_baseline"]["HitRate@500"] == pytest.approx(0.333334, abs=1e-6)
+    assert persisted["variants"]["q20"]["positive_hit_pairs"]["exclusive_vs_baseline_count"] == 1
+    assert persisted["variants"]["q20"]["positive_hit_pairs"]["exclusive_vs_baseline"] == [{"user_id": "u_warm", "item_id": "i_hit_warm"}]
+    assert persisted["variants"]["q20"]["source_hit_attribution"]["primary_source_counts"] == {"itemcf_strong": 1, "popular": 1}
+    assert persisted["variants"]["q20"]["diagnostic_decision"] in persisted["diagnostic_decisions_allowed"]
+    assert "READY" not in json.dumps(persisted, ensure_ascii=False)
+    assert "PROMOTE" not in json.dumps(persisted, ensure_ascii=False)
+
+
+def test_itemcf_strong_augcf_route_gate_matrix_applies_base_source_overrides(tmp_path: Path) -> None:
+    eval_manifest_path, users_path = _write_fixed_eval_artifact(tmp_path)
+    disabled_swing_manifest_path = tmp_path / "disabled" / "swing_recall_source_index_manifest.json"
+    disabled_swing_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    disabled_swing_manifest_path.write_text(json.dumps({"source": "swing_recall", "source_status": "DISABLED_DIAGNOSTIC"}, ensure_ascii=False), encoding="utf-8")
+    q20_source_manifest_path = tmp_path / "q20" / "source_index_manifest.json"
+    q20_source_manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    q20_source_manifest_path.write_text(json.dumps({"source": "itemcf_strong", "variant": "q20"}, ensure_ascii=False), encoding="utf-8")
+    seen_overrides: dict[str, Any] = {}
+
+    def fake_candidate_runner(**kwargs: Any) -> dict[str, Any]:
+        output_dir = Path(kwargs["output_dir"])
+        variant_name = output_dir.name
+        seen_overrides[variant_name] = kwargs["source_manifest_paths"]
+        _write_jsonl(
+            output_dir / "pool500_candidates.jsonl",
+            [
+                {"user_id": "u_hot", "item_id": "i_hit_hot", "rank": 1, "source": "popular", "sources": ["popular"]},
+                {"user_id": "u_warm", "item_id": "i_other_warm", "rank": 1, "source": "category", "sources": ["category"]},
+                {"user_id": "u_cold", "item_id": "i_other_cold", "rank": 1, "source": "category", "sources": ["category"]},
+            ],
+        )
+        return {"schema_version": "fake_generation_v1", "status": "PASS"}
+
+    run_itemcf_strong_augcf_route_gate_matrix(
+        variants={"relaxed": "relaxed", "q20": q20_source_manifest_path},
+        base_source_manifest_paths={"swing_recall": disabled_swing_manifest_path},
+        eval_manifest_path=eval_manifest_path,
+        eval_users_path=users_path,
+        output_dir=tmp_path / "route_gate_matrix_base_overrides",
+        overwrite=True,
+        enforce_venv=False,
+        candidate_runner=fake_candidate_runner,
+    )
+
+    assert seen_overrides["baseline"] == {"swing_recall": disabled_swing_manifest_path}
+    assert seen_overrides["relaxed"] == {"swing_recall": disabled_swing_manifest_path}
+    assert seen_overrides["q20"] == {"swing_recall": disabled_swing_manifest_path, "itemcf_strong": q20_source_manifest_path}
 
 
 def test_evaluate_candidates_rejects_duplicate_user_item(tmp_path: Path) -> None:

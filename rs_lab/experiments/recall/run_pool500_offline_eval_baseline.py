@@ -41,6 +41,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lightweight-views-manifest", default=str(DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST))
     parser.add_argument("--limit-users", type=int, default=0, help="Use the first N fixed eval users for dry-runs; 0 means all fixed eval users.")
     parser.add_argument("--source-index-manifest", default="", help="Run raw two_tower eval with this source_index_manifest.json.")
+    parser.add_argument("--source-manifest", action="append", default=[], help="Override recall source manifest as source=path; may be repeated.")
     parser.add_argument("--with-two-tower-source-manifest", default="", help="Run ablation using this two_tower source_index_manifest.json for the with-two-tower arm.")
     parser.add_argument("--without-two-tower", action="store_true", help="Run the ablation arm with two_tower disabled.")
     parser.add_argument("--metric-ks", default=",".join(str(k) for k in METRIC_KS), help="Comma-separated metric cutoffs, e.g. 20,50,100,500.")
@@ -150,7 +151,13 @@ def run_pool500_offline_eval_baseline(
         "candidate_generation_manifest_path": str(output_dir / "manifest.json"),
         "candidate_generation_target_manifest_path": str(target_manifest_path),
         "recall_route_profile": _recall_route_profile(generation_manifest, enable_semantic, semantic_max_rows),
+        "source_manifest_overrides": {source: str(path) for source, path in sorted((source_manifest_paths or {}).items())},
+        "no_oracle": True,
         "no_oracle_label_injection": True,
+        "no_oracle_semantics": {
+            "label_inputs_role": "evaluation_only_not_recall_generation_inputs",
+            "source_manifest_overrides_do_not_authorize_oracle_candidates": True,
+        },
     }
     baseline_manifest_path = output_dir / "baseline_manifest.json"
     write_json(baseline_manifest_path, baseline_manifest)
@@ -339,6 +346,16 @@ def _validate_source_index_manifest_path(path: Path) -> None:
     manifest = read_json(path)
     if manifest.get("source") != "two_tower":
         raise ValueError(f"source_index_manifest must declare source=two_tower: {path}")
+
+
+def _parse_source_manifest_overrides(values: list[str]) -> dict[str, Path]:
+    overrides = {}
+    for value in values:
+        if "=" not in value:
+            raise ValueError(f"source manifest override must be source=path: {value}")
+        source, path = value.split("=", 1)
+        overrides[source.strip()] = Path(path.strip())
+    return overrides
 
 
 def _positive_hit_stats(
@@ -717,6 +734,7 @@ def _ratios(counts: Counter[str], denominator: int) -> dict[str, float]:
 def main() -> None:
     args = parse_args()
     metric_ks = _parse_metric_ks(args.metric_ks)
+    source_manifest_paths = _parse_source_manifest_overrides(args.source_manifest)
     if args.source_index_manifest:
         if not args.output_manifest:
             raise ValueError("--output-manifest is required with --source-index-manifest")
@@ -773,6 +791,7 @@ def main() -> None:
         overwrite=args.overwrite,
         enforce_venv=not args.skip_venv_check,
         metric_ks=metric_ks,
+        source_manifest_paths=source_manifest_paths,
     )
     print(json.dumps({"status": "PASS", "baseline_manifest_path": str(Path(args.output_dir) / "baseline_manifest.json"), "metrics_path": manifest["metrics_path"]}, ensure_ascii=False, indent=2))
 

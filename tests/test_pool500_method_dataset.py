@@ -52,6 +52,11 @@ FORBIDDEN_OUTPUT_NAMES = {
 }
 
 
+@pytest.fixture(autouse=True)
+def _recent_2y_governance_fixture_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(method_dataset_builder, "RECENT_2Y_GOVERNANCE_MANIFEST", tmp_path / "governance" / "manifest.json")
+
+
 def test_collab_method_datasets_write_whitelisted_outputs_and_hard_schema(tmp_path: Path) -> None:
     governance_manifest = _write_governance_fixture(tmp_path)
 
@@ -74,11 +79,11 @@ def test_collab_method_datasets_write_whitelisted_outputs_and_hard_schema(tmp_pa
         assert manifest["ranking_input_replacement_allowed"] is False
         assert manifest["promotion_allowed"] is False
         assert manifest["final_pool500_ready_claimed"] is False
-        assert manifest["resource_scale_policy"]["input_scope"] == "governance_train_only"
-        assert manifest["resource_scale_policy"]["scale_tier"] == "local_formal"
+        assert manifest["resource_scale_policy"]["input_scope"] == "recent_window_2y_train_only_governance"
+        assert manifest["resource_scale_policy"]["scale_tier"] == "smoke"
         assert manifest["resource_scale_policy"]["selection_strategy"]
-        assert manifest["resource_scale_policy"]["default_tier"] == "local_formal"
-        assert set(manifest["resource_scale_policy"]["scale_tiers"]) == {"smoke", "diagnostic", "local_formal"}
+        assert manifest["resource_scale_policy"]["default_tier"] == "formal"
+        assert set(manifest["resource_scale_policy"]["scale_tiers"]) == {"smoke", "formal"}
         assert manifest["resource_scale_policy"]["p2_contract_scope"] == "method_dataset_only"
         assert manifest["forbidden_scope_audit"]["status"] == "PASS"
         assert {path.name for path in output_dir.iterdir()} == {"method_dataset_manifest.json", "method_dataset_rows.jsonl"}
@@ -166,10 +171,14 @@ def test_itemcf_weak_coverage_profile_broadens_users_and_items_without_changing_
     assert manifest["candidate_generation_allowed"] is False
     assert manifest["ranking_input_replacement_allowed"] is False
     assert policy["coverage_profile"] == "weak_coverage"
-    assert policy["max_output_users"] == 120_000
-    assert policy["max_items_per_user"] == 80
-    assert policy["max_item_user_freq"] == 20_000
-    assert policy["top_k_per_seed"] == 200
+    assert policy["max_output_users"] == 0
+    assert policy["max_output_users_semantics"] == "agent_managed_unlimited_actual_eligible_users"
+    assert policy["max_items_per_user"] == 0
+    assert policy["max_items_per_user_semantics"] == "agent_managed_unlimited_user_history"
+    assert policy["max_item_user_freq"] == 0
+    assert policy["max_item_user_freq_semantics"] == "agent_managed_no_method_cap"
+    assert policy["top_k_per_seed"] == 0
+    assert policy["top_k_per_seed_semantics"] == "agent_managed_no_method_cap"
     assert policy["item_quality_buckets"] == ["cf_ready", "embedding_ready"]
     assert policy["allow_over_hot"] is True
     assert manifest["selection_policy"]["eligible_user_buckets"] == ["medium_behavior", "sequence_sufficient", "collaborative_rich"]
@@ -178,9 +187,98 @@ def test_itemcf_weak_coverage_profile_broadens_users_and_items_without_changing_
     assert manifest["directed_edge_count_after_topk"] == 12
     assert {row["src_item_id"] for row in rows} >= {"cf_a", "cf_b", "cf_mid", "too_hot"}
     assert {row["dst_item_id"] for row in rows} >= {"cf_a", "cf_b", "cf_mid", "too_hot"}
-    assert all(row["top_k_per_seed"] == 200 for row in rows)
+    assert all(row["top_k_per_seed"] == 0 for row in rows)
     assert manifest["dropped_reason_counts"]["item_quality_bucket_not_allowed"] == 1
     assert "item_over_hot" not in manifest["dropped_reason_counts"]
+
+
+def test_itemcf_weak_denoised_profile_keeps_coverage_but_applies_noise_controls(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path, include_sequence_user=True)
+
+    manifest = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "weak_denoised",
+        source_method="itemcf_weak",
+        itemcf_coverage_profile="weak_denoised",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    rows = _read_jsonl(Path(manifest["outputs"]["dataset_rows_path"]))
+    policy = manifest["resource_scale_policy"]
+    assert manifest["status"] == "PASS"
+    assert manifest["candidate_generation_allowed"] is False
+    assert policy["coverage_profile"] == "weak_denoised"
+    assert policy["dataset_variant"] == "itemcf_weak_denoised_formal_v1"
+    assert policy["score_policy"] == method_dataset_builder.ITEMCF_SCORE_POLICY
+    assert policy["shrinkage_alpha"] == 0.0
+    assert policy["top_k_per_seed"] == 200
+    assert policy["allow_over_hot"] is True
+    assert policy["weighting_policy"] == "existing_weighted_cooc_cosine_with_seed_topk200_cap_v1"
+    assert manifest["selection_policy"]["eligible_user_buckets"] == ["medium_behavior", "sequence_sufficient", "collaborative_rich"]
+    assert manifest["selection_policy"]["eligible_item_policy"] == "cf_ready_or_embedding_ready_with_support1_and_seed_topk200_route_gate"
+    assert manifest["score_policy"] == method_dataset_builder.ITEMCF_SCORE_POLICY
+    assert manifest["itemcf_score_formula"] == method_dataset_builder.ITEMCF_SCORE_FORMULA
+    assert manifest["shrinkage_alpha"] == 0.0
+    assert manifest["top_k_per_seed"] == 200
+    assert {"too_hot", "cf_hot"} & ({row["src_item_id"] for row in rows} | {row["dst_item_id"] for row in rows})
+    assert "embed_seed" in {row["src_item_id"] for row in rows} | {row["dst_item_id"] for row in rows}
+    assert "item_over_hot" not in manifest["dropped_reason_counts"]
+    assert all(row["score_policy"] == method_dataset_builder.ITEMCF_SCORE_POLICY for row in rows)
+    assert all(row["shrinkage_alpha"] == 0.0 for row in rows)
+    assert all(row["top_k_per_seed"] == 200 for row in rows)
+
+
+
+def test_augcf_lite_profile_adds_train_only_observed_pseudo_metadata(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path)
+
+    baseline = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "weak_baseline",
+        source_method="itemcf_weak",
+        itemcf_coverage_profile="weak_coverage",
+        overwrite=True,
+        enforce_venv=False,
+    )
+    manifest = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "augcf_lite",
+        source_method="itemcf_weak",
+        itemcf_coverage_profile="augcf_lite",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    rows = _read_jsonl(Path(manifest["outputs"]["dataset_rows_path"]))
+    policy = manifest["resource_scale_policy"]
+    assert manifest["status"] == "PASS"
+    assert manifest["candidate_generation_allowed"] is False
+    assert manifest["ranking_input_replacement_allowed"] is False
+    assert manifest["promotion_allowed"] is False
+    assert manifest["final_pool500_ready_claimed"] is False
+    assert policy["coverage_profile"] == "augcf_lite"
+    assert policy["score_policy"] == "augcf_lite_profile_score_v1"
+    assert policy["augmentation_policy"] == "train_only_observed_pseudo_low_freq_v1"
+    assert policy["pseudo_weight"] == 0.25
+    assert manifest["selection_policy"]["eligible_item_policy"] == "cf_ready_or_embedding_ready_train_only_observed_pseudo_augcf_lite"
+    assert manifest["score_policy"] == "augcf_lite_profile_score_v1"
+    assert manifest["unique_pair_count"] == baseline["unique_pair_count"]
+    assert all(row["score_policy"] == "augcf_lite_profile_score_v1" for row in rows)
+    assert all(row["augmentation_policy"] == "train_only_observed_pseudo_low_freq_v1" for row in rows)
+    assert all(row["augcf_family"] == "AugCF-lite" for row in rows)
+    assert all(row["augcf_reproduction_level"] == "lightweight_train_only_profile" for row in rows)
+    assert all(row["gan_enabled"] is False for row in rows)
+    assert all(row["gumbel_softmax_enabled"] is False for row in rows)
+    assert all(row["pseudo_pseudo_pairs_enabled"] is False for row in rows)
+    assert all("itemcf_score" in row for row in rows)
+    assert all("base_itemcf_score" in row for row in rows)
+    assert all("augcf_lite_score" in row for row in rows)
+    assert all(row["pseudo_contribution_sum"] <= policy["pseudo_weight"] for row in rows)
+    augmented_rows = [row for row in rows if row["pseudo_contribution_sum"] > 0]
+    assert augmented_rows
+    assert all(row["augcf_lite_score"] >= row["base_itemcf_score"] for row in augmented_rows)
+    assert all(row["observed_pair_support"] + row["augmented_pair_support"] == row["pair_support"] for row in rows)
 
 
 def test_itemcf_relaxed_strong_profile_broadens_strong_without_matching_weak_coverage(tmp_path: Path) -> None:
@@ -211,7 +309,7 @@ def test_itemcf_relaxed_strong_profile_broadens_strong_without_matching_weak_cov
     assert relaxed["promotion_allowed"] is False
     assert relaxed["final_pool500_ready_claimed"] is False
     assert policy["coverage_profile"] == "relaxed_strong"
-    assert policy["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_local_formal_v3"
+    assert policy["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_smoke_v3"
     assert policy["selection_strategy"]["policy_name"] == "itemcf_strong_relaxed_edges_v1"
     assert policy["selection_strategy"]["eligible_user_buckets"] == ["sequence_sufficient", "collaborative_rich"]
     assert policy["item_quality_buckets"] == ["cf_ready", "embedding_ready"]
@@ -220,9 +318,9 @@ def test_itemcf_relaxed_strong_profile_broadens_strong_without_matching_weak_cov
     assert policy["allow_over_hot"] is False
     assert policy["src_allow_over_hot"] is True
     assert policy["relaxed_scale_tiers"]["smoke"]["max_output_users"] == 5_000
-    assert policy["relaxed_scale_tiers"]["diagnostic"]["max_output_users"] == 80_000
-    assert policy["relaxed_scale_tiers"]["local_formal"]["max_output_users"] == 160_000
-    assert policy["max_output_users"] == 160_000
+    assert set(policy["relaxed_scale_tiers"]) == {"smoke", "formal"}
+    assert policy["relaxed_scale_tiers"]["formal"]["max_output_users"] == 0
+    assert policy["max_output_users"] == 5_000
     assert policy["max_items_per_user"] == 60
     assert policy["max_item_user_freq"] == 8_000
     assert policy["min_pair_support"] == 1
@@ -264,6 +362,68 @@ def test_itemcf_relaxed_strong_profile_broadens_strong_without_matching_weak_cov
     assert relaxed["dropped_reason_counts"]["item_over_hot"] == 2
 
 
+def test_usercf_relaxed_iuf_profile_broadens_item_universe_without_candidate_generation(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path, include_sequence_user=True)
+
+    strict = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "usercf_strict",
+        source_method="usercf_method_dataset",
+        overwrite=True,
+        enforce_venv=False,
+    )
+    relaxed = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "usercf_relaxed_iuf",
+        source_method="usercf_method_dataset",
+        itemcf_coverage_profile="usercf_relaxed_iuf",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    rows = _read_jsonl(Path(relaxed["outputs"]["dataset_rows_path"]))
+    policy = relaxed["resource_scale_policy"]
+    assert relaxed["status"] == "PASS"
+    assert relaxed["outputs"]["dataset_schema"] == "eligible_user_sequence_v1"
+    assert relaxed["candidate_generation_allowed"] is False
+    assert relaxed["ranking_input_replacement_allowed"] is False
+    assert relaxed["promotion_allowed"] is False
+    assert relaxed["final_pool500_ready_claimed"] is False
+    assert policy["coverage_profile"] == "usercf_relaxed_iuf"
+    assert policy["dataset_variant"] == "usercf_relaxed_iuf_smoke_v1"
+    assert policy["item_quality_buckets"] == ["cf_ready", "embedding_ready"]
+    assert policy["allow_over_hot"] is True
+    assert policy["weighting_policy"] == "iuf_cosine_user_similarity_v1"
+    assert relaxed["weighting_policy"] == "iuf_cosine_user_similarity_v1"
+    assert relaxed["preprocessing_policy"] == "usercf_relaxed_cf_or_embedding_ready_hot_allowed_train_only_v1"
+    assert relaxed["selection_policy"]["eligible_user_buckets"] == ["sequence_sufficient", "collaborative_rich"]
+    assert relaxed["selection_policy"]["eligible_item_policy"] == "cf_ready_or_embedding_ready_with_hot_allowed_as_iuf_weighted_similarity_signal"
+    assert "IUF-weighted similarity signal" in relaxed["effective_item_bucket_policy"]
+    assert relaxed["row_count"] > strict["row_count"]
+    assert relaxed["item_count"] > strict["item_count"]
+    assert {row["user_id"] for row in rows} == {"u_heavy", "u_heavy_2", "u_sequence"}
+    sequence_row = next(row for row in rows if row["user_id"] == "u_sequence")
+    assert "embed_seed" in sequence_row["eligible_item_sequence"]
+    assert "cf_hot" in sequence_row["eligible_item_sequence"]
+    assert "too_hot" in {item_id for row in rows for item_id in row["eligible_item_sequence"]}
+    assert "item_over_hot" not in relaxed["dropped_reason_counts"]
+
+
+
+def test_current_method_dataset_rejects_non_2y_governance_manifest(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path)
+    monkeypatch.setattr(method_dataset_builder, "RECENT_2Y_GOVERNANCE_MANIFEST", tmp_path / "other" / "manifest.json")
+
+    with pytest.raises(ValueError, match="recent 2y train-only governance"):
+        build_pool500_method_dataset(
+            governance_manifest_path=governance_manifest,
+            output_dir=tmp_path / "wrong_manifest",
+            source_method="itemcf_weak",
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+
 def test_itemcf_relaxed_strong_scale_tiers_have_distinct_caps(tmp_path: Path) -> None:
     governance_manifest = _write_governance_fixture(tmp_path, include_sequence_user=True)
 
@@ -276,11 +436,11 @@ def test_itemcf_relaxed_strong_scale_tiers_have_distinct_caps(tmp_path: Path) ->
         overwrite=True,
         enforce_venv=False,
     )
-    diagnostic = build_pool500_method_dataset(
+    formal = build_pool500_method_dataset(
         governance_manifest_path=governance_manifest,
-        output_dir=tmp_path / "strong_relaxed_diagnostic",
+        output_dir=tmp_path / "strong_relaxed_formal",
         source_method="itemcf_strong",
-        scale_tier="diagnostic",
+        scale_tier="formal",
         itemcf_coverage_profile="relaxed_strong",
         overwrite=True,
         enforce_venv=False,
@@ -288,11 +448,12 @@ def test_itemcf_relaxed_strong_scale_tiers_have_distinct_caps(tmp_path: Path) ->
 
     assert smoke["resource_scale_policy"]["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_smoke_v3"
     assert smoke["resource_scale_policy"]["max_output_users"] == 5_000
-    assert diagnostic["resource_scale_policy"]["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_diagnostic_v3"
-    assert diagnostic["resource_scale_policy"]["max_output_users"] == 80_000
-    assert smoke["resource_scale_policy"]["max_items_per_user"] == diagnostic["resource_scale_policy"]["max_items_per_user"] == 60
+    assert formal["resource_scale_policy"]["dataset_variant"] == "itemcf_strong_relaxed_seedsrc_formal_v3"
+    assert formal["resource_scale_policy"]["max_output_users"] == 0
+    assert smoke["resource_scale_policy"]["max_items_per_user"] == 60
+    assert formal["resource_scale_policy"]["max_items_per_user"] == 0
     assert smoke["candidate_generation_allowed"] is False
-    assert diagnostic["candidate_generation_allowed"] is False
+    assert formal["candidate_generation_allowed"] is False
 
 
 def test_itemcf_coverage_profiles_are_source_specific(tmp_path: Path) -> None:
@@ -318,11 +479,41 @@ def test_itemcf_coverage_profiles_are_source_specific(tmp_path: Path) -> None:
             enforce_venv=False,
         )
 
+    with pytest.raises(ValueError, match="weak_denoised profile is only supported for itemcf_weak"):
+        build_pool500_method_dataset(
+            governance_manifest_path=governance_manifest,
+            output_dir=tmp_path / "bad_weak_denoised_profile",
+            source_method="itemcf_strong",
+            itemcf_coverage_profile="weak_denoised",
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+    with pytest.raises(ValueError, match="augcf_lite profile is only supported for itemcf_weak"):
+        build_pool500_method_dataset(
+            governance_manifest_path=governance_manifest,
+            output_dir=tmp_path / "bad_augcf_lite_profile",
+            source_method="itemcf_strong",
+            itemcf_coverage_profile="augcf_lite",
+            overwrite=True,
+            enforce_venv=False,
+        )
+
+    with pytest.raises(ValueError, match="usercf_relaxed_iuf profile is only supported for usercf_method_dataset"):
+        build_pool500_method_dataset(
+            governance_manifest_path=governance_manifest,
+            output_dir=tmp_path / "bad_usercf_profile",
+            source_method="itemcf_weak",
+            itemcf_coverage_profile="usercf_relaxed_iuf",
+            overwrite=True,
+            enforce_venv=False,
+        )
+
 
 def test_itemcf_edge_features_score_rank_and_topk_are_method_dataset_features(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     governance_manifest = _write_governance_fixture(tmp_path)
     capped_policy = json.loads(json.dumps(method_dataset_builder.RESOURCE_SCALE_POLICIES["itemcf_weak"]))
-    capped_policy["scale_tiers"]["local_formal"]["top_k_per_seed"] = 1
+    capped_policy["scale_tiers"]["smoke"]["top_k_per_seed"] = 1
     monkeypatch.setitem(method_dataset_builder.RESOURCE_SCALE_POLICIES, "itemcf_weak", capped_policy)
 
     manifest = build_pool500_method_dataset(
@@ -382,19 +573,21 @@ def test_swing_method_dataset_writes_graph_pair_support_rows(tmp_path: Path) -> 
     assert {(row["item_i"], row["item_j"], row["graph_user_support"]) for row in rows} == {
         ("cf_a", "cf_b", 2),
         ("cf_a", "cf_mid", 2),
+        ("cf_b", "cf_mid", 1),
     }
     assert all(row["dataset_role"] == "method_dataset_swing_pair_support" for row in rows)
     assert manifest["user_count"] == 3
     assert manifest["item_count"] == 3
-    assert manifest["dropped_reason_counts"]["pair_below_min_support"] == 1
+    assert manifest["dropped_reason_counts"]["pair_below_min_support"] == 0
     assert manifest["dropped_reason_counts"]["user_bucket_not_allowed"] == 1
 
 
 def test_usercf_method_dataset_applies_user_and_item_caps(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     governance_manifest = _write_governance_fixture(tmp_path)
     capped_policy = json.loads(json.dumps(method_dataset_builder.RESOURCE_SCALE_POLICIES["usercf_method_dataset"]))
-    capped_policy["scale_tiers"]["local_formal"]["max_output_users"] = 1
-    capped_policy["scale_tiers"]["local_formal"]["max_items_per_user"] = 2
+    capped_policy["scale_tiers"]["smoke"]["max_output_users"] = 1
+    capped_policy["scale_tiers"]["smoke"]["max_output_user_ratio"] = 0
+    capped_policy["scale_tiers"]["smoke"]["max_items_per_user"] = 2
     monkeypatch.setitem(method_dataset_builder.RESOURCE_SCALE_POLICIES, "usercf_method_dataset", capped_policy)
 
     manifest = build_pool500_method_dataset(
@@ -427,10 +620,11 @@ def test_collab_method_dataset_smoke_tier_uses_smoke_caps_not_local_formal(tmp_p
 
     policy = manifest["resource_scale_policy"]
     assert policy["scale_tier"] == "smoke"
-    assert policy["max_output_users"] == 1_000
+    assert policy["max_output_users"] == 0
+    assert policy["max_output_user_ratio"] == 0.02
     assert policy["max_items_per_user"] == 80
     assert policy["similar_users_top_k"] == 50
-    assert policy["max_output_users"] != policy["scale_tiers"]["local_formal"]["max_output_users"]
+    assert policy["max_output_user_ratio"] != policy["scale_tiers"]["formal"].get("max_output_user_ratio")
 
 
 def test_collab_method_dataset_resource_scale_policies_are_method_specific(tmp_path: Path) -> None:
@@ -449,50 +643,35 @@ def test_collab_method_dataset_resource_scale_policies_are_method_specific(tmp_p
     swing_policy = manifests["swing_method_dataset"]["resource_scale_policy"]
     assert weak_policy["selection_strategy"]["policy_name"] == "itemcf_weak_edges_v1"
     assert weak_policy["selection_strategy"]["eligible_user_buckets"] == ["medium_behavior", "collaborative_rich"]
-    assert weak_policy["max_output_users"] == 300_000
+    assert weak_policy["max_output_users"] == 1_000
     assert weak_policy["max_item_user_freq"] == 5_000
     assert weak_policy["min_pair_support"] == 1
     assert weak_policy["top_k_per_seed"] == 100
     assert weak_policy["score_policy"] == method_dataset_builder.ITEMCF_SCORE_POLICY
     assert weak_policy["active_user_penalty_policy"] == method_dataset_builder.ITEMCF_ACTIVE_USER_PENALTY_POLICY
     assert weak_policy["weighted_cooc_feature"] == "weighted_cooc"
-    assert weak_policy["scale_tiers"]["smoke"] == {
-        "max_output_users": 1_000,
-        "max_items_per_user": 50,
-        "max_item_user_freq": 5_000,
-        "min_pair_support": 1,
-        "top_k_per_seed": 100,
-    }
+    assert weak_policy["scale_tiers"]["formal"]["max_output_users"] == 0
     assert strong_policy["selection_strategy"]["policy_name"] == "itemcf_strong_edges_v1"
     assert strong_policy["selection_strategy"]["eligible_user_buckets"] == ["collaborative_rich"]
-    assert strong_policy["max_output_users"] == 200_000
+    assert strong_policy["max_output_users"] == 1_000
     assert strong_policy["max_item_user_freq"] == 3_000
     assert strong_policy["min_pair_support"] == 2
     assert strong_policy["top_k_per_seed"] == 100
     assert strong_policy["score_policy"] == method_dataset_builder.ITEMCF_SCORE_POLICY
     assert strong_policy["active_user_penalty_policy"] == method_dataset_builder.ITEMCF_ACTIVE_USER_PENALTY_POLICY
     assert strong_policy["weighted_cooc_feature"] == "weighted_cooc"
-    assert strong_policy["scale_tiers"]["smoke"] == {
-        "max_output_users": 1_000,
-        "max_items_per_user": 50,
-        "max_item_user_freq": 3_000,
-        "min_pair_support": 2,
-        "top_k_per_seed": 100,
-    }
+    assert strong_policy["scale_tiers"]["formal"]["max_output_users"] == 0
     assert usercf_policy["selection_strategy"]["policy_name"] == "usercf_neighbors_v1"
-    assert usercf_policy["max_output_users"] == 120_000
-    assert usercf_policy["similar_users_top_k"] == 200
+    assert usercf_policy["max_output_users"] == 0
+    assert usercf_policy["similar_users_top_k"] == 50
     assert swing_policy["selection_strategy"]["policy_name"] == "swing_graph_v1"
-    assert swing_policy["max_graph_users"] == 120_000
-    assert swing_policy["max_item_user_freq"] == 600
+    assert swing_policy["max_graph_users"] == 2_000
+    assert swing_policy["max_item_user_freq"] == 1_000
     for policy in (weak_policy, strong_policy, usercf_policy, swing_policy):
-        assert policy["default_tier"] == "local_formal"
-        assert set(policy["scale_tiers"]) == {"smoke", "diagnostic", "local_formal"}
-        local_formal = policy["scale_tiers"]["local_formal"]
-        for key, value in local_formal.items():
-            assert policy[key] == value
+        assert policy["default_tier"] == "formal"
+        assert set(policy["scale_tiers"]) == {"smoke", "formal"}
     assert weak_policy["scale_tiers"]["smoke"]["max_output_users"] == 1_000
-    assert usercf_policy["scale_tiers"]["diagnostic"]["similar_users_top_k"] == 100
+    assert usercf_policy["scale_tiers"]["smoke"]["similar_users_top_k"] == 50
     assert swing_policy["scale_tiers"]["smoke"]["max_graph_users"] == 2_000
     assert {manifest["resource_scale_policy"]["p2_contract_scope"] for manifest in manifests.values()} == {"method_dataset_only"}
     assert len({manifest["config_hash"] for manifest in manifests.values()}) == len(SOURCE_METHODS)
@@ -574,7 +753,7 @@ def test_missing_user_quality_bucket_v2_blocks_without_legacy_fallback(tmp_path:
     assert manifest["row_count"] == 0
     assert manifest["outputs"] == {}
     assert manifest["resource_scale_policy"]["p2_contract_scope"] == "method_dataset_only"
-    assert manifest["resource_scale_policy"]["max_output_users"] == 300_000
+    assert manifest["resource_scale_policy"]["max_output_users"] == 1_000
     assert manifest["dropped_reason_counts"] == {"missing_user_quality_bucket_v2": 1}
     assert not (tmp_path / "blocked" / "method_dataset_rows.jsonl").exists()
     assert (tmp_path / "blocked" / "method_dataset_manifest.json").is_file()

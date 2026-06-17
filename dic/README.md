@@ -2,14 +2,14 @@
 
 ## 项目定位
 
-这个项目的核心叙事不是“纯大模型端到端推荐”，而是**以 Agent 决策为主轴、以传统推荐 backbone 为底座**的混合推荐系统。
+这个项目的核心叙事不是“纯大模型端到端推荐”，而是**以传统推荐 backbone 为底座、以 Agent 编排交互为上层增强**的混合推荐系统。
 
 我们保留推荐系统里最容易解释、也最适合面试表达的主链路：
 
 - 召回：先缩小候选范围
 - 排序：再做优先级判断
 - 规则与约束：去重、过滤、频控、黑白名单等
-- Agent：在候选结果之上做最终选择、解释和反馈响应
+- Agent：在候选和推荐结果之上做工具编排、对话解释和反馈响应
 - RAG：为 Agent 提供商品知识检索、解释 grounding 和幻觉控制，但不替代召回或排序
 
 训练层采用 `Qwen3.5-4B + 8-bit QLoRA SFT + GRPO` 作为规划路线和能力补强方向，但**不把它写成已完整落地的系统能力**。当前已经补齐商品展示卡、轻量 HTTP 服务、React Web Demo、Session Replay、多角色模拟客户和模型驱动模拟用户第一版；Agent RAG 增强已纳入下一阶段计划，但尚不是已完成能力。这些属于展示、仿真评估和 Agent 增强能力，不改变当前推荐 backbone + Agent 的主线。
@@ -28,6 +28,7 @@
 - **CLI Agent feedback canonical demo**：已在 2026-04-28 固化为可复现入口，产物见 `outputs/agent/canonical/agent_feedback_demo_canonical/`
 - **Conversational Agent MVP**：已支持 deterministic 多轮对话雏形，包括模糊请求追问、澄清后更新约束、解释上一轮推荐、换一批推荐和 unsupported 文本保留，产物见 `outputs/agent/canonical/agent_conversation_demo_canonical/`
 - **Phase 2 展示与服务闭环**：已完成 `DisplayResponse` 商品卡 contract、single-process HTTP 服务、结构化 `/feedback`、`GET /session/{session_id}` 安全导出和 React Web Demo 第一版
+- **Recall Serving Layer 第一版**：已新增轻量 `/recall` 候选接口，把 pool500 artifact 与 source-index lookup 封装为服务层可调用的纯召回入口；该能力只返回候选 ID，不替换 ranking input、不开放 pool1000、不声明 promotion，也不把 single-process demo 写成生产级独立召回微服务
 - **Session Replay 与一键 E2E Demo**：已完成前端 Session Replay 时间线和 `/demo/e2e` 闭环入口，可证明反馈后第二轮推荐发生变化
 - **Phase 3 多角色仿真第一版**：已完成角色内在模型、Simulation Scene、批量 Simulation Evaluation 和模型驱动模拟用户策略，产物包括 `simulation_batch.json`、`metrics.json` 和中文评估报告
 - **Phase 4 Agent RAG 增强**：已纳入规划，目标是基于商品知识库和轻量检索工具增强推荐解释、why 问答、澄清追问和幻觉控制；当前只作为下一阶段路线，不写成已落地能力
@@ -79,6 +80,15 @@
 
 当前结论：Top-K hit 与 Phase 1.7 title baseline 持平，但 LOPO target 平均排名从 25.128205 改善到 23.461538。
 
+## 最小本地验证入口
+
+Windows 本地默认使用项目虚拟环境 `.venv`。下面两条命令是当前最小验证入口：第一条用于关键测试快速回归，第二条用于全局工程契约审计。若当前工作区存在未收口的配置、脚本入口或测试 marker 漂移，工程契约审计会按项失败，需要作为单独治理任务处理；这些命令不代表已经完成全部线上或离线流程。
+
+```bash
+./.venv/Scripts/python.exe -m pytest tests/test_engineering_contracts.py tests/test_pool500_method_source_runner.py -q
+./.venv/Scripts/python.exe scripts/ci/validate_engineering_contracts.py
+```
+
 ## 当前不做
 
 - 不把双塔向量召回默认并入主路；DSSM / YouTubeDNN 需要通过 valid/test、LOPO sanity 和 latency strict gate 后才进入人工晋升评审
@@ -91,12 +101,14 @@
 
 ## 推荐阅读顺序
 
-1. `architecture/ARCHITECTURE.md`：总体架构和分层职责。
-2. `architecture/IMPLEMENTATION_PLAN.md`：当前实现路线和阶段边界。
-3. `PROJECT_STRUCTURE.md`：目录职责和演进边界。
-4. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
-5. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
-6. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
+1. `architecture/SYSTEM_ARCHITECTURE.md`：系统总架构、三入口一底座、传统推荐底座与 Agent 编排关系。
+2. `architecture/ARCHITECTURE.md`：总体架构和分层职责。
+3. `architecture/IMPLEMENTATION_PLAN.md`：当前实现路线和阶段边界。
+4. `PROJECT_STRUCTURE.md`：目录职责和演进边界。
+5. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
+6. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
+7. `guides/QWEN_TRAINING_ENV_GUIDE.md`：Qwen QLoRA / SFT / GRPO 训练环境 scaffold 边界、命令和验证口径。
+8. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
 
 ## 文档分区
 

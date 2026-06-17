@@ -19,7 +19,7 @@ export function ProductCard({ item, onFeedback, disabled }: { item: DisplayItem;
         ) : (
           <div className="flex flex-col items-center justify-center text-gray-400">
             <ImageIcon size={48} className="mb-2 opacity-50" />
-            <span className="text-sm font-medium">No Image Available</span>
+            <span className="text-sm font-medium">暂无商品图片</span>
           </div>
         )}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
@@ -33,7 +33,7 @@ export function ProductCard({ item, onFeedback, disabled }: { item: DisplayItem;
       <div className="p-4 flex flex-col flex-grow">
         {item.category && <div className="text-xs text-gray-500 mb-1">{item.category}</div>}
         <h3 className="font-semibold text-lg leading-tight mb-2 flex-grow">
-          {item.title || `Item ${item.parent_asin}`}
+          {item.title || `商品 ${item.parent_asin}`}
         </h3>
         {price && <div className="font-bold text-gray-900 mb-2">{price}</div>}
         {item.summary && <p className="text-sm text-gray-600 mb-4 line-clamp-2">{item.summary}</p>}

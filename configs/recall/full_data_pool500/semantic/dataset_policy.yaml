@@ -1,0 +1,90 @@
+schema_version: pool500_method_dataset_policy_v1
+source: semantic
+canonical_source: semantic
+source_status: TARGET_SLICE_DIAGNOSTIC
+role: direct semantic metadata overlap source
+dataset_policy: recent2y_train_only_semantic_dataset
+semantic_input_dataset: true
+train_only: true
+use_existing_recall_views_with_audit_first: true
+preprocessing_checklist:
+  - train_only_user_sequences_and_item_universe
+  - clean_title_category_attribute_fields
+  - preserve_brand_model_numbers_specs
+  - preserve_category_hierarchy_path_and_categories_flat
+  - forbid_valid_test_holdout_lopo_oracle_eval_label_inputs
+allowed_inputs:
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/user_quality_profile.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/manifest.json
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_recall_inputs.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_inverted_index.jsonl
+  - outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_smoke_v1/eligible_user_manifest.json
+  - outputs/recall/pool500_method_sources_newdata/eligible_users_semantic_recent2y_formal_v1/eligible_user_manifest.json
+forbidden_data_sources:
+  - valid
+  - test
+  - holdout
+  - LOPO
+  - oracle
+  - label
+  - eval_label
+  - clean_10000
+  - full_lightweight
+  - pool1000
+  - old_10k
+outputs_required:
+  - method_dataset_manifest.json
+  - source_index_manifest.json
+  - candidates.jsonl
+  - coverage_audit.json
+  - undercoverage_audit.json
+  - resource_audit.json
+  - no_holdout_audit.json
+required_coverage_audits:
+  - title_coverage
+  - category_coverage
+  - clean_title_token_coverage
+  - seed_item_metadata_coverage
+  - user_coverage_count
+  - candidate_row_count
+  - candidate_count_p50
+  - candidate_count_p90
+  - candidate_count_max
+candidate_storage_policy:
+  mode: lean_reference
+  reason: avoid repeating recent-2y item title/category/description metadata in every user-item candidate row
+  candidate_row_keeps:
+    - user_id
+    - item_id
+    - source
+    - canonical_source
+    - sources
+    - source_scores
+    - score
+    - rank
+    - semantic_token_overlap
+    - semantic_category_overlap
+  item_metadata_ref: data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_recall_inputs.jsonl
+  semantic_index_ref: data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_inverted_index.jsonl
+latest_evidence:
+  smoke_source_index_manifest: outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_smoke_v1/source_index_manifest.json
+  formal_source_index_manifest: outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/source_index_manifest.json
+  formal_evaluation_report: outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/evaluation_report.json
+  formal_scope: target_slice_10000_users
+  formal_candidate_row_count: 800000
+  formal_user_coverage_count: 10000
+  formal_no_holdout_audit: PASS
+  readiness: DIAGNOSTIC_ONLY
+  blocker: full_50k_or_no_cap_formal_and_route_gate_evidence_missing
+promotion_boundary:
+  recommendation: KEEP_DIAGNOSTIC_ONLY_DO_NOT_PROMOTE
+  reason: target-slice artifact audit passed, but Recall@K, overlap/marginal gain, route gate, and full-scale server evidence are missing.
+governance:
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  full_pool500_ready_declared: false
+  final_pool500_ready_claimed: false

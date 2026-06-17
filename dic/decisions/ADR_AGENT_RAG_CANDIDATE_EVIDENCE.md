@@ -10,7 +10,7 @@ RAG 已进入可用闭环，但它的职责必须保持清晰：只为 Agent 提
 
 ## 决策
 
-采用 `rag.evidence_mode=off|shadow|explain` 作为唯一显式开关，配合可选的 `rag.max_evidence_per_item` 控制证据上限。
+采用 `rag.evidence_mode=off|shadow|explain` 作为候选内 evidence RAG 的显式开关，配合可选的 `rag.max_evidence_per_item` 控制证据上限。2026-06-10 补充：新增召回前 `query_rag` 工具作为 query planning RAG，它由 Agent 按需调用，用于背景知识、属性扩展和语义 query hints；该工具不直接返回候选，不替代 `retrieve_candidates`，也不改变本 ADR 中后置候选内证据选择器的边界。
 
 - `off`：不构建 `rag_context`，保持旧链路。
 - `shadow`：构建并记录 `rag_context`，但解释输出不变。

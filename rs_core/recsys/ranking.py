@@ -5,6 +5,8 @@ from itertools import groupby, product
 from pathlib import Path
 from typing import Any
 
+from rs_core.common.io import read_json
+from rs_core.recsys.cold_deepfm import score_deepfm_model
 from rs_core.recsys.ltr import extract_ltr_features, load_ltr_model, score_ltr_model
 from rs_core.recsys.types import MergedCandidate, RankingResult
 
@@ -14,6 +16,8 @@ _ALLOWED_ADDITIVE_WEIGHT_GRID = {
     "freshness_quality": {0.0, 0.1, 0.2},
     "near_miss_tiebreak_strength": {0.0, 0.05, 0.1},
 }
+_DEEPFM_FEATURE_METADATA_KEYS = {"cold_deepfm_features", "deepfm_features", "ranking_features"}
+_FORBIDDEN_DEEPFM_FEATURE_TOKENS = ("label", "target", "holdout", "valid", "test", "future", "candidate_rank", "source_")
 
 
 def rank_candidates(
@@ -213,18 +217,28 @@ def fine_rank_candidates(rows: list[dict[str, Any]], config: dict) -> list[dict[
 
 def rerank_candidates(rows: list[dict[str, Any]], config: dict) -> list[dict[str, Any]]:
     ltr_model = _resolve_ltr_model(config)
+    deepfm_model = _resolve_deepfm_model(config)
+    deepfm_policy = _deepfm_policy(config)
+    deepfm_limit = _deepfm_max_scored_candidates(deepfm_policy)
+    deepfm_scored_item_ids = _deepfm_scored_item_ids(rows, deepfm_limit)
     for row in rows:
         candidate = row.pop("_candidate")
         fine_events = row.pop("_fine_events", [])
         ltr_score, ltr_events = _apply_ltr_model_score(candidate, ltr_model, config)
+        if deepfm_scored_item_ids is not None and candidate.item_id not in deepfm_scored_item_ids:
+            deepfm_score = 0.0
+            deepfm_events = [{**_deepfm_base_event(deepfm_policy), "status": "skipped", "reason": "max_scored_candidates_exceeded", "delta": 0.0, "max_scored_candidates": deepfm_limit}]
+        else:
+            deepfm_score, deepfm_events = _apply_deepfm_model_score(candidate, deepfm_model, config)
         model_rerank_events = candidate.metadata.get("model_rerank_events", [])
         if not isinstance(model_rerank_events, list):
             model_rerank_events = []
-        final_score = float(row["fine_score"]) + ltr_score
-        rerank_score = ltr_score
+        final_score = float(row["fine_score"]) + ltr_score + deepfm_score
+        rerank_score = ltr_score + deepfm_score
         row.update(
             {
                 "ltr_score": round(ltr_score, 6),
+                "deepfm_score": round(deepfm_score, 6),
                 "rerank_score": round(rerank_score, 6),
                 "final_score": round(final_score, 6),
                 "score": round(final_score, 6),
@@ -233,9 +247,9 @@ def rerank_candidates(rows: list[dict[str, Any]], config: dict) -> list[dict[str
                 "repaired_indicator": _candidate_has_policy_marker(candidate, ("repair", "repaired")),
                 "score_trace": [
                     *row["score_trace"],
-                    {"stage": "rerank", "score": round(final_score, 6), "delta": round(rerank_score, 6), "reason_codes": _rerank_reason_codes(ltr_events, model_rerank_events)},
+                    {"stage": "rerank", "score": round(final_score, 6), "delta": round(rerank_score, 6), "reason_codes": _rerank_reason_codes(ltr_events, [*deepfm_events, *model_rerank_events])},
                 ],
-                "rerank_events": [*fine_events, *ltr_events, *model_rerank_events],
+                "rerank_events": [*fine_events, *ltr_events, *deepfm_events, *model_rerank_events],
             }
         )
     return rows
@@ -656,6 +670,239 @@ def _apply_ltr_model_score(candidate: MergedCandidate, model: dict[str, Any] | N
     for event in events:
         event["delta"] = round(ltr_score, 6)
     return ltr_score, events
+
+
+def _deepfm_policy(config: dict) -> dict[str, Any]:
+    disabled_policy: dict[str, Any] = {}
+    for key in ("deepfm_shadow", "deepfm_model", "cold_deepfm_model"):
+        policy = config.get(key)
+        if not isinstance(policy, dict):
+            continue
+        resolved = dict(policy)
+        resolved.setdefault("_policy_key", key)
+        if resolved.get("enabled"):
+            return resolved
+        if not disabled_policy:
+            disabled_policy = resolved
+    return disabled_policy
+
+
+def _resolve_deepfm_model(config: dict) -> dict[str, Any] | None:
+    policy = _deepfm_policy(config)
+    if not policy.get("enabled"):
+        return None
+    model = policy.get("model") if isinstance(policy.get("model"), dict) else None
+    model_path = policy.get("model_path")
+    if model is None and model_path:
+        try:
+            model = _load_deepfm_model_cached(str(Path(model_path)))
+        except FileNotFoundError as exc:
+            return {"load_error": "missing_model_path", "model_path": str(model_path), "error": str(exc)}
+    if model is None:
+        return None
+    contract = policy.get("feature_contract") if isinstance(policy.get("feature_contract"), dict) else None
+    report = policy.get("artifact_report") if isinstance(policy.get("artifact_report"), dict) else None
+    contract_path = policy.get("feature_contract_path")
+    report_path = policy.get("artifact_report_path") or policy.get("offline_report_path")
+    try:
+        return {
+            "model": model,
+            "feature_contract": contract or (_load_deepfm_json_cached(str(Path(contract_path))) if contract_path else None),
+            "artifact_report": report or (_load_deepfm_json_cached(str(Path(report_path))) if report_path else None),
+        }
+    except FileNotFoundError as exc:
+        return {"load_error": "missing_artifact_path", "error": str(exc)}
+
+
+@lru_cache(maxsize=4)
+def _load_deepfm_model_cached(model_path: str) -> dict[str, Any]:
+    return read_json(Path(model_path))
+
+
+@lru_cache(maxsize=8)
+def _load_deepfm_json_cached(json_path: str) -> dict[str, Any]:
+    return read_json(Path(json_path))
+
+
+def _apply_deepfm_model_score(candidate: MergedCandidate, model: dict[str, Any] | None, config: dict) -> tuple[float, list[dict[str, Any]]]:
+    policy = _deepfm_policy(config)
+    if not policy.get("enabled"):
+        return 0.0, []
+    event = _deepfm_base_event(policy)
+    if not model:
+        return 0.0, [{**event, "status": "skipped", "reason": "missing_model"}]
+    if model.get("load_error"):
+        error_event = {**event, "status": "skipped", "reason": model["load_error"], "delta": 0.0}
+        if model.get("model_path"):
+            error_event["artifact_path"] = str(model["model_path"])
+        if model.get("error"):
+            error_event["error"] = str(model["error"])
+        return 0.0, [error_event]
+    model_weights = model.get("model") if isinstance(model.get("model"), dict) else model
+    contract = model.get("feature_contract") if isinstance(model.get("feature_contract"), dict) else None
+    report = model.get("artifact_report") if isinstance(model.get("artifact_report"), dict) else None
+    contract_gate = _deepfm_feature_contract_gate(model_weights, contract)
+    if contract_gate["status"] != "PASS":
+        return 0.0, [{**event, **contract_gate, "delta": 0.0}]
+    features = _deepfm_features_for_candidate(candidate, policy, model_weights, contract)
+    feature_names = _deepfm_model_feature_names(model_weights)
+    missing_features = [name for name in feature_names if name not in features]
+    if missing_features and policy.get("require_all_features", True):
+        return 0.0, [{**event, "status": "skipped", "reason": "missing_required_features", "missing_features": missing_features[:20], "missing_feature_count": len(missing_features)}]
+    raw_score = score_deepfm_model(features, model_weights)
+    scale = float(policy.get("score_scale", 0.0 if _is_deepfm_shadow_policy(policy) else 1.0))
+    mode = str(policy.get("mode") or policy.get("scoring_mode") or ("shadow_diagnostic" if _is_deepfm_shadow_policy(policy) else "rerank"))
+    requested_delta = raw_score * scale if _deepfm_affect_ranking_requested(policy, mode, scale) else 0.0
+    governance = _deepfm_governance_gate(policy, report, requested_delta, model_weights)
+    delta = 0.0 if governance["governance_blocked_delta"] else requested_delta
+    event.update(
+        {
+            "status": "scored_no_ranking_effect" if delta == 0.0 else "scored_with_ranking_delta",
+            "mode": mode,
+            "raw_score": round(raw_score, 6),
+            "score_scale": round(scale, 6),
+            "delta": round(delta, 6),
+            "feature_strategy": _deepfm_feature_strategy(policy),
+            "feature_count": len(features),
+            "missing_feature_count": len(missing_features),
+            **governance,
+        }
+    )
+    return delta, [event]
+
+
+def _deepfm_base_event(policy: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "type": "deepfm_shadow_score" if _is_deepfm_shadow_policy(policy) else "diagnostic_deepfm_rerank",
+        "diagnostic_only": True,
+        "public_payload_allowed": bool(policy.get("public_payload_allowed", False)),
+        "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
+    }
+
+
+def _is_deepfm_shadow_policy(policy: dict[str, Any]) -> bool:
+    mode = str(policy.get("mode") or policy.get("scoring_mode") or "")
+    return policy.get("_policy_key") == "deepfm_shadow" or mode.startswith("shadow")
+
+
+def _deepfm_feature_contract_gate(model: dict[str, Any], contract: dict[str, Any] | None) -> dict[str, Any]:
+    if not contract:
+        return {"status": "PASS", "feature_contract_checked": False}
+    model_features = _deepfm_model_feature_names(model)
+    contract_features = [str(name) for name in contract.get("feature_names", [])]
+    if not contract_features:
+        return {"status": "blocked_feature_contract", "reason": "missing_contract_feature_names", "feature_contract_checked": True}
+    if model_features != contract_features:
+        return {
+            "status": "blocked_feature_contract",
+            "reason": "model_contract_feature_mismatch",
+            "feature_contract_checked": True,
+            "missing_model_features": [name for name in contract_features if name not in model_features][:20],
+            "extra_model_features": [name for name in model_features if name not in contract_features][:20],
+        }
+    return {"status": "PASS", "feature_contract_checked": True, "feature_contract_feature_count": len(contract_features)}
+
+
+def _deepfm_model_feature_names(model: dict[str, Any]) -> list[str]:
+    return [str(name) for name in model.get("feature_names", [])]
+
+
+def _deepfm_governance_gate(policy: dict[str, Any], report: dict[str, Any] | None, requested_delta: float, model: dict[str, Any]) -> dict[str, Any]:
+    report_replacement_allowed = report.get("ranking_replacement_allowed") is True if report else None
+    report_effect_allowed = report.get("ranking_effect_conclusion_allowed") is True if report else None
+    model_diagnostic_only = model.get("diagnostic_only") is True
+    policy_diagnostic_only = policy.get("diagnostic_only") is True
+    report_diagnostic_only = report.get("diagnostic_only") is True if report else False
+    policy_replacement = policy.get("ranking_input_replacement_allowed", policy.get("ranking_replacement_allowed"))
+    policy_effect = policy.get("ranking_effect_conclusion_allowed")
+    delta_allowed = policy_replacement is True and policy_effect is True and not model_diagnostic_only and not policy_diagnostic_only and not report_diagnostic_only
+    if report:
+        delta_allowed = delta_allowed and report_replacement_allowed is True and report_effect_allowed is True
+    governance_blocked_delta = bool(requested_delta and not delta_allowed)
+    return {
+        "ranking_replacement_allowed": bool(delta_allowed),
+        "ranking_effect_conclusion_allowed": bool(delta_allowed),
+        "report_ranking_replacement_allowed": report_replacement_allowed,
+        "report_ranking_effect_conclusion_allowed": report_effect_allowed,
+        "model_diagnostic_only": model_diagnostic_only,
+        "policy_diagnostic_only": policy_diagnostic_only,
+        "report_diagnostic_only": report_diagnostic_only,
+        "governance_blocked_delta": governance_blocked_delta,
+    }
+
+
+def _deepfm_affect_ranking_requested(policy: dict[str, Any], mode: str, scale: float) -> bool:
+    if policy.get("affect_ranking") is not None:
+        return bool(policy.get("affect_ranking")) and scale != 0.0
+    return mode not in {"shadow", "shadow_diagnostic", "diagnostic"} and scale != 0.0
+
+
+def _deepfm_max_scored_candidates(policy: dict[str, Any]) -> int | None:
+    if not policy.get("enabled") or policy.get("max_scored_candidates") in (None, ""):
+        return None
+    try:
+        return max(0, int(policy["max_scored_candidates"]))
+    except (TypeError, ValueError):
+        return None
+
+
+def _deepfm_scored_item_ids(rows: list[dict[str, Any]], limit: int | None) -> set[str] | None:
+    if limit is None:
+        return None
+    ranked = sorted(rows, key=lambda item: (-float(item["fine_score"]), item["parent_asin"]))
+    return {str(item["parent_asin"]) for item in ranked[:limit]}
+
+
+def _deepfm_feature_strategy(policy: dict[str, Any]) -> str:
+    if policy.get("feature_strategy"):
+        return str(policy["feature_strategy"])
+    return "all_zero_safe" if policy.get("_policy_key") == "deepfm_shadow" else "metadata"
+
+
+def _deepfm_features_for_candidate(candidate: MergedCandidate, policy: dict[str, Any], model: dict[str, Any] | None = None, contract: dict[str, Any] | None = None) -> dict[str, float]:
+    strategy = _deepfm_feature_strategy(policy)
+    expected_features = [str(name) for name in (contract or {}).get("feature_names", [])] or _deepfm_model_feature_names(model or {})
+    if strategy in {"all_zero_safe", "metadata_exact_key"}:
+        features = {name: 0.0 for name in expected_features}
+        if strategy == "metadata_exact_key":
+            features.update({key: value for key, value in _deepfm_metadata_features(candidate, policy).items() if key in features})
+        return features
+    features = _deepfm_metadata_features(candidate, policy)
+    inline_features = policy.get("features")
+    if isinstance(inline_features, dict):
+        features.update(_numeric_feature_dict(inline_features))
+    return features
+
+
+def _deepfm_metadata_features(candidate: MergedCandidate, policy: dict[str, Any]) -> dict[str, float]:
+    requested_keys = policy.get("feature_metadata_keys") or sorted(_DEEPFM_FEATURE_METADATA_KEYS)
+    feature_keys = [str(key) for key in requested_keys if str(key) in _DEEPFM_FEATURE_METADATA_KEYS]
+    features: dict[str, float] = {}
+    for key in feature_keys:
+        value = candidate.metadata.get(key)
+        if isinstance(value, dict):
+            features.update(_numeric_feature_dict(value))
+    return features
+
+
+def _numeric_feature_dict(values: dict[str, Any]) -> dict[str, float]:
+    features: dict[str, float] = {}
+    for key, value in values.items():
+        feature_name = str(key)
+        if _is_forbidden_deepfm_feature_name(feature_name):
+            continue
+        try:
+            features[feature_name] = float(value)
+        except (TypeError, ValueError):
+            continue
+    return features
+
+
+def _is_forbidden_deepfm_feature_name(feature_name: str) -> bool:
+    lowered = feature_name.lower()
+    return any(token in lowered for token in _FORBIDDEN_DEEPFM_FEATURE_TOKENS)
 
 
 def _apply_source_aware_fusion_delta(sources: list[str], config: dict) -> tuple[float, list[dict]]:

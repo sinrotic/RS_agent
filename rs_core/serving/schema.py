@@ -12,6 +12,7 @@ ORACLE_FIELD_NAMES = {
     "label_binary",
     "target_item",
     "test_item",
+    "training_samples",
 }
 
 
@@ -71,6 +72,45 @@ class RecommendFromSequenceResponse(BaseModel):
     item_count: int
     candidate_count: int
     fallback_used: bool
+
+
+class RecallRequest(BaseModel):
+    user_id: str | None = None
+    user_sequence: dict[str, Any]
+    candidate_pool_size: int | None = Field(default=None, ge=1, le=500)
+    prior_turn_items: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("user_sequence")
+    @classmethod
+    def reject_oracle_fields(cls, value: dict[str, Any]) -> dict[str, Any]:
+        forbidden = _oracle_fields_in(value)
+        if forbidden:
+            raise ValueError(f"user_sequence contains evaluation-only fields: {sorted(forbidden)}")
+        return value
+
+
+class RecallRetrievalSummary(BaseModel):
+    target_pool_size: int | None = None
+    path_count: int | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+
+class RecallResponse(BaseModel):
+    request_id: str
+    candidate_item_ids: list[str]
+    candidate_count: int
+    retrieval_summary: RecallRetrievalSummary
+
+
+class ReadinessResponse(BaseModel):
+    status: str
+    service: str
+    mode: str
+    session_state: str
+    online_route: dict[str, Any]
 
 
 class SessionExportResponse(BaseModel):

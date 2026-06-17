@@ -20,6 +20,7 @@ from rs_core.workflow.full_data_pool500_route_gate import (
     full_data_pool500_artifact_gate,
     full_data_pool500_route_gate,
     no_holdout_leakage_audit,
+    validate_artifact_level_leakage,
     validate_method_contract,
     validate_pool500_shadow_evidence,
     validate_readiness_bundle,
@@ -176,6 +177,43 @@ def _artifact_gate_defaults_index_manifests() -> dict[str, dict[str, object]]:
         }
         for source in sorted(CANONICAL_SOURCES)
     }
+
+
+def _formal_swing_index_manifest(omit_keys: tuple[str, ...] = (), **overrides: object) -> dict[str, object]:
+    manifest: dict[str, object] = {
+        "schema_version": "full_train_swing_sidecar_v1",
+        "status": "PASS",
+        "source": "swing_recall",
+        "index_status": "INDEX_READY",
+        "manifest_sha256": _artifact_ready_hash("swing_recall:index"),
+        "index_scope": "FULL_DERIVED_INDEX",
+        "train_only": True,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "ranking_replacement_allowed": False,
+        "promotion_allowed": False,
+        "pool1000_allowed": False,
+        "lifecycle_stage": "builder_complete",
+        "train_user_sequences_path": "data/processed/full/user_sequences.train.jsonl",
+        "input_contract": {
+            "allowed_inputs": ["clean_manifest.train_user_sequences_path"],
+            "train_user_sequences_path": "data/processed/full/user_sequences.train.jsonl",
+            "declared_inputs": ["data/processed/full/user_sequences.train.jsonl"],
+        },
+        "provenance": {
+            "clean_manifest_signature": {"sha256": "clean-full-sha"},
+            "train_user_sequences_signature": {"sha256": "train-seq-sha"},
+        },
+        "partial_invalidation_keys": [
+            "provenance.clean_manifest_signature.sha256",
+            "provenance.train_user_sequences_signature.sha256",
+            "parameters",
+        ],
+    }
+    manifest.update(overrides)
+    for key in omit_keys:
+        manifest.pop(key, None)
+    return manifest
 
 
 def _artifact_gate(**overrides: object) -> dict[str, object]:
@@ -368,6 +406,148 @@ def test_full_ready_requires_index_manifest_sha_and_source_consistency() -> None
     assert "SOURCE_INDEX_SHA_MISMATCH" in blocker_codes
 
 
+def test_artifact_gate_accepts_formal_swing_source_index_manifest() -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest()
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == FULL_POOL500_READY
+    assert result["blockers"] == []
+
+
+def test_artifact_gate_accepts_swing_negative_audit_forbidden_references() -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    swing_manifest = _formal_swing_index_manifest(
+        input_contract={
+            "allowed_inputs": ["clean_manifest.train_user_sequences_path"],
+            "train_user_sequences_path": "data/processed/full/user_sequences.train.jsonl",
+            "declared_inputs": ["data/processed/full/user_sequences.train.jsonl"],
+            "forbidden_manifest_inputs": ["valid_path", "test_path", "holdout_path", "label_path"],
+            "forbidden_files_not_read": [
+                "data/processed/full/canonical_interactions.valid.jsonl",
+                "data/processed/full/user_sequences.test.jsonl",
+                "data/processed/full/holdout.jsonl",
+            ],
+        },
+        required_artifacts={
+            "swing_recall_edges": "swing_recall_edges.jsonl",
+            "no_holdout_audit": "no_holdout_audit.json",
+        },
+    )
+    index_manifests["swing_recall"] = swing_manifest
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == FULL_POOL500_READY
+    assert "HOLDOUT_LEAKAGE_FORBIDDEN" not in _blocker_codes(result)
+    assert result["blockers"] == []
+
+
+def test_artifact_gate_still_rejects_swing_actual_forbidden_input() -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(
+        input_contract={
+            "allowed_inputs": ["clean_manifest.train_user_sequences_path"],
+            "train_user_sequences_path": "data/processed/full/user_sequences.train.jsonl",
+            "declared_inputs": [
+                "data/processed/full/user_sequences.train.jsonl",
+                "data/processed/full/user_sequences.valid.jsonl",
+            ],
+        }
+    )
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == STOP
+    assert "HOLDOUT_LEAKAGE_FORBIDDEN" in _blocker_codes(result)
+
+
+def test_artifact_gate_rejects_target_slice_diagnostic_swing_source_index() -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(source_status="TARGET_SLICE_DIAGNOSTIC")
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == STOP
+    assert "SWING_TARGET_SLICE_DIAGNOSTIC_FORBIDDEN_AS_FULL_INDEX" in _blocker_codes(result)
+
+
+@pytest.mark.parametrize(
+    ("override", "blocker_code"),
+    [
+        ({"partial_invalidation_keys": ["provenance.clean_manifest_signature.sha256"]}, "SWING_SOURCE_INDEX_PARTIAL_INVALIDATION_CONTRACT_MISSING"),
+        ({"input_contract": {"allowed_inputs": ["clean_manifest.user_sequences_path"], "train_user_sequences_path": "data/processed/full/user_sequences.train.jsonl", "declared_inputs": ["data/processed/full/user_sequences.train.jsonl"]}}, "SWING_SOURCE_INDEX_TRAIN_PROVENANCE_REQUIRED"),
+        ({"lifecycle_stage": "partial"}, "SWING_SOURCE_INDEX_LIFECYCLE_STAGE_INVALID"),
+        ({"provenance": {"clean_manifest_signature": {"sha256": "clean-full-sha"}}}, "SWING_SOURCE_INDEX_PROVENANCE_SIGNATURE_MISSING"),
+    ],
+)
+def test_artifact_gate_rejects_invalid_swing_source_index_contract(override: dict[str, object], blocker_code: str) -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(**override)
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == STOP
+    assert blocker_code in _blocker_codes(result)
+
+
+@pytest.mark.parametrize(
+    ("omit_key", "blocker_code"),
+    [
+        ("schema_version", "SWING_SOURCE_INDEX_SCHEMA_VERSION_MISMATCH"),
+        ("provenance", "SWING_SOURCE_INDEX_PROVENANCE_SIGNATURE_MISSING"),
+        ("lifecycle_stage", "SWING_SOURCE_INDEX_LIFECYCLE_STAGE_INVALID"),
+    ],
+)
+def test_artifact_gate_rejects_omitted_swing_strict_contract_fields(omit_key: str, blocker_code: str) -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(omit_keys=(omit_key,))
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == STOP
+    assert blocker_code in _blocker_codes(result)
+
+
+@pytest.mark.parametrize(
+    "edges_path",
+    [
+        "../swing_recall_edges.jsonl",
+        "valid/swing_recall_edges.jsonl",
+        "swing_recall_edges.valid.jsonl",
+    ],
+)
+def test_artifact_gate_rejects_forbidden_or_traversal_swing_edges_artifact_path(edges_path: str) -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(required_artifacts={"swing_recall_edges": edges_path})
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == STOP
+    assert "SWING_SOURCE_INDEX_EDGES_ARTIFACT_FORBIDDEN" in _blocker_codes(result)
+
+
+def test_artifact_gate_allows_swing_serving_allowed_false() -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(serving_allowed=False)
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == FULL_POOL500_READY
+    assert "SWING_SOURCE_INDEX_PERMISSION_FORBIDDEN" not in _blocker_codes(result)
+
+
+def test_artifact_gate_rejects_swing_serving_allowed_true() -> None:
+    index_manifests = _artifact_gate_defaults_index_manifests()
+    index_manifests["swing_recall"] = _formal_swing_index_manifest(serving_allowed=True)
+
+    result = _artifact_gate(full_derived_index_manifests=index_manifests)
+
+    assert result["decision"] == STOP
+    assert "SWING_SOURCE_INDEX_PERMISSION_FORBIDDEN" in _blocker_codes(result)
+
+
 @pytest.mark.parametrize(
     ("overrides", "blocker_code"),
     [
@@ -398,6 +578,132 @@ def test_artifact_gate_stop_conditions(overrides: dict[str, object], blocker_cod
 
     assert result["decision"] == STOP
     assert blocker_code in _blocker_codes(result)
+
+
+@pytest.mark.parametrize(
+    ("artifact", "blocker_code"),
+    [
+        (
+            {
+                "source": "itemcf_weak",
+                "artifact_role": "recall_candidate_source",
+                "train_only": True,
+                "candidate_generation_allowed": True,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+                "read_files": ["data/processed/full/user_sequences.valid.jsonl"],
+            },
+            "CANDIDATE_READ_FILES_FORBIDDEN",
+        ),
+        (
+            {
+                "source": "itemcf_weak",
+                "artifact_role": "recall_candidate_source",
+                "train_only": True,
+                "candidate_generation_allowed": True,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+                "read_files": ["data/processed/full/canonical_items.all.jsonl"],
+            },
+            "CANDIDATE_READ_FILES_FORBIDDEN",
+        ),
+        ({"source": "itemcf_weak", "candidate_generation_allowed": False}, "CANDIDATE_ARTIFACT_FIELD_MISSING"),
+        (
+            {
+                "source": "rag_catalog",
+                "artifact_role": "rag_evidence",
+                "train_only": True,
+                "candidate_scoped": True,
+                "candidate_generation_allowed": True,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+            },
+            "ARTIFACT_ROLE_PERMISSION_FORBIDDEN",
+        ),
+        (
+            {
+                "source": "rag_catalog",
+                "artifact_role": "diagnostic_only",
+                "train_only": True,
+                "candidate_scoped": True,
+                "candidate_generation_allowed": False,
+                "ranking_input_replacement_allowed": True,
+                "promotion_allowed": False,
+            },
+            "ARTIFACT_ROLE_PERMISSION_FORBIDDEN",
+        ),
+        (
+            {
+                "source": "semantic_recall",
+                "artifact_role": "recall_candidate_source",
+                "train_only": True,
+                "candidate_generation_allowed": False,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+            },
+            "RECALL_CANDIDATE_SOURCE_REQUIRES_EXPLICIT_GENERATION",
+        ),
+        (
+            {
+                "source": "semantic_recall",
+                "artifact_role": "recall_candidate_source",
+                "train_only": True,
+                "candidate_generation_allowed": True,
+                "ranking_input_replacement_allowed": True,
+                "promotion_allowed": False,
+            },
+            "ARTIFACT_ROLE_PERMISSION_FORBIDDEN",
+        ),
+        (
+            {
+                "source": "unknown",
+                "artifact_role": "serving_feature",
+                "train_only": True,
+                "candidate_generation_allowed": False,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+            },
+            "ARTIFACT_ROLE_NOT_AUTHORIZED",
+        ),
+        (
+            {
+                "source": "itemcf_weak",
+                "artifact_role": "recall_candidate_source",
+                "train_only": True,
+                "candidate_generation_allowed": True,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+                "serving_allowed": False,
+            },
+            "SERVING_ALLOWED_REQUIRED",
+        ),
+        (
+            {
+                "source": "itemcf_weak",
+                "artifact_role": "recall_candidate_source",
+                "train_only": True,
+                "candidate_generation_allowed": True,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+                "candidate_item_universe": "all",
+            },
+            "SERVING_CANDIDATE_SOURCE_FORBIDDEN",
+        ),
+    ],
+)
+def test_artifact_level_leakage_validator_fail_closed(artifact: dict[str, object], blocker_code: str) -> None:
+    audit = validate_artifact_level_leakage(artifacts={"candidate_source": artifact})
+
+    assert audit["status"] == "BLOCKED"
+    assert blocker_code in _blocker_codes(audit)
+
+
+def test_artifact_gate_blocks_candidate_items_outside_train_subset() -> None:
+    result = _artifact_gate(train_item_ids={"i1", "i2"})
+
+    assert result["decision"] == STOP
+    assert "CANDIDATE_ITEM_OUTSIDE_TRAIN_SET" in _blocker_codes(result)
+    assert result["artifact_level_leakage_audit"]["train_item_set_checked"] is True  # type: ignore[index]
 
 
 @pytest.mark.parametrize(
@@ -458,11 +764,13 @@ def _readiness_bundle(**overrides: object) -> dict[str, object]:
 def test_pool500_shadow_evidence_is_independent_read_only_schema() -> None:
     artifact_gate_result = _artifact_gate()
 
+    raw_route_gate_result = _gate()
     evidence = build_pool500_shadow_evidence(
         evidence_id="test-shadow",
         artifact_gate_result=artifact_gate_result,
         readiness_bundle_result={"decision": FULL_POOL500_READY, "status": "PASS"},
         readiness_bundle_path="outputs/pool500/readiness_bundle.json",
+        raw_route_gate_result=raw_route_gate_result,
         artifact_paths={"merged_pool500_manifest": "outputs/pool500/final/merged_pool500_manifest.json"},
     )
     validation = validate_pool500_shadow_evidence(evidence)
@@ -470,10 +778,14 @@ def test_pool500_shadow_evidence_is_independent_read_only_schema() -> None:
     assert evidence["schema_version"] == "pool500_shadow_evidence_v1"
     assert evidence["shadow_mode"] == "read_only_shadow_evidence"
     assert evidence["full_pool500_ready_semantics"] == "recall_artifact_readiness_only"
+    assert raw_route_gate_result["candidate_generation_allowed"] is True
+    assert evidence["raw_route_gate_decision"] == POOL500_RECALL_READY
     assert evidence["promotion_allowed"] is False
     assert evidence["ranking_replacement_allowed"] is False
     assert evidence["ranking_input_replacement_allowed"] is False
     assert evidence["candidate_generation_allowed"] is False
+    assert evidence["full_pool500_ready_declared"] is False
+    assert evidence["final_pool500_ready_claimed"] is False
     assert "current_ranking_route" not in evidence
     assert validation["status"] == "PASS"
     assert validation["blockers"] == []
@@ -487,6 +799,8 @@ def test_pool500_shadow_evidence_rejects_promotion_generation_and_ranking_route_
             "ranking_replacement_allowed": True,
             "ranking_input_replacement_allowed": True,
             "candidate_generation_allowed": True,
+            "full_pool500_ready_declared": True,
+            "final_pool500_ready_claimed": True,
             "current_ranking_route": {"required_output_paths": ["outputs/recall/pool500/manifest.json"]},
         }
     )
@@ -498,10 +812,15 @@ def test_pool500_shadow_evidence_rejects_promotion_generation_and_ranking_route_
     assert "PROMOTION_FORBIDDEN_BY_SHADOW_EVIDENCE" in blocker_codes
     assert "RANKING_REPLACEMENT_FORBIDDEN_BY_SHADOW_EVIDENCE" in blocker_codes
     assert "CANDIDATE_GENERATION_NOT_AUTHORIZED_BY_SHADOW_EVIDENCE" in blocker_codes
+    assert "FULL_POOL500_READY_DECLARATION_FORBIDDEN_BY_SHADOW_EVIDENCE" in blocker_codes
+    assert "FINAL_POOL500_READY_CLAIM_FORBIDDEN_BY_SHADOW_EVIDENCE" in blocker_codes
     assert "CURRENT_RANKING_ROUTE_WRITE_FORBIDDEN" in blocker_codes
     assert validation["promotion_allowed"] is False
     assert validation["ranking_replacement_allowed"] is False
+    assert validation["ranking_input_replacement_allowed"] is False
     assert validation["candidate_generation_allowed"] is False
+    assert validation["full_pool500_ready_declared"] is False
+    assert validation["final_pool500_ready_claimed"] is False
 
 
 def test_readiness_bundle_is_final_full_pool500_ready_authority() -> None:

@@ -13,14 +13,15 @@ from rs_core.serving.service import RecommendationService
 pytestmark = pytest.mark.unit
 
 EXPECTED_CAPABILITIES = {
-    "parse_preferences",
-    "apply_constraints",
+    "get_user_context",
+    "query_rag",
     "retrieve_candidates",
     "rank_candidates",
-    "build_rag_context",
-    "explain_recommendation",
-    "collect_feedback",
+    "get_item_evidence",
+    "record_user_feedback",
+    "build_recommendation_slate",
 }
+PUBLIC_PAYLOAD_CAPABILITIES = {"build_recommendation_slate"}
 BLOCKED_PUBLIC_TERMS = {
     "agent_runtime_trace",
     "runtime_trace",
@@ -40,7 +41,7 @@ def test_agent_capability_manifest_is_internal_and_non_public():
         assert capability.stage
         assert isinstance(capability.read_only, bool)
         assert capability.hidden is True
-        assert capability.public_payload_allowed is False
+        assert capability.public_payload_allowed is (capability.name in PUBLIC_PAYLOAD_CAPABILITIES)
         assert capability.description
 
 

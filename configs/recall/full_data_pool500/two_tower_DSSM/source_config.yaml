@@ -1,0 +1,535 @@
+schema_version: pool500_method_source_config_v1_recent_2y_dssm
+source: two_tower_dssm
+canonical_source: two_tower_dssm
+source_name: two_tower_dssm
+evaluation_mode: train_only
+output_root: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM
+run_id: null
+route_visibility: HIDDEN_FROM_ACTIVE_ROUTE
+hidden_from_active_route: true
+hidden_reason: single_source_recall_remains_weak_after_dynamic_negative_and_hardneg_weight_grid
+method_config:
+  current_dataset_root: data/processed/amazon_2023_recall_recent_2y_1m_3m
+  clean_manifest_path: data/processed/amazon_2023_recall_recent_2y_1m_3m/manifest.json
+  governance_manifest_path: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+  smoke_method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/smoke/method_dataset_manifest.json
+  smoke_item_vocab_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/smoke/two_tower_dssm_item_vocab_manifest.json
+  smoke_training_config_path: configs/recall/full_data_pool500/two_tower_DSSM/two_tower_dssm_recent_2y_safe.yaml
+  smoke_artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_training_run/artifact_manifest.json
+  smoke_source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_source/source_index_manifest.json
+  smoke_direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_eval/raw_two_tower_dssm_direct_eval_manifest.json
+  formal_method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/formal/method_dataset_manifest.json
+  formal_item_vocab_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/formal/two_tower_dssm_item_vocab_manifest.json
+  formal_training_config_path: configs/recall/full_data_pool500/two_tower_DSSM/two_tower_dssm_recent_2y_safe.yaml
+  formal_artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/formal_training_run/artifact_manifest.json
+  formal_source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/formal_source/source_index_manifest.json
+  formal_direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/formal_eval/raw_two_tower_dssm_direct_eval_manifest.json
+  per_user_candidate_limit: 500
+  recency_decay: 0.85
+  seed_window: 30
+scale_tiers:
+  smoke:
+    purpose: program_and_schema_validation_only
+    quantity_policy: small_bounded_smoke
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/smoke/method_dataset_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_source/source_index_manifest.json
+    promotion_allowed: false
+  formal:
+    purpose: official_dssm_method_logic_dataset_under_recent_2y_train_only_governance
+    quantity_policy: agent_managed_no_method_side_fixed_quantity_caps
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/formal/method_dataset_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/formal_source/source_index_manifest.json
+    artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/formal_training_run/artifact_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/formal_eval/raw_two_tower_dssm_direct_eval_manifest.json
+    status: planned_not_run
+resource_guard:
+  batch_size: 256
+  checkpoint_enabled: true
+  resume_enabled: true
+  heavy_job: true
+  heavy_job_policy: smoke_first_then_incremental_1k_5k_10k_formal
+manifest_contract:
+  source_index_manifest: source_index_manifest.json
+  method_dataset_manifest: method_dataset_manifest.json
+  dssm_item_vocab_manifest: two_tower_dssm_item_vocab_manifest.json
+  artifact_manifest: artifact_manifest.json
+  train_metrics: train_metrics.json
+  direct_eval_query_diagnostics: query_source_counts_and_queryless_reason_counts
+  resource_audit: progress.jsonl
+promotion_boundary:
+  source_status: DIAGNOSTIC_ONLY
+  route_visibility: HIDDEN_FROM_ACTIVE_ROUTE
+  hidden_from_active_route: true
+  candidate_generation_allowed: false
+  ranking_input_replacement_allowed: false
+  pool1000_allowed: false
+  promotion_allowed: false
+  final_pool500_ready_claimed: false
+current_evidence:
+  status: PARKED_HIDDEN_DIAGNOSTIC_ONLY
+  evidence_date: '2026-06-09'
+  parked_decision: hide_from_active_route_and_keep_evidence_only
+  parked_reason: best_fixed_500_recall_at_500_0p031792_is_too_weak_for_pool500_source
+  remote_project_root: /home/luo/RS_agent_remote
+  smoke:
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/smoke/method_dataset_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_eval/raw_two_tower_dssm_direct_eval_manifest.json
+    train_sample_count: 1999
+    item_count: 335144
+    query_user_count: 478
+    queryless_user_count: 22
+    recall_at_500: 0.020231
+    hit_rate_at_500: 0.028
+    raw_unique_positive_hits: 14
+  pilot_5k:
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/pilot_5k/method_dataset_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_5k_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_5k_eval/raw_two_tower_dssm_direct_eval_manifest.json
+    train_sample_count: 19708
+    item_count: 336239
+    recall_at_500: 0.020231
+    hit_rate_at_500: 0.028
+    raw_unique_positive_hits: 14
+  pilot_5k_lr1e3_e5:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_5k_lr1e3_e5_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_5k_lr1e3_e5_eval/raw_two_tower_dssm_direct_eval_manifest.json
+    loss_history:
+    - 1.379904
+    - 1.366044
+    - 1.357553
+    - 1.358399
+    - 1.348898
+    recall_at_500: 0.013006
+    hit_rate_at_500: 0.016
+    raw_unique_positive_hits: 9
+  pilot_20k:
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/pilot_20k/method_dataset_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_eval/raw_two_tower_dssm_direct_eval_manifest.json
+    train_sample_count: 79579
+    item_count: 340080
+    recall_at_500: 0.020231
+    hit_rate_at_500: 0.028
+    raw_unique_positive_hits: 14
+  pilot_20k_dim64_e3_lr3e4:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dim64_e3_lr3e4_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dim64_e3_lr3e4_eval/raw_two_tower_dssm_direct_eval_manifest.json
+    embedding_dim: 64
+    hidden_dim: 128
+    epochs: 3
+    learning_rate: 0.0003
+    recall_at_20: 0.007225
+    hit_rate_at_20: 0.01
+    recall_at_100: 0.011561
+    hit_rate_at_100: 0.016
+    recall_at_500: 0.018786
+    hit_rate_at_500: 0.026
+    raw_unique_positive_hits: 13
+  eval_grid_best:
+    summary_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/diagnostic_eval_grid/summary.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    source: pilot_20k_e1_dim32
+    seed_window: 10
+    recency_decay: 0.7
+    recall_at_20: 0.00289
+    hit_rate_at_20: 0.004
+    recall_at_100: 0.010116
+    hit_rate_at_100: 0.014
+    recall_at_500: 0.021676
+    hit_rate_at_500: 0.03
+    raw_unique_positive_hits: 15
+  pilot_20k_dim32_e3_lr3e4_rec07:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dim32_e3_lr3e4_rec07_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dim32_e3_lr3e4_rec07_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    embedding_dim: 32
+    hidden_dim: 64
+    epochs: 3
+    learning_rate: 0.0003
+    recency_decay: 0.7
+    seed_window: 10
+    recall_at_20: 0.00578
+    hit_rate_at_20: 0.008
+    recall_at_100: 0.011561
+    hit_rate_at_100: 0.016
+    recall_at_500: 0.020231
+    hit_rate_at_500: 0.028
+    raw_unique_positive_hits: 14
+  pilot_20k_ms10_neg7_e1:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_ms10_neg7_e1_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_ms10_neg7_e1_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    max_samples_per_user: 10
+    negative_samples: 7
+    explicit_negative_weight: 0.7
+    recall_at_20: 0.004335
+    hit_rate_at_20: 0.006
+    recall_at_100: 0.010116
+    hit_rate_at_100: 0.014
+    recall_at_500: 0.021676
+    hit_rate_at_500: 0.03
+    raw_unique_positive_hits: 15
+  pilot_20k_ms10_bs127_logq_e1:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_ms10_bs127_logq_e1_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_ms10_bs127_logq_e1_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    max_samples_per_user: 10
+    sampled_softmax_candidate_mode: batch_shared
+    negative_samples: 127
+    sampled_softmax_correction: logq
+    loss_history:
+    - 5.974038
+    recall_at_20: 0.004335
+    hit_rate_at_20: 0.006
+    recall_at_100: 0.011561
+    hit_rate_at_100: 0.016
+    recall_at_500: 0.023121
+    hit_rate_at_500: 0.032
+    raw_unique_positive_hits: 16
+  pilot_20k_ms10_bs127_logq_e3:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_ms10_bs127_logq_e3_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_ms10_bs127_logq_e3_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    max_samples_per_user: 10
+    sampled_softmax_candidate_mode: batch_shared
+    negative_samples: 127
+    sampled_softmax_correction: logq
+    loss_history:
+    - 5.974038
+    - 5.966438
+    - 5.962911
+    recall_at_20: 0.00578
+    hit_rate_at_20: 0.008
+    recall_at_100: 0.011561
+    hit_rate_at_100: 0.016
+    recall_at_500: 0.023121
+    hit_rate_at_500: 0.032
+    raw_unique_positive_hits: 16
+  smoke_temp010_textdedup_20260607a:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_temp010_textdedup_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/smoke_temp010_textdedup_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    score_temperature: 0.1
+    text_fields_exclude_item_text: true
+    loss_history:
+    - 16.376578
+    recall_at_20: 0.00289
+    hit_rate_at_20: 0.004
+    recall_at_100: 0.010116
+    hit_rate_at_100: 0.014
+    recall_at_500: 0.021676
+    hit_rate_at_500: 0.03
+    raw_unique_positive_hits: 15
+  pilot_20k_temp010_originaltext_20260607a:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_temp010_originaltext_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_temp010_originaltext_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    score_temperature: 0.1
+    text_fields_exclude_item_text: false
+    loss_history:
+    - 6.786663
+    recall_at_20: 0.00289
+    hit_rate_at_20: 0.004
+    recall_at_100: 0.008671
+    hit_rate_at_100: 0.012
+    recall_at_500: 0.021676
+    hit_rate_at_500: 0.03
+    raw_unique_positive_hits: 15
+  pilot_20k_temp010_textdedup_20260607a:
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_temp010_textdedup_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_temp010_textdedup_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    score_temperature: 0.1
+    text_fields_exclude_item_text: true
+    loss_history:
+    - 6.780944
+    recall_at_20: 0.00289
+    hit_rate_at_20: 0.004
+    recall_at_100: 0.008671
+    hit_rate_at_100: 0.012
+    recall_at_500: 0.020231
+    hit_rate_at_500: 0.028
+    raw_unique_positive_hits: 14
+  pilot_20k_hardneg_v1_20260607a:
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_20260607a/method_dataset_manifest.json
+    artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_20260607a_training_run/artifact_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    hard_negative_policy: same_category_popular_train_only
+    hard_negative_source: canonical_items_metadata_category_joined_with_train_only_popularity_universe
+    train_sample_count: 79579
+    negative_ratio_requested: 31
+    hard_negative_sample_match_count: 79579
+    hard_negative_sample_fallback_count: 0
+    hard_negative_used_distinct_item_count: 274991
+    explicit_negative_weight: 0.5
+    explicit_negative_used_count: 1113856
+    rows_with_explicit_negative_items: 19351
+    sampled_softmax_candidate_mode: per_example
+    sampled_softmax_correction: none
+    loss_history:
+    - 3.411925
+    seed_window: 10
+    recency_decay: 0.7
+    query_user_count: 478
+    queryless_user_count: 22
+    positive_denominator_at_500: 692
+    recall_at_20: 0.004335
+    hit_rate_at_20: 0.006
+    recall_at_100: 0.015896
+    hit_rate_at_100: 0.022
+    recall_at_500: 0.031792
+    hit_rate_at_500: 0.044
+    raw_unique_positive_hits: 22
+    beats_previous_dssm_best: true
+    previous_best_recall_at_500: 0.023121
+    previous_best_hit_rate_at_500: 0.032
+    previous_best_raw_unique_positive_hits: 16
+    candidate_generation_inputs_train_only: true
+    valid_test_label_paths_eval_only: true
+  pilot_20k_hardneg_v1_e2_fullusers_20260607a:
+    artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_e2_fullusers_20260607a_training_run/artifact_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_e2_fullusers_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_e2_fullusers_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    hard_negative_policy: same_category_popular_train_only
+    epochs: 2
+    loss_history:
+    - 3.411925
+    - 3.402076
+    query_user_count: 478
+    queryless_user_count: 22
+    source_user_embedding_row_count: 6485503
+    positive_denominator_at_500: 692
+    recall_at_20: 0.00289
+    hit_rate_at_20: 0.004
+    recall_at_100: 0.007225
+    hit_rate_at_100: 0.01
+    recall_at_500: 0.028902
+    hit_rate_at_500: 0.04
+    raw_unique_positive_hits: 20
+    final_checkpoint_underperforms_e1: true
+  pilot_20k_hardneg_v1_e3_fullusers_20260607a:
+    artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_e3_fullusers_20260607a_training_run/artifact_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_e3_fullusers_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_e3_fullusers_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    hard_negative_policy: same_category_popular_train_only
+    epochs: 3
+    loss_history:
+    - 3.411925
+    - 3.402076
+    - 3.39622
+    query_user_count: 478
+    queryless_user_count: 22
+    source_user_embedding_row_count: 6485503
+    positive_denominator_at_500: 692
+    recall_at_20: 0.001445
+    hit_rate_at_20: 0.002
+    recall_at_100: 0.00578
+    hit_rate_at_100: 0.008
+    recall_at_500: 0.023121
+    hit_rate_at_500: 0.032
+    raw_unique_positive_hits: 16
+    final_checkpoint_underperforms_e1: true
+  pilot_20k_hardneg_mix_v2_e1_20260607a:
+    method_dataset_manifest_path: outputs/recall/pool500_method_datasets/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_20260607a/method_dataset_manifest.json
+    artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_e1_20260607a_training_run/artifact_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_e1_20260607a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_e1_20260607a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    hard_negative_policy: same_category_popular_tail_global_train_only
+    train_sample_count: 79579
+    negative_ratio_requested: 31
+    hard_negative_sample_match_count: 79579
+    hard_negative_sample_fallback_count: 0
+    hard_negative_used_distinct_item_count: 309139
+    hard_negative_component_counts:
+      same_category_popular: 1193685
+      same_category_tail: 557053
+      global_rotated: 716211
+    explicit_negative_weight: 0.5
+    sampled_softmax_candidate_mode: per_example
+    sampled_softmax_correction: none
+    epochs: 1
+    loss_history:
+    - 3.41188
+    query_user_count: 478
+    queryless_user_count: 22
+    source_user_embedding_row_count: 6485503
+    positive_denominator_at_500: 692
+    recall_at_20: 0.004335
+    hit_rate_at_20: 0.006
+    recall_at_100: 0.014451
+    hit_rate_at_100: 0.02
+    recall_at_500: 0.031792
+    hit_rate_at_500: 0.044
+    raw_unique_positive_hits: 22
+    ties_hardneg_v1_e1_on_top500: true
+    candidate_generation_inputs_train_only: true
+    valid_test_label_paths_eval_only: true
+  pilot_20k_dynamic_neg_v3_opt_e1_20260608a:
+    artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dynamic_neg_v3_opt_e1_20260608a_training_run/artifact_manifest.json
+    source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dynamic_neg_v3_opt_e1_20260608a_source/source_index_manifest.json
+    direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_dynamic_neg_v3_opt_e1_20260608a_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+    dynamic_negative_sampling: true
+    dynamic_negative_sampling_mode: same_category_popular_tail_global_train_only
+    dynamic_negative_ratios:
+      same_category_popular: 0.5
+      same_category_tail: 0.25
+      global_random: 0.25
+    negative_samples: 31
+    sampled_softmax_candidate_mode: per_example
+    sampled_softmax_correction: none
+    unique_negatives_per_example: true
+    epochs: 1
+    loss_history:
+    - 3.401916
+    dynamic_negative_used_count: 60671216
+    dynamic_negative_component_counts:
+      same_category_popular: 29357040
+      same_category_tail: 15657088
+      global_random: 15657088
+    explicit_negative_candidates_ignored_by_dynamic_sampling: true
+    explicit_negative_used_count: 0
+    query_user_count: 478
+    queryless_user_count: 22
+    source_user_embedding_row_count: 6485503
+    positive_denominator_at_500: 692
+    recall_at_20: 0.0
+    hit_rate_at_20: 0.0
+    recall_at_100: 0.0
+    hit_rate_at_100: 0.0
+    recall_at_500: 0.011561
+    hit_rate_at_500: 0.016
+    raw_unique_positive_hits: 8
+    underperforms_fixed_hardneg_v1_and_mix_v2: true
+    first_unoptimized_dynamic_run_stopped_due_to_per_example_category_pool_materialization_too_slow: true
+    candidate_generation_inputs_train_only: true
+    valid_test_label_paths_eval_only: true
+  pilot_20k_hardneg_weight_grid_fulluser_20260608b:
+    experiment_scope: explicit_negative_weight_grid_on_fixed_hard_negative_datasets
+    rerun_reason: previous_limited_user_grid_20260608a_generated_only_19000_user_embeddings_and_fell_back_to_projected_seed_queries
+    corrected_user_embedding_scope: full_train_sequences
+    negative_samples: 31
+    sampled_softmax_candidate_mode: per_example
+    sampled_softmax_correction: none
+    epochs: 1
+    query_user_count: 478
+    queryless_user_count: 22
+    source_user_embedding_row_count: 6485503
+    positive_denominator_at_500: 692
+    query_source_counts:
+      artifact_user_embedding: 478
+    projected_seed_query_count: 0
+    runs:
+      hardneg_v1_w030:
+        run_id: pilot_20k_hardneg_v1_ns31_w030_e1_fulluser_grid_20260608b
+        artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w030_e1_fulluser_grid_20260608b_training_run/artifact_manifest.json
+        source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w030_e1_fulluser_grid_20260608b_source/source_index_manifest.json
+        direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w030_e1_fulluser_grid_20260608b_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+        hard_negative_policy: same_category_popular_train_only
+        explicit_negative_weight: 0.3
+        explicit_negative_used_count: 539856
+        loss_history:
+        - 3.412474
+        recall_at_20: 0.004335
+        hit_rate_at_20: 0.006
+        recall_at_100: 0.014451
+        hit_rate_at_100: 0.02
+        recall_at_500: 0.030347
+        hit_rate_at_500: 0.042
+        raw_unique_positive_hits: 21
+      hardneg_v1_w070:
+        run_id: pilot_20k_hardneg_v1_ns31_w070_e1_fulluser_grid_20260608b
+        artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w070_e1_fulluser_grid_20260608b_training_run/artifact_manifest.json
+        source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w070_e1_fulluser_grid_20260608b_source/source_index_manifest.json
+        direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w070_e1_fulluser_grid_20260608b_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+        hard_negative_policy: same_category_popular_train_only
+        explicit_negative_weight: 0.7
+        explicit_negative_used_count: 1319648
+        loss_history:
+        - 3.412655
+        recall_at_20: 0.004335
+        hit_rate_at_20: 0.006
+        recall_at_100: 0.013006
+        hit_rate_at_100: 0.018
+        recall_at_500: 0.030347
+        hit_rate_at_500: 0.042
+        raw_unique_positive_hits: 21
+      hardneg_v1_w100:
+        run_id: pilot_20k_hardneg_v1_ns31_w100_e1_fulluser_grid_20260608b
+        artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w100_e1_fulluser_grid_20260608b_training_run/artifact_manifest.json
+        source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w100_e1_fulluser_grid_20260608b_source/source_index_manifest.json
+        direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_v1_ns31_w100_e1_fulluser_grid_20260608b_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+        hard_negative_policy: same_category_popular_train_only
+        explicit_negative_weight: 1.0
+        explicit_negative_used_count: 1859504
+        loss_history:
+        - 3.412719
+        recall_at_20: 0.004335
+        hit_rate_at_20: 0.006
+        recall_at_100: 0.011561
+        hit_rate_at_100: 0.016
+        recall_at_500: 0.028902
+        hit_rate_at_500: 0.04
+        raw_unique_positive_hits: 20
+      hardneg_mix_v2_w030:
+        run_id: pilot_20k_hardneg_mix_v2_ns31_w030_e1_fulluser_grid_20260608b
+        artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w030_e1_fulluser_grid_20260608b_training_run/artifact_manifest.json
+        source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w030_e1_fulluser_grid_20260608b_source/source_index_manifest.json
+        direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w030_e1_fulluser_grid_20260608b_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+        hard_negative_policy: same_category_popular_tail_global_train_only
+        explicit_negative_weight: 0.3
+        explicit_negative_used_count: 539856
+        loss_history:
+        - 3.412457
+        recall_at_20: 0.004335
+        hit_rate_at_20: 0.006
+        recall_at_100: 0.013006
+        hit_rate_at_100: 0.018
+        recall_at_500: 0.030347
+        hit_rate_at_500: 0.042
+        raw_unique_positive_hits: 21
+      hardneg_mix_v2_w070:
+        run_id: pilot_20k_hardneg_mix_v2_ns31_w070_e1_fulluser_grid_20260608b
+        artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w070_e1_fulluser_grid_20260608b_training_run/artifact_manifest.json
+        source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w070_e1_fulluser_grid_20260608b_source/source_index_manifest.json
+        direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w070_e1_fulluser_grid_20260608b_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+        hard_negative_policy: same_category_popular_tail_global_train_only
+        explicit_negative_weight: 0.7
+        explicit_negative_used_count: 1319648
+        loss_history:
+        - 3.412541
+        recall_at_20: 0.004335
+        hit_rate_at_20: 0.006
+        recall_at_100: 0.013006
+        hit_rate_at_100: 0.018
+        recall_at_500: 0.030347
+        hit_rate_at_500: 0.042
+        raw_unique_positive_hits: 21
+      hardneg_mix_v2_w100:
+        run_id: pilot_20k_hardneg_mix_v2_ns31_w100_e1_fulluser_grid_20260608b
+        artifact_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w100_e1_fulluser_grid_20260608b_training_run/artifact_manifest.json
+        source_index_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w100_e1_fulluser_grid_20260608b_source/source_index_manifest.json
+        direct_eval_manifest_path: outputs/recall/pool500_method_sources/recent_2y/two_tower_DSSM/pilot_20k_hardneg_mix_v2_ns31_w100_e1_fulluser_grid_20260608b_eval_seed10_rec07/raw_two_tower_dssm_direct_eval_manifest.json
+        hard_negative_policy: same_category_popular_tail_global_train_only
+        explicit_negative_weight: 1.0
+        explicit_negative_used_count: 1859504
+        loss_history:
+        - 3.412562
+        recall_at_20: 0.004335
+        hit_rate_at_20: 0.006
+        recall_at_100: 0.014451
+        hit_rate_at_100: 0.02
+        recall_at_500: 0.030347
+        hit_rate_at_500: 0.042
+        raw_unique_positive_hits: 21
+    best_grid_recall_at_500: 0.030347
+    best_grid_raw_unique_positive_hits: 21
+    underperforms_weight_0p5_baseline: true
+    weight_0p5_baseline_recall_at_500: 0.031792
+    weight_0p5_baseline_raw_unique_positive_hits: 22
+    candidate_generation_inputs_train_only: true
+    valid_test_label_paths_eval_only: true
+  conclusion: hard_negative_weight_grid_20260608b_does_not_beat_weight_0p5_keep_hardneg_v1_or_mix_v2_e1_as_best_diagnostic_and_hide_from_active_route
+blockers:
+- hidden_from_active_route_due_to_weak_single_source_recall_keep_artifacts_for_diagnostic_reference_only
+- hard_negative_weight_grid_20260608b_does_not_beat_weight_0p5_best_on_fixed_500_direct_eval
+- hard_negative_v1_and_mixture_v2_only_validated_on_500_user_diagnostic_slice_need_larger_eval_before_promotion
+- dynamic_negative_v3_opt_respects_train_only_sampling_but_underperforms_fixed_hardneg_v1_v2_on_fixed_500_direct_eval
+- longer_epoch_final_checkpoints_underperform_epoch1_despite_lower_loss_need_checkpoint_or_early_stopping_before_more_epochs
+- dssm_still_diagnostic_only_not_pool500_ready_not_ranking_input_replacement
+- temperature_0p1_and_text_dedup_do_not_improve_over_current_batch_shared_logq_best

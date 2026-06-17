@@ -63,6 +63,16 @@ def test_load_batch_sequences_caps_priority_users_by_limit(tmp_path: Path) -> No
 
 
 
+def test_read_priority_user_allowlist_supports_text_and_jsonl(tmp_path: Path) -> None:
+    from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _read_priority_user_allowlist
+
+    allowlist_path = tmp_path / "users.jsonl"
+    allowlist_path.write_text('u1\n{"user_id": "u2"}\nu1\n\n', encoding="utf-8")
+
+    assert _read_priority_user_allowlist(allowlist_path) == ["u1", "u2"]
+
+
+
 def test_recall_runner_has_no_profile_or_target_user_runtime_overrides() -> None:
     source_path = Path("D:/sinrotic_code/python_project/summer/RS_agent/rs_lab/experiments/recall/run_full_data_pool500_recall_only.py")
     source = source_path.read_text(encoding="utf-8")
@@ -72,6 +82,7 @@ def test_recall_runner_has_no_profile_or_target_user_runtime_overrides() -> None
     assert "POOL500_VNEXT_RECALL_PROFILE" not in source
     assert "target_user_manifest" not in source
     assert "target-user-manifest" not in source
+    assert "--priority-user-allowlist" in source
 
 
 
@@ -117,8 +128,8 @@ def test_load_source_itemcf_accepts_sharded_source_manifest_with_allowed_seeds(t
     _write_jsonl(
         input_dir / "method_dataset_rows.jsonl",
         [
-            {"src_item_id": "seed-a", "dst_item_id": "cand-a", "itemcf_score": 0.9},
-            {"src_item_id": "seed-z", "dst_item_id": "cand-z", "itemcf_score": 0.8},
+            {"src_item_id": "seed-a", "dst_item_id": "cand-a", "itemcf_score": 0.9, "edge_rank": 1, "train_only": True, "source_method": "itemcf_weak"},
+            {"src_item_id": "seed-z", "dst_item_id": "cand-z", "itemcf_score": 0.8, "edge_rank": 1, "train_only": True, "source_method": "itemcf_weak"},
         ],
     )
     manifest_path = input_dir / "method_dataset_manifest.json"
@@ -143,13 +154,13 @@ def test_load_source_itemcf_accepts_sharded_source_manifest_with_allowed_seeds(t
 
 def test_main_route_defaults_use_local_formal_pool500_source_indexes() -> None:
     expected_suffixes = {
-        "semantic": "outputs/recall/pool500_method_sources/semantic/local_formal_semantic_20260525/source_index_manifest.json",
+        "semantic": "outputs/recall/pool500_method_sources_newdata/semantic/semantic_recent2y_formal_target10k_v1/source_index_manifest.json",
         "semantic_title_category_expansion": "outputs/recall/pool500_method_sources/semantic_title_category_expansion/local_formal_semantic_title_category_20260525/source_index_manifest.json",
         "co_visit_fallback_repair": "outputs/recall/pool500_method_sources/co_visit_fallback_repair/local_formal_co_visit_repair_20260525/source_index_manifest.json",
-        "usercf_recall": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json",
-        "swing_recall": "outputs/recall/pool500_method_sources/swing_recall/local_formal_swing_recall_20260525/source_index_manifest.json",
-        "itemcf_strong": "outputs/recall/pool500_method_sources/itemcf_strong_relaxed_seedsrc_v3_from_method_dataset/itemcf_strong/formal_sharded/source_index_manifest.json",
-        "two_tower": "outputs/recall/pool500_full_sources/two_tower/index/source_index_manifest.json",
+        "usercf_recall": "outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json",
+        "swing_recall": "outputs/recall/pool500_method_sources/recent_2y/swing_recall/formal/run_20260606_datawhale_f1_main_route_v1/source_index_manifest.json",
+        "itemcf_strong": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json",
+        "two_tower": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json",
     }
 
     for source, expected_suffix in expected_suffixes.items():
@@ -199,6 +210,72 @@ def test_load_batch_semantic_index_keeps_seed_and_matching_candidates(tmp_path: 
     assert "semantic_tokens" in index["seed"]
 
 
+def test_augcf_route_budget_policy_detects_diagnostic_variant() -> None:
+    from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _augcf_route_budget_policy
+
+    policy = _augcf_route_budget_policy(
+        {
+            "path": Path("augcf_source_index_manifest.json"),
+            "manifest": {
+                "source": "itemcf_strong",
+                "diagnostic_only": True,
+                "source_variant": "itemcf_strong_augcf_lite_recent2y_v1",
+                "diagnostic_policy": {"max_final_hot_share_per_user": 0.2, "max_pseudo_per_user": 7},
+            },
+        }
+    )
+
+    assert policy["enabled"] is True
+    assert policy["source_variant"] == "itemcf_strong_augcf_lite_recent2y_v1"
+    assert policy["max_final_hot_share_per_user"] == pytest.approx(0.2)
+    assert policy["max_pseudo_per_user"] == 7
+    assert policy["promotion_allowed"] is False
+
+
+def test_augcf_route_budget_cap_removes_only_diagnostic_augcf_candidates() -> None:
+    from rs_core.recsys.types import MergedCandidate
+    from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _apply_augcf_route_budget_cap
+
+    candidates = [
+        MergedCandidate(
+            item_id="augcf_pseudo_hot",
+            sources=["itemcf_strong"],
+            source_scores={"itemcf_strong": 0.1},
+            metadata={"metadata": {"source_variant": "itemcf_strong_augcf_lite_recent2y_v1", "edge_type": "pseudo_augcf_lite", "dst_hotness_bucket": "hot"}},
+        ),
+        MergedCandidate(
+            item_id="augcf_observed_hot",
+            sources=["itemcf_strong"],
+            source_scores={"itemcf_strong": 0.2},
+            metadata={"source_variant": "itemcf_strong_augcf_lite_recent2y_v1", "edge_type": "observed_strong", "dst_hotness_bucket": "hot"},
+        ),
+        MergedCandidate(
+            item_id="relaxed_hot",
+            sources=["itemcf_strong"],
+            source_scores={"itemcf_strong": 0.3},
+            metadata={"dst_hotness_bucket": "hot"},
+        ),
+        MergedCandidate(
+            item_id="popular_hot",
+            sources=["popular"],
+            source_scores={"popular": 0.4},
+            metadata={"hotness_bucket": "hot"},
+        ),
+    ]
+
+    capped, audit = _apply_augcf_route_budget_cap(
+        candidates,
+        {"enabled": True, "max_final_hot_share_per_user": 0.25, "max_pseudo_per_user": 0},
+    )
+
+    assert [candidate.item_id for candidate in capped] == ["relaxed_hot", "popular_hot"]
+    assert audit["removed_count"] == 2
+    assert audit["removed_hot_count"] == 2
+    assert audit["removed_pseudo_count"] == 1
+    assert audit["before_itemcf_strong_row_count"] == 3
+    assert audit["after_itemcf_strong_row_count"] == 1
+
+
 def test_load_batch_semantic_index_respects_candidate_limit(tmp_path: Path) -> None:
     semantic_path = tmp_path / "semantic.jsonl"
     _write_jsonl(
@@ -228,7 +305,11 @@ def test_vector_two_tower_batch_uses_realtime_history_for_all_users(tmp_path: Pa
         {"user_id": "missing", "recent_item_sequence": ["seed"], "recent_positive_item_sequence": ["seed"]},
     ]
 
-    recall = _precompute_two_tower_recall(sequences, index, {"two_tower_enabled": True, "two_tower_per_user": 1})
+    recall = _precompute_two_tower_recall(
+        sequences,
+        index,
+        {"two_tower_enabled": True, "two_tower_per_user": 1, "two_tower_artifact_user_embedding_first": False},
+    )
 
     assert {row.item_id for row in recall["known"]} == {"seed_match"}
     assert {row.item_id for row in recall["missing"]} == {"seed_match"}
@@ -524,31 +605,43 @@ def test_recall_only_runner_loads_source_artifacts_and_writes_contracts(tmp_path
     assert manifest["required_artifacts"]["final_readiness_contract"] == str(output_dir / "final_readiness_contract.json")
     assert manifest["ready_source_stoploss_audit"]["audit_path"] == str(output_dir / "ready_source_stoploss_audit.json")
     assert manifest["diagnostic_source_contribution"]["audit_path"] == str(output_dir / "diagnostic_source_contribution.json")
-    assert set(stoploss_audit["ready_sources"]) == {"category", "popular", "swing_recall", "usercf_recall"}
-    assert set(stoploss_audit["sources"]) == {"category", "popular", "swing_recall", "usercf_recall"}
+    assert set(stoploss_audit["ready_sources"]) == {"category", "popular", "swing_recall"}
+    assert set(stoploss_audit["sources"]) == {"category", "popular", "swing_recall"}
+    assert "itemcf_weak" not in stoploss_audit["ready_sources"]
+    assert "itemcf_strong" not in stoploss_audit["ready_sources"]
     assert "semantic_title_category_expansion" not in stoploss_audit["ready_sources"]
     assert "two_tower" not in stoploss_audit["ready_sources"]
     assert stoploss_audit["diagnostic_only_promotion_allowed"] is False
     assert stoploss_audit["ranking_input_replacement_allowed"] is False
     assert manifest["ranking_input_replacement_allowed"] is False
     assert stoploss_audit["pool1000_allowed"] is False
-    assert readiness["semantic"]["status"] == "BATCH_SCOPED_DIAGNOSTIC"
+    semantic_description_gate = read_json(output_dir / "semantic_description_evidence_gate.json")
+    co_visit_task_audit = read_json(output_dir / "co_visit_fallback_repair_task_audit.json")
+    assert readiness["semantic"]["status"] == "READY_CANDIDATE"
     assert readiness["semantic"]["canonical_source"] == "semantic"
+    assert manifest["required_artifacts"]["semantic_description_evidence_gate"] == str(output_dir / "semantic_description_evidence_gate.json")
+    assert semantic_description_gate["decision"] in {"PASS_GUARDED_CANDIDATE", "DIAGNOSTIC_ONLY"}
+    assert semantic_description_gate["promotion_allowed"] is False
+    assert manifest["required_artifacts"]["co_visit_fallback_repair_task_audit"] == str(output_dir / "co_visit_fallback_repair_task_audit.json")
+    assert co_visit_task_audit["source"] == "co_visit_fallback_repair"
+    assert co_visit_task_audit["primary_acceptance_metric"] == "fallback_underfill_repair_completion"
+    assert co_visit_task_audit["promotion_allowed"] is False
     assert readiness["semantic_title_category_expansion"]["status"] == "BATCH_SCOPED_DIAGNOSTIC"
     assert readiness["co_visit_fallback_repair"]["status"] == "BATCH_SCOPED_DIAGNOSTIC"
     assert readiness["co_visit_fallback_repair"]["status"] != "READY"
     assert readiness["co_visit_fallback_repair"]["algorithm_scope"] == "train_transition_metadata_repair_v0"
     assert readiness["co_visit_fallback_repair"]["complete_co_visit_graph_claimed"] is False
-    assert index_manifests["semantic"]["status"] == "BATCH_SCOPED_DIAGNOSTIC"
+    assert index_manifests["semantic"]["status"] == "READY_CANDIDATE"
     assert index_manifests["semantic"]["canonical_source"] == "semantic"
     assert index_manifests["semantic_title_category_expansion"]["status"] == "BATCH_SCOPED_DIAGNOSTIC"
     assert index_manifests["co_visit_fallback_repair"]["status"] == "BATCH_SCOPED_DIAGNOSTIC"
     assert index_manifests["co_visit_fallback_repair"]["algorithm_scope"] == "train_transition_metadata_repair_v0"
     assert index_manifests["co_visit_fallback_repair"]["complete_co_visit_graph_claimed"] is False
-    assert canonical_semantic_source_manifest["status"] == "BATCH_SCOPED_DIAGNOSTIC"
+    assert canonical_semantic_source_manifest["status"] == "READY_CANDIDATE"
     assert canonical_semantic_source_manifest["final_sources"] == []
-    assert canonical_semantic_source_manifest["batch_scoped_evidence_only"] is True
-    assert canonical_semantic_source_manifest["manifest_sha256"] == canonical_manifest_sha256({"source": "semantic", "ready": False})
+    assert canonical_semantic_source_manifest["batch_scoped_evidence_only"] is False
+    assert canonical_semantic_source_manifest["guarded_candidate_source"] is True
+    assert canonical_semantic_source_manifest["manifest_sha256"] == canonical_manifest_sha256({"source": "semantic", "ready": False, "ready_candidate": True})
     assert semantic_source_manifest["status"] == "BATCH_SCOPED_DIAGNOSTIC"
     assert semantic_source_manifest["final_sources"] == []
     assert semantic_source_manifest["batch_scoped_evidence_only"] is True
@@ -593,9 +686,16 @@ def test_recall_only_runner_loads_source_artifacts_and_writes_contracts(tmp_path
     assert underfill_audit["target_user_count"] == 1
     assert underfill_audit["remaining_underfilled_user_count"] >= 0
     assert underfill_audit["ranking_input_replacement_allowed"] is False
-    assert set(source_contribution_audit["ready_sources"]) == {"category", "popular", "swing_recall", "usercf_recall"}
-    assert set(source_contribution_audit["diagnostic_sources"]) == {"itemcf_weak", "itemcf_strong"}
-    assert source_contribution_audit["sources"]["usercf_recall"]["readiness_status"] == "READY"
+    assert set(source_contribution_audit["ready_sources"]) == {"category", "popular", "swing_recall"}
+    assert set(source_contribution_audit["diagnostic_sources"]) == {"itemcf_weak", "itemcf_strong", "usercf_recall"}
+    assert set(source_contribution_audit["guarded_candidate_sources"]) == {"semantic"}
+    assert source_contribution_audit["guarded_candidate_source_details"]["semantic"]["readiness_status"] == "READY_CANDIDATE"
+    assert "itemcf_weak" not in source_contribution_audit["ready_sources"]
+    assert "itemcf_strong" not in source_contribution_audit["ready_sources"]
+    assert source_contribution_audit["sources"]["usercf_recall"]["readiness_status"] == "DIAGNOSTIC_ONLY"
+    assert readiness["usercf_recall"]["status"] == "DIAGNOSTIC_ONLY"
+    assert readiness["usercf_recall"]["source_status"] == "DIAGNOSTIC_ONLY"
+    assert readiness["usercf_recall"]["diagnostic_output_status"] == "DIAGNOSTIC_OUTPUT_READY"
     assert source_contribution_audit["promotion_allowed"] is False
     assert source_overlap_audit["status"] == "DIAGNOSTIC_ONLY_AUDIT"
     assert source_overlap_audit["ranking_input_replacement_allowed"] is False
@@ -604,18 +704,21 @@ def test_recall_only_runner_loads_source_artifacts_and_writes_contracts(tmp_path
     assert final_readiness_contract["final_pool500_ready_claimed"] is False
     registry_audit = validate_per_source_readiness(readiness, {"required_sources": sorted(readiness)})
     assert all(blocker["code"] != "UNKNOWN_READINESS_STATUS" for blocker in registry_audit["blockers"])
+    assert "usercf_recall" not in registry_audit["ready_sources"]
+    assert registry_audit["status_by_source"]["semantic"] == "READY_CANDIDATE"
     assert "semantic" not in registry_audit["ready_sources"]
     assert "semantic_title_category_expansion" not in registry_audit["ready_sources"]
     assert "co_visit_fallback_repair" not in registry_audit["ready_sources"]
     assert final_readiness_contract["ranking_input_replacement_allowed"] is False
     assert final_readiness_contract["pool1000_allowed"] is False
     assert diagnostic_contribution["status"] == "DIAGNOSTIC_ONLY_AUDIT"
-    assert set(diagnostic_contribution["diagnostic_sources"]) == {"itemcf_weak", "itemcf_strong"}
+    assert set(diagnostic_contribution["diagnostic_sources"]) == {"itemcf_weak", "itemcf_strong", "usercf_recall"}
+    assert set(diagnostic_contribution["guarded_candidate_sources"]) == {"semantic"}
     assert diagnostic_contribution["promotion_allowed"] is False
     assert diagnostic_contribution["ranking_input_replacement_allowed"] is False
     assert diagnostic_contribution["pool1000_allowed"] is False
     assert diagnostic_contribution["diagnostic_row_total"] > 0
-    assert "usercf_recall" not in diagnostic_contribution["sources"]
+    assert diagnostic_contribution["sources"]["usercf_recall"]["readiness_status"] == "DIAGNOSTIC_ONLY"
     assert diagnostic_contribution["sources"]["itemcf_weak"]["marginal_candidate_share"] > 0
     assert diagnostic_contribution["sources"]["itemcf_strong"]["marginal_candidate_share"] > 0
     assert stoploss_audit["candidate_row_count"] < 1000
@@ -782,9 +885,11 @@ def _write_usercf_source(path: Path) -> Path:
     shard = path / "shard.jsonl"
     _write_jsonl(shard, [{"user_id": "u1", "candidates": [{"item_id": "usercf_1", "score": 4.0, "rank": 1, "source": "usercf_recall"}]}])
     readiness = {
-        "status": "READY",
+        "status": "DIAGNOSTIC_ONLY",
+        "source_status": "DIAGNOSTIC_ONLY",
+        "diagnostic_only": True,
         "index_status": "INDEX_READY",
-        "full_output_status": "FULL_OUTPUT_READY",
+        "diagnostic_output_status": "DIAGNOSTIC_OUTPUT_READY",
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
         "ranking_replacement_allowed": False,
@@ -797,8 +902,8 @@ def _write_usercf_source(path: Path) -> Path:
     (path / "readiness_contract.json").write_text(json.dumps(readiness), encoding="utf-8")
     manifest = {
         "status": "PASS",
-        "source_status": "READY",
-        "diagnostic_only": False,
+        "source_status": "DIAGNOSTIC_ONLY",
+        "diagnostic_only": True,
         "source": "usercf_recall",
         "index_scope": "FULL_DERIVED_INDEX",
         "train_only": True,

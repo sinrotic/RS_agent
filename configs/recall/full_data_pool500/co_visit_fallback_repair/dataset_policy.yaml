@@ -1,15 +1,53 @@
-schema_version: pool500_method_dataset_policy_v1
+schema_version: pool500_method_dataset_policy_v2_recent_2y
 source: co_visit_fallback_repair
-source_status: BATCH_SCOPED_DIAGNOSTIC
-role: co-visit and metadata-neighbor repair source
-dataset_policy: method_specific_covisit_repair_dataset
+canonical_source: co_visit_fallback_repair
+source_status: TARGET_SLICE_DIAGNOSTIC
+readiness: DEFERRED
+role: fallback repair for underfilled / behavior-sparse users, not primary recall
+method_dataset_policy: co_visit_recent2y_train_only_repair_dataset_v1
+algorithm_scope: train_transition_metadata_repair_v0
+complete_co_visit_graph_claimed: false
 train_only: true
+current_dataset_root: data/processed/amazon_2023_recall_recent_2y_1m_3m
+governance_manifest_path: data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/manifest.json
+allowed_inputs:
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/canonical_interactions.train.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/user_sequences.train.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/canonical_items.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_recall_inputs.jsonl
+  - data/processed/amazon_2023_recall_recent_2y_1m_3m/train_only_governance/user_quality_profile.jsonl
 forbidden_data_sources:
   - holdout
   - valid
   - test
   - LOPO
   - clean_10000
+  - oracle
+  - eval_label
+  - pool1000
+  - youtube_dnn
+  - full_data_derived_method_dataset
+eligible_user_policy: non_cold_start_train_sequence_users_requiring_repair
+eligible_user_buckets:
+  - fallback_only
+  - medium_behavior
+  - sequence_sufficient
+  - collaborative_rich
+excluded_user_buckets:
+  - cold_start
+scale_tiers:
+  smoke:
+    manifest: outputs/recall/pool500_method_sources_newdata/co_visit_recent2y_smoke_dataset_v1/manifest.json
+    eligible_user_manifest: outputs/recall/pool500_method_sources_newdata/co_visit_recent2y_smoke_dataset_v1/eligible_user_manifest.json
+    target_user_count: 10000
+    purpose: program_and_schema_validation_only
+    promotion_allowed: false
+  formal:
+    manifest: outputs/recall/pool500_method_sources_newdata/co_visit_recent2y_formal_dataset_v1/manifest.json
+    eligible_user_manifest: outputs/recall/pool500_method_sources_newdata/co_visit_recent2y_formal_dataset_v1/eligible_user_manifest.json
+    target_user_count: 1558964
+    purpose: official_method_logic_dataset_under_recent_2y_train_only_governance
+    quantity_policy: agent_managed_no_method_side_fixed_quantity_caps
 outputs_required:
   - method_dataset_manifest.json
   - source_index_manifest.json
@@ -18,8 +56,23 @@ outputs_required:
   - undercoverage_audit.json
   - resource_audit.json
   - no_holdout_audit.json
+evaluation_required_for_promotion:
+  - Recall@K
+  - user_coverage
+  - candidate_count_stats
+  - user_bucket_breakdown
+  - underfilled_user_repair_delta
+  - source_overlap_with_ready_sources
+  - no_holdout_audit
+  - route_gate_regression
 governance:
   candidate_generation_allowed: false
   ranking_input_replacement_allowed: false
   pool1000_allowed: false
   promotion_allowed: false
+  full_pool500_ready_declared: false
+  final_pool500_ready_claimed: false
+blockers:
+  - formal source artifact and effect report are not available yet
+  - builder should be sharded or executed remotely before full formal
+  - pair_support and distinct_user_support remain follow-up-only, not gates

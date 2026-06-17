@@ -27,8 +27,9 @@ from rs_lab.experiments.recall.run_phase1_itemcf_covisit_representative_merge_ev
 SCHEMA_VERSION = "pool500_usercf_recall_method_source_v1"
 SOURCE = "usercf_recall"
 SOURCE_STATUS = "DIAGNOSTIC_ONLY"
+FUTURE_PROMOTION_STATUS = "POOL500_RECALL_ONLY_SUPPLEMENTAL_READY"
 INDEX_SCOPE = "FULL_DERIVED_INDEX"
-DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_clean_full" / "manifest.json"
+DEFAULT_CLEAN_MANIFEST = ROOT / "data" / "processed" / "amazon_2023_recall_recent_2y_1m_3m" / "manifest.json"
 DEFAULT_SOURCE_CONFIG = ROOT / "configs" / "recall" / "full_data_pool500" / SOURCE / "source_config.yaml"
 DEFAULT_DATASET_POLICY = ROOT / "configs" / "recall" / "full_data_pool500" / SOURCE / "dataset_policy.yaml"
 DEFAULT_OUTPUT_ROOT = ROOT / "outputs" / "recall" / "pool500_method_sources"
@@ -76,10 +77,15 @@ def build_usercf_recall_method_source(
     candidate_top_k_per_user: int | None = None,
     generation_usercf_per_user: int | None = None,
     similar_users_top_k: int | None = None,
+    scoring_policy: str | None = None,
     target_batch_size: int | None = None,
     shard_count: int | None = None,
     max_items_per_user: int | None = None,
     max_item_user_freq: int | None = None,
+    src_min_positive_user_count: int | None = None,
+    dst_min_positive_user_count: int | None = None,
+    min_src_filtered_items_per_user: int | None = None,
+    keep_hot: bool | None = None,
     max_rss_mb: int | None = None,
     min_free_bytes: int = 0,
     min_free_memory_bytes: int = 0,
@@ -107,13 +113,23 @@ def build_usercf_recall_method_source(
         else source_config.get("generation_config_overrides", {}).get("usercf_per_user", candidate_top_k_per_user)
     )
     similar_users_top_k = int(similar_users_top_k if similar_users_top_k is not None else source_config.get("similar_users_top_k", 200))
+    scoring_policy = str(scoring_policy or source_config.get("scoring_policy") or "cosine_overlap")
     target_batch_size = int(target_batch_size if target_batch_size is not None else source_config.get("target_batch_size", 50))
     shard_count = int(shard_count if shard_count is not None else source_config.get("shard_count", 16))
     max_items_per_user = int(max_items_per_user if max_items_per_user is not None else source_config.get("max_items_per_user", 80))
     max_item_user_freq = int(max_item_user_freq if max_item_user_freq is not None else source_config.get("max_item_user_freq", 5000))
+    item_filter_policy = source_config.get("item_filter_policy") if isinstance(source_config.get("item_filter_policy"), dict) else {}
+    user_filter_policy = source_config.get("user_filter_policy") if isinstance(source_config.get("user_filter_policy"), dict) else {}
+    src_min_positive_user_count = int(src_min_positive_user_count if src_min_positive_user_count is not None else item_filter_policy.get("src_min_positive_user_count", 2))
+    dst_min_positive_user_count = int(dst_min_positive_user_count if dst_min_positive_user_count is not None else item_filter_policy.get("dst_min_positive_user_count", 3))
+    min_src_filtered_items_per_user = int(min_src_filtered_items_per_user if min_src_filtered_items_per_user is not None else user_filter_policy.get("min_src_filtered_items_per_user", 2))
+    keep_hot = bool(keep_hot if keep_hot is not None else item_filter_policy.get("keep_hot", True))
     max_rss_mb = int(max_rss_mb if max_rss_mb is not None else source_config.get("max_rss_mb", 4096))
+    method_dataset_manifest_path = _resolve_repo_path(method_dataset_manifest_path).resolve() if method_dataset_manifest_path else None
+    if target_user_limit < 0:
+        raise ValueError("target_user_limit must be non-negative")
+    _validate_scoring_policy(scoring_policy)
     _validate_positive(
-        target_user_limit=target_user_limit,
         candidate_top_k_per_user=candidate_top_k_per_user,
         generation_usercf_per_user=generation_usercf_per_user,
         similar_users_top_k=similar_users_top_k,
@@ -123,7 +139,6 @@ def build_usercf_recall_method_source(
         max_item_user_freq=max_item_user_freq,
         max_rss_mb=max_rss_mb,
     )
-    method_dataset_manifest_path = _resolve_repo_path(method_dataset_manifest_path).resolve() if method_dataset_manifest_path else None
     if method_dataset_manifest_path is None:
         _precheck_paths(clean_manifest_path, output_dir, eligible_user_quality_manifest, overwrite, resume)
     else:
@@ -182,8 +197,13 @@ def build_usercf_recall_method_source(
         include_medium_behavior=False,
         max_items_per_user=max_items_per_user,
         max_item_user_freq=max_item_user_freq,
+        src_min_positive_user_count=src_min_positive_user_count,
+        dst_min_positive_user_count=dst_min_positive_user_count,
+        min_src_filtered_items_per_user=min_src_filtered_items_per_user,
+        keep_hot=keep_hot,
         similar_users_top_k=similar_users_top_k,
         candidate_top_k_per_user=candidate_top_k_per_user,
+        scoring_policy=scoring_policy,
         shard_count=shard_count,
         target_user_limit=target_user_limit,
         target_batch_size=target_batch_size,
@@ -222,10 +242,15 @@ def build_usercf_recall_method_source(
         candidate_top_k_per_user=candidate_top_k_per_user,
         generation_usercf_per_user=generation_usercf_per_user,
         similar_users_top_k=similar_users_top_k,
+        scoring_policy=scoring_policy,
         target_batch_size=target_batch_size,
         shard_count=shard_count,
         max_items_per_user=max_items_per_user,
         max_item_user_freq=max_item_user_freq,
+        src_min_positive_user_count=src_min_positive_user_count,
+        dst_min_positive_user_count=dst_min_positive_user_count,
+        min_src_filtered_items_per_user=min_src_filtered_items_per_user,
+        keep_hot=keep_hot,
         max_rss_mb=max_rss_mb,
         runtime_seconds=round(perf_counter() - started, 6),
         route_ready=route_ready,
@@ -261,7 +286,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--candidate-top-k-per-user", type=int, default=None)
     parser.add_argument("--generation-usercf-per-user", type=int, default=None)
     parser.add_argument("--similar-users-top-k", type=int, default=None)
+    parser.add_argument("--scoring-policy", choices=("cosine_overlap", "iuf_cosine"), default=None)
     parser.add_argument("--target-batch-size", type=int, default=None)
+    parser.add_argument("--shard-count", type=int, default=None)
+    parser.add_argument("--max-items-per-user", type=int, default=None)
+    parser.add_argument("--max-item-user-freq", type=int, default=None)
+    parser.add_argument("--src-min-positive-user-count", type=int, default=None)
+    parser.add_argument("--dst-min-positive-user-count", type=int, default=None)
+    parser.add_argument("--min-src-filtered-items-per-user", type=int, default=None)
+    parser.add_argument("--keep-hot", action=argparse.BooleanOptionalAction, default=None)
+    parser.add_argument("--max-rss-mb", type=int, default=None)
+    parser.add_argument("--min-free-bytes", type=int, default=0)
+    parser.add_argument("--min-free-memory-bytes", type=int, default=0)
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--route-ready", action="store_true")
@@ -282,7 +318,18 @@ def main() -> None:
         candidate_top_k_per_user=args.candidate_top_k_per_user,
         generation_usercf_per_user=args.generation_usercf_per_user,
         similar_users_top_k=args.similar_users_top_k,
+        scoring_policy=args.scoring_policy,
         target_batch_size=args.target_batch_size,
+        shard_count=args.shard_count,
+        max_items_per_user=args.max_items_per_user,
+        max_item_user_freq=args.max_item_user_freq,
+        src_min_positive_user_count=args.src_min_positive_user_count,
+        dst_min_positive_user_count=args.dst_min_positive_user_count,
+        min_src_filtered_items_per_user=args.min_src_filtered_items_per_user,
+        keep_hot=args.keep_hot,
+        max_rss_mb=args.max_rss_mb,
+        min_free_bytes=args.min_free_bytes,
+        min_free_memory_bytes=args.min_free_memory_bytes,
         overwrite=args.overwrite,
         resume=args.resume,
         route_ready=args.route_ready,
@@ -324,6 +371,11 @@ def _validate_positive(**values: int) -> None:
     for name, value in values.items():
         if value <= 0:
             raise ValueError(f"{name} must be positive")
+
+
+def _validate_scoring_policy(scoring_policy: str) -> None:
+    if scoring_policy not in {"cosine_overlap", "iuf_cosine"}:
+        raise ValueError(f"Unsupported scoring_policy: {scoring_policy}")
 
 
 def _precheck_paths(clean_manifest_path: Path, output_dir: Path, eligible_manifest: Path | None, overwrite: bool, resume: bool) -> None:
@@ -430,6 +482,7 @@ def _build_train_only_target_diagnostics(
     raw_item_count = 0
     matched_external_targets = 0
     preselection_limit = max(target_user_limit, target_user_limit * 10)
+    unlimited_targets = target_user_limit == 0
 
     for row in iter_jsonl(train_sequences_path):
         user_id = str(row.get("user_id") or "")
@@ -453,18 +506,24 @@ def _build_train_only_target_diagnostics(
             if matched_external_targets >= len(external_target_set):
                 break
         else:
-            _push_candidate_profile(candidates, profile, preselection_limit, raw_user_count)
+            if unlimited_targets:
+                candidates.append(profile)
+            else:
+                _push_candidate_profile(candidates, profile, preselection_limit, raw_user_count)
 
     if external_target_ids is not None:
         candidates_by_id = {str(profile["user_id"]): profile for profile in candidates}
         selected_candidates = [candidates_by_id[user_id] for user_id in external_target_ids if user_id in candidates_by_id]
+    elif unlimited_targets:
+        selected_candidates = list(candidates)
     else:
         selected_candidates = [entry[4] for entry in heapq.nlargest(target_user_limit, candidates)]
     users: dict[str, dict[str, Any]] = {}
     indexed_after_hot: dict[str, list[str]] = {}
     overlap_potential: dict[str, int] = {}
     selected_candidates.sort(key=lambda profile: (-int(profile["positive_count"]), -int(profile["unique_item_count"]), str(profile["user_id"])))
-    for profile in selected_candidates[:target_user_limit]:
+    selected_profiles = selected_candidates if unlimited_targets else selected_candidates[:target_user_limit]
+    for profile in selected_profiles:
         user_id = str(profile.pop("user_id"))
         kept_items = list(profile["indexed_items"])
         users[user_id] = profile
@@ -714,7 +773,9 @@ def _generated_target_profiles(target_diagnostics: dict[str, Any], target_user_l
             -int(overlap_potential.get(user_id, 0)),
             user_id,
         ),
-    )[:target_user_limit]
+    )
+    if target_user_limit:
+        ranked = ranked[:target_user_limit]
     return [_eligible_profile(user_id, users[user_id], overlap_potential.get(user_id, 0)) for user_id in ranked]
 
 
@@ -742,7 +803,7 @@ def _validate_external_eligible_manifest(payload: dict[str, Any], target_user_li
         if not user_id:
             continue
         selected.append({**profile, "user_id": user_id, "quality_bucket": "target500_high_cost_slice", "eligible_for_usercf_slice": True})
-        if len(selected) >= target_user_limit:
+        if target_user_limit and len(selected) >= target_user_limit:
             break
     return selected
 
@@ -911,16 +972,21 @@ def _final_source_index_manifest(
     candidate_top_k_per_user: int,
     generation_usercf_per_user: int,
     similar_users_top_k: int,
+    scoring_policy: str,
     target_batch_size: int,
     shard_count: int,
     max_items_per_user: int,
     max_item_user_freq: int,
+    src_min_positive_user_count: int,
+    dst_min_positive_user_count: int,
+    min_src_filtered_items_per_user: int,
+    keep_hot: bool,
     max_rss_mb: int,
     runtime_seconds: float,
     route_ready: bool = False,
 ) -> dict[str, Any]:
     outputs = core_manifest.get("outputs", {}) if isinstance(core_manifest.get("outputs"), dict) else {}
-    source_status = "READY" if route_ready else SOURCE_STATUS
+    source_status = FUTURE_PROMOTION_STATUS if route_ready else SOURCE_STATUS
     final_manifest = {
         "schema_version": f"{SCHEMA_VERSION}.source_index_manifest",
         "status": "PASS",
@@ -951,13 +1017,19 @@ def _final_source_index_manifest(
             "user_coverage_count_delta": coverage_audit["new_vs_old_delta"]["user_coverage_count_delta"],
         },
         "generation_config_overrides": {"usercf_per_user": generation_usercf_per_user},
+        "scoring_policy": scoring_policy,
         "config_caps": {
             "candidate_top_k_per_user": candidate_top_k_per_user,
             "similar_users_top_k": similar_users_top_k,
+            "scoring_policy": scoring_policy,
             "target_batch_size": target_batch_size,
             "shard_count": shard_count,
             "max_items_per_user": max_items_per_user,
             "max_item_user_freq": max_item_user_freq,
+            "src_min_positive_user_count": src_min_positive_user_count,
+            "dst_min_positive_user_count": dst_min_positive_user_count,
+            "min_src_filtered_items_per_user": min_src_filtered_items_per_user,
+            "keep_hot": keep_hot,
             "max_rss_mb": max_rss_mb,
         },
         **FORBIDDEN_SWITCHES,
@@ -979,7 +1051,7 @@ def _final_source_index_manifest(
 def _write_readiness_contract(output_dir: Path, final_manifest: dict[str, Any], *, route_ready: bool = False) -> None:
     manifest_path = output_dir / "source_index_manifest.json"
     signature = _file_signature(manifest_path)
-    source_status = "READY" if route_ready else SOURCE_STATUS
+    source_status = FUTURE_PROMOTION_STATUS if route_ready else SOURCE_STATUS
     payload = {
         "schema_version": f"{SCHEMA_VERSION}.readiness_contract",
         "source": SOURCE,

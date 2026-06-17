@@ -123,3 +123,19 @@ def test_pool500_adapter_allows_extra_diagnostic_sources_only_when_explicit() ->
     assert allowed["status"] == PASS
     candidate = allowed["candidates_by_user"]["u1"][0]  # type: ignore[index]
     assert candidate.sources == ["cold_start_category_sibling"]
+
+
+def test_pool500_adapter_uses_score_fallback_only_when_explicit() -> None:
+    row = _row(source="swing_recall")
+    row.pop("score")
+    row["source_scores"] = {"swing_recall": 2.5}
+
+    blocked = adapt_pool500_rows_to_candidates([row])
+    allowed = adapt_pool500_rows_to_candidates([row], allow_score_fallback=True)
+
+    assert blocked["status"] == STOP
+    assert "POOL500_REQUIRED_FIELD_MISSING" in _blocker_codes(blocked)
+    assert allowed["status"] == PASS
+    candidate = allowed["candidates_by_user"]["u1"][0]  # type: ignore[index]
+    assert candidate.source_scores == {"swing_recall": 2.5}
+    assert "POOL500_SCORE_FALLBACK_USED" in _diagnostic_codes(allowed)

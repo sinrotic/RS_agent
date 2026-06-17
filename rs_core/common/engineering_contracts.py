@@ -16,6 +16,7 @@ _REQUIRED_ROUTE_KEYS = {
     "current_recall_route",
     "current_ranking_route",
     "current_agent_demo_route",
+    "current_online_service_route",
 }
 _ALLOWED_ROUTE_STATUSES = {
     "current",
@@ -265,6 +266,9 @@ def validate_route_registry_contract(root: Path, registry_path: str | Path) -> l
     pool500_continuation = routes.get(_POOL500_CONTINUATION_ROUTE)
     if isinstance(pool500_continuation, dict):
         violations.extend(_pool500_continuation_route_violations(display_path, pool500_continuation))
+    online_service_route = routes.get("current_online_service_route")
+    if isinstance(online_service_route, dict):
+        violations.extend(_online_service_route_violations(root, display_path, online_service_route))
     return violations
 
 
@@ -438,6 +442,84 @@ def select_test_paths_by_markers(
         if test_markers_for_file(path) & selected_markers:
             selected.append(_display_path(root, path))
     return selected
+
+
+def _online_service_route_violations(root: Path, display_path: str, route: dict[str, Any]) -> list[ContractViolation]:
+    route_path = f"{display_path}:current_online_service_route"
+    dual_path_fields = sorted(
+        field
+        for field in route
+        if field.startswith("dual_path_governance") or field == "explicit_dual_path_governance"
+    )
+    if dual_path_fields:
+        return [
+            ContractViolation(
+                check="online_serving_dual_path_governance_forbidden",
+                path=route_path,
+                message=f"current_online_service_route 不允许声明 dual-path governance 旁路字段：{dual_path_fields}。",
+            )
+        ]
+    required_output_paths = route.get("required_output_paths", [])
+    config_paths = route.get("config_paths", [])
+    if not isinstance(required_output_paths, list) or len(required_output_paths) != 1 or not isinstance(required_output_paths[0], str):
+        return [
+            ContractViolation(
+                check="online_serving_required_output_path_shape",
+                path=route_path,
+                message="current_online_service_route.required_output_paths 必须精确包含一个 pool500 candidate artifact 路径字符串。",
+            )
+        ]
+    if not isinstance(config_paths, list) or len(config_paths) != 1 or not isinstance(config_paths[0], str):
+        return [
+            ContractViolation(
+                check="online_serving_config_path_shape",
+                path=route_path,
+                message="current_online_service_route.config_paths 必须精确包含一个 serving config 路径字符串。",
+            )
+        ]
+    config_path = config_paths[0]
+    try:
+        serving_config = load_config(_resolve_under_root(root, Path(config_path)))
+    except Exception as exc:
+        return [
+            ContractViolation(
+                check="online_serving_config_loadable",
+                path=route_path,
+                message=f"online serving route 引用的配置无法读取：{config_path}：{exc}",
+            )
+        ]
+    online_route = serving_config.get("online_route")
+    if not isinstance(online_route, dict):
+        return [
+            ContractViolation(
+                check="online_serving_config_route_shape",
+                path=config_path,
+                message="online serving 配置必须包含 online_route 映射。",
+            )
+        ]
+    registry_path = required_output_paths[0]
+    serving_path = online_route.get("pool500_candidates_path")
+    if not isinstance(serving_path, str) or not serving_path:
+        return [
+            ContractViolation(
+                check="online_serving_pool500_candidates_path_required",
+                path=config_path,
+                message="online serving 配置 online_route.pool500_candidates_path 必须是非空路径字符串。",
+            )
+        ]
+    if registry_path != serving_path:
+        return [
+            ContractViolation(
+                check="online_serving_artifact_path_consistency",
+                path=route_path,
+                message=(
+                    "current_online_service_route.required_output_paths[0] 必须与 "
+                    f"{config_path} online_route.pool500_candidates_path 一致："
+                    f"registry={registry_path!r}, serving_config={serving_path!r}。"
+                ),
+            )
+        ]
+    return []
 
 
 def _pool500_continuation_route_violations(display_path: str, route: dict[str, Any]) -> list[ContractViolation]:

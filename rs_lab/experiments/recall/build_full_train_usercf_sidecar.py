@@ -27,6 +27,10 @@ DEFAULT_ELIGIBLE_USER_QUALITY_MANIFEST = ROOT / "outputs" / "recall" / "pool500_
 DEFAULT_OUTPUT_DIR = ROOT / "outputs" / "recall" / "pool500_sidecar_fix" / "usercf_recall_guarded_diagnostic"
 DEFAULT_MAX_ITEMS_PER_USER = 80
 DEFAULT_MAX_ITEM_USER_FREQ = 5000
+DEFAULT_SRC_MIN_POSITIVE_USER_COUNT = 2
+DEFAULT_DST_MIN_POSITIVE_USER_COUNT = 3
+DEFAULT_MIN_SRC_FILTERED_ITEMS_PER_USER = 2
+DEFAULT_KEEP_HOT = True
 DEFAULT_SIMILAR_USERS_TOP_K = 100
 DEFAULT_CANDIDATE_TOP_K_PER_USER = 200
 DEFAULT_SHARD_COUNT = 64
@@ -54,18 +58,30 @@ FORBIDDEN_SWITCHES = {
     "promotion_allowed": False,
     "final_pool500_ready_claimed": False,
 }
+METHOD_DATASET_USERCF_SCHEMA = "eligible_user_sequence_v1"
+METHOD_DATASET_RPA_LIKE_SCHEMA = "rpa_like_eligible_sequence_v1"
+METHOD_DATASET_RPA_LIKE_SOURCE_METHOD = "rpa_like_recursive_cf"
+COSINE_OVERLAP_SCORING_POLICY = "cosine_overlap"
+IUF_COSINE_SCORING_POLICY = "iuf_cosine"
+SCORING_POLICIES = {COSINE_OVERLAP_SCORING_POLICY, IUF_COSINE_SCORING_POLICY}
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build a guarded diagnostic train-only UserCF recall sidecar index.")
     parser.add_argument("--clean-manifest", default=str(DEFAULT_CLEAN_MANIFEST))
     parser.add_argument("--method-dataset-manifest", default=None)
+    parser.add_argument("--target-users", default=None, help="Optional JSONL of user_id-only materialization targets for method-dataset mode.")
     parser.add_argument("--eligible-user-quality-manifest", default=str(DEFAULT_ELIGIBLE_USER_QUALITY_MANIFEST))
     parser.add_argument("--include-medium-behavior", action="store_true")
     parser.add_argument("--max-items-per-user", type=int, default=DEFAULT_MAX_ITEMS_PER_USER)
     parser.add_argument("--max-item-user-freq", type=int, default=DEFAULT_MAX_ITEM_USER_FREQ)
+    parser.add_argument("--src-min-positive-user-count", type=int, default=DEFAULT_SRC_MIN_POSITIVE_USER_COUNT)
+    parser.add_argument("--dst-min-positive-user-count", type=int, default=DEFAULT_DST_MIN_POSITIVE_USER_COUNT)
+    parser.add_argument("--min-src-filtered-items-per-user", type=int, default=DEFAULT_MIN_SRC_FILTERED_ITEMS_PER_USER)
+    parser.add_argument("--keep-hot", action=argparse.BooleanOptionalAction, default=DEFAULT_KEEP_HOT)
     parser.add_argument("--similar-users-top-k", type=int, default=DEFAULT_SIMILAR_USERS_TOP_K)
     parser.add_argument("--candidate-top-k-per-user", type=int, default=DEFAULT_CANDIDATE_TOP_K_PER_USER)
+    parser.add_argument("--scoring-policy", choices=sorted(SCORING_POLICIES), default=COSINE_OVERLAP_SCORING_POLICY)
     parser.add_argument("--shard-count", type=int, default=DEFAULT_SHARD_COUNT)
     parser.add_argument("--target-user-limit", type=int, default=0, help="Keep at most N eligible diagnostic users; 0 keeps all eligible users.")
     parser.add_argument("--target-batch-size", type=int, default=DEFAULT_TARGET_BATCH_SIZE)
@@ -85,11 +101,17 @@ def build_full_train_usercf_sidecar(
     output_dir: Path = DEFAULT_OUTPUT_DIR,
     eligible_user_quality_manifest: Path | None = DEFAULT_ELIGIBLE_USER_QUALITY_MANIFEST,
     method_dataset_manifest: Path | None = None,
+    target_users_path: Path | None = None,
     include_medium_behavior: bool = False,
     max_items_per_user: int = DEFAULT_MAX_ITEMS_PER_USER,
     max_item_user_freq: int = DEFAULT_MAX_ITEM_USER_FREQ,
+    src_min_positive_user_count: int = DEFAULT_SRC_MIN_POSITIVE_USER_COUNT,
+    dst_min_positive_user_count: int = DEFAULT_DST_MIN_POSITIVE_USER_COUNT,
+    min_src_filtered_items_per_user: int = DEFAULT_MIN_SRC_FILTERED_ITEMS_PER_USER,
+    keep_hot: bool = DEFAULT_KEEP_HOT,
     similar_users_top_k: int = DEFAULT_SIMILAR_USERS_TOP_K,
     candidate_top_k_per_user: int = DEFAULT_CANDIDATE_TOP_K_PER_USER,
+    scoring_policy: str = COSINE_OVERLAP_SCORING_POLICY,
     shard_count: int = DEFAULT_SHARD_COUNT,
     target_user_limit: int = 0,
     target_batch_size: int = DEFAULT_TARGET_BATCH_SIZE,
@@ -106,8 +128,12 @@ def build_full_train_usercf_sidecar(
     _validate_caps(
         max_items_per_user=max_items_per_user,
         max_item_user_freq=max_item_user_freq,
+        src_min_positive_user_count=src_min_positive_user_count,
+        dst_min_positive_user_count=dst_min_positive_user_count,
+        min_src_filtered_items_per_user=min_src_filtered_items_per_user,
         similar_users_top_k=similar_users_top_k,
         candidate_top_k_per_user=candidate_top_k_per_user,
+        scoring_policy=scoring_policy,
         shard_count=shard_count,
         target_batch_size=target_batch_size,
         min_free_bytes=min_free_bytes,
@@ -123,6 +149,7 @@ def build_full_train_usercf_sidecar(
     output_dir = output_dir.resolve()
     eligible_user_quality_manifest = eligible_user_quality_manifest.resolve() if eligible_user_quality_manifest else None
     method_dataset_manifest = method_dataset_manifest.resolve() if method_dataset_manifest else None
+    target_users_path = target_users_path.resolve() if target_users_path else None
     method_dataset_payload: dict[str, Any] | None = None
     method_dataset_rows_path: Path | None = None
     if method_dataset_manifest is None:
@@ -132,6 +159,8 @@ def build_full_train_usercf_sidecar(
         method_dataset_payload, method_dataset_rows_path = _resolve_method_dataset_rows(method_dataset_manifest)
         _precheck_input_path(method_dataset_manifest, "method_dataset_manifest_path")
         _precheck_input_path(method_dataset_rows_path, "method_dataset_rows_path")
+    if target_users_path:
+        _precheck_target_users_path(target_users_path)
     _enforce_memory_guard(memory_samples, max_rss_mb=max_rss_mb, min_free_memory_bytes=min_free_memory_bytes)
     disk_free_start = shutil.disk_usage(_existing_ancestor(output_dir.parent)).free
     if disk_free_start < min_free_bytes:
@@ -150,6 +179,7 @@ def build_full_train_usercf_sidecar(
         train_sequence_path = method_dataset_rows_path
         eligible_manifest_payload = None
         eligible_target_user_ids = None
+    explicit_target_user_ids = _load_target_user_ids(target_users_path, target_user_limit) if target_users_path else None
 
     if output_dir.exists() and overwrite:
         shutil.rmtree(output_dir)
@@ -161,20 +191,26 @@ def build_full_train_usercf_sidecar(
     checkpoint_dir.mkdir(parents=True, exist_ok=resume)
 
     if method_dataset_manifest is None:
-        user_items, item_users_raw, load_audit, target_user_ids = _load_train_user_items(
+        user_items, item_users_raw, load_audit, target_user_ids, user_candidate_items, user_seen_items = _load_train_user_items(
             train_sequence_path,
             max_items_per_user,
             target_user_limit=target_user_limit,
             eligible_target_user_ids=eligible_target_user_ids,
+            src_min_positive_user_count=src_min_positive_user_count,
+            dst_min_positive_user_count=dst_min_positive_user_count,
+            min_src_filtered_items_per_user=min_src_filtered_items_per_user,
         )
     else:
         user_items, item_users_raw, load_audit, target_user_ids = _load_method_dataset_user_items(
             train_sequence_path,
             max_items_per_user,
             target_user_limit=target_user_limit,
+            explicit_target_user_ids=explicit_target_user_ids,
         )
+        user_candidate_items = user_items
+        user_seen_items = user_items
     hot_items = {item_id for item_id, users in item_users_raw.items() if len(users) > max_item_user_freq}
-    item_users = {item_id: users for item_id, users in item_users_raw.items() if item_id not in hot_items}
+    item_users = item_users_raw if keep_hot else {item_id: users for item_id, users in item_users_raw.items() if item_id not in hot_items}
     _sample_memory(memory_samples, "after_index_load")
     _enforce_memory_guard(memory_samples, max_rss_mb=max_rss_mb, min_free_memory_bytes=min_free_memory_bytes)
 
@@ -185,9 +221,12 @@ def build_full_train_usercf_sidecar(
     batch_manifests = _build_usercf_candidates_batched(
         user_items=user_items,
         item_users=item_users,
+        user_candidate_items=user_candidate_items,
+        user_seen_items=user_seen_items,
         target_user_ids=target_user_ids,
         similar_users_top_k=similar_users_top_k,
         candidate_top_k_per_user=candidate_top_k_per_user,
+        scoring_policy=scoring_policy,
         target_batch_size=target_batch_size,
         shard_paths=shard_paths,
         checkpoint_dir=checkpoint_dir,
@@ -211,8 +250,13 @@ def build_full_train_usercf_sidecar(
     config_caps = {
         "max_items_per_user": max_items_per_user,
         "max_item_user_freq": max_item_user_freq,
+        "src_min_positive_user_count": src_min_positive_user_count,
+        "dst_min_positive_user_count": dst_min_positive_user_count,
+        "min_src_filtered_items_per_user": min_src_filtered_items_per_user,
+        "keep_hot": keep_hot,
         "similar_users_top_k": similar_users_top_k,
         "candidate_top_k_per_user": candidate_top_k_per_user,
+        "scoring_policy": scoring_policy,
         "shard_count": shard_count,
         "target_user_limit": target_user_limit,
         "target_batch_size": target_batch_size,
@@ -234,20 +278,25 @@ def build_full_train_usercf_sidecar(
         "train_user_sequences_path": str(train_sequence_path) if method_dataset_manifest is None else None,
         "method_dataset_manifest": str(method_dataset_manifest) if method_dataset_manifest else None,
         "method_dataset_rows_path": str(method_dataset_rows_path) if method_dataset_rows_path else None,
+        "target_users_path": str(target_users_path) if target_users_path else None,
         "eligible_user_quality_manifest": str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None,
         "output_dir": str(output_dir),
         "shards_dir": str(shards_dir),
         "checkpoint_dir": str(checkpoint_dir),
     }
     forbidden_inputs = [str(train_sequence_path.parent / name) for name in FORBIDDEN_INPUT_NAMES]
-    source_signature = _method_dataset_source_signature(method_dataset_manifest, train_sequence_path) if method_dataset_manifest else _source_signature(train_sequence_path)
+    source_signature = _method_dataset_source_signature(method_dataset_manifest, train_sequence_path, method_dataset_payload) if method_dataset_manifest else _source_signature(train_sequence_path)
     eligible_signature = _file_signature(eligible_user_quality_manifest) if eligible_user_quality_manifest else None
     dropped_hot_items = {
         "schema_version": SCHEMA_VERSION,
         "status": "PASS",
         "source": SOURCE_NAME,
         "max_item_user_freq": max_item_user_freq,
-        "dropped_item_count": len(hot_items),
+        "scoring_policy": scoring_policy,
+        "keep_hot": keep_hot,
+        "hot_item_hard_drop_enabled": not keep_hot,
+        "observed_over_freq_item_count": len(hot_items),
+        "dropped_item_count": 0 if keep_hot else len(hot_items),
         "items": [
             {"item_id": item_id, "user_freq": len(item_users_raw[item_id])}
             for item_id in sorted(hot_items, key=lambda item_id: (-len(item_users_raw[item_id]), item_id))
@@ -262,6 +311,7 @@ def build_full_train_usercf_sidecar(
             for path in (
                 str(method_dataset_manifest) if method_dataset_manifest else None,
                 str(method_dataset_rows_path) if method_dataset_rows_path else str(train_sequence_path),
+                str(target_users_path) if target_users_path else None,
                 str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None,
             )
             if path
@@ -273,7 +323,8 @@ def build_full_train_usercf_sidecar(
         "uses_10k": False,
         "uses_pool1000": False,
         "ranking_input_modified": False,
-        "train_sequence_field": "eligible_item_sequence" if method_dataset_manifest else "recent_positive_item_sequence",
+        "target_users_role": "materialization_targets_only" if target_users_path else None,
+        "train_sequence_field": str(method_dataset_payload.get("_sidecar_sequence_field")) if method_dataset_payload else "recent_positive_item_sequence",
     }
     resource_audit = {
         "schema_version": SCHEMA_VERSION,
@@ -286,7 +337,10 @@ def build_full_train_usercf_sidecar(
         "eligible_user_quality_signature": eligible_signature,
         **load_audit,
         "effective_item_count": len(item_users),
-        "dropped_hot_item_count": len(hot_items),
+        "keep_hot": keep_hot,
+        "hot_item_hard_drop_enabled": not keep_hot,
+        "observed_over_freq_item_count": len(hot_items),
+        "dropped_hot_item_count": 0 if keep_hot else len(hot_items),
         "candidate_user_count": candidate_user_count,
         "candidate_total_count": candidate_total_count,
         "row_count": row_count,
@@ -305,6 +359,7 @@ def build_full_train_usercf_sidecar(
         "status": "DIAGNOSTIC_ONLY",
         **hard_contract,
         "source_status": "DIAGNOSTIC_ONLY",
+        "scoring_policy": scoring_policy,
         "target_user_count": target_user_count,
         "indexed_user_count": load_audit["indexed_user_count"],
         "candidate_user_count": candidate_user_count,
@@ -333,6 +388,7 @@ def build_full_train_usercf_sidecar(
         "source_status": "DIAGNOSTIC_ONLY",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         **hard_contract,
+        "scoring_policy": scoring_policy,
         "eligible_user_policy": eligible_user_policy,
         "resolved_paths": resolved_paths,
         "config_caps": config_caps,
@@ -361,12 +417,13 @@ def build_full_train_usercf_sidecar(
         "status": "PASS",
         **hard_contract,
         "source_status": "DIAGNOSTIC_ONLY",
+        "scoring_policy": scoring_policy,
         "selection_reason": "guarded_train_only_usercf_diagnostic_for_heavy_cf_eligible_users_avoids_unbounded_user_user_matrix",
         "eligible_user_policy": source_index_manifest["eligible_user_policy"],
         "eligible_user_quality_manifest": str(eligible_user_quality_manifest) if eligible_user_quality_manifest else None,
         "eligible_user_quality_summary": _eligible_quality_summary(eligible_manifest_payload),
         "target_user_ids": target_user_ids,
-        "allowed_inputs": ["method_dataset_manifest.outputs.dataset_rows_path", "method_dataset_rows.eligible_item_sequence"] if method_dataset_manifest else ["clean_manifest.train_user_sequences_path", "eligible_user_quality_manifest.profiles"],
+        "allowed_inputs": _allowed_input_descriptions(method_dataset_payload) if method_dataset_manifest else ["clean_manifest.train_user_sequences_path", "eligible_user_quality_manifest.profiles"],
         "forbidden_inputs": forbidden_inputs,
         "source_signature": source_signature,
         "eligible_user_quality_signature": eligible_signature,
@@ -395,8 +452,12 @@ def _validate_caps(
     *,
     max_items_per_user: int,
     max_item_user_freq: int,
+    src_min_positive_user_count: int,
+    dst_min_positive_user_count: int,
+    min_src_filtered_items_per_user: int,
     similar_users_top_k: int,
     candidate_top_k_per_user: int,
+    scoring_policy: str,
     shard_count: int,
     target_batch_size: int,
     min_free_bytes: int,
@@ -406,6 +467,9 @@ def _validate_caps(
     positive_caps = {
         "--max-items-per-user": max_items_per_user,
         "--max-item-user-freq": max_item_user_freq,
+        "--src-min-positive-user-count": src_min_positive_user_count,
+        "--dst-min-positive-user-count": dst_min_positive_user_count,
+        "--min-src-filtered-items-per-user": min_src_filtered_items_per_user,
         "--similar-users-top-k": similar_users_top_k,
         "--candidate-top-k-per-user": candidate_top_k_per_user,
         "--shard-count": shard_count,
@@ -415,6 +479,8 @@ def _validate_caps(
     for name, value in positive_caps.items():
         if value <= 0:
             raise ValueError(f"{name} must be positive")
+    if scoring_policy not in SCORING_POLICIES:
+        raise ValueError(f"Unsupported scoring_policy: {scoring_policy}")
     if min_free_bytes < 0:
         raise ValueError("--min-free-bytes must be non-negative")
     if min_free_memory_bytes < 0:
@@ -469,6 +535,28 @@ def _precheck_train_path(train_sequence_path: Path) -> None:
         raise FileNotFoundError(train_sequence_path)
 
 
+def _precheck_target_users_path(target_users_path: Path) -> None:
+    _precheck_input_path(target_users_path, "target_users_path")
+    if not target_users_path.is_file():
+        raise FileNotFoundError(target_users_path)
+    if target_users_path.suffix != ".jsonl":
+        raise ValueError(f"target users path must be a JSONL file: {target_users_path}")
+
+
+def _load_target_user_ids(target_users_path: Path, target_user_limit: int = 0) -> list[str]:
+    target_user_ids: list[str] = []
+    seen: set[str] = set()
+    for row in iter_jsonl(target_users_path):
+        user_id = _clean_id(row.get("user_id") if isinstance(row, dict) else None)
+        if not user_id or user_id in seen:
+            continue
+        seen.add(user_id)
+        target_user_ids.append(user_id)
+        if target_user_limit and len(target_user_ids) >= target_user_limit:
+            break
+    return target_user_ids
+
+
 def _resolve_train_sequence_path(clean_manifest: Path, manifest_payload: dict[str, Any]) -> Path:
     candidates = [
         manifest_payload.get("train_user_sequences_path"),
@@ -493,21 +581,42 @@ def _resolve_method_dataset_rows(manifest_path: Path) -> tuple[dict[str, Any], P
     payload = read_json(manifest_path)
     if payload.get("status") != "PASS":
         raise ValueError("method_dataset_manifest.status must be PASS")
-    if payload.get("schema_version") != "pool500_method_dataset_v1":
-        raise ValueError("method_dataset_manifest.schema_version must be pool500_method_dataset_v1")
     if payload.get("train_only") is not True:
         raise ValueError("method_dataset_manifest.train_only must be true")
     for key, expected in FORBIDDEN_SWITCHES.items():
         if key in payload and payload.get(key) is not expected:
             raise ValueError(f"method_dataset_manifest.{key} must be false")
-    if payload.get("source_method") != "usercf_method_dataset":
-        raise ValueError("method_dataset_manifest.source_method must be usercf_method_dataset")
+    if payload.get("ready_source_artifact") is True:
+        raise ValueError("method_dataset_manifest.ready_source_artifact must not be true")
+    if payload.get("label_backflow_allowed") is True:
+        raise ValueError("method_dataset_manifest.label_backflow_allowed must not be true")
+
     outputs = payload.get("outputs") if isinstance(payload.get("outputs"), dict) else {}
-    if outputs.get("dataset_schema") != "eligible_user_sequence_v1":
-        raise ValueError("method_dataset_manifest.outputs.dataset_schema must be eligible_user_sequence_v1")
-    raw_rows_path = outputs.get("dataset_rows_path")
+    if payload.get("schema_version") == "pool500_method_dataset_v1":
+        if payload.get("source_method") != "usercf_method_dataset":
+            raise ValueError("method_dataset_manifest.source_method must be usercf_method_dataset")
+        if outputs.get("dataset_schema") != METHOD_DATASET_USERCF_SCHEMA:
+            raise ValueError(f"method_dataset_manifest.outputs.dataset_schema must be {METHOD_DATASET_USERCF_SCHEMA}")
+        raw_rows_path = outputs.get("dataset_rows_path")
+        payload["_sidecar_sequence_field"] = "eligible_item_sequence"
+        payload["_sidecar_dataset_schema"] = METHOD_DATASET_USERCF_SCHEMA
+    elif payload.get("schema_version") == "rpa_like_recent2y_method_dataset_v1":
+        if payload.get("row_schema_version") != METHOD_DATASET_RPA_LIKE_SCHEMA:
+            raise ValueError(f"method_dataset_manifest.row_schema_version must be {METHOD_DATASET_RPA_LIKE_SCHEMA}")
+        if payload.get("source_method") != METHOD_DATASET_RPA_LIKE_SOURCE_METHOD:
+            raise ValueError(f"method_dataset_manifest.source_method must be {METHOD_DATASET_RPA_LIKE_SOURCE_METHOD}")
+        if payload.get("diagnostic_only") is not True:
+            raise ValueError("method_dataset_manifest.diagnostic_only must be true")
+        if payload.get("source_status") != "DIAGNOSTIC_ONLY":
+            raise ValueError("method_dataset_manifest.source_status must be DIAGNOSTIC_ONLY")
+        raw_rows_path = outputs.get("method_dataset_rows")
+        payload["_sidecar_sequence_field"] = "seed_item_sequence"
+        payload["_sidecar_dataset_schema"] = METHOD_DATASET_RPA_LIKE_SCHEMA
+    else:
+        raise ValueError("Unsupported method_dataset_manifest.schema_version")
+
     if not raw_rows_path:
-        raise ValueError("method_dataset_manifest.outputs.dataset_rows_path is required")
+        raise ValueError("method_dataset_manifest.outputs method dataset rows path is required")
     rows_path = Path(str(raw_rows_path))
     if not rows_path.is_absolute():
         rows_path = (manifest_path.parent / rows_path).resolve()
@@ -565,57 +674,133 @@ def _load_method_dataset_user_items(
     path: Path,
     max_items_per_user: int,
     target_user_limit: int = 0,
+    explicit_target_user_ids: list[str] | None = None,
 ) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[str, Any], list[str]]:
+    explicit_target_set = set(explicit_target_user_ids or [])
+    if explicit_target_user_ids is not None and not explicit_target_user_ids:
+        return {}, {}, {
+            "input_mode": "method_dataset",
+            "method_dataset_rows_path": str(path),
+            "train_rows_scanned": 0,
+            "rows_with_positive_sequence": 0,
+            "rows_with_eligible_sequence": 0,
+            "indexed_user_count": 0,
+            "target_user_limit": target_user_limit,
+            "target_user_count": 0,
+            "target_item_count": 0,
+            "raw_positive_event_count": 0,
+            "raw_eligible_event_count": 0,
+            "kept_unique_positive_event_count": 0,
+            "raw_item_count": 0,
+            "empty_history_count": 0,
+            "explicit_target_user_count": 0,
+            "missing_explicit_target_user_count": 0,
+            "dropped_reason_counts": {},
+        }, []
+
+    target_user_ids: list[str] = []
+    target_items: set[str] = set()
+    rows_scanned_for_targets = 0
+    rows_with_eligible_sequence_for_targets = 0
+    dropped_reason_counts: Counter[str] = Counter()
+
+    if explicit_target_set or target_user_limit:
+        found_targets: set[str] = set()
+        for row in iter_jsonl(path):
+            rows_scanned_for_targets += 1
+            user_id = _clean_id(row.get("user_id"))
+            raw_items = _method_dataset_raw_items(row)
+            if not user_id:
+                dropped_reason_counts["missing_user_id"] += 1
+                continue
+            if not isinstance(raw_items, list):
+                dropped_reason_counts["missing_or_invalid_eligible_item_sequence"] += 1
+                continue
+            if explicit_target_set and user_id not in explicit_target_set:
+                continue
+            rows_with_eligible_sequence_for_targets += 1
+            items, dropped = _first_unique_items(raw_items, max_items_per_user)
+            dropped_reason_counts.update(dropped)
+            if not items:
+                dropped_reason_counts["empty_eligible_item_sequence"] += 1
+                continue
+            found_targets.add(user_id)
+            target_items.update(items)
+            if not explicit_target_set:
+                target_user_ids.append(user_id)
+                if target_user_limit and len(target_user_ids) >= target_user_limit:
+                    break
+        if explicit_target_set:
+            target_user_ids = [user_id for user_id in explicit_target_user_ids or [] if user_id in found_targets]
+
     user_items: dict[str, set[str]] = {}
     item_users: dict[str, set[str]] = defaultdict(set)
     rows_scanned = 0
     rows_with_eligible_sequence = 0
     raw_eligible_event_count = 0
     kept_positive_event_count = 0
-    target_user_ids: list[str] = []
-    dropped_reason_counts: Counter[str] = Counter()
+    indexed_target_user_count = 0
+    target_user_set = set(target_user_ids)
     for row in iter_jsonl(path):
         rows_scanned += 1
         user_id = _clean_id(row.get("user_id"))
-        raw_items = row.get("eligible_item_sequence")
+        raw_items = _method_dataset_raw_items(row)
         if not user_id:
             dropped_reason_counts["missing_user_id"] += 1
             continue
         if not isinstance(raw_items, list):
             dropped_reason_counts["missing_or_invalid_eligible_item_sequence"] += 1
             continue
-        target_user_ids.append(user_id)
         rows_with_eligible_sequence += 1
         raw_eligible_event_count += len(raw_items)
+        if not explicit_target_set and not target_user_limit and user_id not in target_user_set:
+            target_user_ids.append(user_id)
+            target_user_set.add(user_id)
         items, dropped = _first_unique_items(raw_items, max_items_per_user)
         dropped_reason_counts.update(dropped)
         if not items:
             dropped_reason_counts["empty_eligible_item_sequence"] += 1
-        else:
-            item_set = set(items)
-            user_items[user_id] = item_set
-            kept_positive_event_count += len(item_set)
-            for item_id in item_set:
-                item_users[item_id].add(user_id)
-        if target_user_limit and len(target_user_ids) >= target_user_limit:
+            continue
+        item_set = set(items)
+        if target_user_ids and not (user_id in target_user_set or item_set & target_items):
+            continue
+        user_items[user_id] = item_set
+        if user_id in target_user_set:
+            indexed_target_user_count += 1
+        kept_positive_event_count += len(item_set)
+        for item_id in item_set:
+            item_users[item_id].add(user_id)
+        if not explicit_target_set and not target_items and target_user_limit and len(target_user_ids) >= target_user_limit:
             break
     return user_items, dict(item_users), {
         "input_mode": "method_dataset",
         "method_dataset_rows_path": str(path),
         "train_rows_scanned": rows_scanned,
+        "target_discovery_rows_scanned": rows_scanned_for_targets,
         "rows_with_positive_sequence": rows_with_eligible_sequence,
         "rows_with_eligible_sequence": rows_with_eligible_sequence,
+        "target_discovery_rows_with_eligible_sequence": rows_with_eligible_sequence_for_targets,
         "indexed_user_count": len(user_items),
+        "indexed_target_user_count": indexed_target_user_count,
         "target_user_limit": target_user_limit,
         "target_user_count": len(target_user_ids),
-        "target_item_count": 0,
+        "target_item_count": len(target_items),
         "raw_positive_event_count": raw_eligible_event_count,
         "raw_eligible_event_count": raw_eligible_event_count,
         "kept_unique_positive_event_count": kept_positive_event_count,
         "raw_item_count": len(item_users),
-        "empty_history_count": len(target_user_ids) - len(user_items),
+        "empty_history_count": len(target_user_ids) - indexed_target_user_count,
+        "explicit_target_user_count": len(explicit_target_user_ids or []),
+        "missing_explicit_target_user_count": len(explicit_target_set - target_user_set),
         "dropped_reason_counts": dict(sorted(dropped_reason_counts.items())),
     }, target_user_ids
+
+
+def _method_dataset_raw_items(row: dict[str, Any]) -> Any:
+    raw_items = row.get("eligible_item_sequence")
+    if raw_items is None:
+        raw_items = row.get("seed_item_sequence")
+    return raw_items
 
 
 def _load_train_user_items(
@@ -623,17 +808,26 @@ def _load_train_user_items(
     max_items_per_user: int,
     target_user_limit: int = 0,
     eligible_target_user_ids: list[str] | None = None,
-) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[str, Any], list[str]]:
+    src_min_positive_user_count: int = DEFAULT_SRC_MIN_POSITIVE_USER_COUNT,
+    dst_min_positive_user_count: int = DEFAULT_DST_MIN_POSITIVE_USER_COUNT,
+    min_src_filtered_items_per_user: int = DEFAULT_MIN_SRC_FILTERED_ITEMS_PER_USER,
+) -> tuple[dict[str, set[str]], dict[str, set[str]], dict[str, Any], list[str], dict[str, set[str]], dict[str, set[str]]]:
     user_items: dict[str, set[str]] = {}
+    user_candidate_items: dict[str, set[str]] = {}
+    user_seen_items: dict[str, set[str]] = {}
     item_users: dict[str, set[str]] = defaultdict(set)
     rows_scanned = 0
     rows_with_positive_sequence = 0
     raw_positive_event_count = 0
     kept_positive_event_count = 0
+    src_filtered_event_count = 0
+    dst_filtered_event_count = 0
     target_items: set[str] = set()
     target_user_ids: list[str] = []
+    dropped_reason_counts: Counter[str] = Counter()
     if eligible_target_user_ids is not None and not eligible_target_user_ids:
-        return {}, {}, {
+        empty_audit = {
+            "input_mode": "clean_train_sequences",
             "train_rows_scanned": 0,
             "rows_with_positive_sequence": 0,
             "indexed_user_count": 0,
@@ -642,47 +836,74 @@ def _load_train_user_items(
             "target_item_count": 0,
             "raw_positive_event_count": 0,
             "kept_unique_positive_event_count": 0,
+            "src_filtered_positive_event_count": 0,
+            "dst_filtered_positive_event_count": 0,
             "raw_item_count": 0,
-        }, []
-    explicit_target_set = set(eligible_target_user_ids or [])
-    if explicit_target_set or target_user_limit:
-        for row in iter_jsonl(path):
-            user_id = str(row.get("user_id", ""))
-            raw_items = row.get("recent_positive_item_sequence", []) or []
-            if not user_id or not isinstance(raw_items, list):
-                continue
-            if explicit_target_set and user_id not in explicit_target_set:
-                continue
-            items = _recent_unique_items(raw_items, max_items_per_user)
-            if not items:
-                continue
-            target_user_ids.append(user_id)
-            target_items.update(items)
-            if not explicit_target_set and target_user_limit and len(target_user_ids) >= target_user_limit:
-                break
-        if explicit_target_set:
-            target_user_ids = [user_id for user_id in eligible_target_user_ids or [] if user_id in set(target_user_ids)]
+            "src_eligible_item_count": 0,
+            "dst_eligible_item_count": 0,
+            "dropped_reason_counts": {},
+        }
+        return {}, {}, empty_audit, [], {}, {}
+
+    rows: list[tuple[str, list[str]]] = []
+    item_positive_users: dict[str, set[str]] = defaultdict(set)
     for row in iter_jsonl(path):
         rows_scanned += 1
-        user_id = str(row.get("user_id", ""))
+        user_id = str(row.get("user_id", "")).strip()
         raw_items = row.get("recent_positive_item_sequence", []) or []
         if not user_id or not isinstance(raw_items, list):
             continue
         rows_with_positive_sequence += 1
         raw_positive_event_count += len(raw_items)
+        count_items = _unique_items(raw_items)
+        if not count_items:
+            continue
         items = _recent_unique_items(raw_items, max_items_per_user)
         if not items:
             continue
-        item_set = set(items)
-        if target_user_ids and not (user_id in set(target_user_ids) or item_set & target_items):
+        rows.append((user_id, items))
+        for item_id in count_items:
+            item_positive_users[item_id].add(user_id)
+
+    src_eligible_items = {item_id for item_id, users in item_positive_users.items() if len(users) >= src_min_positive_user_count}
+    dst_eligible_items = {item_id for item_id, users in item_positive_users.items() if len(users) >= dst_min_positive_user_count}
+    explicit_target_set = set(eligible_target_user_ids or [])
+
+    for user_id, items in rows:
+        if explicit_target_set and user_id not in explicit_target_set:
             continue
-        user_items[user_id] = item_set
-        kept_positive_event_count += len(item_set)
-        for item_id in item_set:
+        src_items = [item_id for item_id in items if item_id in src_eligible_items]
+        if len(src_items) < min_src_filtered_items_per_user:
+            dropped_reason_counts["insufficient_src_filtered_items"] += 1
+            continue
+        target_user_ids.append(user_id)
+        target_items.update(src_items)
+        if not explicit_target_set and target_user_limit and len(target_user_ids) >= target_user_limit:
+            break
+    if explicit_target_set:
+        target_user_ids = [user_id for user_id in eligible_target_user_ids or [] if user_id in set(target_user_ids)]
+
+    target_user_set = set(target_user_ids)
+    for user_id, items in rows:
+        src_set = {item_id for item_id in items if item_id in src_eligible_items}
+        if len(src_set) < min_src_filtered_items_per_user:
+            continue
+        dst_set = {item_id for item_id in items if item_id in dst_eligible_items}
+        seen_set = set(items)
+        if target_user_ids and not (user_id in target_user_set or src_set & target_items):
+            continue
+        user_items[user_id] = src_set
+        user_candidate_items[user_id] = dst_set
+        user_seen_items[user_id] = seen_set
+        kept_positive_event_count += len(seen_set)
+        src_filtered_event_count += len(src_set)
+        dst_filtered_event_count += len(dst_set)
+        for item_id in src_set:
             item_users[item_id].add(user_id)
     if not target_user_ids:
         target_user_ids = list(user_items)
     return user_items, dict(item_users), {
+        "input_mode": "clean_train_sequences",
         "train_rows_scanned": rows_scanned,
         "rows_with_positive_sequence": rows_with_positive_sequence,
         "indexed_user_count": len(user_items),
@@ -691,9 +912,16 @@ def _load_train_user_items(
         "target_item_count": len(target_items),
         "raw_positive_event_count": raw_positive_event_count,
         "kept_unique_positive_event_count": kept_positive_event_count,
-        "raw_item_count": len(item_users),
-    }, target_user_ids
-
+        "src_filtered_positive_event_count": src_filtered_event_count,
+        "dst_filtered_positive_event_count": dst_filtered_event_count,
+        "raw_item_count": len(item_positive_users),
+        "src_eligible_item_count": len(src_eligible_items),
+        "dst_eligible_item_count": len(dst_eligible_items),
+        "src_min_positive_user_count": src_min_positive_user_count,
+        "dst_min_positive_user_count": dst_min_positive_user_count,
+        "min_src_filtered_items_per_user": min_src_filtered_items_per_user,
+        "dropped_reason_counts": dict(sorted(dropped_reason_counts.items())),
+    }, target_user_ids, user_candidate_items, user_seen_items
 
 def _recent_unique_items(raw_items: list[Any], max_items_per_user: int) -> list[str]:
     items: list[str] = []
@@ -705,6 +933,10 @@ def _recent_unique_items(raw_items: list[Any], max_items_per_user: int) -> list[
             items.append(item_id)
     items.reverse()
     return items
+
+
+def _unique_items(raw_items: list[Any]) -> set[str]:
+    return {item_id for item_id in (_clean_id(item) for item in raw_items) if item_id}
 
 
 def _first_unique_items(raw_items: list[Any], max_items_per_user: int) -> tuple[list[str], Counter[str]]:
@@ -736,9 +968,12 @@ def _build_usercf_candidates_batched(
     *,
     user_items: dict[str, set[str]],
     item_users: dict[str, set[str]],
+    user_candidate_items: dict[str, set[str]],
+    user_seen_items: dict[str, set[str]],
     target_user_ids: list[str],
     similar_users_top_k: int,
     candidate_top_k_per_user: int,
+    scoring_policy: str,
     target_batch_size: int,
     shard_paths: list[Path],
     checkpoint_dir: Path,
@@ -757,8 +992,11 @@ def _build_usercf_candidates_batched(
         build_result = _build_usercf_candidates(
             user_items=user_items,
             item_users=item_users,
+            user_candidate_items=user_candidate_items,
+            user_seen_items=user_seen_items,
             similar_users_top_k=similar_users_top_k,
             candidate_top_k_per_user=candidate_top_k_per_user,
+            scoring_policy=scoring_policy,
             target_user_ids=batch_user_ids,
         )
         shard_delta = _append_candidate_shards(shard_paths, build_result["candidates_by_user"])
@@ -772,6 +1010,7 @@ def _build_usercf_candidates_batched(
             "target_user_ids": batch_user_ids,
             "candidate_user_count": build_result["candidate_user_count"],
             "candidate_total_count": build_result["candidate_total_count"],
+            "scoring_policy": scoring_policy,
             "row_count": build_result["candidate_user_count"],
             "neighbor_edge_checks": build_result["neighbor_edge_checks"],
             "similar_user_links_used": build_result["similar_user_links_used"],
@@ -787,9 +1026,15 @@ def _build_usercf_candidates(
     user_items: dict[str, set[str]],
     item_users: dict[str, set[str]],
     similar_users_top_k: int,
+    user_candidate_items: dict[str, set[str]] | None = None,
+    user_seen_items: dict[str, set[str]] | None = None,
     candidate_top_k_per_user: int,
+    scoring_policy: str = COSINE_OVERLAP_SCORING_POLICY,
     target_user_ids: list[str] | None = None,
 ) -> dict[str, Any]:
+    if scoring_policy not in SCORING_POLICIES:
+        raise ValueError(f"Unsupported scoring_policy: {scoring_policy}")
+    item_iuf = _item_iuf_weights(user_items=user_items, item_users=item_users) if scoring_policy == IUF_COSINE_SCORING_POLICY else {}
     candidates_by_user: dict[str, list[dict[str, Any]]] = {}
     neighbor_edge_checks = 0
     similar_user_links_used = 0
@@ -797,21 +1042,29 @@ def _build_usercf_candidates(
     user_ids = target_user_ids or list(user_items)
     for user_id in user_ids:
         items = user_items.get(user_id, set())
+        seen_items = (user_seen_items or user_items).get(user_id, items)
         neighbor_scores: Counter[str] = Counter()
         for item_id in items:
+            item_weight = item_iuf.get(item_id, 1.0)
             for neighbor_user in item_users.get(item_id, set()):
                 if neighbor_user != user_id:
-                    neighbor_scores[neighbor_user] += 1
+                    neighbor_scores[neighbor_user] += item_weight * item_weight
                     neighbor_edge_checks += 1
         candidate_scores: Counter[str] = Counter()
         sorted_neighbors = sorted(neighbor_scores.items(), key=lambda pair: (-pair[1], pair[0]))[:similar_users_top_k]
         similar_user_links_used += len(sorted_neighbors)
         for neighbor_user, overlap in sorted_neighbors:
             neighbor_items = user_items.get(neighbor_user, set())
-            norm = math.sqrt(len(items) * max(1, len(neighbor_items)))
-            user_score = float(overlap) / norm if norm else 0.0
-            for item_id in neighbor_items - items:
-                candidate_scores[item_id] += user_score
+            neighbor_candidate_items = (user_candidate_items or user_items).get(neighbor_user, neighbor_items)
+            user_score = _usercf_similarity_score(
+                overlap=float(overlap),
+                user_items=items,
+                neighbor_items=neighbor_items,
+                item_iuf=item_iuf,
+                scoring_policy=scoring_policy,
+            )
+            for item_id in neighbor_candidate_items - seen_items:
+                candidate_scores[item_id] += user_score * item_iuf.get(item_id, 1.0)
         rows = []
         for rank, (item_id, score) in enumerate(sorted(candidate_scores.items(), key=lambda pair: (-pair[1], pair[0]))[:candidate_top_k_per_user], start=1):
             rows.append({"item_id": item_id, "score": round(float(score), 6), "rank": rank, "source": SOURCE_NAME})
@@ -825,6 +1078,33 @@ def _build_usercf_candidates(
         "neighbor_edge_checks": neighbor_edge_checks,
         "similar_user_links_used": similar_user_links_used,
     }
+
+
+def _item_iuf_weights(*, user_items: dict[str, set[str]], item_users: dict[str, set[str]]) -> dict[str, float]:
+    corpus_user_count = max(len(user_items), 1)
+    return {
+        item_id: max(math.log((corpus_user_count + 1) / (len(users) + 1)), 1e-6)
+        for item_id, users in item_users.items()
+    }
+
+
+def _usercf_similarity_score(
+    *,
+    overlap: float,
+    user_items: set[str],
+    neighbor_items: set[str],
+    item_iuf: dict[str, float],
+    scoring_policy: str,
+) -> float:
+    if scoring_policy == COSINE_OVERLAP_SCORING_POLICY:
+        norm = math.sqrt(len(user_items) * max(1, len(neighbor_items)))
+        return overlap / norm if norm else 0.0
+    if scoring_policy == IUF_COSINE_SCORING_POLICY:
+        user_norm = math.sqrt(sum(item_iuf.get(item_id, 1.0) ** 2 for item_id in user_items))
+        neighbor_norm = math.sqrt(sum(item_iuf.get(item_id, 1.0) ** 2 for item_id in neighbor_items))
+        norm = user_norm * neighbor_norm
+        return overlap / norm if norm else 0.0
+    raise ValueError(f"Unsupported scoring_policy: {scoring_policy}")
 
 
 def _append_candidate_shards(shard_paths: list[Path], candidates_by_user: dict[str, list[dict[str, Any]]]) -> list[dict[str, Any]]:
@@ -989,12 +1269,20 @@ def _source_signature(path: Path) -> dict[str, Any]:
     return signature
 
 
-def _method_dataset_source_signature(manifest_path: Path, rows_path: Path) -> dict[str, Any]:
+def _method_dataset_source_signature(manifest_path: Path, rows_path: Path, method_dataset_payload: dict[str, Any] | None = None) -> dict[str, Any]:
     rows_signature = _file_signature(rows_path)
     rows_signature["manifest_sha256"] = _file_signature(manifest_path)["sha256"]
-    rows_signature["field"] = "eligible_item_sequence"
+    rows_signature["field"] = str((method_dataset_payload or {}).get("_sidecar_sequence_field") or "eligible_item_sequence")
+    rows_signature["dataset_schema"] = str((method_dataset_payload or {}).get("_sidecar_dataset_schema") or METHOD_DATASET_USERCF_SCHEMA)
     rows_signature["input_mode"] = "method_dataset"
     return rows_signature
+
+
+def _allowed_input_descriptions(method_dataset_payload: dict[str, Any] | None) -> list[str]:
+    sequence_field = str((method_dataset_payload or {}).get("_sidecar_sequence_field") or "eligible_item_sequence")
+    if sequence_field == "seed_item_sequence":
+        return ["method_dataset_manifest.outputs.method_dataset_rows", "method_dataset_rows.seed_item_sequence", "target_users_path.user_id_optional"]
+    return ["method_dataset_manifest.outputs.dataset_rows_path", "method_dataset_rows.eligible_item_sequence", "target_users_path.user_id_optional"]
 
 
 def main() -> None:
@@ -1004,11 +1292,17 @@ def main() -> None:
         output_dir=Path(args.output_dir),
         eligible_user_quality_manifest=Path(args.eligible_user_quality_manifest) if args.eligible_user_quality_manifest else None,
         method_dataset_manifest=Path(args.method_dataset_manifest) if args.method_dataset_manifest else None,
+        target_users_path=Path(args.target_users) if args.target_users else None,
         include_medium_behavior=args.include_medium_behavior,
         max_items_per_user=args.max_items_per_user,
         max_item_user_freq=args.max_item_user_freq,
+        src_min_positive_user_count=args.src_min_positive_user_count,
+        dst_min_positive_user_count=args.dst_min_positive_user_count,
+        min_src_filtered_items_per_user=args.min_src_filtered_items_per_user,
+        keep_hot=args.keep_hot,
         similar_users_top_k=args.similar_users_top_k,
         candidate_top_k_per_user=args.candidate_top_k_per_user,
+        scoring_policy=args.scoring_policy,
         shard_count=args.shard_count,
         target_user_limit=args.target_user_limit,
         target_batch_size=args.target_batch_size,

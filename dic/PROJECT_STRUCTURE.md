@@ -49,7 +49,7 @@ RS_agent/
 - `llm/`：模型训练与推理支撑，承载当前固定路线相关封装
 - `workflow/`：串联推荐、Agent 和模型相关流程
 - `evaluation/`：离线评估、案例分析、对比分析
-- `serving/`：服务接口和在线推理封装
+- `serving/`：服务接口和在线推理封装，承载 `/recall` 纯候选召回、`/recommend` 完整推荐展示、`/chat` 对话和 feedback/session API；当前是 single-process demo/local serving layer，不是独立生产级召回微服务
 - `display/`：商品展示卡、推荐回复结构和前端消费 contract，已实现第一版
 - `simulation/`：多角色模拟客户、persona、scene runner、batch evaluation 和模型驱动用户策略，已实现第一版
 - `animation/`：动画化展示或 session / rollout 回放支撑，目前主要由前端 Session Replay 承担轻量回放
@@ -90,8 +90,11 @@ React Web Demo 入口，目标是消费服务层和展示层 contract，而不�
 - 数据处理配置
 - 训练配置
 - 评估配置
-- 服务配置
+- 服务配置，例如 `configs/serving/` 中的在线候选获取、source-index、shadow diagnostic 和 public serving 参数
+- governance 配置，例如 `configs/governance/` 中的 current / provisional route、serving 读取权限、ranking replacement / pool1000 / promotion 禁止项
 - demo 或 policy 相关配置
+
+服务运行配置不能单独替代 governance registry 的晋升语义：Recall Serving Layer 可以读取受治理候选，但不因此把 pool500 recall-only 产物提升为 ranking input 或 production-ready 能力。
 
 ### 3.5 `outputs/`
 

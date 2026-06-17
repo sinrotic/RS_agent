@@ -80,6 +80,11 @@ def test_builds_semantic_title_category_pool500_method_source(tmp_path: Path) ->
         per_seed=5,
         per_token_item_limit=10,
         max_candidate_items=10,
+        checkpoint_every_users=1,
+        target_user_offset=0,
+        target_user_limit=1,
+        shard_id=0,
+        shard_count=1,
         enforce_venv=False,
     )
 
@@ -113,8 +118,62 @@ def test_builds_semantic_title_category_pool500_method_source(tmp_path: Path) ->
     assert coverage["clean_title_token_coverage"] == 1.0
     assert coverage["seed_item_metadata_coverage"] == 1.0
     assert no_holdout["status"] == "PASS"
+    resource = json.loads((output_dir / "resource_audit.json").read_text(encoding="utf-8"))
+    method_dataset = json.loads((output_dir / "method_dataset_manifest.json").read_text(encoding="utf-8"))
+    assert resource["status"] == "PASS"
+    assert resource["source_status"] == "TARGET_SLICE_DIAGNOSTIC"
+    assert resource["shard_contract"]["checkpoint_every_users"] == 1
+    assert resource["shard_contract"]["formal_shard_mode"] is True
+    assert method_dataset["target_user_limit"] == 1
+    assert method_dataset["shard_id"] == 0
     assert candidate["source"] == "semantic_title_category_expansion"
     assert candidate["canonical_source"] == "semantic_title_category_expansion"
+
+
+def test_title_tokens_include_category_fields_when_title_missing() -> None:
+    from rs_lab.experiments.recall.pool500.methods.semantic_title_category_expansion.builder import _title_tokens
+
+    assert _title_tokens({"title_clean": "", "main_category": "Office Products", "categories_flat": ["Printer Ink"]}) >= {"office", "products", "printer", "ink"}
+
+
+def test_inverted_index_limit_preserves_bucket_order_not_lexicographic(tmp_path: Path) -> None:
+    from rs_lab.experiments.recall.pool500.methods.semantic_title_category_expansion.builder import _candidate_ids_from_inverted_index
+
+    index_path = tmp_path / "semantic_inverted_index.jsonl"
+    _write_jsonl(index_path, [{"token": "office", "parent_asins": ["z_high_signal", "a_lexicographic_first", "m_mid"]}])
+
+    candidate_ids, token_candidate_ids, stats = _candidate_ids_from_inverted_index(
+        index_path,
+        {"office"},
+        per_token_item_limit=10,
+        max_candidate_items=2,
+    )
+
+    assert candidate_ids == {"z_high_signal", "a_lexicographic_first"}
+    assert token_candidate_ids["office"] == candidate_ids
+    assert stats["max_candidate_items_reached"] is True
+
+
+def test_title_category_scorer_applies_per_seed_before_per_user() -> None:
+    from rs_lab.experiments.recall.pool500.methods.semantic_title_category_expansion.builder import _title_category_scorer_candidate_rows
+
+    semantic_index = {
+        "seed1": {"parent_asin": "seed1", "semantic_tokens": {"shared"}, "main_category": "Books"},
+        "seed2": {"parent_asin": "seed2", "semantic_tokens": {"rare"}, "main_category": "Books"},
+        "cand_a": {"parent_asin": "cand_a", "semantic_tokens": {"shared"}, "main_category": "Books"},
+        "cand_b": {"parent_asin": "cand_b", "semantic_tokens": {"shared"}, "main_category": "Books"},
+        "cand_c": {"parent_asin": "cand_c", "semantic_tokens": {"rare"}, "main_category": "Books"},
+    }
+    rows = _title_category_scorer_candidate_rows(
+        sequences=[{"user_id": "u1", "recent_item_sequence": ["seed1", "seed2"], "recent_positive_item_sequence": ["seed1", "seed2"]}],
+        seed_items_by_user={"u1": ["seed1", "seed2"]},
+        seed_records={"seed1": semantic_index["seed1"], "seed2": semantic_index["seed2"]},
+        semantic_index=semantic_index,
+        generation_config={"semantic_title_category_expansion": {"per_seed": 1, "min_title_overlap": 1, "require_category_overlap": True}},
+        per_user=5,
+    )
+
+    assert {row["item_id"] for row in rows} == {"cand_a", "cand_c"}
 
 
 def test_semantic_title_category_no_holdout_audit_blocks_forbidden_split(tmp_path: Path) -> None:

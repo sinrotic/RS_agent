@@ -101,6 +101,37 @@ class ConversationState:
 
 
 @dataclass
+class UserPreferenceProfile:
+    liked_item_ids: list[str] = field(default_factory=list)
+    disliked_item_ids: list[str] = field(default_factory=list)
+    disliked_categories: list[str] = field(default_factory=list)
+    preferred_categories: dict[str, float] = field(default_factory=dict)
+    preferred_sources: dict[str, float] = field(default_factory=dict)
+    preferred_keywords: dict[str, float] = field(default_factory=dict)
+    disliked_keywords: dict[str, float] = field(default_factory=dict)
+    max_price: float | None = None
+    use_cases: dict[str, float] = field(default_factory=dict)
+    updated_turn_index: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass
+class ArchivedTurnSummary:
+    turn_index: int
+    user_input: str = ""
+    assistant_response: str = ""
+    intent: str | None = None
+    agent_action: str | None = None
+    item_ids: list[str] = field(default_factory=list)
+    fallback_used: bool = False
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass
 class ItemDisplayCard:
     parent_asin: str
     title: str | None = None
@@ -159,8 +190,7 @@ class AgentTurn:
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
-        if self.rag_context is None:
-            payload.pop("rag_context", None)
+        payload.pop("rag_context", None)
         payload["feedback_constraints"] = self.feedback_constraints.to_dict()
         payload["recommendation"] = self.recommendation.to_dict()
         payload["reward_evidence"] = self.reward_evidence.to_dict()
@@ -177,9 +207,13 @@ class AgentSession:
     turns: list[AgentTurn] = field(default_factory=list)
     runtime_trace: list[dict[str, Any]] = field(default_factory=list)
     session_summary: dict[str, Any] = field(default_factory=dict)
+    user_profile: UserPreferenceProfile = field(default_factory=UserPreferenceProfile)
+    archived_turn_summaries: list[ArchivedTurnSummary] = field(default_factory=list)
 
     def prior_turn_items(self) -> set[str]:
         items: set[str] = set()
+        for summary in self.archived_turn_summaries:
+            items.update(str(item_id) for item_id in summary.item_ids if item_id)
         for turn in self.turns:
             if not turn.recommendation.final_items:
                 continue
@@ -194,6 +228,8 @@ class AgentSession:
             "conversation_state": self.conversation_state.to_dict(),
             "runtime_trace": _jsonable(self.runtime_trace),
             "session_summary": _jsonable(self.session_summary),
+            "user_profile": self.user_profile.to_dict(),
+            "archived_turn_summaries": [summary.to_dict() for summary in self.archived_turn_summaries],
             "turns": [turn.to_dict() for turn in self.turns],
         }
 
