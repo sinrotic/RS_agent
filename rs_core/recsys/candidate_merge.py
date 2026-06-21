@@ -11,7 +11,7 @@ from typing import Any
 from rs_core.common.io import iter_jsonl, read_json
 from rs_core.recsys.two_tower_query import apply_user_tower_projection, build_two_tower_query_for_user
 from rs_core.recsys.types import MergedCandidate, RecallCandidate
-from rs_core.recsys.vector_index import VectorIndex, load_vector_index_artifact
+from rs_core.recsys.vector_index import VectorIndex, VectorSearchIndex, load_vector_index_artifact
 
 
 _SEMANTIC_SEED_CONTEXT_CACHE_LIMIT = 4
@@ -805,12 +805,12 @@ def semantic_title_category_expansion_candidates_for_user(
 
 def two_tower_candidates_for_user(
     user_sequence: dict[str, Any],
-    two_tower_index: dict[str, dict[str, Any]] | VectorIndex,
+    two_tower_index: dict[str, dict[str, Any]] | VectorSearchIndex,
     config: dict,
 ) -> list[RecallCandidate]:
     if not config.get("two_tower_enabled") or not two_tower_index:
         return []
-    if isinstance(two_tower_index, VectorIndex):
+    if isinstance(two_tower_index, VectorSearchIndex):
         return _two_tower_vector_candidates_for_user(user_sequence, two_tower_index, config)
 
     seen_items = set(user_sequence.get("recent_item_sequence", []))
@@ -882,7 +882,7 @@ def two_tower_candidates_for_user(
 
 def _two_tower_vector_candidates_for_user(
     user_sequence: dict[str, Any],
-    two_tower_index: VectorIndex,
+    two_tower_index: VectorSearchIndex,
     config: dict,
 ) -> list[RecallCandidate]:
     limit = int(config.get("two_tower_per_user", 20))
@@ -919,7 +919,7 @@ def _two_tower_vector_candidates_for_user(
     return rows
 
 
-def _apply_user_tower_projection(query_vector: list[float], index: VectorIndex) -> list[float]:
+def _apply_user_tower_projection(query_vector: list[float], index: VectorSearchIndex) -> list[float]:
     return apply_user_tower_projection(query_vector, index)
 
 

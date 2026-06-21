@@ -4,7 +4,7 @@ import heapq
 import math
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol, runtime_checkable
 
 try:
     import numpy as np
@@ -20,6 +20,20 @@ class VectorSearchResult:
     item_id: str
     score: float
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@runtime_checkable
+class VectorSearchIndex(Protocol):
+    source_name: str
+    model_metadata: dict[str, Any]
+
+    def __bool__(self) -> bool: ...
+
+    def get_item_vector(self, item_id: str) -> list[float]: ...
+
+    def get_user_vector(self, user_id: str) -> list[float]: ...
+
+    def search(self, query_vector: list[float], limit: int, excluded_items: set[str] | None = None) -> list[VectorSearchResult]: ...
 
 
 @dataclass

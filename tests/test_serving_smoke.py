@@ -14,7 +14,7 @@ from rs_core.recsys.semantic_description import build_sqlite_semantic_descriptio
 from rs_core.rsagent.tools import AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
 from rs_core.serving import app as serving_app
 from rs_core.serving.facades import FeedbackSessionFacade, RecommendationFacade, RecallFacade
-from rs_core.serving.schema import RecallRequest, RecommendFromSequenceRequest
+from rs_core.serving.schema import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
 from rs_core.serving.service import RecommendationService, resolve_serving_config
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 
@@ -120,6 +120,148 @@ def test_health_does_not_instantiate_service_or_readiness(monkeypatch: pytest.Mo
 
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+    assert response.headers["X-Request-ID"]
+
+
+
+def test_request_id_header_preserves_valid_client_id(client: TestClient):
+    response = client.post("/session/start", json={"user_id": "u1"}, headers={"X-Request-ID": "web-test-123"})
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"] == "web-test-123"
+
+
+
+def test_request_id_header_replaces_invalid_client_id(client: TestClient):
+    response = client.post("/session/start", json={"user_id": "u1"}, headers={"X-Request-ID": "bad id with spaces"})
+
+    assert response.status_code == 200
+    assert response.headers["X-Request-ID"]
+    assert response.headers["X-Request-ID"] != "bad id with spaces"
+    assert _is_uuid(response.headers["X-Request-ID"])
+
+
+
+def test_strict_auth_rejects_trial_endpoint_without_token(monkeypatch: pytest.MonkeyPatch):
+    def fail_get_service():
+        raise AssertionError("unauthorized request must not instantiate service")
+
+    monkeypatch.setenv("RS_SERVING_STRICT_AUTH", "1")
+    monkeypatch.setenv("RS_TRIAL_TOKEN", "trial-secret")
+    monkeypatch.setattr(serving_app, "get_service", fail_get_service)
+    with TestClient(serving_app.app) as test_client:
+        response = test_client.post("/session/start", json={"user_id": "u1"})
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == {"code": "AUTH_REQUIRED", "message": "Trial token required"}
+    assert response.headers["X-Request-ID"]
+
+
+
+def test_strict_auth_allows_trial_token_for_public_endpoint(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_SERVING_STRICT_AUTH", "1")
+    monkeypatch.setenv("RS_TRIAL_TOKEN", "trial-secret")
+
+    response = client.post("/session/start", json={"user_id": "u1"}, headers={"Authorization": "Bearer trial-secret"})
+
+    assert response.status_code == 200
+    assert response.json()["session_id"]
+
+
+
+def test_strict_auth_recall_requires_debug_token(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_SERVING_STRICT_AUTH", "1")
+    monkeypatch.setenv("RS_TRIAL_TOKEN", "trial-secret")
+    monkeypatch.setenv("RS_DEBUG_TOKEN", "debug-secret")
+
+    trial_response = client.post(
+        "/recall",
+        json={"user_sequence": {"user_id": "online-u1", "recent_item_sequence": ["seed_audio"]}},
+        headers={"Authorization": "Bearer trial-secret"},
+    )
+    debug_response = client.post(
+        "/recall",
+        json={"user_sequence": {"user_id": "online-u1", "recent_item_sequence": ["seed_audio"]}},
+        headers={"Authorization": "Bearer debug-secret"},
+    )
+
+    assert trial_response.status_code == 403
+    assert trial_response.json()["detail"] == {"code": "FORBIDDEN", "message": "Debug token required"}
+    assert debug_response.status_code == 200
+    assert set(debug_response.json()) == {"request_id", "candidate_item_ids", "candidate_count", "retrieval_summary"}
+
+
+
+def test_demo_endpoint_can_be_disabled_by_env(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_ENABLE_DEMO_ENDPOINT", "0")
+
+    response = client.post("/demo/e2e", json={"user_id": "u1", "message": "For commute, prefer bluetooth and Audio"})
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == {"code": "FORBIDDEN", "message": "Demo endpoint disabled"}
+
+
+
+def test_recall_endpoint_can_be_disabled_by_env(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_ENABLE_RECALL_ENDPOINT", "0")
+
+    response = client.post("/recall", json={"user_sequence": {"user_id": "online-u1", "recent_item_sequence": ["seed_audio"]}})
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == {"code": "FORBIDDEN", "message": "Recall endpoint disabled"}
+
+
+
+def test_strict_auth_leaves_health_public(monkeypatch: pytest.MonkeyPatch):
+    def fail_get_service():
+        raise AssertionError("/health must stay liveness-only under strict auth")
+
+    monkeypatch.setenv("RS_SERVING_STRICT_AUTH", "1")
+    monkeypatch.setattr(serving_app, "get_service", fail_get_service)
+    with TestClient(serving_app.app) as test_client:
+        response = test_client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ok"
+
+
+
+def test_strict_auth_simulation_requires_simulation_or_debug_token(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_SERVING_STRICT_AUTH", "1")
+    monkeypatch.setenv("RS_TRIAL_TOKEN", "trial-secret")
+    monkeypatch.setenv("RS_SIMULATION_TOKEN", "simulation-secret")
+    monkeypatch.setenv("RS_DEBUG_TOKEN", "debug-secret")
+
+    trial_response = client.post(
+        "/simulation/scene",
+        json={"role_id": "commuter_practical", "max_turns": 1},
+        headers={"Authorization": "Bearer trial-secret"},
+    )
+    simulation_response = client.post(
+        "/simulation/scene",
+        json={"role_id": "commuter_practical", "max_turns": 1},
+        headers={"Authorization": "Bearer simulation-secret"},
+    )
+    debug_response = client.post(
+        "/simulation/scene",
+        json={"role_id": "commuter_practical", "max_turns": 1},
+        headers={"Authorization": "Bearer debug-secret"},
+    )
+
+    assert trial_response.status_code == 403
+    assert trial_response.json()["detail"] == {"code": "FORBIDDEN", "message": "Simulation token required"}
+    assert simulation_response.status_code == 200
+    assert debug_response.status_code == 200
+
+
+
+def test_simulation_endpoint_can_be_disabled_by_env(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_ENABLE_SIMULATION_ENDPOINTS", "0")
+
+    response = client.post("/simulation/scene", json={"role_id": "commuter_practical", "max_turns": 1})
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == {"code": "FORBIDDEN", "message": "Simulation endpoints disabled"}
 
 
 
@@ -146,6 +288,7 @@ def test_ready_returns_coarse_public_readiness(client: TestClient):
         "mode": "online-service",
         "session_state": "single_process_in_memory",
         "complete_pool500_available": True,
+        "online_source_indexes_available": False,
         "source_index_available_count": 0,
         "source_index_configured_count": 0,
         "pool500_artifact": {"enabled": True, "status": "ready"},
@@ -299,17 +442,17 @@ def test_recommendation_service_holds_facades_and_delegates_public_methods(tmp_p
     monkeypatch.setattr(
         service.feedback_session_facade,
         "start_session",
-        lambda user_id=None: calls.append(("start_session", user_id)) or "session-1",
+        lambda user_id=None, request_id=None: calls.append(("start_session", user_id)) or "session-1",
     )
     monkeypatch.setattr(
         service.feedback_session_facade,
         "chat",
-        lambda session_id, message: calls.append(("chat", session_id, message)) or type("Result", (), {"session_id": session_id, "display": {"items": []}})(),
+        lambda session_id, message, request_id=None: calls.append(("chat", session_id, message)) or type("Result", (), {"session_id": session_id, "display": {"items": []}})(),
     )
     monkeypatch.setattr(
         service.feedback_session_facade,
         "feedback",
-        lambda session_id, action_type, item_id=None, comment=None: calls.append(("feedback", session_id, action_type, item_id, comment)) or type("Result", (), {"session_id": session_id, "display": {"items": []}})(),
+        lambda session_id, action_type, item_id=None, comment=None, request_id=None: calls.append(("feedback", session_id, action_type, item_id, comment)) or type("Result", (), {"session_id": session_id, "display": {"items": []}})(),
     )
     monkeypatch.setattr(
         service.feedback_session_facade,
@@ -319,12 +462,12 @@ def test_recommendation_service_holds_facades_and_delegates_public_methods(tmp_p
     monkeypatch.setattr(
         service.recall_facade,
         "recall",
-        lambda request: calls.append(("recall", request)) or {"request_id": "recall-1"},
+        lambda request: calls.append(("recall", request)) or {"request_id": "recall-1", "candidate_count": 0, "retrieval_summary": {}},
     )
     monkeypatch.setattr(
         service.recommendation_facade,
         "recommend_from_sequence",
-        lambda request: calls.append(("recommend_from_sequence", request)) or {"request_id": "recommend-1"},
+        lambda request: calls.append(("recommend_from_sequence", request)) or {"request_id": "recommend-1", "item_count": 0, "candidate_count": 0, "fallback_used": False},
     )
 
     recall_request = RecallRequest(user_sequence={"recent_item_sequence": ["seed_audio"]})
@@ -334,8 +477,8 @@ def test_recommendation_service_holds_facades_and_delegates_public_methods(tmp_p
     assert service.chat("session-1", "hello").display == {"items": []}
     assert service.feedback("session-1", "why", "speaker_1", "short").display == {"items": []}
     assert service.export_session("session-1") == {"session_id": "session-1"}
-    assert service.recall(recall_request) == {"request_id": "recall-1"}
-    assert service.recommend_from_sequence(recommend_request) == {"request_id": "recommend-1"}
+    assert service.recall(recall_request) == {"request_id": "recall-1", "candidate_count": 0, "retrieval_summary": {}}
+    assert service.recommend_from_sequence(recommend_request) == {"request_id": "recommend-1", "item_count": 0, "candidate_count": 0, "fallback_used": False}
     assert calls == [
         ("start_session", "u1"),
         ("chat", "session-1", "hello"),
@@ -344,6 +487,65 @@ def test_recommendation_service_holds_facades_and_delegates_public_methods(tmp_p
         ("recall", recall_request),
         ("recommend_from_sequence", recommend_request),
     ]
+
+
+def test_feed_refresh_endpoint_reranks_and_rerecalls_without_chat_prompt(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+    first = client.post("/chat", json={"session_id": session_id, "message": "For commute, prefer bluetooth and Audio"}).json()
+
+    like = client.post(
+        "/feed/refresh",
+        json={"session_id": session_id, "event_type": "like", "item_id": "speaker_1", "display_revision": 1, "top_k": 3},
+    )
+    stale = client.post(
+        "/feed/refresh",
+        json={"session_id": session_id, "event_type": "show_different", "display_revision": 1, "top_k": 3},
+    )
+    show_more = client.post(
+        "/feed/refresh",
+        json={"session_id": session_id, "event_type": "show_different", "display_revision": like.json()["display_revision"], "top_k": 3},
+    )
+
+    assert like.status_code == 200
+    like_payload = like.json()
+    assert like_payload["session_id"] == session_id
+    assert like_payload["display_revision"] == 2
+    assert like_payload["decision"]["action"] == "rerank_existing"
+    assert like_payload["decision"]["decision_source"] == "feed_refresh_policy"
+    assert like_payload["display"]["session_id"] == session_id
+    assert like_payload["items"] == like_payload["display"]["items"]
+    assert first["display"]["session_id"] == session_id
+
+    assert stale.status_code == 200
+    assert stale.json()["display_revision"] == 2
+    assert stale.json()["decision"] == {
+        "action": "no_refresh",
+        "decision_source": "feed_refresh_policy",
+        "reason_code": "idempotency_conflict",
+        "fallback_reason": "idempotency_conflict",
+    }
+
+    assert show_more.status_code == 200
+    assert show_more.json()["decision"]["action"] == "rerecall_pool500"
+    _assert_no_blocked_keys(like_payload)
+    _assert_no_blocked_public_terms(like_payload)
+
+
+def test_feed_refresh_facade_observe_only_dwell_and_search_decisions(tmp_path: Path):
+    service = RecommendationService(str(_write_serving_fixture(tmp_path)), limit_users=1)
+    session_id = service.start_session("u1")
+    service.chat(session_id, "For commute, prefer bluetooth and Audio")
+
+    click = service.feed_refresh(HomeFeedEventRequest(session_id=session_id, event_type="click", item_id="speaker_1", display_revision=1))
+    dwell = service.feed_refresh(HomeFeedEventRequest(session_id=session_id, event_type="dwell", item_id="speaker_1", dwell_ms=3500, display_revision=1))
+    search = service.feed_refresh(HomeFeedEventRequest(session_id=session_id, event_type="search", query="portable charger", display_revision=dwell["display_revision"]))
+
+    assert click["decision"]["action"] == "no_refresh"
+    assert click["display_revision"] == 1
+    assert dwell["decision"]["action"] == "rerank_existing"
+    assert dwell["display_revision"] == 2
+    assert search["decision"]["action"] == "rerecall_pool500"
+    assert search["display_revision"] == 3
 
 
 def test_hybrid_demo_public_serving_smoke_does_not_read_holdout_files(tmp_path: Path):
@@ -633,6 +835,73 @@ def test_demo_roundtrip_rejects_unknown_feedback_action(client: TestClient):
 
     assert response.status_code == 422
     assert "Unsupported feedback action_type" in response.json()["detail"]
+
+
+def test_session_end_endpoint_defaults_to_disabled_summary_and_preserves_export(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+    client.post("/chat", json={"session_id": session_id, "message": "For commute, prefer bluetooth and Audio"})
+
+    response = client.post(
+        "/session/end",
+        json={"session_id": session_id, "reason": "manual", "client_event": "manual", "write_summary": True},
+    )
+    export = client.get(f"/session/{session_id}")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload == {
+        "session_id": session_id,
+        "status": "ended",
+        "turn_count": 1,
+        "summary_document": {
+            "relative_path": None,
+            "created": False,
+            "error": "LLM_SESSION_SUMMARY_DISABLED",
+        },
+    }
+    assert export.status_code == 200
+    assert export.json()["turn_count"] == 1
+
+
+def test_session_end_normalizes_unknown_reason_and_can_skip_summary(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+
+    response = client.post(
+        "/session/end",
+        json={"session_id": session_id, "reason": "unexpected", "client_event": "surprise", "write_summary": False},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "session_id": session_id,
+        "status": "ended",
+        "turn_count": 0,
+        "summary_document": None,
+    }
+
+
+def test_session_end_unknown_session_returns_stable_404_error(client: TestClient):
+    response = client.post("/session/end", json={"session_id": "missing-session", "write_summary": False})
+
+    assert response.status_code == 404
+    assert response.json() == {"error": {"code": "SESSION_NOT_FOUND", "message": "Unknown session_id"}}
+
+
+def test_session_end_makes_chat_and_feedback_read_only(client: TestClient):
+    session_id = client.post("/session/start", json={"user_id": "u1"}).json()["session_id"]
+    client.post("/chat", json={"session_id": session_id, "message": "For commute, prefer bluetooth and Audio"})
+    client.post("/session/end", json={"session_id": session_id, "write_summary": False})
+
+    chat = client.post("/chat", json={"session_id": session_id, "message": "more please"})
+    feedback = client.post("/feedback", json={"session_id": session_id, "action_type": "why", "item_id": "speaker_1"})
+    export = client.get(f"/session/{session_id}")
+
+    assert chat.status_code == 409
+    assert chat.json() == {"error": {"code": "SESSION_ENDED", "message": "Session has already ended"}}
+    assert feedback.status_code == 409
+    assert feedback.json() == {"error": {"code": "SESSION_ENDED", "message": "Session has already ended"}}
+    assert export.status_code == 200
+    assert export.json()["turn_count"] == 1
 
 
 def test_session_export_returns_safe_turn_history(client: TestClient):

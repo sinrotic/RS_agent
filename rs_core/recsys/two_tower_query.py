@@ -5,7 +5,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from rs_core.recsys.vector_index import VectorIndex, average_vectors
+from rs_core.recsys.vector_index import VectorSearchIndex, average_vectors
 
 ARTIFACT_USER_EMBEDDING_SOURCE = "artifact_user_embedding"
 NO_QUERY_SOURCE = "none"
@@ -36,7 +36,7 @@ class TwoTowerQueryDiagnostics:
 
 def build_two_tower_query_for_user(
     user_sequence: dict[str, Any],
-    index: VectorIndex,
+    index: VectorSearchIndex,
     *,
     seed_window: int,
     recency_decay: float,
@@ -145,12 +145,12 @@ def is_seed_average_source(query_source: str) -> bool:
     return query_source.endswith("_average_vectors")
 
 
-def has_user_tower_projection(index: VectorIndex) -> bool:
+def has_user_tower_projection(index: VectorSearchIndex) -> bool:
     params = index.model_metadata.get("model_parameters", {})
     return isinstance(params, dict) and bool(params.get("user_tower.0.weight")) and bool(params.get("user_tower.2.weight"))
 
 
-def apply_user_tower_projection(query_vector: list[float], index: VectorIndex) -> list[float]:
+def apply_user_tower_projection(query_vector: list[float], index: VectorSearchIndex) -> list[float]:
     params = index.model_metadata.get("model_parameters", {})
     if not isinstance(params, dict) or not params:
         return query_vector

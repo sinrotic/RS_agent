@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -44,6 +44,91 @@ class FeedbackRequest(BaseModel):
 class FeedbackResponse(BaseModel):
     session_id: str
     display: dict[str, Any]
+
+
+FEED_EVENT_TYPES = {"click", "like", "dislike", "dwell", "show_different", "search"}
+FEED_REFRESH_ACTIONS = {"rerank_existing", "rerecall_pool500", "no_refresh", "fallback_cached_or_cold"}
+
+
+class HomeFeedEventRequest(BaseModel):
+    session_id: str
+    event_type: Literal["click", "like", "dislike", "dwell", "show_different", "search"]
+    display_revision: int = Field(default=1, ge=0)
+    event_id: str | None = None
+    item_id: str | None = None
+    query: str | None = None
+    dwell_ms: int | None = Field(default=None, ge=0)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    top_k: int = Field(default=5, ge=1, le=50)
+    candidate_pool_size: int | None = Field(default=None, ge=1, le=500)
+
+    model_config = ConfigDict(extra="forbid")
+
+    @field_validator("query")
+    @classmethod
+    def normalize_query(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        return normalized or None
+
+
+class FeedRefreshDecisionResponse(BaseModel):
+    action: Literal["rerank_existing", "rerecall_pool500", "no_refresh", "fallback_cached_or_cold"]
+    decision_source: str
+    reason_code: str
+    fallback_reason: str | None = None
+
+
+class DisplayRefreshResponse(BaseModel):
+    session_id: str
+    request_id: str
+    display_revision: int
+    decision: FeedRefreshDecisionResponse
+    display: dict[str, Any]
+    items: list[dict[str, Any]]
+    item_count: int
+    candidate_count: int
+    fallback_used: bool
+    public_message: str
+
+
+SESSION_END_REASONS = {"user_exit", "checkout", "persona_switch", "pagehide", "manual", "unknown"}
+SESSION_END_CLIENT_EVENTS = {"manual", "checkout", "persona_change", "pagehide", "beforeunload", "unknown"}
+
+
+class EndSessionRequest(BaseModel):
+    session_id: str
+    reason: str = "unknown"
+    client_event: str | None = None
+    write_summary: bool = True
+
+    @field_validator("reason")
+    @classmethod
+    def normalize_reason(cls, value: str) -> str:
+        normalized = str(value or "unknown").strip().lower()
+        return normalized if normalized in SESSION_END_REASONS else "unknown"
+
+    @field_validator("client_event")
+    @classmethod
+    def normalize_client_event(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = str(value or "unknown").strip().lower()
+        return normalized if normalized in SESSION_END_CLIENT_EVENTS else "unknown"
+
+
+class SummaryDocumentInfo(BaseModel):
+    relative_path: str | None = None
+    created: bool = False
+    error: str | None = None
+
+
+class EndSessionResponse(BaseModel):
+    session_id: str
+    status: str
+    turn_count: int
+    summary_document: SummaryDocumentInfo | None = None
 
 
 class RecommendFromSequenceRequest(BaseModel):

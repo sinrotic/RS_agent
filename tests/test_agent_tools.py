@@ -28,7 +28,14 @@ from rs_core.rsagent.tools import (
     QueryRagOutput,
     RankCandidatesInput,
     RankCandidatesOutput,
+    RecallConstraints,
+    RecallDiversityPolicy,
+    RecallIntent,
     RecallPathPlan,
+    RecallProfilePolicy,
+    RecallRetrievalSummary,
+    RecallRouteDecision,
+    RecallRoutePolicy,
     RecordUserFeedbackInput,
     RecordUserFeedbackOutput,
     RetrieveCandidatesInput,
@@ -80,11 +87,38 @@ def test_agent_tool_schema_names_have_local_contracts_for_new_tools():
     assert query_rag_payload["scope"] == "catalog_knowledge"
     assert query_rag_payload["fields"] == ["title"]
     assert QueryRagOutput(semantic_query_hint="通勤 蓝牙").to_dict()["semantic_query_hint"] == "通勤 蓝牙"
-    retrieve_payload = RetrieveCandidatesInput(query="通勤耳机", limit=50, semantic_mode="hybrid_query_history").to_dict()
+    retrieve_payload = RetrieveCandidatesInput(
+        query="通勤耳机",
+        target_pool_size=500,
+        intent=RecallIntent(scenario="commute", need_specificity="specific"),
+        profile_policy=RecallProfilePolicy(use_current_query=True, use_recent_history=True),
+        route_policy=RecallRoutePolicy(semantic="hybrid_query_history", similar_item="auto", user_neighbor="auto"),
+        constraints=RecallConstraints(preferred_keywords=["bluetooth"]),
+        diversity=RecallDiversityPolicy(source_balance="balanced"),
+        limit=50,
+        semantic_mode="hybrid_query_history",
+    ).to_dict()
+    assert retrieve_payload["target_pool_size"] == 500
+    assert retrieve_payload["retrieval_mode"] == "auto"
+    assert retrieve_payload["profile_usage"] == "balanced"
+    assert retrieve_payload["expansion_policy"] == "balanced"
+    assert retrieve_payload["reference_item_id"] is None
+    assert retrieve_payload["route_policy"]["semantic"] == "hybrid_query_history"
+    assert retrieve_payload["constraints"]["preferred_keywords"] == ["bluetooth"]
     assert retrieve_payload["limit"] == 50
     assert retrieve_payload["semantic_mode"] == "hybrid_query_history"
     assert retrieve_payload["use_history_profile"] is True
-    assert RetrieveCandidatesOutput(candidate_item_ids=["i1"]).to_dict()["candidate_count"] == 0
+    retrieve_output = RetrieveCandidatesOutput(
+        candidate_item_ids=["i1"],
+        retrieval_summary=RecallRetrievalSummary(target_pool_size=500, returned_count=1),
+        route_decisions=[RecallRouteDecision(route="semantic", status="used", eligible=True, returned_count=1)],
+    ).to_dict()
+    assert retrieve_output["candidate_count"] == 0
+    assert retrieve_output["retrieval_summary"]["schema_version"] == "retrieve_candidates_output_v3"
+    assert retrieve_output["retrieval_summary"]["retrieval_mode"] == "auto"
+    assert retrieve_output["retrieval_summary"]["profile_usage"] == "balanced"
+    assert retrieve_output["retrieval_summary"]["expansion_policy"] == "balanced"
+    assert retrieve_output["route_decisions"][0]["route"] == "semantic"
     assert RankCandidatesInput(candidate_item_ids=["i1"], return_top_k=1).to_dict()["return_top_k"] == 1
     assert RankCandidatesOutput(ranked_item_ids=["i1"]).to_dict()["ranked_item_count"] == 0
     assert GetItemEvidenceInput(item_ids=["i1"]).to_dict()["max_evidence_per_item"] == 3
@@ -140,8 +174,8 @@ def test_agent_tool_planner_system_prompt_payload_contains_hidden_tool_boundarie
     assert prompt.startswith(AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT)
     assert "retrieve_candidates" in prompt
     assert "query_rag" in prompt
-    assert "semantic_live" in prompt
-    assert "semantic_live is available to every user" in prompt
+    assert "retrieval_mode" in prompt
+    assert "reference_item_id" in prompt
     assert "never use query_rag as a replacement" in prompt
     assert "concept completion" in prompt
     assert "attribute expansion" in prompt
@@ -167,25 +201,32 @@ def test_get_item_evidence_declares_post_ranking_grounding_boundary():
     assert "raw RAG/source diagnostics" in tool.boundary_prompt
 
 
-def test_retrieve_candidates_declares_semantic_and_behavioral_boundaries():
+def test_retrieve_candidates_declares_business_mode_boundaries():
     tool = next(tool for tool in AGENT_TOOL_MANIFEST if tool.name == "retrieve_candidates")
 
-    assert tool.routing_attributes["semantic_live"]["enabled_for"] == "all_users"
-    assert set(tool.routing_attributes["semantic_live"]["modes"]) == {
+    assert tool.routing_attributes["llm_visible_policy"]["retrieval_mode"] == [
         "auto",
-        "query_intent",
-        "history_profile",
-        "hybrid_query_history",
-    }
-    assert tool.routing_attributes["behavioral_recall"]["usercf_recall"]["min_recent_positive_items"] == 3
-    assert tool.routing_attributes["behavioral_recall"]["co_visit_fallback_repair"]["min_recent_positive_items"] == 2
-    assert "semantic_live is available to every user" in tool.boundary_prompt
+        "specific_need",
+        "personalized_feed",
+        "broad_browse",
+        "similar_to_item",
+        "reference_with_constraints",
+    ]
+    assert tool.routing_attributes["llm_visible_policy"]["profile_usage"] == ["none", "light", "balanced", "strong"]
+    assert tool.routing_attributes["llm_visible_policy"]["expansion_policy"] == ["none", "narrow", "balanced", "broad"]
+    assert "reference_item_id" in tool.routing_attributes["llm_visible_policy"]
+    assert "semantic_participation" in tool.routing_attributes
+    assert tool.routing_attributes["internal_output"] == "business_route_decisions_allowed_without_scores_or_lineage"
+    assert "retrieval_mode" in tool.boundary_prompt
+    assert "reference_item_id" in tool.boundary_prompt
+    assert "semantic acquisition" in tool.boundary_prompt
+    assert "do not choose provider names" in tool.boundary_prompt
     assert "never public scores" in tool.boundary_prompt
-    assert "semantic_live" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "retrieval_mode/profile_usage/expansion_policy" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
     assert "tool traces" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
 
 
-def test_dialogue_plan_passes_semantic_mode_boundary_to_retrieve_candidates():
+def test_dialogue_plan_passes_business_mode_boundary_to_retrieve_candidates():
     plan = plan_dialogue_turn("For commute, prefer bluetooth speaker", AgentSession(session_id="s1", user_id="u1"))
 
     tool_names = [call["name"] for call in plan.tool_calls]
@@ -203,9 +244,22 @@ def test_dialogue_plan_passes_semantic_mode_boundary_to_retrieve_candidates():
     retrieve_call = next(call for call in plan.tool_calls if call["name"] == "retrieve_candidates")
     arguments = retrieve_call["arguments"]
 
+    assert arguments["retrieval_mode"] == "specific_need"
+    assert arguments["profile_usage"] == "balanced"
+    assert arguments["expansion_policy"] == "balanced"
+    assert arguments["target_pool_size"] == 500
+    assert arguments["reference_item_id"] is None
     assert arguments["semantic_mode"] == "hybrid_query_history"
     assert arguments["use_history_profile"] is True
     assert arguments["use_behavioral_recall"] is True
+    assert arguments["profile_policy"] == {"use_current_query": True, "use_recent_history": True, "history_weight": "balanced"}
+    assert arguments["route_policy"] == {
+        "semantic": "hybrid_query_history",
+        "similar_item": "auto",
+        "user_neighbor": "auto",
+        "behavioral": "auto",
+        "fallback": "auto",
+    }
     assert arguments["query"] == "For commute, prefer bluetooth speaker"
 
 

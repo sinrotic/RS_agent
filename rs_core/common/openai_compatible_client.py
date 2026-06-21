@@ -123,8 +123,22 @@ def safe_response_metadata(response: dict[str, Any]) -> dict[str, Any]:
 
 
 def _default_transport(url: str, headers: dict[str, str], payload: dict[str, Any], timeout_seconds: float) -> dict[str, Any]:
+    request_headers = {"User-Agent": "RS-Agent-SFT-Generator/1.0", **headers}
+    try:
+        import requests  # type: ignore[import-untyped]
+
+        response = requests.post(url, headers=request_headers, json=payload, timeout=timeout_seconds)
+        response.raise_for_status()
+        return response.json()
+    except ImportError:
+        pass
+    except Exception as exc:
+        if exc.__class__.__module__.startswith("requests"):
+            raise RuntimeError(f"OpenAI-compatible request failed: {_redact_sensitive_text(str(exc))}") from exc
+        raise
+
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    request = Request(url, data=body, headers=headers, method="POST")
+    request = Request(url, data=body, headers=request_headers, method="POST")
     with urlopen(request, timeout=timeout_seconds) as response:  # nosec B310 - endpoint is explicit user config.
         return json.loads(response.read().decode("utf-8"))
 

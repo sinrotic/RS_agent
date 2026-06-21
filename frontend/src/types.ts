@@ -47,6 +47,55 @@ export interface FeedbackResponse {
   display: DisplayResponse;
 }
 
+export type HomeFeedEventType = 'click' | 'like' | 'dislike' | 'dwell' | 'show_different' | 'search';
+export type FeedRefreshAction = 'rerank_existing' | 'rerecall_pool500' | 'no_refresh' | 'fallback_cached_or_cold';
+
+export interface HomeFeedEventRequest {
+  session_id: string;
+  event_type: HomeFeedEventType;
+  display_revision: number;
+  event_id?: string | null;
+  item_id?: string | null;
+  query?: string | null;
+  dwell_ms?: number | null;
+  metadata?: Record<string, any>;
+  top_k?: number;
+  candidate_pool_size?: number | null;
+}
+
+export interface FeedRefreshDecision {
+  action: FeedRefreshAction;
+  decision_source: string;
+  reason_code: string;
+  fallback_reason: string | null;
+}
+
+export interface DisplayRefreshResponse {
+  session_id: string;
+  request_id: string;
+  display_revision: number;
+  decision: FeedRefreshDecision;
+  display: DisplayResponse;
+  items: DisplayItem[];
+  item_count: number;
+  candidate_count: number;
+  fallback_used: boolean;
+  public_message: string;
+}
+
+export interface SummaryDocumentInfo {
+  relative_path: string | null;
+  created: boolean;
+  error: string | null;
+}
+
+export interface EndSessionResponse {
+  session_id: string;
+  status: string;
+  turn_count: number;
+  summary_document: SummaryDocumentInfo | null;
+}
+
 export interface DemoRoundtripRequest {
   message: string;
   feedback_action?: string;
@@ -72,7 +121,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   items?: DisplayItem[];
-  thoughts?: any;
+  turn_index?: number;
 }
 
 export interface SanitizedTimelineEvent {
@@ -97,7 +146,6 @@ export interface SessionExportResponse {
   turn_count: number;
   public_timeline: PublicTimeline;
   display_responses: DisplayResponse[];
-  agent_thoughts?: any[];
 }
 
 export interface SimulationSceneRequest {

@@ -97,7 +97,7 @@ class ContextBundle:
             "recent_action": self.latest_action or "",
             "turn_count": self.turn_count,
             "user_profile": self.user_profile,
-            "archived_turn_count": len(self.archived_turn_summaries),
+            "archived_turn_count": _archived_turn_count(self.turn_count, self.diagnostics.get("budget", {})),
             "context_budget": self.diagnostics.get("budget", {}),
         }
 
@@ -110,7 +110,12 @@ def build_context_bundle(session: AgentSession, budget: ContextBudget | None = N
         summarize_turn(turn, active_budget).to_dict()
         for turn in session.turns[-max(0, active_budget.recent_turns):]
     ] if active_budget.recent_turns else []
-    archived = [summary.to_dict() for summary in session.archived_turn_summaries[-active_budget.archived_turns:]]
+    recent_turn_indices = {turn.get("turn_index") for turn in recent_turns}
+    archived = [
+        summary.to_dict()
+        for summary in session.archived_turn_summaries[-active_budget.archived_turns:]
+        if summary.turn_index not in recent_turn_indices
+    ]
     state = session.conversation_state
     return ContextBundle(
         session_id=session.session_id,
@@ -126,7 +131,11 @@ def build_context_bundle(session: AgentSession, budget: ContextBudget | None = N
         recent_turns=recent_turns,
         archived_turn_summaries=archived,
         turn_count=len(session.turns),
-        diagnostics={"compact": True, "budget": active_budget.to_dict()},
+        diagnostics={
+            "compact": True,
+            "budget": active_budget.to_dict(),
+            "archived_turn_count": len(session.archived_turn_summaries),
+        },
     )
 
 
@@ -155,10 +164,18 @@ def update_user_profile(session: AgentSession, budget: ContextBudget | None = No
 
 def refresh_archived_turn_summaries(session: AgentSession, budget: ContextBudget | None = None) -> list[ArchivedTurnSummary]:
     active_budget = budget or ContextBudget()
+    if active_budget.archived_turns <= 0:
+        session.archived_turn_summaries = []
+        return session.archived_turn_summaries
     summaries_by_turn = {summary.turn_index: summary for summary in session.archived_turn_summaries}
-    for turn in session.turns:
-        summaries_by_turn[turn.turn_index] = summarize_turn(turn, active_budget)
-    ordered = [summaries_by_turn[index] for index in sorted(summaries_by_turn)]
+    for turn in session.turns[-active_budget.archived_turns:]:
+        summaries_by_turn.setdefault(turn.turn_index, summarize_turn(turn, active_budget))
+    retained_turn_indices = {turn.turn_index for turn in session.turns[-active_budget.archived_turns:]}
+    ordered = [
+        summaries_by_turn[index]
+        for index in sorted(summaries_by_turn)
+        if index in retained_turn_indices
+    ]
     session.archived_turn_summaries = ordered[-active_budget.archived_turns:]
     return session.archived_turn_summaries
 
@@ -175,6 +192,12 @@ def summarize_turn(turn: AgentTurn, budget: ContextBudget | None = None) -> Arch
         item_ids=_item_ids(turn.recommendation.final_items),
         fallback_used=bool(turn.fallback_used),
     )
+
+
+def _archived_turn_count(turn_count: int, budget: dict[str, Any]) -> int:
+    recent_turns = int(budget.get("recent_turns", ContextBudget.recent_turns)) if isinstance(budget, dict) else ContextBudget.recent_turns
+    archived_turns = int(budget.get("archived_turns", ContextBudget.archived_turns)) if isinstance(budget, dict) else ContextBudget.archived_turns
+    return max(0, min(int(turn_count), archived_turns) - max(0, min(int(turn_count), recent_turns)))
 
 
 def constraints_summary(constraints: FeedbackConstraints, budget: ContextBudget | None = None) -> dict[str, Any]:

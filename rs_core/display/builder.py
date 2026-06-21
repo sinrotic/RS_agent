@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from rs_core.display.public_safety import sanitize_public_text
 from rs_core.rsagent.schema import AgentSession, AgentTurn, DisplayResponse, ItemDisplayCard
 
 DISPLAY_RECORD_ALLOWED_KEYS = {
@@ -221,8 +222,8 @@ def build_public_timeline(session: AgentSession, events: list[dict[str, Any]] | 
                 "public_event_id": f"{session.session_id}:turn:{turn.turn_index}",
                 "event_type": _public_event_type(source_event.get("type")),
                 "turn_index": turn.turn_index,
-                "user_message": turn.user_input,
-                "assistant_message": turn.assistant_response or turn.recommendation.agent_explanation,
+                "user_message": sanitize_public_text(turn.user_input).text,
+                "assistant_message": sanitize_public_text(turn.assistant_response or turn.recommendation.agent_explanation).text,
                 "display_response_index": index,
             }
         )

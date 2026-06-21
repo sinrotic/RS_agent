@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
+from qdrant_fakes import install_fake_qdrant
 from rs_core.common.io import write_jsonl
 from rs_core.serving import app as serving_app
 from rs_core.serving.service import RecommendationService
@@ -369,7 +370,8 @@ def test_missing_co_visit_candidates_path_degrades_readiness(tmp_path: Path, mon
 
     assert response.status_code == 200
     public = response.json()
-    assert public["online_route"]["complete_pool500_available"] is True
+    assert public["online_route"]["complete_pool500_available"] is False
+    assert public["online_route"]["online_source_indexes_available"] is True
     _assert_ready_no_internal_details(public)
     internal = service.online_recommender.readiness()["online_source_indexes"]["co_visit_fallback_repair"]
     assert internal["available"] is False
@@ -400,7 +402,8 @@ def test_ready_with_source_indexes_is_coarse_and_blocks_large_itemcf(tmp_path: P
     assert result["online_route"] == {
         "mode": "online-service",
         "session_state": "single_process_in_memory",
-        "complete_pool500_available": True,
+        "complete_pool500_available": False,
+        "online_source_indexes_available": True,
         "source_index_available_count": 3,
         "source_index_configured_count": 5,
         "pool500_artifact": {"enabled": False, "status": "not_configured"},
@@ -409,6 +412,31 @@ def test_ready_with_source_indexes_is_coarse_and_blocks_large_itemcf(tmp_path: P
     internal = service.online_recommender.readiness()["online_source_indexes"]
     assert internal["itemcf_weak"]["status"] == "blocked_heavy_scan"
     assert internal["itemcf_weak"]["available"] is False
+
+
+def test_ready_with_qdrant_two_tower_requires_available_vector_backend(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _write_serving_fixture(tmp_path)
+    source_indexes = _write_source_index_fixture(tmp_path)
+    source_indexes["two_tower"].update({
+        "backend": "qdrant",
+        "qdrant": {"enabled": True, "collection_name": "missing_two_tower_items"},
+    })
+    payload = json.loads(config.read_text(encoding="utf-8"))
+    payload["online_route"] = {"source_indexes": source_indexes, "governance": SERVING_GOVERNANCE}
+    config.write_text(json.dumps(payload), encoding="utf-8")
+    install_fake_qdrant(monkeypatch)
+    service = RecommendationService(str(config), limit_users=1)
+    monkeypatch.setattr(serving_app, "get_service", lambda: service)
+
+    with TestClient(serving_app.app) as test_client:
+        response = test_client.get("/ready")
+
+    assert response.status_code == 200
+    public = response.json()
+    assert public["online_route"]["complete_pool500_available"] is False
+    internal = service.online_recommender.readiness()["online_source_indexes"]
+    assert internal["two_tower"]["available"] is False
+    assert internal["two_tower"]["status"] == "qdrant_unavailable"
 
 
 def test_recommend_from_sequence_uses_complete_pool500_artifact_route(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

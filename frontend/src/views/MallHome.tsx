@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { mockData } from '../mockData';
-import { startSession, sendChat, sendFeedback } from '../api';
-import { DisplayItem, DisplayResponse } from '../types';
+import { DEBUG_PANEL_ENABLED, endSession, endSessionKeepalive, startSession, sendChat, sendFeedback, refreshFeed } from '../api';
+import { DisplayItem, DisplayResponse, HomeFeedEventType } from '../types';
 import { PersonaSprite } from '../components/sandbox/PersonaSprite';
 import { 
   ShoppingBag, Heart, ShoppingCart, Search, Plus, Sparkles, 
-  Cpu, Brain, Trash2, HelpCircle, X, CheckCircle2, 
+  Cpu, Brain, Trash2, HelpCircle, X,
   Filter, Star, RefreshCw 
 } from 'lucide-react';
 
@@ -36,10 +36,12 @@ export function MallHome() {
   const [activePersona, setActivePersona] = useState<string>('guest');
   const [sessionId, setSessionId] = useState<string>('');
   const [display, setDisplay] = useState<DisplayResponse | null>(null);
+  const [displayRevision, setDisplayRevision] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<string>('正在初始化商城首页推荐...');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
+  const endedSessionIdsRef = useRef<Set<string>>(new Set());
+
   // Local shopping cart & wishlist state
   const [cart, setCart] = useState<DisplayItem[]>([]);
   const [wishlist, setWishlist] = useState<DisplayItem[]>([]);
@@ -65,15 +67,40 @@ export function MallHome() {
   // Active category filter (local filter)
   const [selectedCategory, setSelectedCategory] = useState<string>('全部');
 
+  async function finalizeSession(reason: string, clientEvent: string) {
+    if (!sessionId || endedSessionIdsRef.current.has(sessionId)) return;
+    const currentSessionId = sessionId;
+    endedSessionIdsRef.current.add(currentSessionId);
+    const response = await endSession(currentSessionId, reason, clientEvent, true);
+    const document = response.summary_document;
+    if (document?.created) {
+      setStatus(`上一轮会话已结束，LLM 总结文档已生成：${document.relative_path || 'session summary'}`);
+    } else if (document) {
+      setStatus(`上一轮会话已结束，但总结文档未生成：${document.error || 'summary unavailable'}`);
+    }
+  }
+
   // Initialize session on load or persona change
   useEffect(() => {
     handleSwitchPersona(activePersona);
   }, [activePersona]);
 
+  useEffect(() => {
+    if (!sessionId) return;
+    function handlePageHide() {
+      if (!sessionId || endedSessionIdsRef.current.has(sessionId)) return;
+      endedSessionIdsRef.current.add(sessionId);
+      endSessionKeepalive(sessionId, 'pagehide', 'pagehide');
+    }
+    window.addEventListener('pagehide', handlePageHide);
+    return () => window.removeEventListener('pagehide', handlePageHide);
+  }, [sessionId]);
+
   const handleSwitchPersona = async (personaId: string) => {
     setLoading(true);
     setStatus(`正在为 [${rolePrompts[personaId].displayName}] 生成专属推荐商城...`);
     try {
+      await finalizeSession('persona_switch', 'persona_change');
       // Start a session
       const startRes = await startSession(personaId === 'guest' ? undefined : personaId);
       const newSessionId = startRes.session_id;
@@ -83,45 +110,69 @@ export function MallHome() {
       const initPrompt = rolePrompts[personaId].prompt;
       const chatRes = await sendChat(newSessionId, initPrompt);
       setDisplay(chatRes.display);
+      setDisplayRevision(1);
       setStatus('专属推荐已更新！');
     } catch (e: any) {
       console.error(e);
       setStatus(`连接服务失败，正在展示 Mock 数据。错误: ${e.message}`);
       // Fallback to mock data
       setDisplay(mockData);
+      setDisplayRevision(1);
     } finally {
       setLoading(false);
     }
   };
 
-  // Trigger search/refinement
+  async function applyFeedRefresh(eventType: HomeFeedEventType, options: { itemId?: string; query?: string; dwellMs?: number } = {}) {
+    if (!sessionId) return null;
+    const response = await refreshFeed({
+      session_id: sessionId,
+      event_type: eventType,
+      display_revision: displayRevision || 1,
+      item_id: options.itemId,
+      query: options.query,
+      dwell_ms: options.dwellMs,
+      top_k: 5,
+      candidate_pool_size: 500,
+    });
+    if (response.display_revision >= displayRevision) {
+      setDisplay(response.display);
+      setDisplayRevision(response.display_revision);
+    }
+    return response;
+  }
+
+  // Trigger search/refinement through the homepage behavior refresh route.
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim() || !sessionId || loading) return;
     setLoading(true);
-    setStatus(`正在为您寻找 "${searchQuery}" 相关的推荐...`);
+    setStatus(`正在根据搜索意图从召回池刷新 "${searchQuery}" 相关商品...`);
     try {
-      const chatRes = await sendChat(sessionId, searchQuery);
-      setDisplay(chatRes.display);
-      setStatus(`成功匹配 "${searchQuery}" 的个性化推荐！`);
+      const refresh = await applyFeedRefresh('search', { query: searchQuery });
+      setStatus(refresh?.public_message || `成功匹配 "${searchQuery}" 的个性化推荐！`);
     } catch (e: any) {
-      setStatus(`搜索失败: ${e.message}`);
+      setStatus(`搜索刷新失败: ${e.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Provide interactive feedback (like, dislike, show_different)
+  // Provide structured homepage behavior feedback (like, dislike, show_different).
   const handleItemFeedback = async (actionType: string, itemId?: string) => {
     if (!sessionId || loading) return;
+    if (actionType === 'why') {
+      const item = display?.items.find(i => i.parent_asin === itemId);
+      if (item) await handleGetExplanation(item);
+      return;
+    }
     setLoading(true);
     const label = actionType === 'like' ? '喜欢' : actionType === 'dislike' ? '不喜欢' : '换一批';
-    setStatus(`正在记录反馈 [${label}] 并刷新商城推荐商品...`);
+    setStatus(`FeedRefreshAgent 正在根据 [${label}] 判断重排或重新召回...`);
     try {
-      const fbRes = await sendFeedback(sessionId, actionType, itemId);
-      setDisplay(fbRes.display);
-      setStatus(`已接收反馈！推荐网格已微调。`);
-      
+      const refresh = await applyFeedRefresh(actionType as HomeFeedEventType, { itemId });
+      setStatus(refresh?.public_message || '已接收行为反馈，推荐网格已刷新。');
+
       // If the feedback is 'like', add it to wishlist automatically if it has an itemId
       if (actionType === 'like' && itemId && display) {
         const item = display.items.find(i => i.parent_asin === itemId);
@@ -130,7 +181,7 @@ export function MallHome() {
         }
       }
     } catch (e: any) {
-      setStatus(`反馈提交失败: ${e.message}`);
+      setStatus(`行为刷新失败: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -204,23 +255,14 @@ export function MallHome() {
     ? allItems 
     : allItems.filter(item => item.category === selectedCategory);
 
-  // Active thoughts summary (RAG, safety redlines, reward metrics)
-  // Let's retrieve this from the last turn in display
-  const thoughts = (display as any)?.thoughts;
-  
-  // Find current session agent thoughts if available
-  const latestThoughts = thoughts || (displayItems.length > 0 ? {
-    conversation_intent: searchQuery ? "refine_search" : "persona_match",
-    agent_action: "recommend_items",
-    tool_calls: [
-      { tool_name: "get_user_context", status: "ok" },
-      { tool_name: "retrieve_candidates", status: "ok" },
-      { tool_name: "rank_candidates", status: "ok" }
-    ],
-    stop_check: { passed: true, violations: [] },
-    rag: { query: searchQuery || rolePrompts[activePersona].prompt, retriever_name: "sqlite_bm25" },
-    reward: { total: 4.8, recommendation_quality: 4.7, feedback_alignment: 4.9, explanation_faithfulness: 4.8 }
-  } : null);
+  const latestPublicSummary = DEBUG_PANEL_ENABLED && displayItems.length > 0
+    ? {
+      query: searchQuery || rolePrompts[activePersona].prompt,
+      itemCount: displayItems.length,
+      turnIndex: display?.turn_index,
+      assistantMessage: display?.assistant_message || status
+    }
+    : null;
 
   const formatPrice = (p: string | number | null) => {
     if (p === null || p === undefined) return '$--';
@@ -243,7 +285,7 @@ export function MallHome() {
               探索你的专属推荐主页
             </h1>
             <p className="text-indigo-150 text-sm md:text-base leading-relaxed">
-              系统根据您的交互行为和底层 RAG 检索模型进行多轮规划。通过点赞、踩或细化诉求，您可以与模型实时对齐。
+              系统根据您的交互行为和商品知识信号进行多轮推荐。通过点赞、踩或细化诉求，您可以与推荐结果实时对齐。
             </p>
           </div>
 
@@ -563,53 +605,32 @@ export function MallHome() {
             </div>
           </div>
 
-          {/* Interactive Recommender Thoughts Dashboard */}
-          {latestThoughts && (
+          {/* Public recommender summary */}
+          {latestPublicSummary && (
             <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-lg flex flex-col gap-4">
               <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
                 <Cpu size={16} className="text-indigo-400 animate-pulse" />
-                <h3 className="font-bold text-xs tracking-wider uppercase">推荐系统内部决策轨迹</h3>
+                <h3 className="font-bold text-xs tracking-wider uppercase">公开推荐摘要</h3>
               </div>
-
-              {/* RAG Context */}
               <div className="space-y-1">
-                <span className="text-[10px] text-slate-400 block">RAG 语义检索词:</span>
-                <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-xs font-mono text-indigo-300">
-                  "{latestThoughts.rag?.query || 'N/A'}"
+                <span className="text-[10px] text-slate-400 block">当前公开需求:</span>
+                <div className="bg-slate-800/80 border border-slate-700 rounded-lg p-2 text-xs text-indigo-300">
+                  "{latestPublicSummary.query}"
                 </div>
               </div>
-
-              {/* Tool Execution Steps */}
-              <div className="space-y-2">
-                <span className="text-[10px] text-slate-400 block">Agent 调用链 trace:</span>
-                <div className="space-y-1.5 text-[10px] font-mono">
-                  {latestThoughts.tool_calls?.map((tool: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center bg-slate-950/60 px-2.5 py-1.5 rounded border border-slate-800/50">
-                      <span className="text-indigo-400">{tool.tool_name}</span>
-                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase">
-                        {tool.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Safety check and rewards */}
               <div className="grid grid-cols-2 gap-2 text-[10px] font-sans border-t border-slate-800 pt-3 mt-1">
                 <div>
-                  <span className="text-slate-400 block">硬边界红线过滤:</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-0.5 mt-0.5">
-                    <CheckCircle2 size={10} />
-                    PASSED
-                  </span>
+                  <span className="text-slate-400 block">推荐轮次:</span>
+                  <span className="text-indigo-300 font-semibold block mt-0.5">Turn {latestPublicSummary.turnIndex || '-'}</span>
                 </div>
                 <div>
-                  <span className="text-slate-400 block">推荐对齐得分:</span>
-                  <span className="text-indigo-300 font-extrabold text-xs block mt-0.5">
-                    {latestThoughts.reward?.total || '4.8'} / 5.0
-                  </span>
+                  <span className="text-slate-400 block">公开商品数:</span>
+                  <span className="text-indigo-300 font-semibold block mt-0.5">{latestPublicSummary.itemCount}</span>
                 </div>
               </div>
+              <p className="text-[10px] text-slate-400 leading-relaxed">
+                商城页只展示后端 public display 字段；内部工具链路、RAG 原始证据、奖励分和诊断不进入公开卡片。
+              </p>
             </div>
           )}
 
@@ -683,11 +704,21 @@ export function MallHome() {
                   </span>
                 </div>
                 <button
-                  onClick={() => {
-                    alert('结账成功！非常感谢您的使用。模型已更新您的购买历史。');
-                    setCart([]);
+                  onClick={async () => {
+                    setLoading(true);
+                    setStatus('正在结算并生成本次会话总结...');
+                    try {
+                      await finalizeSession('checkout', 'checkout');
+                      alert('结账成功！本次会话已触发 LLM 总结文档生成。');
+                      setCart([]);
+                    } catch (e: any) {
+                      setStatus(`结算完成，但会话总结触发失败: ${e.message}`);
+                    } finally {
+                      setLoading(false);
+                    }
                   }}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs shadow-sm text-center block transition-all"
+                  disabled={loading || !sessionId}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs shadow-sm text-center block transition-all disabled:opacity-50"
                 >
                   去结算并生成购买回执
                 </button>
@@ -748,7 +779,7 @@ export function MallHome() {
                   </div>
                 ) : (
                   <div className="bg-slate-50 border border-gray-250 p-4 rounded-xl text-sm leading-relaxed text-gray-800 whitespace-pre-wrap font-sans">
-                    {explanation || '点击下方按钮，获取系统对该商品的语义对齐及 RAG 逻辑解释。'}
+                    {explanation || '点击下方按钮，获取系统对该商品的推荐理由和匹配依据。'}
                   </div>
                 )}
               </div>
@@ -788,7 +819,7 @@ export function MallHome() {
             </div>
 
             <div className="p-4 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 flex-shrink-0">
-              {!explanation && !explaining && (
+              {(!explanation || explanation.startsWith('获取推荐解释失败')) && !explaining && (
                 <button
                   onClick={() => handleGetExplanation(selectedProduct)}
                   className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-all"

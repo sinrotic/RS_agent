@@ -1,0 +1,39 @@
+# 多轮 SFT 样本生成配置：推荐 Agent + 模拟用户 Agent 交互。
+# 默认 dry-run，不调用外部 API；只有 --execute 且 enabled=true 时才调用 gpt5.3codexspark 并写出产物。
+generation:
+  enabled: true
+  dry_run: true
+  target_samples: 500
+  seed: 20260621
+  service_config: configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml
+  limit_users: null
+  min_turns_per_scene: 4
+  max_turns_per_scene: 7
+  strict_model_policy: false
+  output_path: outputs/training/multi_turn_sft_gpt53/samples.jsonl
+  flat_output_path: outputs/training/multi_turn_sft_gpt53/turns_flattened.jsonl
+  manifest_path: outputs/training/multi_turn_sft_gpt53/manifest.json
+  rejects_path: outputs/training/multi_turn_sft_gpt53/rejects.jsonl
+
+model:
+  provider: openai_compatible
+  api_base: https://cpa2api.sinrotic233.com
+  api_key_env: RS_agent
+  model: gpt5.3codexspark
+  timeout_seconds: 90
+  temperature: 0.55
+  max_tokens: 1200
+  response_format:
+    type: json_object
+
+user_sampling:
+  source: train_user_sequences
+  include_segments: ["hot", "warm"]
+  segment_basis: train_history_count
+  no_label_as_generation_input: true
+
+quality:
+  require_candidate_grounding: true
+  reject_unknown_item_ids: true
+  require_public_payload_safe: true
+  schema_version: rs_agent_multi_turn_sft_sample_v1

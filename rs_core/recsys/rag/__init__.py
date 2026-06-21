@@ -7,6 +7,8 @@ from rs_core.recsys.rag.bm25 import (
 from rs_core.recsys.rag.context import build_empty_rag_context
 from rs_core.recsys.rag.corpus import RAG_COMPACT_DENSE_FIELD, RAG_STANDARD_FIELDS, build_compact_item_text, normalize_item_record
 from rs_core.recsys.rag.hybrid import HybridCandidateRetriever, cosine_score, text_to_hashed_vector
+from rs_core.recsys.rag.qdrant_index import build_qdrant_rag_chunk_index
+from rs_core.recsys.rag.qdrant_vector import QdrantCandidateRagVectorRetriever
 from rs_core.recsys.rag.vector_index import (
     DEFAULT_DENSE_MODEL_NAME,
     DEFAULT_RAG_CORPUS_SCOPE,
@@ -35,6 +37,7 @@ __all__ = [
     "EvidencePolicyViolation",
     "HybridCandidateRetriever",
     "InMemoryCandidateCardRetriever",
+    "QdrantCandidateRagVectorRetriever",
     "QueryPlanningEvidenceRetriever",
     "LOCAL_TFIDF_VECTOR_METHOD",
     "LOCAL_VECTOR_METHOD",
@@ -52,6 +55,7 @@ __all__ = [
     "build_compact_item_text",
     "build_empty_rag_context",
     "build_local_vector_index",
+    "build_qdrant_rag_chunk_index",
     "build_query_rag_context_for_planning",
     "build_rag_context_for_ranked_candidates",
     "build_sqlite_bm25_index",

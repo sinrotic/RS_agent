@@ -1,0 +1,63 @@
+{
+  "phase": "1a",
+  "runtime_adapter": "not_implemented_in_phase_1a",
+  "migration_framework": "sql_ddl_baseline_only_no_alembic",
+  "tables": {
+    "serving_sessions": {
+      "target_table": "serving_sessions",
+      "fields": {
+        "session_id": "session_id",
+        "user_id": "user_id",
+        "status": "status",
+        "schema_version": "schema_version",
+        "created_at": "created_at",
+        "updated_at": "updated_at",
+        "last_request_id": "last_request_id",
+        "operation_id": "phase1b_generated_operation_id"
+      }
+    },
+    "serving_turns": {
+      "target_table": "serving_turns",
+      "fields": {
+        "session_id": "session_id",
+        "turn_index": "turn_index",
+        "event_type": "event_type",
+        "user_message": "user_message_public",
+        "assistant_message": "assistant_message_public",
+        "display_json": "display_json",
+        "created_at": "created_at",
+        "turn_id": "session_id_plus_turn_index",
+        "operation_id": "phase1b_generated_operation_id"
+      }
+    },
+    "serving_feedback_events": {
+      "target_table": "serving_feedback_events",
+      "fields": {
+        "event_id": "event_id",
+        "session_id": "session_id",
+        "turn_index": "turn_index",
+        "action_type": "action_type",
+        "item_id": "item_id",
+        "comment": "comment_public",
+        "comment_truncated": "comment_truncated",
+        "comment_redacted": "comment_redacted",
+        "created_at": "created_at",
+        "operation_id": "phase1b_generated_operation_id"
+      }
+    },
+    "serving_request_summaries": {
+      "target_table": "serving_request_summaries",
+      "fields": {
+        "request_id": "request_id",
+        "endpoint": "endpoint",
+        "user_id": "user_id",
+        "item_count": "item_count",
+        "candidate_count": "candidate_count",
+        "fallback_used": "fallback_used",
+        "public_summary_json": "public_summary_json",
+        "created_at": "created_at",
+        "operation_id": "phase1b_generated_operation_id_when_available"
+      }
+    }
+  }
+}

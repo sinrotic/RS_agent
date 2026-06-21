@@ -44,7 +44,26 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
         )
 
     lowered = text.lower()
-    if _is_explanation_request(lowered):
+    parsed = parse_feedback(text)
+    is_explanation_request = _is_explanation_request(lowered)
+    clarification_update = _clarification_constraints(text, parsed) if session.conversation_state.pending_clarification else parsed
+    should_treat_as_clarification = not is_explanation_request or _has_clarification_answer_signal(lowered, parsed)
+    if session.conversation_state.pending_clarification and explanation_item_id is None and should_treat_as_clarification:
+        parsed = clarification_update
+        return DialoguePlan(
+            intent=INTENT_CLARIFICATION_ANSWER,
+            action=ACTION_RECOMMEND_ITEMS,
+            assistant_response="Thanks, I updated the recommendation constraints from your clarification.",
+            constraints_update=parsed,
+            should_recommend=True,
+            diagnostics={
+                "answered_clarification": session.conversation_state.pending_clarification,
+                "clarification_route": "pending_clarification_priority",
+            },
+            tool_calls=_recommendation_tool_calls(INTENT_CLARIFICATION_ANSWER, parsed, text),
+        )
+
+    if is_explanation_request:
         source_turn = latest_recommendation_turn(session)
         return DialoguePlan(
             intent=INTENT_ASK_EXPLANATION,
@@ -55,19 +74,6 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
                 {"name": "get_user_context", "phase": "pre_recommendation"},
                 {"name": "get_item_evidence", "phase": "post_recommendation"},
             ],
-        )
-
-    parsed = parse_feedback(text)
-    if session.conversation_state.pending_clarification:
-        parsed = _clarification_constraints(text, parsed)
-        return DialoguePlan(
-            intent=INTENT_CLARIFICATION_ANSWER,
-            action=ACTION_RECOMMEND_ITEMS,
-            assistant_response="Thanks, I updated the recommendation constraints from your clarification.",
-            constraints_update=parsed,
-            should_recommend=True,
-            diagnostics={"answered_clarification": session.conversation_state.pending_clarification},
-            tool_calls=_recommendation_tool_calls(INTENT_CLARIFICATION_ANSWER, parsed, text),
         )
 
     if _has_supported_constraint(parsed):
@@ -110,10 +116,30 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
 
 
 def _recommendation_tool_calls(intent: str, constraints: FeedbackConstraints, query: str = "") -> list[dict[str, Any]]:
+    retrieval_mode, reference_item_id = _retrieve_business_mode(query)
+    semantic_mode = "hybrid_query_history" if query else "history_profile"
     retrieve_arguments: dict[str, Any] = {
-        "semantic_mode": "hybrid_query_history" if query else "history_profile",
+        "retrieval_mode": retrieval_mode,
+        "profile_usage": "balanced",
+        "expansion_policy": "balanced",
+        "target_pool_size": 500,
+        "reference_item_id": reference_item_id,
+        # Legacy fields are retained for runtime compatibility while the visible contract moves to business modes.
+        "semantic_mode": semantic_mode,
         "use_history_profile": True,
         "use_behavioral_recall": True,
+        "profile_policy": {
+            "use_current_query": bool(query),
+            "use_recent_history": True,
+            "history_weight": "balanced",
+        },
+        "route_policy": {
+            "semantic": semantic_mode,
+            "similar_item": "prefer" if reference_item_id else "auto",
+            "user_neighbor": "auto",
+            "behavioral": "auto",
+            "fallback": "auto",
+        },
     }
     if query:
         retrieve_arguments["query"] = query
@@ -131,6 +157,23 @@ def _recommendation_tool_calls(intent: str, constraints: FeedbackConstraints, qu
         {"name": "build_recommendation_slate", "phase": "post_recommendation"},
     ])
     return tool_calls
+
+
+def _retrieve_business_mode(query: str) -> tuple[str, str | None]:
+    text = query.strip()
+    lowered = text.lower()
+    reference_item_id = requested_item_id(text)
+    has_reference_cue = bool(reference_item_id or re.search(r"\b(like this|similar|alternative|more like)\b|像|类似|相似|同款|替代", lowered))
+    has_constraint_cue = bool(re.search(r"\b(cheaper|lighter|smaller|larger|budget|wireless|bluetooth|avoid|without|with)\b|更便宜|更轻|更小|不要|避免|带|有", lowered))
+    if has_reference_cue and has_constraint_cue:
+        return "reference_with_constraints", reference_item_id
+    if has_reference_cue:
+        return "similar_to_item", reference_item_id
+    if _has_retrievable_query_terms(lowered):
+        return "specific_need", None
+    if text:
+        return "personalized_feed", None
+    return "broad_browse", None
 
 
 def apply_dialogue_plan(session: AgentSession, plan: DialoguePlan) -> FeedbackConstraints:
@@ -164,6 +207,12 @@ def _prefix_before_intent(text: str) -> str:
 
 def _is_explanation_request(lowered: str) -> bool:
     return bool(re.search(r"\bwhy\b|\bexplain\b|为什么|解释", lowered))
+
+
+def _has_clarification_answer_signal(lowered: str, parsed: FeedbackConstraints) -> bool:
+    if _has_supported_constraint(parsed):
+        return True
+    return bool(re.search(r"\bbudget\b|\bcheap\b|\bprice\b|便宜|预算|贵|价格", lowered))
 
 
 def _is_vague_recommendation_request(lowered: str) -> bool:

@@ -284,6 +284,12 @@ class AgentRuntime:
                 "phase_count": len(reports),
                 "result_count": len(trace),
                 "event_count": len(events),
+                "executed_count": sum(
+                    int(report.get("summary", {}).get("executed_count", 0))
+                    for report in reports
+                    if isinstance(report.get("summary"), dict)
+                ),
+                "skipped_count": sum(1 for result in trace if result.get("status") == "skipped"),
                 "error_count": sum(1 for result in trace if result.get("status") == "error"),
             },
         }

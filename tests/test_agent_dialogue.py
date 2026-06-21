@@ -94,6 +94,34 @@ def test_clarification_answer_updates_constraints_and_recommends(tmp_path: Path)
     assert turn.diagnostics["boosts_applied"]
 
 
+def test_pending_clarification_takes_priority_over_why_word(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+    env.converse(session, "I want something")
+
+    turn = env.converse(session, "为什么不先按 budget 推荐便宜一点")
+
+    assert turn.diagnostics["conversation_intent"] == "clarification_answer"
+    assert turn.diagnostics["clarification_route"] == "pending_clarification_priority"
+    assert session.conversation_state.pending_clarification == ""
+    assert session.active_constraints.preferred_keywords["cheap"] == 1.0
+    assert turn.ranking
+
+
+def test_bare_why_during_pending_clarification_stays_explanation_request(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+    env.converse(session, "I want something")
+    pending_question = session.conversation_state.pending_clarification
+
+    turn = env.converse(session, "why?")
+
+    assert turn.diagnostics["conversation_intent"] == "ask_explanation"
+    assert turn.diagnostics["agent_action"] == "explain_recommendation"
+    assert session.conversation_state.pending_clarification == pending_question
+    assert turn.ranking == []
+
+
 def test_why_request_explains_prior_turn_without_changing_constraints(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
     session = env.start_session("u1")

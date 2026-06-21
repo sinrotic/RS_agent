@@ -8,20 +8,26 @@ from typing import Any
 from rs_core.common.config import load_config
 from rs_core.rsagent.long_memory import LongMemoryConfig, LongMemoryStore, build_long_memory_store
 from rs_core.rsagent.schema import AgentSession
+from rs_core.serving.persistence import ServingPersistenceStore, ensure_safe_persistence_store
+from rs_core.serving.session_summary import SessionSummaryServiceProtocol, build_session_summary_service
 from rs_core.serving.facades import (
     SERVING_GOVERNANCE_GUARDRAILS,
     FeedbackSessionFacade,
+    FeedRefreshFacade,
     RecommendationFacade,
     RecallFacade,
+    SessionEndedError,
     feedback_prompt as _facade_feedback_prompt,
 )
-from rs_core.serving.schema import RecallRequest, RecommendFromSequenceRequest
+from rs_core.serving.schema import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
 from rs_core.workflow.online_recommendation import OnlinePool500Recommender
 
 DEFAULT_CONFIG = "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml"
 SERVING_CONFIG_ENV = "RS_SERVING_CONFIG"
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+__all__ = ["DEFAULT_CONFIG", "RecommendationService", "SessionEndedError", "SessionNotFoundError"]
 
 
 @dataclass
@@ -52,6 +58,8 @@ class RecommendationService:
         config_overrides: dict[str, Any] | None = None,
         long_memory_config: LongMemoryConfig | None = None,
         long_memory_store: LongMemoryStore | None = None,
+        persistence_store: ServingPersistenceStore | None = None,
+        session_summary_service: SessionSummaryServiceProtocol | None = None,
     ) -> None:
         resolved_config = resolve_serving_config(config)
         effective_config = load_config(resolved_config)
@@ -63,6 +71,8 @@ class RecommendationService:
         self.env.online_recommender = self.online_recommender
         self.long_memory_config = long_memory_config or LongMemoryConfig(enabled=False)
         self.long_memory_store = long_memory_store or build_long_memory_store(self.long_memory_config)
+        self.persistence_store = ensure_safe_persistence_store(persistence_store)
+        self.session_summary_service = session_summary_service or build_session_summary_service(effective_config)
         self.sessions: dict[str, AgentSession] = {}
         self.session_events: dict[str, list[dict[str, Any]]] = {}
         self.feedback_session_facade = FeedbackSessionFacade(
@@ -72,20 +82,49 @@ class RecommendationService:
             self.long_memory_config,
             self.long_memory_store,
             not_found_error=SessionNotFoundError,
+            persistence_store=self.persistence_store,
+            session_summary_service=self.session_summary_service,
         )
         self.recall_facade = RecallFacade(self.online_recommender)
         self.recommendation_facade = RecommendationFacade(self.online_recommender)
+        self.feed_refresh_facade = FeedRefreshFacade(
+            self.online_recommender,
+            self.sessions,
+            not_found_error=SessionNotFoundError,
+        )
 
-    def start_session(self, user_id: str | None = None) -> str:
-        return self.feedback_session_facade.start_session(user_id)
+    def start_session(self, user_id: str | None = None, request_id: str | None = None) -> str:
+        if request_id is None:
+            return self.feedback_session_facade.start_session(user_id)
+        return self.feedback_session_facade.start_session(user_id, request_id=request_id)
 
-    def chat(self, session_id: str, message: str) -> ChatResult:
-        result = self.feedback_session_facade.chat(session_id, message)
+    def chat(self, session_id: str, message: str, request_id: str | None = None) -> ChatResult:
+        result = self.feedback_session_facade.chat(session_id, message) if request_id is None else self.feedback_session_facade.chat(session_id, message, request_id=request_id)
         return ChatResult(session_id=result.session_id, display=result.display)
 
-    def feedback(self, session_id: str, action_type: str, item_id: str | None = None, comment: str | None = None) -> ChatResult:
-        result = self.feedback_session_facade.feedback(session_id, action_type, item_id, comment)
+    def feedback(self, session_id: str, action_type: str, item_id: str | None = None, comment: str | None = None, request_id: str | None = None) -> ChatResult:
+        result = (
+            self.feedback_session_facade.feedback(session_id, action_type, item_id, comment)
+            if request_id is None
+            else self.feedback_session_facade.feedback(session_id, action_type, item_id, comment, request_id=request_id)
+        )
         return ChatResult(session_id=result.session_id, display=result.display)
+
+    def end_session(
+        self,
+        session_id: str,
+        reason: str = "unknown",
+        client_event: str | None = None,
+        write_summary: bool = True,
+        request_id: str | None = None,
+    ) -> dict[str, Any]:
+        return self.feedback_session_facade.end_session(
+            session_id,
+            reason=reason,
+            client_event=client_event,
+            write_summary=write_summary,
+            request_id=request_id,
+        )
 
     def get_agent_session(self, session_id: str) -> AgentSession:
         return self._session(session_id)
@@ -93,19 +132,63 @@ class RecommendationService:
     def readiness(self) -> dict[str, Any]:
         online = self.online_recommender.readiness()
         public_route = _public_online_route_readiness(online)
+        route_available = public_route.get("complete_pool500_available") or public_route.get("online_source_indexes_available")
         return {
-            "status": "ready" if public_route.get("complete_pool500_available") else "degraded",
+            "status": "ready" if route_available else "degraded",
             "service": "rs-agent-serving",
             "mode": public_route.get("mode", "demo-compatible"),
             "session_state": "single_process_in_memory",
             "online_route": public_route,
         }
 
-    def recommend_from_sequence(self, request: RecommendFromSequenceRequest) -> dict[str, Any]:
-        return self.recommendation_facade.recommend_from_sequence(request)
+    def recommend_from_sequence(self, request: RecommendFromSequenceRequest, request_id: str | None = None) -> dict[str, Any]:
+        result = self.recommendation_facade.recommend_from_sequence(request)
+        if {"request_id", "item_count", "candidate_count", "fallback_used"}.issubset(result):
+            self.persistence_store.record_request_summary(
+                request_id=result["request_id"],
+                endpoint="recommend",
+                user_id=request.user_id or _request_user_id(request.user_sequence),
+                item_count=result["item_count"],
+                candidate_count=result["candidate_count"],
+                fallback_used=result["fallback_used"],
+                public_summary={"http_request_id": request_id} if request_id else {},
+            )
+        return result
 
-    def recall(self, request: RecallRequest) -> dict[str, Any]:
-        return self.recall_facade.recall(request)
+    def recall(self, request: RecallRequest, request_id: str | None = None) -> dict[str, Any]:
+        result = self.recall_facade.recall(request)
+        if {"request_id", "candidate_count", "retrieval_summary"}.issubset(result):
+            self.persistence_store.record_request_summary(
+                request_id=result["request_id"],
+                endpoint="recall",
+                user_id=request.user_id or _request_user_id(request.user_sequence),
+                candidate_count=result["candidate_count"],
+                public_summary={
+                    "http_request_id": request_id,
+                    "retrieval_summary": result["retrieval_summary"],
+                } if request_id else {"retrieval_summary": result["retrieval_summary"]},
+            )
+        return result
+
+    def feed_refresh(self, request: HomeFeedEventRequest, request_id: str | None = None) -> dict[str, Any]:
+        result = self.feed_refresh_facade.refresh(request)
+        self.persistence_store.record_request_summary(
+            request_id=result["request_id"],
+            endpoint="feed_refresh",
+            user_id=self._session(request.session_id).user_id,
+            item_count=result["item_count"],
+            candidate_count=result["candidate_count"],
+            fallback_used=result["fallback_used"],
+            public_summary={
+                "http_request_id": request_id,
+                "decision": result["decision"],
+                "display_revision": result["display_revision"],
+            } if request_id else {
+                "decision": result["decision"],
+                "display_revision": result["display_revision"],
+            },
+        )
+        return result
 
     def export_session(self, session_id: str) -> dict[str, Any]:
         return self.feedback_session_facade.export_session(session_id)
@@ -215,6 +298,7 @@ def _public_online_route_readiness(online: dict[str, Any]) -> dict[str, Any]:
         "mode": online.get("mode", "demo-compatible"),
         "session_state": "single_process_in_memory",
         "complete_pool500_available": bool(online.get("complete_pool500_available")),
+        "online_source_indexes_available": bool(online.get("online_source_indexes_available")),
         "source_index_available_count": sum(1 for status in source_indexes.values() if isinstance(status, dict) and status.get("available")),
         "source_index_configured_count": len(source_indexes),
         "pool500_artifact": {
@@ -260,3 +344,8 @@ def display_item_ids(display: dict[str, Any]) -> list[str]:
         if isinstance(item, dict) and item.get("parent_asin"):
             item_ids.append(str(item["parent_asin"]))
     return item_ids
+
+
+def _request_user_id(user_sequence: dict[str, Any]) -> str | None:
+    user_id = user_sequence.get("user_id") if isinstance(user_sequence, dict) else None
+    return str(user_id) if user_id not in (None, "") else None

@@ -12,14 +12,17 @@ routes:
     notes: Pool200 source-balanced recall route retired on 2026-06-08; only historical records remain.
   current_ranking_route:
     role: ranking
-    status: current
-    authority_refs: ["dic/decisions/PHASE_1_31_FINAL_OFFLINE_RANKING_ROUTE_ADR.md"]
-    config_paths: ["configs/ranking/phase_1_15/phase_1_15_frozen_youtubednn_pool100.yaml"]
-    workflow_paths: ["rs_core/workflow/ranking_experiments.py"]
-    script_paths: ["rs_lab/experiments/ranking/run_phase_1_29_terminal_ranking_route.py", "rs_lab/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py", "rs_lab/experiments/ranking/run_phase_1_31_ranking_algorithm_scaffold.py"]
-    required_output_paths: []
-    promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#ranking-route-promotion
-    notes: Current offline ranking route remains frozen-pool ranking; pool500 recall continuation must not replace this input without ranking promotion.
+    status: current_engineering_main
+    authority_refs: ["dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md", "dic/ENGINEERING_NARRATIVE_LOG.md"]
+    config_paths: []
+    workflow_paths: ["rs_core/recsys/cold_deepfm.py", "rs_core/workflow/online_recommendation.py"]
+    script_paths: ["rs_lab/experiments/ranking/run_cold_deepfm_offline_train_eval.py"]
+    required_output_paths: ["outputs/ranking/cold_full_formal_20260620_existing_deepfm/cold_model.json", "outputs/ranking/cold_full_formal_20260620_existing_deepfm/deepfm_model.json", "outputs/ranking/cold_full_formal_20260620_existing_deepfm/manifest.json", "outputs/ranking/cold_full_formal_20260620_existing_deepfm/comparison.json"]
+    promotion_gate_ref: dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md
+    ranking_strategy: pool500_cold_coarse_then_deepfm_fine
+    fallback_route: baseline_cached_popular
+    effect_claim_allowed: false
+    notes: COLD coarse rank plus DeepFM fine rank is fixed as the current engineering main ranking route for Agent/frontend closure. This is an engineering-route promotion with baseline fallback; do not claim strict overall ranking lift while candidate coverage gate remains STOP_FOR_RANKING_EFFECT.
   current_agent_demo_route:
     role: agent_demo
     status: provisional_current

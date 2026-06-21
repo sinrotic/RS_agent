@@ -292,11 +292,110 @@ class QueryRagOutput:
 
 
 @dataclass(frozen=True)
+class RecallIntent:
+    intent_type: str = "recommend_request"
+    scenario: str = ""
+    need_specificity: str = "auto"
+    reference_item_id: str | None = None
+    explanation: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
+class RecallProfilePolicy:
+    use_current_query: bool = True
+    use_recent_history: bool = True
+    history_weight: str = "balanced"
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
+class RecallRoutePolicy:
+    semantic: str = "auto"
+    similar_item: str = "auto"
+    user_neighbor: str = "auto"
+    behavioral: str = "auto"
+    fallback: str = "auto"
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
+class RecallConstraints:
+    preferred_categories: list[str] = field(default_factory=list)
+    disliked_categories: list[str] = field(default_factory=list)
+    preferred_keywords: list[str] = field(default_factory=list)
+    disliked_keywords: list[str] = field(default_factory=list)
+    preferred_brands: list[str] = field(default_factory=list)
+    disliked_brands: list[str] = field(default_factory=list)
+    price_min: float | None = None
+    price_max: float | None = None
+    exclude_seen_items: bool = True
+    exclude_prior_turn_items: bool = True
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
+class RecallDiversityPolicy:
+    dedupe_by_parent_asin: bool = True
+    source_balance: str = "auto"
+    max_per_source: int | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
+class RecallRouteDecision:
+    route: str
+    status: str
+    reason: str = ""
+    eligible: bool = False
+    returned_count: int = 0
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
+class RecallRetrievalSummary:
+    schema_version: str = "retrieve_candidates_output_v3"
+    target_pool_size: int | None = None
+    returned_count: int = 0
+    underfill: bool = False
+    route_count: int = 0
+    path_count: int | None = None
+    retrieval_mode: str = "auto"
+    profile_usage: str = "balanced"
+    expansion_policy: str = "balanced"
+
+    def to_dict(self) -> dict[str, Any]:
+        return _jsonable(asdict(self))
+
+
+@dataclass(frozen=True)
 class RetrieveCandidatesInput:
     query: str = ""
+    target_pool_size: int = 500
+    retrieval_mode: str = "auto"
+    profile_usage: str = "balanced"
+    expansion_policy: str = "balanced"
+    reference_item_id: str | None = None
+    intent: RecallIntent = field(default_factory=RecallIntent)
+    profile_policy: RecallProfilePolicy = field(default_factory=RecallProfilePolicy)
+    route_policy: RecallRoutePolicy = field(default_factory=RecallRoutePolicy)
+    constraints: RecallConstraints | dict[str, Any] = field(default_factory=RecallConstraints)
+    diversity: RecallDiversityPolicy = field(default_factory=RecallDiversityPolicy)
+    # Backward-compatible aliases used by the current deterministic planner.
     limit: int = 100
     exclude_seen_items: bool = True
-    constraints: dict[str, Any] = field(default_factory=dict)
     semantic_mode: str = "auto"
     use_history_profile: bool = True
     use_behavioral_recall: bool = True
@@ -309,7 +408,8 @@ class RetrieveCandidatesInput:
 class RetrieveCandidatesOutput:
     candidate_item_ids: list[str] = field(default_factory=list)
     candidate_count: int = 0
-    retrieval_summary: dict[str, Any] = field(default_factory=dict)
+    retrieval_summary: RecallRetrievalSummary | dict[str, Any] = field(default_factory=RecallRetrievalSummary)
+    route_decisions: list[RecallRouteDecision] = field(default_factory=list)
     diagnostics: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -595,24 +695,27 @@ class DeepFMRankOutput:
 CatalogItems = dict[str, dict[str, Any]] | list[dict[str, Any]] | tuple[dict[str, Any], ...]
 
 RETRIEVE_CANDIDATES_ROUTING_ATTRIBUTES = {
-    "semantic_live": {
-        "enabled_for": "all_users",
-        "modes": ["auto", "query_intent", "history_profile", "hybrid_query_history"],
-        "query_intent": "Use the current user request when it contains a concrete need.",
-        "history_profile": "Use recent positive interactions to form a semantic preference query when request text is vague.",
-        "hybrid_query_history": "Blend current intent and history when both are informative.",
+    "llm_visible_policy": {
+        "retrieval_mode": ["auto", "specific_need", "personalized_feed", "broad_browse", "similar_to_item", "reference_with_constraints"],
+        "profile_usage": ["none", "light", "balanced", "strong"],
+        "expansion_policy": ["none", "narrow", "balanced", "broad"],
+        "reference_item_id": "Optional item id that means 'like this item' for reference-aware requests.",
+        "query": "Natural-language need or extra constraints; can be combined with reference_item_id.",
+        "constraints": "Business constraints such as category, keyword, price, brand, or exclusions.",
+        "target_pool_size": "Bounded candidate pool size requested by the planner.",
     },
-    "behavioral_recall": {
-        "itemcf": {"min_recent_items": 1},
-        "co_visit_fallback_repair": {"min_recent_positive_items": 2, "mode": "seed_index_lookup_or_guarded_repair"},
-        "usercf_recall": {"min_recent_positive_items": 3, "mode": "user_index_lookup"},
-        "two_tower": {"min_recent_items": 1, "mode": "seed_or_user_vector_lookup"},
+    "business_modes": {
+        "auto": "Backend infers a safe blend from query, history, reference item, and constraints.",
+        "specific_need": "Use the current natural-language need as the primary acquisition intent.",
+        "personalized_feed": "Use user profile and history for a personalized feed when the request is broad.",
+        "broad_browse": "Explore broadly with light personalization for empty or generic requests.",
+        "similar_to_item": "Find items like reference_item_id; query may describe how they should be similar.",
+        "reference_with_constraints": "Find alternatives related to reference_item_id while honoring query or constraints.",
     },
-    "fallback_recall": {
-        "popular": "always_available",
-        "category": "available_when_category_or_preference_context_exists",
-    },
+    "backend_mapping": "The server maps business modes to semantic, traditional, reference-aware, and fallback providers; the planner must not select provider names.",
+    "semantic_participation": "reference_item_id can seed semantic text and query can describe how/why items should be similar.",
     "public_output": "candidate_ids_only_no_scores_no_diagnostics_no_lineage",
+    "internal_output": "business_route_decisions_allowed_without_scores_or_lineage",
 }
 
 QUERY_RAG_ROUTING_ATTRIBUTES = {
@@ -640,11 +743,12 @@ QUERY_RAG_BOUNDARY_PROMPT = (
 
 RETRIEVE_CANDIDATES_BOUNDARY_PROMPT = (
     "Use retrieve_candidates only as a high-level candidate acquisition tool. "
-    "Do not expose or request low-level recall method names from the user. "
-    "semantic_live is available to every user and may run in query_intent, history_profile, or hybrid_query_history mode: "
-    "use query_intent for explicit needs, history_profile for vague requests with useful interaction history, and hybrid_query_history when both are useful. "
-    "Behavioral routes such as item-item, user-neighbor, two-tower, and co-visit are backend-gated by interaction sufficiency and index availability; skip them silently when gates are not met. "
-    "Return bounded candidate ids for ranking only, never public scores, diagnostics, labels, oracle fields, trace, or recall lineage."
+    "The planner should express the business mode through retrieval_mode, profile_usage, expansion_policy, reference_item_id, query, constraints, and target_pool_size. "
+    "Use specific_need for concrete natural-language needs, personalized_feed or broad_browse for broad requests, similar_to_item when reference_item_id means 'like this item', and reference_with_constraints when query or constraints describe how the alternatives should differ. "
+    "reference_item_id means '像谁'; query means '怎么像/额外约束', so reference-aware requests can still use semantic acquisition. "
+    "semantic_live is available to every user, but the planner should choose the business retrieval mode rather than low-level semantic/provider switches. "
+    "Backend eligibility maps these business fields to semantic, traditional, reference-aware, and fallback providers; do not choose provider names, source files, indexes, scores, or lineage. "
+    "Return bounded candidate ids and compact internal business route_decisions for debugging only, never public scores, diagnostics, labels, oracle fields, trace, or recall lineage."
 )
 
 GET_ITEM_EVIDENCE_BOUNDARY_PROMPT = (
@@ -661,8 +765,9 @@ AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT = (
     "After candidates are ranked, call get_item_evidence only to ground recommendation support for ranked candidate items; it must not add new candidates, must not change ranking, or expose raw RAG/source diagnostics. "
     "Ask a clarifying question before retrieval only when missing information blocks safe candidate acquisition; otherwise use available context, optional query_rag, retrieve_candidates, and rank_candidates first, then provide grouped recommendations or one high-value follow-up clarification after the slate. "
     "Record_user_feedback only for explicit feedback, and build_recommendation_slate for display-safe output. "
-    "For retrieve_candidates, semantic_live is the all-user semantic provider and can use the current query, the user's interaction history, or both. "
-    "Collaborative and behavioral recall providers are backend implementation details guarded by user history and serving indexes. "
+    "For retrieve_candidates, choose retrieval_mode/profile_usage/expansion_policy plus optional reference_item_id, query, constraints, and target_pool_size; do not expose or steer low-level provider policies. "
+    "reference_item_id means the item to be like, while query describes how it should be similar or what extra constraints apply; semantic acquisition may participate even for reference-aware modes. "
+    "Concrete recall providers are backend implementation details guarded by user history and serving indexes. "
     "Do not reveal source scores, method lineage, diagnostics, labels, oracle fields, training artifacts, or tool traces to the public response."
 )
 
@@ -1496,7 +1601,7 @@ AGENT_TOOL_MANIFEST = (
     AgentToolSpec(
         name="retrieve_candidates",
         stage="candidate_generation",
-        description="Retrieve a bounded candidate set through all-user semantic intent/history recall plus backend-gated behavioral recall.",
+        description="Retrieve a bounded candidate set from a business retrieval mode, optional profile usage, expansion policy, reference item, query, and constraints.",
         input_schema_name="RetrieveCandidatesInput",
         output_schema_name="RetrieveCandidatesOutput",
         read_only=True,
@@ -1617,7 +1722,7 @@ AGENT_CAPABILITY_MANIFEST = (
         read_only=True,
         hidden=True,
         public_payload_allowed=False,
-        description="Retrieve candidate items through semantic intent/history recall and backend-gated behavioral recall.",
+        description="Retrieve candidate items through a business retrieval mode with optional profile, expansion, reference, query, and constraints.",
     ),
     AgentCapability(
         name="rank_candidates",

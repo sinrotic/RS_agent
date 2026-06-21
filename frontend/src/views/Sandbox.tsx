@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { runSimulationScene } from '../api';
+import { DEBUG_PANEL_ENABLED, runSimulationScene } from '../api';
 import { SimulationSceneResponse } from '../types';
 import { AgentTimeline } from '../components/sandbox/AgentTimeline';
 import { PersonaSprite, personaVisual } from '../components/sandbox/PersonaSprite';
-import { Brain, Sparkles, Play, RefreshCw, Plus, Cpu, CheckCircle2, AlertTriangle, Trophy } from 'lucide-react';
+import { Brain, Sparkles, Play, RefreshCw, Plus, Cpu, Trophy } from 'lucide-react';
 
 const roleStaticInfo: Record<string, { goal: string; persona: string; style: string; preferred: string; negative: string }> = {
   commuter_practical: {
@@ -69,11 +69,17 @@ export function Sandbox() {
         <div className="xl:col-span-3 bg-white rounded-xl shadow-sm border border-gray-200 p-4 h-[550px] xl:h-full flex flex-col gap-3 overflow-hidden">
           <div className="flex items-center gap-2 border-b border-gray-150 pb-2.5 flex-shrink-0">
             <Cpu className="text-indigo-600" size={18} />
-            <h2 className="font-bold text-gray-900 text-sm">推荐系统内部思考</h2>
+            <h2 className="font-bold text-gray-900 text-sm">{DEBUG_PANEL_ENABLED ? '推荐系统内部思考' : '仿真公开摘要'}</h2>
           </div>
 
           <div className="flex-grow overflow-y-auto pr-1 text-xs font-mono space-y-3 min-h-0">
-            {!simScene ? (
+            {!DEBUG_PANEL_ENABLED ? (
+              <div className="h-full flex flex-col items-center justify-center text-gray-500 gap-3 text-center p-4 font-sans">
+                <Brain size={32} className="opacity-30 text-indigo-600" />
+                <span className="text-xs font-bold text-gray-700">公开试用模式</span>
+                <p className="text-[11px] text-gray-500 leading-relaxed">仿真页面默认只展示 persona、对话轨迹和用户动作摘要；内部推荐工具链路与评估指标需开启 debug 面板后查看。</p>
+              </div>
+            ) : !simScene ? (
               <div className="h-full flex flex-col items-center justify-center text-gray-400 gap-2 text-center p-4">
                 <Brain size={32} className="opacity-30 text-indigo-600" />
                 <span className="text-xs">等待运行仿真...</span>
@@ -84,97 +90,34 @@ export function Sandbox() {
                 <span>请点击对话中的气泡来查看对应轮次的思考轨迹。</span>
               </div>
             ) : (() => {
-              const thoughts = simScene.session.agent_thoughts?.find(t => t.turn_index === selectedTurnIndex);
-              if (!thoughts) {
+              const event = simScene.session.public_timeline.events.find(e => e.turn_index === selectedTurnIndex);
+              const displayResponse = event ? simScene.session.display_responses[event.display_response_index] : undefined;
+              if (!event) {
                 return (
                   <div className="h-full flex items-center justify-center text-gray-400 text-center">
-                    <span>第 {selectedTurnIndex} 轮暂无推荐决策数据。</span>
+                    <span>第 {selectedTurnIndex} 轮暂无公开交互摘要。</span>
                   </div>
                 );
               }
               return (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center bg-indigo-50 border border-indigo-100 p-2 rounded-lg flex-shrink-0 font-sans">
-                    <span className="font-bold text-indigo-800">推荐系统 (第 {selectedTurnIndex} 轮)</span>
+                <div className="space-y-4 font-sans">
+                  <div className="flex justify-between items-center bg-indigo-50 border border-indigo-100 p-2 rounded-lg flex-shrink-0">
+                    <span className="font-bold text-indigo-800">公开交互摘要 (第 {selectedTurnIndex} 轮)</span>
                   </div>
-                  
-                  {/* Intent & Action */}
-                  <div className="space-y-1">
-                    <div className="font-bold text-gray-800 flex items-center gap-1 font-sans">
-                      <Sparkles size={12} className="text-yellow-500" />
-                      意图与规划动作
+                  <div className="bg-gray-50 border border-gray-150 p-2 rounded space-y-2 text-[11px]">
+                    <div>
+                      <div className="text-gray-400 text-[10px] font-semibold">用户动作</div>
+                      <div className="text-gray-800">{event.user_message || '无用户输入'}</div>
                     </div>
-                    <div className="bg-gray-50 border border-gray-150 p-2 rounded space-y-1">
-                      <div><span className="text-gray-400 font-sans">用户意图:</span> <span className="text-gray-800 font-bold">{thoughts.conversation_intent || 'N/A'}</span></div>
-                      <div><span className="text-gray-400 font-sans">规划动作:</span> <span className="text-gray-800 font-bold">{thoughts.agent_action || 'N/A'}</span></div>
+                    <div>
+                      <div className="text-gray-400 text-[10px] font-semibold">系统回复</div>
+                      <div className="text-gray-800">{event.assistant_message}</div>
                     </div>
+                    <div className="text-gray-500 text-[10px]">公开展示商品数：{displayResponse?.items.length || 0}</div>
                   </div>
-
-                  {/* Tools trace */}
-                  {thoughts.tool_calls && thoughts.tool_calls.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="font-bold text-gray-800 font-sans">工具执行链路:</div>
-                      <div className="space-y-1 bg-white border border-gray-150 p-2 rounded">
-                        {thoughts.tool_calls.map((tool: any, tIdx: number) => (
-                          <div key={tIdx} className="flex justify-between items-center text-[10px]">
-                            <span className="text-indigo-600">{tool.tool_name}</span>
-                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${tool.status === 'ok' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}`}>
-                              {tool.status}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* RAG search log */}
-                  {thoughts.rag && (
-                    <div className="space-y-1">
-                      <div className="font-bold text-gray-800 font-sans">RAG 事实检索依据:</div>
-                      <div className="bg-white border border-gray-150 p-2 rounded text-[10px]">
-                        <div><span className="text-gray-400 font-sans">检索词:</span> "{thoughts.rag.query}"</div>
-                        <div><span className="text-gray-400 font-sans">检索方式:</span> {thoughts.rag.retriever_name}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Stop-check */}
-                  {thoughts.stop_check && (
-                    <div className="space-y-1">
-                      <div className="font-bold text-gray-800 font-sans flex items-center gap-1">
-                        {thoughts.stop_check.passed ? (
-                          <CheckCircle2 size={12} className="text-emerald-500" />
-                        ) : (
-                          <AlertTriangle size={12} className="text-amber-500" />
-                        )}
-                        安全硬拦截校验:
-                      </div>
-                      <div className="bg-white border border-gray-155 p-2 rounded text-[10px]">
-                        <div><span className="text-gray-400 font-sans">红线校验:</span> {thoughts.stop_check.passed ? 'PASSED (符合约束)' : 'REPAIRED (已拦截拦截)'}</div>
-                        {thoughts.stop_check.violations && thoughts.stop_check.violations.length > 0 && (
-                          <div className="text-rose-600 mt-1 font-sans font-semibold">
-                            已过滤拦截 ASIN: {thoughts.stop_check.violations.map((v: any) => v.parent_asin).join(', ')}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Rewards */}
-                  {thoughts.reward && (
-                    <div className="space-y-1">
-                      <div className="font-bold text-gray-800 font-sans flex items-center gap-1">
-                        <Trophy size={12} className="text-amber-500" />
-                        对齐评估反馈奖赏:
-                      </div>
-                      <div className="bg-white border border-gray-155 p-2 rounded text-[10px] grid grid-cols-2 gap-1.5 font-sans">
-                        <div><span className="text-gray-400 font-normal">总奖赏:</span> <span className="font-bold text-indigo-650">{thoughts.reward.total}</span></div>
-                        <div><span className="text-gray-400 font-normal">推荐质量:</span> <span className="text-gray-700">{thoughts.reward.recommendation_quality}</span></div>
-                        <div><span className="text-gray-400 font-normal">约束对齐:</span> <span className="text-gray-700">{thoughts.reward.feedback_alignment}</span></div>
-                        <div><span className="text-gray-400 font-normal">事实置信:</span> <span className="text-gray-700">{thoughts.reward.explanation_faithfulness}</span></div>
-                      </div>
-                    </div>
-                  )}
+                  <div className="text-[10px] text-gray-400 leading-relaxed">
+                    仿真页面只读取 public_timeline 与 display_responses；内部工具链路、RAG 原始证据、奖励分和诊断不进入公开导出。
+                  </div>
                 </div>
               );
             })()}
@@ -258,7 +201,7 @@ export function Sandbox() {
           </div>
         </div>
 
-        {/* Right Column (xl:col-span-3): Sidebar & User Agent thoughts */}
+        {/* Right Column (xl:col-span-3): Sidebar & user agent controls */}
         <div className="xl:col-span-3 flex flex-col gap-4 h-[650px] xl:h-full overflow-hidden">
           {/* Agent list panel */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col gap-4 flex-grow min-h-0">
@@ -336,6 +279,7 @@ export function Sandbox() {
           </div>
 
           {/* User Agent Thoughts Card (Dedicated White Box) */}
+          {DEBUG_PANEL_ENABLED && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 h-[200px] flex flex-col gap-2 flex-shrink-0 overflow-hidden">
             <div className="flex items-center gap-2 border-b border-gray-150 pb-2 flex-shrink-0">
               <Brain className="text-purple-600" size={16} />
@@ -428,6 +372,7 @@ export function Sandbox() {
               })()}
             </div>
           </div>
+          )}
         </div>
       </div>
 

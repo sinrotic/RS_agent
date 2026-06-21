@@ -1,7 +1,17 @@
 import { FormEvent, useEffect, useRef } from 'react';
 import { Send, MessageSquare, Cpu, User } from 'lucide-react';
 import { ChatMessage, DisplayResponse } from '../types';
-import { ProductCard } from './ProductCard';
+import { FeedbackActions } from './FeedbackActions';
+import { GroupedRecommendationGrid } from './GroupedRecommendationGrid';
+import { RecommendationIntentSummary } from './RecommendationIntentSummary';
+import { FeedbackContext, buildDisplayViewModel } from '../utils/displayViewModel';
+
+function itemFeedbackLabel(actionType: string): string {
+  if (actionType === 'like') return '喜欢该商品，找相似';
+  if (actionType === 'dislike') return '不感兴趣';
+  if (actionType === 'why') return '为什么推荐';
+  return '继续调整推荐';
+}
 
 interface ChatPanelProps {
   display: DisplayResponse;
@@ -14,12 +24,13 @@ interface ChatPanelProps {
   setSelectedTurnIndex: (turnIndex: number | null) => void;
   onSubmit: (message: string) => void;
   onFeedback: (actionType: string, label: string, itemId?: string) => void;
+  lastFeedbackContext?: FeedbackContext | null;
 }
 
 export function ChatPanel({
   display, messages, input, setInput, isLoading, sessionId,
   selectedTurnIndex, setSelectedTurnIndex,
-  onSubmit, onFeedback
+  onSubmit, onFeedback, lastFeedbackContext
 }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -55,6 +66,7 @@ export function ChatPanel({
       {/* Messages timeline */}
       <div className="flex-grow rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-4 overflow-y-auto flex flex-col min-h-0">
         {messages.map((message, index) => {
+          const latestUserMessage = [...messages.slice(0, index)].reverse().find((entry) => entry.role === 'user')?.content;
           if (message.role === 'system') {
             return (
               <div key={`msg-${index}`} className="self-center bg-gray-200/60 text-gray-500 rounded-full px-4 py-1 text-xs text-center font-medium my-1 max-w-[90%] flex-shrink-0">
@@ -65,7 +77,7 @@ export function ChatPanel({
 
           const isUser = message.role === 'user';
           // Associate turns for both user and assistant messages if available
-          const turnIndex = message.thoughts?.turn_index;
+          const turnIndex = message.turn_index;
           const isSelected = turnIndex !== undefined && turnIndex === selectedTurnIndex;
           const hasTurn = turnIndex !== undefined;
 
@@ -86,7 +98,7 @@ export function ChatPanel({
               }`}
             >
               <div className="text-[10px] text-gray-400 px-2 font-semibold uppercase flex items-center gap-1">
-                {isUser ? <User size={10} className="text-purple-500" /> : <Cpu size={10} className="text-indigo-555" />}
+                {isUser ? <User size={10} className="text-purple-500" /> : <Cpu size={10} className="text-indigo-500" />}
                 {isUser ? '用户' : '推荐系统'}
               </div>
               <div
@@ -98,23 +110,20 @@ export function ChatPanel({
               >
                 <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
 
-                {/* Inline Product Grid */}
-                {message.items && message.items.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100">
-                    <h4 className="font-semibold text-xs text-gray-505 uppercase tracking-wider mb-3">为您推荐以下商品：</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                      {message.items.map((item) => (
-                        <div key={item.parent_asin} className="w-full">
-                          <ProductCard
-                            item={item}
-                            onFeedback={(actionType, itemId) => onFeedback(actionType, actionType === 'like' ? '喜欢该商品' : '不喜欢该商品', itemId)}
-                            disabled={isLoading || !sessionId}
-                          />
-                        </div>
-                      ))}
+                {/* Guide-style recommendation view */}
+                {message.items && message.items.length > 0 && (() => {
+                  const viewModel = buildDisplayViewModel(display, message.items || [], latestUserMessage, lastFeedbackContext);
+                  return (
+                    <div className="mt-4 space-y-4 border-t border-gray-100 pt-4">
+                      <RecommendationIntentSummary viewModel={viewModel} />
+                      <GroupedRecommendationGrid
+                        groups={viewModel.groups}
+                        onFeedback={(actionType, itemId) => onFeedback(actionType, itemFeedbackLabel(actionType), itemId)}
+                        disabled={isLoading || !sessionId}
+                      />
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Turn Info & outer inspect hint */}
                 {isUser && hasTurn && (
@@ -124,29 +133,23 @@ export function ChatPanel({
                   </div>
                 )}
 
-                {!isUser && message.thoughts && (
+                {!isUser && hasTurn && (
                   <div className="mt-3 text-[9px] text-gray-400 border-t border-gray-150 pt-1.5 flex justify-between items-center">
-                    <span>第 {message.thoughts.turn_index} 轮推荐</span>
-                    <span className="text-indigo-600 font-semibold">点击查看推荐依据摘要</span>
+                    <span>第 {turnIndex} 轮推荐</span>
+                    <span className="text-indigo-600 font-semibold">点击查看公开交互摘要</span>
                   </div>
                 )}
               </div>
 
-              {/* Inline Feedback Quick Reply Chips (Only for the latest Assistant message) */}
+              {/* Feedback Quick Reply Chips (Only for the latest Assistant message) */}
               {!isUser && isLatestAssistantMessage(index) && display.feedback_actions && display.feedback_actions.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-2 px-1">
-                  {display.feedback_actions.map((action) => (
-                    <button
-                      key={action.type}
-                      type="button"
-                      disabled={isLoading || !sessionId}
-                      onClick={() => onFeedback(action.type, action.label)}
-                      className="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full hover:bg-indigo-100 hover:border-indigo-300 font-medium transition-colors text-xs flex items-center gap-1 disabled:opacity-50 focus:outline-none"
-                    >
-                      {action.label}
-                    </button>
-                  ))}
-                </div>
+                <FeedbackActions
+                  actions={display.feedback_actions}
+                  onAction={(action) => onFeedback(action.type, action.label)}
+                  disabled={isLoading || !sessionId}
+                  size="sm"
+                  align="left"
+                />
               )}
             </div>
           );

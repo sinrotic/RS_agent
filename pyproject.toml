@@ -17,6 +17,13 @@ dev = [
     "pytest",
     "ruff",
 ]
+qdrant = [
+    "qdrant-client",
+]
+qdrant-rag = [
+    "qdrant-client",
+    "sentence-transformers",
+]
 
 [tool.setuptools.packages.find]
 include = ["rs_core*"]

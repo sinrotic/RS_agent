@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
+from rs_core.recsys.rag.retriever import CandidateEvidenceRetriever
+
 from rs_core.recsys.rag.bm25 import SQLiteBM25CandidateRetriever
 from rs_core.recsys.rag.corpus import RAG_COMPACT_DENSE_FIELD, RAG_DEFAULT_FIELD_WEIGHTS, RAG_EVIDENCE_FIELD_QUOTAS, RAG_STANDARD_FIELDS
 from rs_core.recsys.rag.schema import RagEvidence
@@ -30,6 +32,7 @@ class HybridCandidateRetriever:
     rrf_k: int = 60
     field_weights: dict[str, float] | None = None
     embedding_backend: TextEmbeddingBackend | None = None
+    vector_backend: CandidateEvidenceRetriever | None = None
 
     def retrieve(
         self,
@@ -46,6 +49,9 @@ class HybridCandidateRetriever:
         return self._fuse(bm25_evidence, vector_evidence, max_evidence_per_item)
 
     def _vector_evidence(self, query: str, candidate_ids: list[str], max_evidence_per_item: int) -> list[RagEvidence]:
+        if self.vector_backend is not None:
+            return self.vector_backend.retrieve(query, candidate_ids, max_evidence_per_item)
+
         vector_index_path = self.vector_index_path or _manifest_vector_index_path(Path(self.index_path))
         if vector_index_path and Path(vector_index_path).exists():
             return load_local_vector_index(vector_index_path).retrieve(

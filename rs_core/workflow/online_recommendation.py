@@ -19,6 +19,9 @@ from rs_core.recsys.candidate_merge import (
     usercf_candidates_for_user,
 )
 from rs_core.recsys.pool500_artifacts import Pool500ArtifactIndex, load_pool500_artifact_index
+from rs_core.recsys.vectorstores.qdrant_client import QdrantVectorStore
+from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_TWO_TOWER_COLLECTION, OptionalQdrantDependencyMissing
+from rs_core.recsys.vectorstores.qdrant_two_tower import QdrantTwoTowerIndex
 from rs_core.recsys.types import MergedCandidate, RecallCandidate
 from rs_core.rsagent.policy import normalize_feedback_input, parse_feedback
 from rs_core.rsagent.schema import DisplayResponse
@@ -66,16 +69,18 @@ class OnlinePool500Recommender:
             "mode": "online-service" if path or source_indexes else "demo-compatible",
             "config_path": self.env.config_path,
             "session_state": "single_process_in_memory",
-            "complete_pool500_available": bool(path or source_index_available),
+            "complete_pool500_available": False,
+            "online_source_indexes_available": source_index_available,
             "online_source_indexes": source_indexes,
         }
         if not path:
             payload["pool500_artifact"] = {"enabled": False, "status": "not_configured"}
             return payload
         try:
-            payload["pool500_artifact"] = self._get_pool500_index().readiness()
+            artifact_readiness = self._get_pool500_index().readiness()
+            payload["pool500_artifact"] = artifact_readiness
+            payload["complete_pool500_available"] = artifact_readiness.get("status") == "ready"
         except Exception as exc:  # pragma: no cover - defensive readiness path
-            payload["complete_pool500_available"] = source_index_available
             payload["pool500_artifact"] = {"enabled": True, "status": "error", "candidates_path": str(path), "error": _compact_error(exc)}
         return payload
 
@@ -170,16 +175,19 @@ class OnlinePool500Recommender:
         *,
         prior_turn_items: set[str] | None = None,
         candidate_pool_size: int | None = None,
+        retrieve_policy: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         normalized_sequence = _normalize_sequence(user_sequence, user_sequence.get("user_id"))
+        policy = retrieve_policy if isinstance(retrieve_policy, dict) else {}
         seen_items = (prior_turn_items or set()) | set(normalized_sequence.get("recent_item_sequence", []))
         candidates: list[MergedCandidate] = []
         index = self._maybe_pool500_index()
         if index is not None:
             candidates.extend(_filter_live_candidates(index.candidates_for_user(normalized_sequence["user_id"], seen_items=seen_items)))
         request_config = _request_config(self.env.config, top_k=5, candidate_pool_size=candidate_pool_size)
+        source_sequence = _sequence_with_reference_seed(normalized_sequence, policy.get("reference_item_id"))
         source_index_candidates, source_index_diagnostics = self._source_index_candidates_for_sequence(
-            normalized_sequence,
+            source_sequence,
             request_config,
         )
         candidates = _filter_live_candidates(_merge_online_extra_candidates([*candidates, *source_index_candidates]))
@@ -307,6 +315,8 @@ class OnlinePool500Recommender:
                         "available": Path(manifest_path).exists() and not blocked,
                         "status": "blocked_heavy_scan" if blocked else "configured" if Path(manifest_path).exists() else "missing_manifest",
                     })
+                elif source == "two_tower":
+                    status.update(_two_tower_source_readiness_status(source_config, manifest_path))
                 else:
                     status.update({"available": Path(manifest_path).exists(), "status": "configured" if Path(manifest_path).exists() else "missing_manifest"})
             except Exception as exc:  # pragma: no cover - readiness must stay defensive
@@ -345,7 +355,7 @@ class OnlinePool500Recommender:
                     source_rows = usercf_candidates_for_user(user_sequence, self._usercf_lookup, source_config)
                 elif source == "two_tower":
                     if self._two_tower_index is None:
-                        self._two_tower_index = load_two_tower_index(manifest_path)
+                        self._two_tower_index = _load_two_tower_backend(manifest_path, source_config)
                     source_config = dict(config) | {"two_tower_enabled": True}
                     source_rows = two_tower_candidates_for_user(user_sequence, self._two_tower_index, source_config)
                 elif source == "co_visit_fallback_repair":
@@ -467,6 +477,20 @@ class OnlinePool500Recommender:
         return usercf_candidates_for_user(user_sequence, self._co_visit_lookup, source_config)
 
 
+def _sequence_with_reference_seed(user_sequence: dict[str, Any], reference_item_id: Any) -> dict[str, Any]:
+    item_id = str(reference_item_id or "").strip()
+    if not item_id:
+        return user_sequence
+    sequence = dict(user_sequence)
+    for key in ("recent_item_sequence", "recent_positive_item_sequence"):
+        values = [str(item) for item in sequence.get(key, []) if str(item or "").strip()]
+        if item_id not in values:
+            values.append(item_id)
+        sequence[key] = values
+    return sequence
+
+
+
 def _normalize_sequence(user_sequence: dict[str, Any], user_id: str | None) -> dict[str, Any]:
     sequence = dict(user_sequence)
     resolved_user_id = str(user_id or sequence.get("user_id") or f"online-{uuid4()}")
@@ -526,6 +550,43 @@ def _online_source_index_configs(config: dict[str, Any], config_path: str | Path
             source_config["manifest_path"] = _resolve_config_path(raw_path, config_path)
         configs[source_name] = source_config
     return configs
+
+
+def _two_tower_source_readiness_status(source_config: dict[str, Any], manifest_path: Path) -> dict[str, Any]:
+    backend = str(source_config.get("backend", "local_vector")).strip().lower()
+    if backend != "qdrant":
+        return {"available": Path(manifest_path).exists(), "status": "configured" if Path(manifest_path).exists() else "missing_manifest"}
+    qdrant_config = source_config.get("qdrant") if isinstance(source_config.get("qdrant"), dict) else {}
+    if not qdrant_config.get("enabled", False):
+        return {"available": Path(manifest_path).exists(), "status": "configured" if Path(manifest_path).exists() else "missing_manifest"}
+    try:
+        store = QdrantVectorStore.from_config(qdrant_config)
+        collection_name = str(qdrant_config.get("collection_name") or DEFAULT_TWO_TOWER_COLLECTION)
+        store.client.get_collection(collection_name=collection_name)
+    except OptionalQdrantDependencyMissing:
+        return {"available": False, "status": "qdrant_dependency_missing", "backend": "qdrant"}
+    except Exception:
+        return {"available": False, "status": "qdrant_unavailable", "backend": "qdrant"}
+    return {"available": Path(manifest_path).exists(), "status": "qdrant_configured" if Path(manifest_path).exists() else "missing_manifest", "backend": "qdrant"}
+
+
+def _load_two_tower_backend(manifest_path: Path, source_config: dict[str, Any]) -> Any:
+    local_index = load_two_tower_index(manifest_path)
+    backend = str(source_config.get("backend", "local_vector")).strip().lower()
+    if backend != "qdrant":
+        return local_index
+    qdrant_config = source_config.get("qdrant") if isinstance(source_config.get("qdrant"), dict) else {}
+    if not qdrant_config.get("enabled", False):
+        return local_index
+    return QdrantTwoTowerIndex(
+        store=QdrantVectorStore.from_config(qdrant_config),
+        collection_name=str(qdrant_config.get("collection_name") or DEFAULT_TWO_TOWER_COLLECTION),
+        items=dict(getattr(local_index, "items", {}) or {}),
+        user_embeddings=dict(getattr(local_index, "user_embeddings", {}) or {}),
+        source_name=str(getattr(local_index, "source_name", "two_tower") or "two_tower"),
+        model_metadata=dict(getattr(local_index, "model_metadata", {}) or {}),
+    )
+
 
 
 def _resolve_config_path(raw_path: Any, config_path: str | Path) -> Path:

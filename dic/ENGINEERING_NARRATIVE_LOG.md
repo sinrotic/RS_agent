@@ -12,6 +12,206 @@
 - 不记录无意义的中间尝试，不堆 raw log。
 - 简单机械修改不需要单独记录。
 
+### 2026-06-21 - 双 Agent 多轮 SFT 数据生成流水线
+
+**任务：**
+按用户新的口径，把 SFT 样本生成从“单 turn GPT 改写”扩展为“推荐 Agent + 模拟用户 Agent 多轮交互”：抽样中上热度用户，基于 train history 总结人设，驱动多轮推荐对话，并为后续 500 条样本生成提供 scene-level JSONL、flattened turn JSONL、manifest 和 reject 记录。
+
+**遇到的问题：**
+现有 `run_gpt_sft_api.py` 只面向已有单 turn seed SFT 样本；现有 simulation runner 能多轮交互但输出是 public scene，不是训练合同；模拟用户模型客户端与 GPT SFT 客户端分裂，且真实 500 条生成会向外部 OpenAI-compatible API 发送用户历史摘要和展示商品，必须显式执行并受权限控制。
+
+**定位方式：**
+只读梳理 `rs_core/common/openai_compatible_client.py`、`rs_core/training/gpt_sft_runner.py`、`rs_core/training/data_contracts.py`、`rs_core/simulation/policy.py`、`rs_core/simulation/runner.py` 与 `rs_core/serving/service.py`，确认最小方案是新增离线 batch 生成器，复用 `RecommendationService.start_session/chat/feedback`、现有 hidden tool runtime、`ModelDrivenRolePolicy` 的 JSON action 约束，以及 train-only `user_sequences` 作为中上热度用户抽样来源。
+
+**解决方式：**
+新增 `rs_core/training/multi_turn_sft_generator.py`、`scripts/training/generate_multi_turn_sft.py`、`configs/training/multi_turn_sft_gpt53.yaml` 和 `tests/test_multi_turn_sft_generator.py`。生成器默认 dry-run，不要求 key、不外发 API；`--execute` 才创建 `OpenAICompatibleClient`，默认 `api_base=https://cpa2api.sinrotic233.com`、`api_key_env=RS_agent`、`model=gpt5.3codexspark`。用户抽样按 train history count 取 warm/hot；persona 只声明 `derived_from=train_history_only`；输出 `rs_agent_multi_turn_sft_sample_v1`，并额外导出兼容旧 SFT runner 的 flattened turn samples。validator 强制每轮 `selected_item_ids` 属于 `display_item_ids/allowed_item_ids`，并扫描 `diagnostics/oracle/ground_truth/reward/rag_context/training_samples` 等内部或评估字段。
+
+**验证结果：**
+运行 `./.venv/Scripts/python.exe -m pytest tests/test_multi_turn_sft_generator.py tests/test_gpt_sft_api.py tests/test_openai_compatible_client.py`，结果 `32 passed in 364.19s`；运行 `./.venv/Scripts/python.exe -m py_compile rs_core/training/multi_turn_sft_generator.py scripts/training/generate_multi_turn_sft.py tests/test_multi_turn_sft_generator.py` 通过。dry-run smoke：`./.venv/Scripts/python.exe scripts/training/generate_multi_turn_sft.py --config configs/training/multi_turn_sft_gpt53.yaml --limit 2 --dry-run`，生成预览 `generated_count=2`、`api_called=false`、`avg_dialogue_turn_count=4.0`。code-reviewer 复审 `APPROVE`，仅指出并已修复 CLI `--dry-run` override no-op。真实 500 条 `--execute` 生成未执行：本会话自动权限拦截外部 API 数据发送，且当前 shell 未设置 `RS_agent` 环境变量。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 的多轮训练数据闭环设计”：不是把用户历史直接喂给训练，而是先按 train-only 历史构造人设，再用模拟用户 Agent 产生追问、解释、换方向、接受等真实交互，把推荐 Agent 的公开响应和展示商品固化为可验证多轮 SFT 合同；同时用 dry-run、manifest、rejects 和 grounding validator 管住外部 API 成本、数据泄漏和候选池越界。
+
+### 2026-06-21 - Qdrant 向量资产迁移 builder 与 dry-run 闭环
+
+**任务：**
+在 Qdrant foundation、RAG retriever 和 two-tower adapter 已完成后，继续把现有向量资产迁移从“可接入后端”推进到“可物化 collection”：补齐 two-tower item embeddings 与 RAG product chunks 写入 Qdrant 的 builder、CLI、manifest 和测试闭环。
+
+**遇到的问题：**
+向量迁移不能直接把现有本地 artifact 或 BM25F/token semantic 统一替换成 Qdrant：RAG 只能保持 candidate-scoped evidence；two-tower 必须从受验证 source manifest 构建，不能绕过 train-only/no-holdout 治理；真实 embedding/full-data job 还可能很重，默认执行必须有 `--dry-run` 和 `--limit-items` 保护。
+
+**定位方式：**
+复用既有边界文件定位实现落点：two-tower 侧沿 `rs_core/recsys/vector_index.py::load_vector_index_artifact()` 与 `two_tower_source_manifest.py` / `two_tower_DSSM/source_manifest.py` 校验 source manifest；RAG 侧沿 `rs_core/recsys/rag/chunking.py::chunk_item_record()`、`rag/vector_index.py::SentenceTransformerEmbeddingBackend` 与既有 `QdrantCandidateRagVectorRetriever`。同时用 `tests/qdrant_fakes.py` 保证单元测试不依赖外部 Qdrant 服务或真实模型下载。
+
+**解决方式：**
+新增共享 `qdrant_builders.py`，提供 Qdrant CLI 参数、batch、manifest 和 store 构建辅助，并要求 live build 必须显式传入 Qdrant target，避免误写临时内存库；新增 `qdrant_two_tower_build.py`，只接受 `source_index_manifest.json`，校验后把 item embeddings 以包含 `source_name` 的稳定 point id 和 `two_tower_item_payload()` 写入 `rs_agent_two_tower_items_v1`，重建前清理同 source 旧点并预校验向量维度/finite 值；新增 `rag/qdrant_index.py`，要求非 dry-run 提供 source manifest 做 provenance/path 检查，将商品 JSONL chunk 后用可注入 embedding backend 编码，并以 `rag_chunk_payload()` 写入 `rs_agent_rag_chunks_v1`。两个 CLI 均支持 `--dry-run`、`--limit-items` 和 Qdrant connection flags；当前 `semantic` 仍保持 BM25F/token source，不做直接迁移。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 Qdrant targeted tests：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_qdrant_vectorstore_contract.py tests/test_qdrant_rag_retriever.py tests/test_qdrant_two_tower_index.py tests/test_qdrant_rag_index_build.py tests/test_qdrant_two_tower_build.py tests/test_qdrant_cli_smoke.py -q`，修复 reviewer 发现的临时内存 target、point id 冲突、同 source stale points、RAG provenance、`limit_items=0` 和向量预校验问题后，结果 `18 passed in 0.52s`。运行 serving/agent 相关回归：`test_serving_smoke.py`、`test_serving_recommend_from_sequence.py`、`test_agent_runtime.py`、`test_agent_tools.py`，结果 `147 passed in 2.96s`。补充真实 `qdrant-client` in-memory delete-by-filter smoke，确认同 source stale points 清理路径可用，输出 `real qdrant delete smoke passed`。针对本轮变更文件运行 ruff 通过；全量 `rs_core/scripts/tests` ruff 暴露两个既有 unrelated unused import，不属于本轮 Qdrant 迁移改动。
+
+**面试可讲点：**
+这段可以讲成“向量数据库迁移不是换库，而是把数据治理和上线边界一起迁移”：RAG、two-tower 两类向量资产分别落到 Qdrant collection，但通过 payload flags、manifest validator、dry-run/smoke 和 local baseline 保证不会越权成为 ranking replacement 或 promotion 输入，体现推荐系统向量检索服务化中的可复现、可回滚和可治理迁移能力。
+
+### 2026-06-21 - RS Agent 对话/工具编排与 SFT 前置体检
+
+**任务：**
+按用户要求先审查 `rsagent/raagent` 对话上下文编排、工具编排和公开展示边界；发现本地问题后先修正，不直接进入 GPT 1000 条样本生成或远程 Qwen3.5-4B SFT。
+
+**遇到的问题：**
+交互入口中 `HybridRecommendationEnvironment.step()` 仍可绕过完整 `AgentRuntime.run_turn()`；pending clarification 与 `why/为什么` explanation request 的优先级存在误路由风险；context compact 中 recent turns 与 archived summaries 可能重复；工具 dispatcher 保留 legacy branch，缺少 manifest gate；前端 public 类型仍暗示 `thoughts/agent_thoughts`，容易把内部工具链路、RAG 原始证据或诊断暴露到试用界面。
+
+**定位方式：**
+沿 `/chat -> RecommendationService -> FeedbackSessionFacade -> HybridRecommendationEnvironment.converse() -> AgentRuntime.run_turn()` 梳理运行链路，对照 `rs_core/rsagent/dialogue.py`、`rs_core/workflow/hybrid_environment.py`、`rs_core/rsagent/context.py`、`rs_core/rsagent/tools.py` 与前端 `frontend/src/types.ts`、`LiveDemo.tsx`、`Sandbox.tsx`、`MallHome.tsx` 检查 contract 漂移；用回归测试复现 `pending_clarification`、runtime trace、public schema 与 GPT/Qwen dry-run 边界。
+
+**解决方式：**
+将 `step()` 收口到 `converse()`，确保 CLI/仿真/旧入口也走 context compact、hidden tool execution、stop check、diagnostics 和 session summary；调整 dialogue routing，让带真实约束信号的“为什么不先按 budget/便宜”继续作为澄清回答，而 bare `why?/explain` 在 pending clarification 下走解释请求且不清空 pending；构建 context bundle 时按 `turn_index` 排除 recent/archive 重复，并把 public summary 的 `archived_turn_count` 解释为 recent window 外的 compact archive 数；dispatcher 顶部增加 manifest gate，正式工具仍保留 `get_user_context/query_rag/retrieve_candidates/rank_candidates/get_item_evidence/build_recommendation_slate`；前端移除 `thoughts/agent_thoughts` public 类型和相关展示，改为基于 `turn_index`、`public_timeline`、`display_responses` 的公开交互摘要。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_agent_dialogue.py tests/test_agent_runtime.py tests/test_agent_tools.py tests/test_display_contract.py tests/test_session_summary.py`，最终结果 `218 passed in 1.18s`；其中新增覆盖 pending clarification + `why/budget` 与 bare `why?` 的分流。运行 `npm --prefix frontend run lint` 通过。运行 `./.venv/Scripts/python.exe -m pytest tests/test_gpt_sft_api.py tests/test_openai_compatible_client.py`，结果 `28 passed in 0.20s`；运行 `./.venv/Scripts/python.exe scripts/training/run_gpt_sft_api.py --config configs/training/gpt_sft_api_smoke.yaml --dry-run`，输出 `api_called: false`，确认未调用外部 GPT API。运行 `./.venv/Scripts/python.exe scripts/training/run_qwen_sft.py --config configs/training/qwen_qlora_sft_smoke.yaml`，输出 `dry_run: true`、`heavy_path_entered: false`，并报告本地缺少 `peft/trl`、`bitsandbytes`，resource gate 为 `block`，因此真实 Qwen SFT 应转到确认后的训练环境执行。code-reviewer 最终复审 `APPROVE`，未发现本轮指定范围内的 blocker。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 从 demo 编排到可训练前置合同的收口”：先把对话入口、上下文压缩、hidden tool manifest 和 public display 边界统一成可测试 contract，再用 dry-run 验证 GPT 数据生成和 Qwen SFT 不会误触发外部 API/重训练；体现了在 LLM Agent 推荐系统中同时治理工具调用准确率、上下文预算、公开安全边界和训练前评估口径。
+
+### 2026-06-21 - Qdrant 向量基础层与 RAG/two-tower 迁移骨架
+
+**任务：**
+按用户明确选择的 Qdrant 方向，先搭建可选向量基础层，并把 RAG evidence 检索与 two-tower 向量召回接入迁移骨架；同时不把 Qdrant 变成 serving 强依赖，不改变当前默认 public serving 行为。
+
+**遇到的问题：**
+项目里已有两类向量相关链路：RAG 的本地 TF-IDF/dense vector index，以及 two-tower 的 numpy exact scan；如果直接替换为 Qdrant，容易绕过 RAG candidate scope/policy gate，或让 ANN 检索结果在未验证 exact baseline overlap 前影响在线召回。另一个边界是当前 `semantic` 仍是 BM25F/token 倒排，不应被误当成 dense vector source 直接迁移。
+
+**定位方式：**
+对照 `rs_core/recsys/rag/vector_index.py`、`rs_core/recsys/rag/retriever.py`、`rs_core/recsys/vector_index.py`、`rs_core/recsys/candidate_merge.py` 与 `rs_core/workflow/online_recommendation.py` 梳理调用边界：RAG 必须返回 `RagEvidence` 并进入 `build_rag_context_for_ranked_candidates()`；two-tower 的最小替换点是兼容 `search()/get_item_vector()/get_user_vector()` 的向量索引协议。
+
+**解决方式：**
+新增 `rs_core/recsys/vectorstores/` 下的 Qdrant contract/client/payload/filter helper，并把 `qdrant-client` 声明为 optional extra、`qdrant-rag` 声明为包含 `sentence-transformers` 的 RAG extra。新增 `QdrantCandidateRagVectorRetriever`，通过 Qdrant payload filter 限定候选 item，并继续交给 RAG policy gate 处理 forbidden provenance、quota、budget 与 truncation。新增 `QdrantTwoTowerIndex`，兼容现有 two-tower query 构造和 candidate merge 逻辑，并强制 `train_only/no_holdout/candidate_generation_allowed` 等检索过滤；`online_recommendation` 支持 `backend: qdrant` 但默认继续使用 local vector backend，同时 public readiness 区分 Pool500 artifact readiness 与 online source index readiness。路线图补充 Qdrant vector foundation lane，明确这只是用户新批准的可选向量基础层，不代表 Phase 2 全量生产化。
+
+**验证结果：**
+用户授权后，使用项目默认 `.venv` 成功安装 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pip install -e "D:/sinrotic_code/python_project/summer/RS_agent[qdrant-rag]"`，实际安装 `qdrant-client==1.18.0` 与 `sentence-transformers==5.6.0`。随后运行真实 `qdrant-client` 的 `QdrantClient(":memory:")` smoke，覆盖 RAG chunk collection 建表/upsert/filter/query、`QdrantCandidateRagVectorRetriever` candidate scope，以及 two-tower collection 的 `train_only/candidate_generation_allowed/excluded_items/non-positive score` 过滤，结果 `real qdrant smoke passed`。真实 smoke 暴露 `get_collection()` 对 missing collection 抛 `ValueError("Collection ... not found")`，已修复 `ensure_collection()` 仅将 not-found 类 `ValueError` 视为 missing，仍传播非 missing 错误，并补充回归用例。最终运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_qdrant_vectorstore_contract.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_qdrant_rag_retriever.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_qdrant_two_tower_index.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_rag_core.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_smoke.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_recommend_from_sequence.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runtime.py -q`，结果 `147 passed in 4.00s`；运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m ruff check D:/sinrotic_code/python_project/summer/RS_agent/rs_core D:/sinrotic_code/python_project/summer/RS_agent/tests/test_qdrant_vectorstore_contract.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_qdrant_rag_retriever.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_qdrant_two_tower_index.py D:/sinrotic_code/python_project/summer/RS_agent/tests/qdrant_fakes.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_recommend_from_sequence.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runtime.py`，结果 `All checks passed!`。code-reviewer 复审结论为 `APPROVED`，其追加指出的 Qdrant two-tower readiness 健康检查也已补充非变更式 collection 探测和回归用例。
+
+**面试可讲点：**
+这段可以讲成“推荐系统向量检索服务化的渐进迁移”：先抽象 vector store contract，再把 RAG evidence 与 two-tower candidate recall 分别接入 Qdrant；前者严格保持 evidence-only/candidate-scoped，后者保留 exact scan baseline 做 ANN 对齐，体现了对召回质量、解释 grounding 和线上安全边界的综合治理。
+
+### 2026-06-20 - 数据库/中间件 Phase 0/1a 服务治理落地
+
+**任务：**
+按已批准的 `proceed_phase0_1a` 范围执行数据库/中间件串联计划，只落地 Phase 0 trial hardening 与 Phase 1a contract/schema baseline，不提前引入 PostgreSQL runtime、Redis/RQ、MinIO、Prometheus、Kafka/ClickHouse、pgvector 或多实例生产化。
+
+**遇到的问题：**
+现有 SQLite/JSONL persistence 已能记录 public serving 行为，但对外 trial 还缺少更保守的数据治理：comment 长度与脱敏标记、public timeline/request summary/session export 的敏感字段过滤、retention cleanup 函数；同时 Phase 1a 若只停留在规划文档，后续接 PostgreSQL/队列/观测时容易混淆 fail-open audit store 与 fail-closed facts store。
+
+**定位方式：**
+复核 `.omc/plans/rs-agent-service-datastores-middleware-plan.md`、`dic/guides/RS_AGENT_DATASTORE_MIDDLEWARE_ROADMAP.md` 与当前 `rs_core/serving/persistence.py`、`rs_core/display/builder.py`，把验收拆成 public-safe export、retention、Store Failure Policy、Trace ID mapping、SQL DDL baseline 与 SQLite/target schema mapping 几类可测试合同。
+
+**解决方式：**
+新增 `rs_core/display/public_safety.py`，统一过滤 token/cookie/secret、raw prompt、tool trace、diagnostics、oracle、label、holdout、ground_truth、target_item 等 public 禁止内容；在 `rs_core/display/builder.py` 与 `rs_core/serving/persistence.py` 中对 public timeline、turn message、feedback comment、request summary、session end JSONL summary 做脱敏。Feedback comment 默认 500 字符截断，并在 SQLite 中记录 `comment_truncated` / `comment_redacted`。新增 `cleanup_expired_public_records()`，覆盖 session/public timeline 7 天、request log 14 天、feedback/comment 90 天，simulation namespace 7 天作为 policy 常量保留。新增 `rs_core/serving/store_contracts.py`、`configs/serving/schema/phase1a_serving_baseline.sql`、`configs/serving/schema/sqlite_to_phase1a_mapping.json`，固化 LocalAuditStore fail-open、CanonicalFactsStore fail-closed、DerivedSink fail-open/retry、Trace ID mapping、RAG evidence 分层与 SQL baseline，不实现 PostgreSQL runtime adapter 或 Alembic。
+
+**验证结果：**
+新增 `tests/test_serving_trial_hardening.py` 覆盖 comment 截断/脱敏标记、redaction/filter marker、public-safe session export、request/JSONL 敏感字段过滤、retention cleanup 与 policy 常量，并补充 `auth_token/authToken/sessionCookie/session_cookie/api_key/password` 等 realistic secret variants 以及 safe neighbor 字段保留回归；新增 `tests/test_serving_store_contracts.py` 覆盖 Store Failure Policy、safe wrapper compatibility、Trace ID mapping、Phase 1a config defaults 与 RAG evidence contract；新增 `tests/test_serving_migrations.py` 覆盖 SQL baseline 的关键表、索引、约束和 SQLite→Phase1a mapping。使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_trial_hardening.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_store_contracts.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_migrations.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_persistence.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_smoke.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_session_summary.py -q`，结果 `82 passed, 1 warning in 2.27s`；warning 为既有 semantic description SQLite 跨线程析构。运行 `ruff check` 覆盖本轮改动 Python 文件，结果 `All checks passed!`。code-reviewer 最终复审 `APPROVE`，HIGH/MEDIUM/LOW findings 均为 0。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 受控试用到生产兼容合同的分阶段治理”：Phase 0 先解决 public data minimization、审计回放和 retention；Phase 1a 再把 facts store、audit sink、trace graph、RAG evidence 和 SQL schema 作为可测试合同固定下来。亮点不是一次性上全套中间件，而是在模块化单体中用 contract-first 方式降低未来迁移到 PostgreSQL/事件流/观测系统的风险。
+
+### 2026-06-20 - 数据库/中间件路线图与 Team 执行锚点
+
+**任务：**
+把数据库/中间件服务串联的 RALPLAN 共识规划固化为项目级路线文档与 Team/Ralph handoff，防止后续长流程执行中丢失阶段边界或提前引入重组件。
+
+**遇到的问题：**
+原规划已落在 `.omc/plans/rs-agent-service-datastores-middleware-plan.md`，但用户担心后续 `/team` 长历程、上下文压缩或多 agent 执行时忘记“当前最多执行 Phase 0 + Phase 1a”的约束，导致 PostgreSQL runtime、Redis/RQ、Kafka/ClickHouse 等后续阶段被误提前。
+
+**定位方式：**
+复核最终计划中的阶段 gate、Phase 0 trial hardening、Phase 1a SQL DDL baseline 和 Approval Gate，并确认现有 `.omc/handoffs/`、`dic/guides/` 与项目 memory 可作为执行锚点。
+
+**解决方式：**
+新增 `dic/guides/RS_AGENT_DATASTORE_MIDDLEWARE_ROADMAP.md` 作为项目级摘要路线图，明确 Phase 0/1a/1b/1c/2 的允许/禁止事项和分阶段批准口径；新增 `.omc/handoffs/team-plan-to-team-exec-datastore-middleware.md`，要求未来 Team/Ralph 执行前读取计划与路线图，提醒后续执行不要越过 approval gate。
+
+**验证结果：**
+文件写入成功；路线图与 handoff 明确引用 `.omc/plans/rs-agent-service-datastores-middleware-plan.md` 和 `.omc/plans/open-questions.md`，并把 `proceed_phase0_1a` 作为当前建议上限。未运行代码测试，因为本次只做规划/文档锚定，不改 runtime 代码。
+
+**面试可讲点：**
+这段可以讲成“复杂推荐服务生产化路线的执行治理”：不仅做技术选型，还把阶段 gate、禁止提前引入的基础设施、trial 数据治理和 Team handoff 固化成文档与记忆，降低多 agent 长流程中的路线漂移风险。
+
+### 2026-06-19 - Serving 受控试用 P1 轻量持久化
+
+**任务：**
+在 P0 trace、权限和 debug 隔离基础上，为 FastAPI serving 补齐 SQLite + JSONL 轻量持久化，记录 session metadata、public turn、feedback event 和 request summary，同时保持召回/排序主链路、public response contract 与 debug 边界不变。
+
+**遇到的问题：**
+原 serving 只依赖单进程内存 `sessions/session_events`，进程重启后无法回看试用会话，也缺少请求级审计；但如果直接序列化 `AgentSession.to_dict()` 或 raw diagnostics，会把 `runtime_trace`、`rag_context`、tool/score/user_profile 等内部字段带入 public export 或落盘产物。
+
+**定位方式：**
+沿 `rs_core/serving/app.py`、`service.py`、`facades.py`、`rs_core/display/builder.py` 和 serving tests 梳理边界，确认最小接入点应放在 serving facade/service 层：主请求先完成，再 best-effort persist；未授权请求必须在 `get_service()` 前被 gate；fallback export 只能从已校验的 public display/timeline 表恢复。
+
+**解决方式：**
+新增 `rs_core/serving/persistence.py`，实现 `NoopServingPersistenceStore`、`SQLiteJsonlServingPersistenceStore` 和 fail-open 的 `SafeServingPersistenceStore`；通过 `RS_SERVING_PERSISTENCE_ENABLED`、`RS_SERVING_SQLITE_PATH`、`RS_SERVING_JSONL_PATH` 开启持久化，默认保持 Noop。SQLite 表只保存 `serving_sessions`、`serving_turns`、`serving_feedback_events`、`serving_request_summaries` 的 public-safe 字段；JSONL 只追加事件摘要。`/session/start`、`/chat`、`/feedback`、`/recommend`、`/recall` 接入 middleware 生成/规范化后的 `X-Request-ID`，并让 request summary 只白名单保留 `http_request_id` 与公开 retrieval summary 计数字段。初始化失败、写入失败和 export fallback 失败均降级，不影响主请求。针对安全复审提出的“strict auth 本地默认放开若误绑定外网会 fail-open”风险，在 `scripts/serving/run_service.py` 增加启动护栏：非 loopback host 必须显式设置 `RS_SERVING_STRICT_AUTH=1`，且必须配置 `RS_TRIAL_TOKEN`、`RS_DEBUG_TOKEN`，显式开启 simulation 时还需 `RS_SIMULATION_TOKEN`。
+
+**验证结果：**
+新增 `tests/test_serving_persistence.py` 覆盖 session/chat/feedback 落库、SQLite fallback export、recommend/recall request summary、persistence 失败降级、strict-auth 未授权不实例化 service/persistence、trial token 不能触发 recall 落库、非法/缺失 request id 与响应头落库一致、SQLite 初始化失败 fail-open，以及 SQLite/JSONL blocked terms 扫描；新增 `tests/test_serving_run_service.py` 覆盖 loopback 本地开发不强制鉴权、非 loopback 必须 strict auth、缺 trial/debug/simulation token 拒绝启动等部署护栏。使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_run_service.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_smoke.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_facades.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_recommend_from_sequence.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_long_memory.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_persistence.py -q`，结果 `89 passed, 1 warning in 2.32s`；warning 来自既有 semantic description SQLite 对象跨线程析构，不是本次 persistence store。前端复跑 `npm --prefix D:/sinrotic_code/python_project/summer/RS_agent/frontend run lint` 与 `npm --prefix D:/sinrotic_code/python_project/summer/RS_agent/frontend run build` 通过。code-reviewer 复审 `APPROVE`，HIGH/MEDIUM/LOW 均为 0；security-reviewer 对 P1 persistence 与非 loopback 启动护栏均 `APPROVE`。额外注意：前端 Vite dev dependency audit 有独立 HIGH advisory，需后续单独升级处理。
+
+**面试可讲点：**
+这段可以讲成“受控试用推荐系统的可追溯与数据最小化落地”：不是为了持久化而把内部 Agent 状态全量落盘，而是把 serving 侧拆出 public-safe persistence seam，用白名单 schema、fail-open 策略和鉴权前置保证试用可回放、可审计、可降级，同时不泄露召回/排序诊断和 Agent 内部推理链路。
+
+### 2026-06-19 - Serving 受控试用部署 checklist 与黑盒 smoke
+
+**任务：**
+在 P1 轻量持久化和非 loopback 启动护栏之后，补齐受控试用部署说明与真实服务黑盒 smoke 脚本，让“代码测试通过”进一步收口为“启动后可按 checklist 验收”。
+
+**遇到的问题：**
+已有 pytest 能验证 app 内部契约，但缺少部署者可直接执行的 endpoint 权限矩阵、env 配置说明和外部 HTTP smoke；初版 smoke 通过 CLI 参数传 token，存在进程列表/shell history/CI 日志泄露风险；同时 simulation endpoint 在 app 中默认可用，文档和非 loopback 启动护栏如果只在显式启用时要求 `RS_SIMULATION_TOKEN`，会造成部署口径不一致。
+
+**定位方式：**
+对照 `rs_core/serving/app.py`、`scripts/serving/run_service.py`、`rs_core/serving/schema.py`、`tests/test_serving_smoke.py`、`tests/test_serving_persistence.py` 和 `tests/test_serving_run_service.py` 梳理 endpoint 权限、response schema、`X-Request-ID` 行为和 simulation 默认开关语义；code-reviewer 与 security-reviewer 分别复审文档/脚本一致性和 token/endpoint 暴露边界。
+
+**解决方式：**
+新增 `dic/guides/SERVING_TRIAL_DEPLOYMENT_CHECKLIST.md`，用中文记录 loopback 与非 loopback 启动方式、token 分层、endpoint 权限矩阵、request tracing、SQLite/JSONL persistence 路径和 public-safe 边界。新增 `scripts/serving/smoke_trial_service.py`，使用 Python 标准库对已启动服务执行 `/health`、`/ready`、session/chat/feedback/export、`/recommend` 与可选 `/recall` 权限 smoke，并统一检查 `X-Request-ID`。脚本默认从 `RS_TRIAL_TOKEN` / `RS_DEBUG_TOKEN` 读取 token，CLI token 仅作为本地临时 fallback。同步收紧 `run_service.py`：非 loopback 场景下，simulation endpoint 默认可用时必须配置 `RS_SIMULATION_TOKEN`，只有显式 `RS_ENABLE_SIMULATION_ENDPOINTS=0` 才允许不配置。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m py_compile scripts/serving/smoke_trial_service.py scripts/serving/run_service.py` 通过；运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_serving_smoke.py tests/test_serving_persistence.py tests/test_serving_run_service.py`，结果 `62 passed, 1 warning in 1.72s`，warning 仍为既有 semantic description SQLite 跨线程析构。无 scheme `--base-url 127.0.0.1:8000` 返回结构化 JSON 失败，证明 smoke 脚本错误路径可读。code-reviewer 复审 `APPROVE`，security-reviewer 复审 `APPROVE`；security-reviewer 还通过 `uvx pip-audit -r requirements-serving.txt` 确认 serving requirements 暂无已知漏洞。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 从功能可用到试用可运维的交付闭环”：不仅写接口和单测，还补部署 checklist、权限矩阵、启动护栏和外部 smoke，把 token 泄露、debug/simulation 边界、request tracing 和持久化 fail-open 都纳入可执行验收，体现从 demo 到受控试用的工程化思路。
+
+### 2026-06-18 - Agent 召回工具 schema v2 高层路由收口
+
+**任务：**
+重编排 `retrieve_candidates` 的召回工具 schema，把语义召回、相似物品、用户近邻、行为召回和 fallback 从一个粗粒度 `use_behavioral_recall` 开关中拆成高层 `route_policy`，同时保持后端继续 gate 具体 ItemCF/UserCF/TwoTower/co-visit 分路。
+
+**遇到的问题：**
+原 schema 中 `semantic_mode` 相对清楚，但协同过滤类分路只通过 `use_behavioral_recall` 和 manifest 文案描述，LLM planner 难以判断“什么时候偏相似物品、什么时候可用用户近邻、什么时候只是 fallback 补齐”；如果让模型直接选择 ItemCF/UserCF/TwoTower，又会暴露过多底层实现并带来误调风险。
+
+**定位方式：**
+检查 `rs_core/rsagent/tools.py` 的 `RetrieveCandidatesInput/Output`、`RETRIEVE_CANDIDATES_ROUTING_ATTRIBUTES` 和 boundary prompt，结合 `rs_core/rsagent/dialogue.py` 的默认 tool call 参数、`rs_core/workflow/hybrid_environment.py` 的召回 dispatch，以及 `tests/test_agent_tools.py` / `tests/test_agent_runtime.py` 的既有契约，确认最小改法是新增高层策略 schema 并保留旧字段兼容。
+
+**解决方式：**
+新增 `RecallIntent`、`RecallProfilePolicy`、`RecallRoutePolicy`、`RecallConstraints`、`RecallDiversityPolicy`、`RecallRouteDecision`、`RecallRetrievalSummary` 等 dataclass；`RetrieveCandidatesInput` 保留 `limit/semantic_mode/use_history_profile/use_behavioral_recall`，同时增加 `target_pool_size/profile_policy/route_policy/constraints/diversity`。manifest 中明确 LLM 只能表达 `semantic/similar_item/user_neighbor/behavioral/fallback` 高层策略，不能直接选择底层 source 文件或索引；runtime 在召回输出上附加 compact `route_decisions`，只包含 route/status/reason/eligible/returned_count，不带 score、候选 source lineage 或 oracle 字段。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `.venv/Scripts/python -m pytest tests/test_agent_tools.py tests/test_agent_runtime.py tests/test_agent_dialogue.py tests/test_agent_capability_manifest.py tests/test_serving_facades.py tests/test_serving_recommend_from_sequence.py -q`，结果 `119 passed in 1.57s`；运行 `.venv/Scripts/python -m compileall -q rs_core tests` 通过。另由 verifier 只读复核 schema 兼容性、route boundary、public serving API 不泄露内部 route diagnostics，结论 `PASS`，无 blocker。
+
+**面试可讲点：**
+这段可以讲成“LLM Agent 召回编排的抽象层治理”：不是把所有召回算法暴露给模型，而是让 LLM 只选择语义、相似物品、用户近邻、行为扩展和 fallback 这些业务可理解的高层策略；具体 ItemCF/UserCF/TwoTower/co-visit 是否可跑，由后端根据用户历史、索引可用性和 underfill 自动判定，从而兼顾可解释编排、稳定性和工程安全边界。
+
+### 2026-06-17 - Serving 受控试用 P0 trace 与 debug 隔离
+
+**任务：**
+按 Option A+ 方向对 FastAPI serving 和 React 试用界面做 P0 加固：补齐 `X-Request-ID`、trial/debug/simulation token gate、demo/simulation endpoint 开关，以及前端 debug 面板默认隐藏。
+
+**遇到的问题：**
+现有服务所有 endpoint 默认公开，前端会直接展示 mock/internal thoughts，`/recall`、`/demo/e2e`、`/simulation/*` 与公开试用入口边界不够清晰；同时不能破坏既有 `/health` liveness-only 和 public response contract。
+
+**定位方式：**
+检查 `rs_core/serving/app.py`、`frontend/src/api.ts`、`frontend/src/views/LiveDemo.tsx`、`frontend/src/views/Sandbox.tsx`、`frontend/src/views/MallHome.tsx` 和 serving smoke tests，确认采用兼容式加固：保留原响应形态，通过 header、env gate 和 UI flag 收紧边界，而不是一次性改全量 response envelope。
+
+**解决方式：**
+在 serving 中加入 `X-Request-ID` middleware，合法 request id 原样透传，非法值替换为 UUID；通过 `RS_SERVING_STRICT_AUTH`、`RS_TRIAL_TOKEN`、`RS_DEBUG_TOKEN`、`RS_SIMULATION_TOKEN` 控制公开、debug 和 simulation 访问；`RS_ENABLE_DEMO_ENDPOINT` / `RS_ENABLE_SIMULATION_ENDPOINTS` / `RS_ENABLE_RECALL_ENDPOINT` 提供端点开关。前端统一注入 `X-Request-ID` 和可选 `VITE_RS_AGENT_TOKEN`，并用 `VITE_ENABLE_DEBUG_PANEL` 默认关闭 LiveDemo、MallHome、Sandbox 的内部 tool/RAG/reward/stop_check 面板。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py tests/test_serving_facades.py`，首轮结果 `67 passed in 5.63s`。Code review 发现 token 比较、Sandbox 右侧内部状态和 simulation gate 测试覆盖缺口后，补充 `hmac.compare_digest`、Sandbox 用户智能体内部面板 gate、公开文案收口和更多 auth/disable tests；复跑同一 suite，最终结果 `71 passed in 1.77s`。前端先误在仓库根目录运行 `npm run lint`，因根目录无 `package.json` 失败；随后改用 `npm --prefix D:/sinrotic_code/python_project/summer/RS_agent/frontend run lint` 通过，`npm --prefix D:/sinrotic_code/python_project/summer/RS_agent/frontend run build` 通过。最终 code review 复核无 HIGH/MEDIUM 问题，结论 `APPROVE`；剩余 LOW 注意点是浏览器端 `VITE_RS_AGENT_TOKEN` 只能配置低权限 trial token，不能放 debug/simulation token。
+
+**面试可讲点：**
+这段可以讲成“推荐系统从 demo 到受控试用的边界加固”：没有急着拆网关或微服务，而是在模块化单体中先落地线上系统常见的 trace、权限分层、debug 双隔离和可执行验收，既保持推荐主链路稳定，又能支持试用问题复盘和内部排查。
+
 ### 2026-06-16 - Recommendation Agent 工具规划提示词强化
 
 **任务：**
@@ -1355,6 +1555,26 @@ e1 hard negative 有明显提升，但直接增加 epoch 可能让模型过度�
 **面试可讲点：**
 这段可以讲成“远程训练失败时先分清资源问题、schema 问题和治理问题”：训练本身可以远程跑通，真正阻塞来自候选 artifact 与评估 adapter 的契约不一致。解决时没有放宽全局校验，也没有用 eval label 修候选，而是把 relaxed 逻辑局部化到 frozen eval、补足可审计证据，再用远程 artifact 和本地测试证明 DeepFM 训练闭环已跑通，同时保留 coverage gate 对效果声明的约束，体现推荐系统离线训练中的数据隔离和晋升门禁意识。
 
+### 2026-06-20 - COLD full/formal 训练与既有 DeepFM 精排链路补齐
+
+**任务：**
+按排序主线收敛方案，在远程 `/home/luo/RS_agent_remote` 补一轮 full/formal COLD 粗排训练，并复用既有 full/formal DeepFM 模型跑 `COLD top200 → DeepFM top20` 链路诊断。
+
+**遇到的问题：**
+DeepFM 已有 `history_features_neg4` 全量级 direct 训练证据，但 COLD 只有 earlier formal 限量训练；若要把路线讲成“COLD 粗排 + DeepFM 精排”，需要补齐 COLD 在同口径训练集上的 full/formal 训练证据。同时仍不能绕过此前 frozen eval candidate coverage gate。
+
+**定位方式：**
+复用远程训练集 `outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/train_dataset/ranking_training_dataset.jsonl`、既有 DeepFM 模型 `direct_deepfm/deepfm_model.json` 和 valid/test frozen eval `deepfm_remote_formal_20260609_valid_test_eval_users/frozen_eval/eval_rows.jsonl`。后台日志显示 COLD 5 个 epoch 均完整扫过 45,655,785 行训练样本。
+
+**解决方式：**
+新增一次远程流式 COLD 训练，避免把 51GB jsonl 全量读入内存；训练完成后保存 `cold_model.json`，并在同一报告中复用既有 DeepFM model 做 `full_formal_cold_then_existing_deepfm` 评估。关键产物已镜像到本地 `outputs/ranking/cold_full_formal_20260620_existing_deepfm/`。
+
+**验证结果：**
+远程报告 `status=PASS`。COLD 训练样本 `45,655,785` 行、正样本 `9,131,157`、正样本用户 `5,375,378`、`epochs=5`、`updates=228,278,925`、`average_loss=0.3391834313`。在 frozen candidate 子集上，COLD top200 的正样本保留率为 `1.0`；接既有 DeepFM top20 后命中 `2/14` candidate 内正例，`in_candidate_positive_recall_at_k=0.142857`，相对 candidate-rank baseline 的 `1/14`、`0.071429` 有 `+0.071428` 的候选内诊断增量。但 coverage gate 仍为 `STOP_FOR_RANKING_EFFECT`（全 label denominator `1678`，candidate 内正例 `14`，正例用户 `11`，低于 `100/500` 门槛），因此 `ranking_effect_conclusion_allowed=false`，不能宣称整体排序效果或替换当前主路。
+
+**面试可讲点：**
+这段可以讲成“训练证据补齐与晋升门禁分离”：模型链路上已经补齐 COLD full/formal 粗排和 DeepFM full/formal 精排的两阶段证据，并验证 COLD 没有在 top200 阶段损失候选内正样本；但仍坚持 candidate coverage gate，不把小覆盖候选内提升包装成线上排序提升，体现推荐系统排序实验的工程治理。
+
 ## 条目模板
 
 ### 2026-05-21 - aligned smoke010 pool500 oracle candidate 诊断产物
@@ -1945,6 +2165,26 @@ focused pytest：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/
 
 **面试可讲点：**
 这段可以讲成“把论文算法收益和业务最终指标拆开验证”：RPA 在评分预测任务上能降 MAE，但在稀疏、冷启动、候选池已冻结的 top-N 任务中，邻居覆盖不足会让分数退化甚至伤害前排。工程上没有把论文指标直接包装成推荐效果，而是通过 per-user confidence coverage、bucket local rerank 和 no-label-backflow 审计证明当前方法只适合作为诊断/弱特征候选，下一步应优先提升热/温用户切片和候选 item 的 train-only 协同证据覆盖。
+
+### 2026-06-19 - retrieve_candidates 业务模式 schema 收敛
+
+**任务：**
+保留 `retrieve_candidates` 统一候选获取入口，但将 Agent 可见口径从底层 `route_policy.semantic/similar_item/user_neighbor/behavioral/fallback` 收敛为 `retrieval_mode/profile_usage/expansion_policy/reference_item_id/query/constraints/target_pool_size`，同时保持 legacy 字段兼容。
+
+**遇到的问题：**
+原 manifest、planner 和 runtime route decisions 暴露过多 provider 细节，容易让 Agent 直接选择类似 ItemCF/UserCF/two-tower/co-visit 的底层召回来源；同时“像某个商品但更便宜/更轻”等 reference-aware 请求需要允许语义召回参与，而不能只落到传统相似物品路径。
+
+**定位方式：**
+阅读 `rs_core/rsagent/tools.py`、`rs_core/rsagent/dialogue.py`、`rs_core/workflow/hybrid_environment.py`、`rs_core/workflow/online_recommendation.py` 以及 `tests/test_agent_tools.py`、`tests/test_agent_runtime.py`、`tests/test_agent_dialogue.py`。首次 focused pytest 暴露旧测试仍断言 `retrieve_candidates_output_v2` 和 `semantic_live` manifest 口径，随后按新业务 schema 更新测试断言。
+
+**解决方式：**
+`RetrieveCandidatesInput` 增加业务字段，manifest/boundary prompt 改为强调业务模式和禁止 provider steering；runtime 新增 `_normalize_retrieve_policy()`，新字段优先、旧字段 fallback，并把 summary 升级到 `retrieve_candidates_output_v3`。语义 query 构造支持 `reference_item_id` compact text，route decisions 改为 `semantic_intent/profile_context/reference_context/backend_recall/fallback_safety`，避免低层 source/score/lineage 泄漏。Dialogue planner 用 deterministic 规则输出 `specific_need/personalized_feed/broad_browse/similar_to_item/reference_with_constraints`，online retrieve seam 增加可选 `retrieve_policy` 并用 reference item 作为 source index seed。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 focused 回归：`.venv/Scripts/python -m pytest tests/test_agent_tools.py tests/test_agent_runtime.py tests/test_agent_dialogue.py tests/test_agent_capability_manifest.py tests/test_serving_facades.py tests/test_serving_smoke.py -q`，结果 `147 passed in 2.00s`（有 1 个既有 SQLite `__del__` 线程告警）；随后运行 `.venv/Scripts/python -m compileall -q rs_core tests`，无输出通过。另由 verifier 只读复核，结论 `PASS`、无 blocker。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 的工具协议从算法实现细节上移到业务意图层”：Agent 只表达用户需求模式、画像使用强度、扩展策略和 reference item，后端统一做 provider 映射与治理，既降低 prompt 对底层召回源的耦合，也用 public payload 测试防止 score/source/lineage 泄漏。
 
 ### YYYY-MM-DD - 任务标题
 
@@ -6517,3 +6757,43 @@ A ç»„ 3k è¯Šæ–­åˆ‡ç‰‡å·²ç”Ÿæˆ� 300000 è¡Œå€
 - 解决方式：让 `retrieve_candidates` 的输出显式进入 final turn；`rank_candidates` 只接受当前 turn pool 内的 explicit ids；将 co-visit fallback 标记为 diagnostic-only，不再进入 live candidate generation；bad pool500 artifact 走 degraded/fallback 而不是伪成功；`/health` 继续只做轻量 liveness，把 readiness 留给 `/ready`。同时将默认 serving registry 固定到 repo root 解析，pool500/source-index 路径按 repo root/config-dir 解析且不再 fallback 到 CWD；online candidate route 缺 `online_route.governance` 时启动即拒绝；guardrail 增加 `final_pool500_ready_claimed=false`。
 - 验证结果：先跑 serving governance regression：`.venv/Scripts/python -m pytest tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py -q`，结果 `53 passed in 1.64s`。最终 targeted suite：`.venv/Scripts/python -m pytest tests/test_agent_runtime.py tests/test_agent_dialogue.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py tests/test_serving_facades.py tests/test_display_contract.py tests/test_agent_tools.py tests/test_agent_capability_manifest.py -q`，结果 `239 passed in 2.10s`。code-reviewer 最终 `APPROVE`，verifier 最终 `PASS/APPROVE`，未发现 blocker。
 - 面试可讲点：这段可以概括成“把 Agent 候选流和在线治理从能跑改成语义正确、启动即受控”：最终 turn、候选池、降级与健康检查各司其职，避免诊断路径污染线上候选；同时把路径解析和 governance guardrail 前置成服务启动合同，防止部署 CWD、配置漂移或 final-ready 误声明绕过上线边界。
+
+## 2026-06-19 å‰�ç«¯å¯¼è´­å¼�æŽ¨è��å±•ç¤º ViewModel
+
+- ä»»åŠ¡ï¼šåœ¨ä¸�ä¿®æ”¹å�Žç«¯ display schema å’Œ public API çš„å‰�æ��ä¸‹ï¼ŒæŠŠ `DisplayResponse` çš„å¹³é“ºå•†å“�å�¡åŒ…è£…æˆ�æ›´åƒ�å¯¼è´­çš„å‰�ç«¯æŽ¨è��å±•ç¤ºã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šå�Žå�° `retrieve_candidates` å·²ç»�æ”¶æ•›ä¸ºä¸šåŠ¡æ¨¡å¼�é©±åŠ¨ï¼Œä½†å‰�ç«¯ä»�ç›´æŽ¥å±•ç¤º assistant æ–‡æ¡ˆå’Œå•†å“�ç½‘æ ¼ï¼Œç”¨æˆ·éš¾ä»¥ç�†è§£â€œæœ¬è½®æŽ¨è��ç�†è§£äº†ä»€ä¹ˆã€�ä¸ºä»€ä¹ˆæŽ¨è��ã€�ä¸‹ä¸€æ­¥å¦‚ä½•å��é¦ˆâ€�ï¼›å¦‚æžœè¿‡æ—©æ‰©å±•å�Žç«¯ schemaï¼Œä¼šæ‰©å¤§ display contract å’Œ serving éªŒè¯�é�¢ã€‚
+- å®šä½�æ–¹å¼�ï¼šæ£€æŸ¥ `frontend/src/types.ts`ã€�`ChatPanel.tsx`ã€�`ProductCard.tsx`ã€�`FeedbackActions.tsx`ã€�`LiveDemo.tsx` çš„çŽ°æœ‰æ•°æ�®ç»“æž„å’Œå±•ç¤ºè·¯å¾„ï¼Œç¡®è®¤çŽ°æœ‰ `DisplayItem` å·²åŒ…å�« title/category/price/rating/features/summary/badgesï¼Œè¶³å¤Ÿå…ˆåœ¨å‰�ç«¯æŽ¨å¯¼å¯¼è´­è§†å›¾ã€‚
+- è§£å†³æ–¹å¼�ï¼šæ–°å¢ž `frontend/src/utils/displayViewModel.ts`ï¼Œä»ŽçŽ°æœ‰ displayã€�æœ€è¿‘ç”¨æˆ·æ¶ˆæ�¯å’Œæœ€è¿‘å��é¦ˆä¸Šä¸‹æ–‡æŽ¨å¯¼æ„�å›¾æ‘˜è¦�ã€�chipsã€�åˆ†ç»„æŽ¨è��å’Œ reference æ��ç¤ºï¼›æ–°å¢ž `RecommendationIntentSummary` ä¸Ž `GroupedRecommendationGrid`ï¼›å¢žå¼º `ProductCard` çš„ç”¨æˆ·å�¯è¯» badgeã€�æŽ¨è��ç�†ç”±å’Œâ€œå–œæ¬¢æ‰¾ç›¸ä¼¼ / ä¸�æ„Ÿå…´è¶£ / ä¸ºä»€ä¹ˆæŽ¨è��â€�æŒ‰é’®ï¼›å¤�ç”¨ `FeedbackActions` ç»Ÿä¸€å…¨å±€å��é¦ˆ chipsï¼›`LiveDemo` ä»…æ–°å¢žæœ€è¿‘å��é¦ˆä¸Šä¸‹æ–‡çŠ¶æ€�ï¼Œä¸�æ”¹å�Žç«¯ schemaã€‚
+- éªŒè¯�ç»“æžœï¼šè¿�è¡Œ `cd frontend && npm run build` ä¸¤æ¬¡å�‡é€šè¿‡ï¼Œæœ€ç»ˆäº§ç‰©æž„å»ºæˆ�åŠŸï¼›verifier å�ªè¯»å¤�æ ¸ç»™å‡º `PASS`ï¼Œç¡®è®¤ TypeScript/React æ— é˜»å¡žé—®é¢˜ã€�æ”¹é€ ä¿�æŒ� frontend-onlyã€�æŽ¨è��å�¡åŒºåŸŸæ²¡æœ‰æ–°å¢ž tool/retrieval/RAG/score/source/itemcf/usercf/two_tower/co_visit ç­‰å†…éƒ¨è¯�æ³„æ¼�ã€‚æ ¹æ�® verifier å»ºè®®è¡¥å……äº† `features` ç©ºå€¼å…œåº•å¹¶ä¿®æ­£é�žé»˜è®¤ Tailwind è‰²é˜¶å�Žå†�æ¬¡ build é€šè¿‡ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œæŽ¨è��äº§å“�ä½“éªŒçš„æ¸�è¿›å¼�å¥‘çº¦æ¼”è¿›â€�ï¼šå…ˆä¸�æ€¥ç�€å›ºåŒ–å�Žç«¯ schemaï¼Œè€Œæ˜¯åœ¨å‰�ç«¯ç”¨ ViewModel éªŒè¯�å¯¼è´­å¼�å±•ç¤ºï¼ŒåŒ…æ‹¬éœ€æ±‚ç�†è§£ã€�åˆ†ç»„ã€�æŽ¨è��ç�†ç”±å’Œå��é¦ˆé—­çŽ¯ï¼›ç­‰äº¤äº’å½¢æ€�ç¨³å®šå�Žï¼Œå†�æŠŠè¢«éªŒè¯�è¿‡çš„å­—æ®µæ™‹å�‡ä¸º public display contractã€‚
+
+
+
+## 2026-06-20 ä¼šè¯�ç»“æ�Ÿ LLM æ€»ç»“ hook ä¸Ž public-safe ç”Ÿå‘½å‘¨æœŸæ”¶å�£
+
+- ä»»åŠ¡ï¼šè¡¥å…¨å®žæ—¶ RAG query planning ä¹‹å¤–çš„ä¼šè¯�ç»“æ�Ÿç”Ÿå‘½å‘¨æœŸï¼Œåœ¨ç”¨æˆ·æ‰‹åŠ¨ç»“æ�Ÿã€�ç»“ç®—ã€�åˆ‡æ�¢ persona æˆ–é¡µé�¢é€€å‡ºæ—¶è§¦å�‘ `/session/end`ï¼ŒåŸºäºŽ public-safe ä¼šè¯�æ��æ–™è°ƒç”¨ LLM ç”Ÿæˆ� Markdown æ€»ç»“æ–‡æ¡£ã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šåŽŸ serving å�ªæœ‰ start/chat/feedback/exportï¼Œæ²¡æœ‰æ˜Žç¡® session end hookï¼›å¦‚æžœæŠŠæ€»ç»“æ”¾åœ¨æ¯�è½®æŽ¨è��é‡Œä¼šå¢žåŠ å®žæ—¶é“¾è·¯å»¶è¿Ÿä¸”ä¸Šä¸‹æ–‡ä¸�å®Œæ•´ï¼›summary è¿˜æ¶‰å�Š raw user textã€�LLM è¾“å‡ºã€�frontmatterã€�summary path å’Œ session ç»“æ�Ÿå�Žç»§ç»­å†™å…¥ç­‰å®‰å…¨/ä¸€è‡´æ€§è¾¹ç•Œã€‚
+- å®šä½�æ–¹å¼�ï¼šæ²¿ `rs_core/serving/app.py`ã€�`service.py`ã€�`facades.py`ã€�`persistence.py` å’Œå‰�ç«¯ `LiveDemo.tsx`ã€�`MallHome.tsx` æ£€æŸ¥ä¼šè¯�ç”Ÿå‘½å‘¨æœŸï¼›code-reviewer å¤šè½®å¤�æ ¸æŒ‡å‡º PII/secret redactionã€�frontmatter æ³¨å…¥ã€�ç»“æ�Ÿå�Žç»§ç»­ chat/feedbackã€�å‰�ç«¯å¤±è´¥é‡�è¯•å’Œ pagehide best-effort çš„é£Žé™©ç‚¹ã€‚
+- è§£å†³æ–¹å¼�ï¼šæ–°å¢ž `rs_core/serving/session_summary.py`ï¼Œå�ªä»Ž public export æž„é€  LLM è¾“å…¥ï¼Œå‰¥ç¦» agent thoughts/tool trace/raw evidence/score/source ç­‰å†…éƒ¨å­—æ®µï¼Œå¹¶å¯¹ç”¨æˆ·æ–‡æœ¬ã€�metadataã€�LLM è¾“å‡ºå�šæ•�æ„Ÿä¿¡æ�¯ redactionï¼›æ–°å¢ž `/session/end` schema/API/service/facade/persistenceï¼Œè®°å½• `session_ended`ï¼Œç”Ÿæˆ� summary documentï¼Œç»“æ�Ÿå�Ž chat/feedback è¿”å›ž `409 SESSION_ENDED` ä½† export ä¿�æŒ�å�¯è¯»ï¼›å‰�ç«¯æ–°å¢ž `endSession/endSessionKeepalive`ï¼ŒLiveDemo æ”¯æŒ�æ‰‹åŠ¨ç»“æ�Ÿå’Œ demo roundtrip å‰�æ—§ session æ”¶å�£ï¼ŒMallHome æ”¯æŒ� checkout/persona switch/pagehide è§¦å�‘ï¼Œå¹¶ä¿�è¯�å¤±è´¥å�Žå�¯é‡�è¯•ã€‚
+- éªŒè¯�ç»“æžœï¼šä½¿ç”¨é¡¹ç›® `.venv` è¿�è¡Œ `.venv/Scripts/python.exe -m pytest tests/test_session_summary.py tests/test_serving_persistence.py tests/test_serving_smoke.py tests/test_serving_facades.py -q`ï¼Œç»“æžœ `72 passed`ï¼›è¿�è¡Œ `.venv/Scripts/python.exe -m pytest tests/test_agent_tools.py tests/test_agent_runtime.py tests/test_agent_dialogue.py tests/test_rag_core.py -q`ï¼Œç»“æžœ `121 passed`ï¼›é€šè¿‡ `.venv/Scripts/python.exe -c "import subprocess; raise SystemExit(subprocess.run([r'D:\Program Files\nodejs\npm.cmd', 'run', 'build'], cwd='frontend').returncode)"` å®Œæˆ�å‰�ç«¯ buildï¼›æœ€ç»ˆ code-reviewer å¤�å®¡ `PASS`ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œæŽ¨è�� Agent çš„ä¼šè¯�ç”Ÿå‘½å‘¨æœŸæ²»ç�†â€�ï¼šæŠŠå®žæ—¶ RAG query planning å’Œç»“æ�Ÿå�Ž LLM summarization æ˜Žç¡®æ‹†å¼€ï¼Œå®žæ—¶é“¾è·¯å�ªå�šä½Žå»¶è¿Ÿ hintï¼Œç»“æ�Ÿé“¾è·¯åŸºäºŽå®Œæ•´ public-safe è½¨è¿¹äº§å‡ºå�¯å®¡è®¡æ€»ç»“ï¼›å�Œæ—¶ç”¨ redactionã€�å�ªè¯»ç»ˆæ€�ã€�æŒ�ä¹…åŒ–äº‹ä»¶å’Œå‰�ç«¯å¤šè§¦å�‘ç‚¹ï¼ŒæŠŠå¤šè½®æŽ¨è��ä»Žâ€œèƒ½å¯¹è¯�â€�æŽ¨è¿›åˆ°â€œå�¯å¤�ç›˜ã€�å�¯ç»§æ‰¿ã€�å�¯æ²»ç�†â€�ã€‚
+
+
+## 2026-06-20 é¦–é¡µè¡Œä¸º FeedRefreshAgent ä¸Žå¯¹è¯� RSAgent å�Œç¼–æŽ’è�½åœ°
+
+- ä»»åŠ¡ï¼šæŒ‰å�Œ Agent è§„åˆ’æŠŠé¦–é¡µç»“æž„åŒ–è¡Œä¸ºé“¾è·¯ä»Žå¯¹è¯�å¼� `/feedback` ä¸­æ‹†å‡ºï¼Œæ–°å¢ž `FeedRefreshAgent`/`FeedRefreshPolicy` å¯¹åº”çš„ `/feed/refresh` å�Žç«¯å…¥å�£ï¼Œå¹¶è®© MallHome é€šè¿‡è¡Œä¸ºäº‹ä»¶è§¦å�‘ rerankã€�re-recallã€�no-refresh æˆ– fallbackã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šé¦–é¡µç‚¹å‡»ã€�å–œæ¬¢ã€�ç‚¹è¸©ã€�å�œç•™å’Œâ€œæ�¢ä¸€æ‰¹â€�ä¸�èƒ½ç®€å�•ç­‰ä»·ä¸ºå¯¹è¯� promptï¼›å¦‚æžœå½“å‰�å€™é€‰æ± æ²¡æœ‰å¯¹åº”å•†å“�ï¼Œå�ªé‡�æŽ’æ²¡æœ‰ä»·å€¼ï¼›å�Œæ—¶å‰�ç«¯åˆ·æ–°éœ€è¦� `display_revision` é˜²æ­¢æ—§å“�åº”è¦†ç›–æ–°é¡µé�¢ï¼Œpublic payload ä¸�èƒ½æ³„éœ²æ¨¡åž‹åˆ†æ•°ã€�sourceã€�diagnostics æˆ–å†…éƒ¨ traceã€‚
+- å®šä½�æ–¹å¼�ï¼šæ£€æŸ¥ `rs_core/serving/schema.py`ã€�`service.py`ã€�`facades.py`ã€�`app.py` çš„ serving contractï¼Œç»“å�ˆ `rs_core/workflow/online_recommendation.py` çŽ°æœ‰ pool500/feedback rerank èƒ½åŠ›ï¼Œä»¥å�Š `frontend/src/views/MallHome.tsx`ã€�`frontend/src/api.ts`ã€�`frontend/src/types.ts` çš„é¦–é¡µäº¤äº’è·¯å¾„ï¼Œç¡®è®¤é¦–é¡µè¡Œä¸ºåº”èµ°ç»“æž„åŒ– refresh seamï¼Œè€Œå¯¹è¯�è§£é‡Šç»§ç»­ä¿�ç•™åœ¨ `ConversationalRSAgent`/`RSAgent`ã€‚
+- è§£å†³æ–¹å¼�ï¼šæ–°å¢ž `HomeFeedEventRequest`ã€�`FeedRefreshDecisionResponse`ã€�`DisplayRefreshResponse`ï¼Œåœ¨ `FeedRefreshFacade` å†…ç»´æŠ¤è½»é‡� `FeedSessionState` å’Œå†…éƒ¨ decision traceï¼›ç­–ç•¥ä¸Š click/çŸ­ dwell å�ªè®°å½•ä¸�åˆ·æ–°ï¼Œlike/dislike/é•¿ dwell èµ° `rerank_existing`ï¼Œsearch ä¸Žè¿žç»­ show_different/å€™é€‰ä¸�è¶³èµ° `rerecall_pool500`ï¼Œrevision å†²çª�æˆ–å¼‚å¸¸èµ° public-safe fallbackï¼›å‰�ç«¯ MallHome æ”¹ä¸ºè°ƒç”¨ `refreshFeed('/feed/refresh')` å¹¶æŒ‰ `display_revision` åº”ç”¨æ–°å±•ç¤ºã€‚
+- éªŒè¯�ç»“æžœï¼šä½¿ç”¨é¡¹ç›® `.venv` è¿�è¡Œ `.venv/Scripts/python.exe -m pytest tests/test_serving_smoke.py tests/test_serving_persistence.py tests/test_serving_run_service.py -q`ï¼Œç»“æžœ `69 passed in 1.99s`ï¼›è¿�è¡Œ `cd frontend && npm run lint`ï¼ŒTypeScript `tsc --noEmit` é€šè¿‡ã€‚æœŸé—´ä¸€æ¬¡ä»Žé�ž repo root ä½¿ç”¨ç»�å¯¹æµ‹è¯•è·¯å¾„å¯¼è‡´ `ModuleNotFoundError: tests/scripts`ï¼Œå·²æ”¹ä¸ºä»Ž repo root æ‰§è¡Œè§£å†³ã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œæŠŠæŽ¨è��é¦–é¡µä»Žè¢«åŠ¨å��é¦ˆå�‡çº§ä¸ºè¡Œä¸ºé©±åŠ¨çš„å®žæ—¶åˆ·æ–°ç¼–æŽ’â€�ï¼šä¸�æ˜¯æ‰€æœ‰å��é¦ˆéƒ½äº¤ç»™ LLM å¯¹è¯�ï¼Œè€Œæ˜¯ç”¨ç»“æž„åŒ– Agent policy åœ¨ä½Žå»¶è¿Ÿé“¾è·¯åˆ¤æ–­é‡�æŽ’è¿˜æ˜¯é‡�æ–°å�¬å›žï¼›å�Œæ—¶ç”¨ revisionã€�public/private è¾¹ç•Œã€�fallback reason å’Œ serving contract ä¿�è¯�ä½“éªŒç¨³å®šã€�å�¯å›žæ”¾ã€�å�¯æ²»ç�†ã€‚
+
+
+## 2026-06-20 COLDâ†’DeepFM å·¥ç¨‹ä¸»æŽ’åº�è·¯çº¿å›ºå®š
+
+- ä»»åŠ¡ï¼šæ ¹æ�®å½“å‰�é¡¹ç›®ç›®æ ‡ä»Žâ€œç»§ç»­æŽ’åº�ä¼˜åŒ–â€�è½¬å�‘â€œAgent/å‰�ç«¯é—­çŽ¯â€�ï¼Œæ­£å¼�å›ºå®š `pool500 + COLD ç²—æŽ’ + DeepFM ç²¾æŽ’` ä¸ºå½“å‰�å·¥ç¨‹ä¸»æŽ’åº�è·¯çº¿ï¼Œå¹¶æŠŠæ—§ baseline/GBDT/XGBoost/LambdaMART ç­‰è·¯çº¿é™�çº§ä¸º fallbackã€�åŽ†å�²æˆ–æœªæ�¥å·¥ä½œã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šCOLDâ†’DeepFM çš„ full/formal è®­ç»ƒé“¾è·¯å·²ç»�è¡¥é½�ï¼Œä½† frozen eval ä»�æœ‰å€™é€‰è¦†ç›–é—¨ç¦�ï¼Œä¸�èƒ½æŠŠå€™é€‰å†…è¯Šæ–­æ”¶ç›ŠåŒ…è£…æˆ�ä¸¥æ ¼æ•´ä½“æ•ˆæžœæ��å�‡ï¼›å¦‚æžœç»§ç»­ä¿�ç•™å¤šç§�æŽ’åº�æ–¹æ³•å¹¶è¡Œï¼Œä¼šè®©é¡¹ç›®ä¸»çº¿å�‘æ•£ï¼Œå½±å“� Agent å’Œå‰�ç«¯é—­çŽ¯æŽ¨è¿›ã€‚
+- å®šä½�æ–¹å¼�ï¼šæ ¸å¯¹ `outputs/ranking/cold_full_formal_20260620_existing_deepfm/` ä¸‹ `cold_model.json`ã€�`manifest.json`ã€�`comparison.json` çš„è®­ç»ƒå’Œè¯„ä¼°è¯�æ�®ï¼›ç»“å�ˆå½“å‰�é˜¶æ®µç›®æ ‡ç¡®è®¤æŽ’åº�ä¾§éœ€è¦�çš„æ˜¯å�¯è§£é‡Šã€�å�¯è�½åœ°çš„å·¥ç¨‹ä¸»è·¯ï¼Œè€Œä¸�æ˜¯ç»§ç»­æ‰©å±•æ¨¡åž‹åˆ†æ”¯ã€‚
+- è§£å†³æ–¹å¼�ï¼šæ–°å¢ž `dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md`ï¼Œæ˜Žç¡® COLD ä½œä¸º coarse rank / candidate compressionï¼ŒDeepFM ä½œä¸º fine rank / feature-cross scorerï¼›æ›´æ–° `configs/governance/current_route_registry.yaml`ï¼Œå°† `current_ranking_route` æ”¹ä¸º `current_engineering_main`ï¼Œè®°å½• required artifactsã€�fallback route å’Œ `effect_claim_allowed=false` è¾¹ç•Œã€‚
+- éªŒè¯�ç»“æžœï¼šä½¿ç”¨é¡¹ç›® `.venv` è¿�è¡Œ `.venv/Scripts/python.exe -m pytest tests/test_serving_smoke.py tests/test_serving_persistence.py tests/test_serving_run_service.py -q`ï¼Œç»“æžœ `69 passed`ï¼›å‰�ç«¯ `cd frontend && npm run lint` å·²é€šè¿‡ã€‚è·¯çº¿å›ºå®šä¸ºæ–‡æ¡£/æ²»ç�†å±‚å�˜æ›´ï¼Œæ²¡æœ‰æ”¹å�˜æœ�åŠ¡ guardrail å¯¹ public/private payload å’Œ fallback çš„çº¦æ�Ÿã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œå·¥ç¨‹ä¸»è·¯æ™‹å�‡ä¸Žæ•ˆæžœå£°æ˜Žè§£è€¦â€�ï¼šåœ¨ full/formal è®­ç»ƒå®Œæˆ�å�Žï¼Œä¸ºäº†æŽ¨è¿›æŽ¨è�� Agent äº§å“�é—­çŽ¯ï¼ŒæŠŠ COLDâ†’DeepFM å›ºå®šä¸ºå·¥ä¸šåˆ†å±‚å¼�ç²—æŽ’/ç²¾æŽ’ä¸»è·¯ï¼›å�Œæ—¶ä¿�ç•™ baseline fallbackï¼Œä¸�æŠŠå€™é€‰è¦†ç›–ä¸�è¶³ä¸‹çš„å€™é€‰å†…æ”¶ç›Šå¤¸å¤§æˆ�å…¨å±€æŒ‡æ ‡æ��å�‡ï¼Œä½“çŽ°äº†è·¯çº¿æ”¶å�£å’Œè¯�æ�®è¾¹ç•Œæ„�è¯†ã€‚

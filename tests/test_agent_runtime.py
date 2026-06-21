@@ -11,6 +11,7 @@ pytestmark = [pytest.mark.unit, pytest.mark.serving]
 
 from rs_core.common.io import write_jsonl
 from rs_core.recsys.types import AgentDecision
+from rs_core.rsagent.context import build_context_bundle
 from rs_core.rsagent.reward import build_reward_evidence
 from rs_core.rsagent.runtime import RUNTIME_TRACE_STEP_ORDER, AgentRuntime
 from rs_core.rsagent.schema import INTENT_RECOMMEND_REQUEST, AgentSession, AgentTurn, FeedbackConstraints
@@ -18,6 +19,7 @@ from rs_core.rsagent.tools import AgentToolCall
 from rs_core.workflow.facades import AgentOrchestrationFacade
 from rs_core.workflow.hybrid_environment import (
     HybridRecommendationEnvironment,
+    _attach_retrieve_route_decisions,
     _deepfm_rank_request_from_call,
     _product_search_request_from_call,
     _rank_candidates_output,
@@ -72,6 +74,18 @@ def test_converse_delegates_through_agent_orchestration_facade(tmp_path: Path):
     assert turn.diagnostics["agent_runtime_trace"]
     assert session.turns[-1] is turn
     assert turn.recommendation.final_items[0]["parent_asin"] == "speaker_1"
+
+
+def test_step_uses_full_agent_runtime_path(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_runtime_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+
+    turn = env.step(session, "For commute, prefer bluetooth and Audio")
+
+    assert [step["name"] for step in turn.diagnostics["agent_runtime_trace"]] == RUNTIME_TRACE_STEP_ORDER
+    assert turn.diagnostics["agent_tool_summary"]["executed_count"] > 0
+    assert turn.diagnostics["stop_check_result"]["checked"] is True
+    assert session.runtime_trace[-1]["turn_index"] == turn.turn_index
 
 
 def test_converse_attaches_ordered_runtime_trace_and_summary(tmp_path: Path):
@@ -214,6 +228,38 @@ def test_runtime_passes_single_turn_tool_context_between_phases():
     assert host.post_context_seen == host.pre_context_seen
 
 
+def test_retrieve_route_decisions_summarize_high_level_policy_without_source_scores():
+    session = AgentSession(session_id="s1", user_id="u1")
+    output = _attach_retrieve_route_decisions(
+        {"candidate_item_ids": ["i1"], "candidate_count": 1, "retrieval_summary": {"target_pool_size": 3}},
+        AgentToolCall(name="retrieve_candidates", arguments={
+            "query": "commute bluetooth speaker",
+            "target_pool_size": 3,
+            "route_policy": {"semantic": "hybrid_query_history", "similar_item": "auto", "user_neighbor": "auto", "fallback": "auto"},
+        }),
+        session,
+        {"recent_item_sequence": ["seed_1"], "recent_positive_item_sequence": ["seed_1", "seed_2", "seed_3"]},
+        "online_backend",
+    )
+
+    assert output["retrieval_summary"]["schema_version"] == "retrieve_candidates_output_v3"
+    assert output["retrieval_summary"]["retrieval_mode"] == "specific_need"
+    assert output["retrieval_summary"]["profile_usage"] == "balanced"
+    assert output["retrieval_summary"]["expansion_policy"] == "balanced"
+    assert output["retrieval_summary"]["returned_count"] == 1
+    assert output["retrieval_summary"]["underfill"] is True
+    assert {decision["route"] for decision in output["route_decisions"]} == {"semantic_intent", "profile_context", "reference_context", "backend_recall", "fallback_safety"}
+    assert next(decision for decision in output["route_decisions"] if decision["route"] == "backend_recall")["eligible"] is True
+    payload = json.dumps(output["route_decisions"], ensure_ascii=False).lower()
+    assert "score" not in payload
+    assert "source" not in payload
+    assert "itemcf" not in payload
+    assert "usercf" not in payload
+    assert "two_tower" not in payload
+    assert "co_visit" not in payload
+
+
+
 def test_retrieve_candidates_tool_context_feeds_recommendation_without_public_candidate_payload(tmp_path: Path):
     env = HybridRecommendationEnvironment.from_config(str(_write_runtime_fixture(tmp_path)), limit_users=1)
     session = env.start_session("u1")
@@ -238,6 +284,7 @@ def test_retrieve_candidates_tool_context_feeds_recommendation_without_public_ca
     assert turn.recommendation.final_items[0]["parent_asin"] == "tool_1"
     assert "tool_1" in [candidate["item_id"] for candidate in turn.candidates]
     assert turn.diagnostics["retrieve_candidates"]["source"] == "tool_context"
+    assert turn.diagnostics["retrieve_candidates"]["retrieval_summary"]["target_pool_size"] == 1
     assert "candidates" not in turn.diagnostics["retrieve_candidates"]
 
 
@@ -479,13 +526,27 @@ def test_context_bundle_preserves_summary_profile_and_archive_contract(tmp_path:
     assert summary["current_goal"] == "preference_feedback"
     assert summary["preferred_categories"] == {"Audio": 1.0}
     assert summary["user_profile"]["preferred_keywords"]["bluetooth"] == 1.0
-    assert summary["archived_turn_count"] == 2
+    assert summary["archived_turn_count"] == 0
     assert session.user_profile.preferred_categories == {"Audio": 1.0}
     assert len(session.archived_turn_summaries) == 2
     archived = session.archived_turn_summaries[0].to_dict()
     assert archived["item_ids"] == ["speaker_1", "earbuds_1", "charger_1"]
     assert "diagnostics" not in archived
     assert "rag_context" not in archived
+
+
+def test_context_bundle_does_not_duplicate_recent_turns_in_archive(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_runtime_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+
+    env.converse(session, "For commute, prefer bluetooth and Audio")
+    env.converse(session, "show me something different")
+    bundle = build_context_bundle(session)
+
+    recent_turn_indices = {turn["turn_index"] for turn in bundle.recent_turns}
+    archived_turn_indices = {turn["turn_index"] for turn in bundle.archived_turn_summaries}
+    assert recent_turn_indices
+    assert recent_turn_indices.isdisjoint(archived_turn_indices)
 
 
 class _Plan:

@@ -179,7 +179,7 @@ class HybridRecommendationEnvironment:
         return AgentSession(session_id=selected_session_id, user_id=selected)
 
     def step(self, session: AgentSession, user_input: str = "") -> AgentTurn:
-        return self._recommendation_step(session, user_input)
+        return self.converse(session, user_input)
 
     def converse(self, session: AgentSession, user_input: str = "", explanation_item_id: str | None = None) -> AgentTurn:
         user_input = normalize_feedback_input(user_input) if user_input else ""
@@ -252,7 +252,7 @@ class HybridRecommendationEnvironment:
             return _tool_result(call.name, phase, "skipped", reason="rank_candidates_candidate_pool_mismatch")
         if call.name == "rank_candidates" and _rank_candidates_explicit_filter_ids(call.arguments):
             online_recommender = getattr(self, "online_recommender", None)
-            if online_recommender is not None and online_recommender.readiness().get("complete_pool500_available"):
+            if online_recommender is not None and _online_recommender_available(online_recommender):
                 return _tool_result(call.name, phase, "skipped", reason="rank_candidates_explicit_ids_unsupported_online")
         try:
             result = self._dispatch_agent_tool_call(session, plan, phase, turn, call, active_tool_context)
@@ -277,33 +277,41 @@ class HybridRecommendationEnvironment:
         call: AgentToolCall,
         tool_context: dict[str, Any],
     ) -> AgentToolResult:
+        if get_agent_tool_spec(call.name) is None:
+            return _tool_result(call.name, phase, "skipped", reason="unknown_tool")
         if call.name == "get_user_context":
             return _tool_result(call.name, phase, "ok", output=_get_user_context_output(session, call))
         if call.name == "query_rag":
             return _tool_result(call.name, phase, "ok", output=_query_rag_output(self.config, call))
         if call.name == "retrieve_candidates":
+            normalized_policy = _normalize_retrieve_policy(call.arguments, self.config)
+            call = AgentToolCall(name=call.name, arguments=normalized_policy, phase=call.phase, call_id=call.call_id)
             semantic_output = self._semantic_live_retrieve_candidates(call, session, turn, tool_context)
             if semantic_output is not None:
+                semantic_output = _attach_retrieve_route_decisions(semantic_output, call, session, self.sequences_by_user.get(session.user_id, {}), "semantic_live")
                 _store_retrieve_candidates_tool_context(tool_context, semantic_output)
                 return _tool_result(call.name, phase, "ok", output=_public_retrieve_candidates_output(semantic_output))
             online_recommender = getattr(self, "online_recommender", None)
-            if online_recommender is not None and online_recommender.readiness().get("complete_pool500_available"):
+            if online_recommender is not None and _online_recommender_available(online_recommender):
                 sequence = self.sequences_by_user[session.user_id]
                 output = online_recommender.tool_retrieve_candidates(
                     sequence,
                     prior_turn_items=session.prior_turn_items(),
-                    candidate_pool_size=int(call.arguments.get("limit") or self.config.get("candidate_pool_size", 50)),
+                    candidate_pool_size=_retrieve_target_pool_size(call.arguments, self.config),
+                    retrieve_policy=normalized_policy,
                 )
+                output = _attach_retrieve_route_decisions(output, call, session, sequence, "online_backend")
                 _store_retrieve_candidates_tool_context(tool_context, output)
                 return _tool_result(call.name, phase, "ok", output=_public_retrieve_candidates_output(output))
             request = _agentic_recall_request_from_call(call, session, turn)
             output = agentic_recall_candidates(request, self._tool_catalog_items(), session.prior_turn_items()).to_dict()
             internal_output = _retrieve_candidates_internal_output(output)
+            internal_output = _attach_retrieve_route_decisions(internal_output, call, session, self.sequences_by_user.get(session.user_id, {}), "agentic_fallback")
             _store_retrieve_candidates_tool_context(tool_context, internal_output)
             return _tool_result(call.name, phase, "ok", output=_public_retrieve_candidates_output(internal_output))
         if call.name == "rank_candidates":
             online_recommender = getattr(self, "online_recommender", None)
-            if online_recommender is not None and online_recommender.readiness().get("complete_pool500_available"):
+            if online_recommender is not None and _online_recommender_available(online_recommender):
                 output = online_recommender.tool_rank_candidates(turn, return_top_k=call.arguments.get("return_top_k"))
                 return _tool_result(call.name, phase, "ok", output=output)
             request = _deepfm_rank_request_from_call(call, session, turn)
@@ -379,7 +387,9 @@ class HybridRecommendationEnvironment:
     ) -> dict[str, Any] | None:
         if self.semantic_live_engine is None:
             return None
-        semantic_mode = str(call.arguments.get("semantic_mode") or "auto").strip().lower()
+        semantic_mode = _semantic_mode_from_arguments(call.arguments)
+        if semantic_mode == "off":
+            return None
         query = _semantic_live_query_for_call(
             call.arguments,
             user_input=str(getattr(turn, "user_input", "") or ""),
@@ -618,19 +628,21 @@ def _semantic_live_query_for_call(
     semantic_mode: str,
     query_rag_context: Any = None,
 ) -> str:
+    normalized = _normalize_retrieve_policy(arguments)
     mode = semantic_mode if semantic_mode in {"auto", "query_intent", "history_profile", "hybrid_query_history"} else "auto"
-    explicit_query = _semantic_live_explicit_query_with_rag_hint(arguments, user_input, query_rag_context)
-    use_history = arguments.get("use_history_profile", True) is not False
+    explicit_query = _semantic_live_explicit_query_with_rag_hint(normalized, user_input, query_rag_context)
+    reference_query = _semantic_live_reference_query(normalized.get("reference_item_id"), item_metadata, item_category)
+    use_history = normalized.get("use_history_profile", True) is not False
     history_query = _semantic_live_history_query(sequence, item_metadata, item_category) if use_history else ""
     if mode == "query_intent":
-        return explicit_query
+        return " ".join(part for part in (explicit_query, reference_query) if part).strip()
     if mode == "history_profile":
-        return history_query
+        return " ".join(part for part in (reference_query, history_query) if part).strip()
     if mode == "hybrid_query_history":
-        return " ".join(part for part in (explicit_query, history_query) if part).strip()
-    if explicit_query and history_query:
-        return " ".join((explicit_query, history_query)).strip()
-    return explicit_query or history_query
+        return " ".join(part for part in (explicit_query, reference_query, history_query) if part).strip()
+    if explicit_query or reference_query or history_query:
+        return " ".join(part for part in (explicit_query, reference_query, history_query) if part).strip()
+    return ""
 
 
 def _semantic_live_explicit_query_with_rag_hint(
@@ -653,6 +665,28 @@ def _semantic_live_explicit_query_with_rag_hint(
     existing_tokens = set(tokens(explicit_query))
     fresh_terms = [term for term in suggested_terms if tokens(term) and not set(tokens(term)) <= existing_tokens]
     return " ".join([explicit_query, *fresh_terms]).strip()
+
+
+def _semantic_live_reference_query(reference_item_id: Any, item_metadata: dict[str, dict[str, Any]], item_category: dict[str, str]) -> str:
+    item_id = str(reference_item_id or "").strip()
+    if not item_id:
+        return ""
+    metadata = item_metadata.get(item_id, {})
+    values = [
+        metadata.get("title_clean") or metadata.get("title"),
+        metadata.get("main_category") or metadata.get("category") or item_category.get(item_id),
+        metadata.get("categories_flat"),
+        metadata.get("description_text") or metadata.get("description"),
+    ]
+    terms: list[str] = []
+    for value in values:
+        for token in tokens(" ".join(str(part) for part in value) if isinstance(value, list) else str(value or "")):
+            if token not in terms:
+                terms.append(token)
+            if len(terms) >= 8:
+                return " ".join(terms)
+    return " ".join(terms)
+
 
 
 def _semantic_live_history_query(
@@ -845,6 +879,76 @@ def _query_rag_suggested_terms(query: str, evidence: list[Any]) -> list[str]:
     return terms
 
 
+def _normalize_retrieve_policy(arguments: dict[str, Any] | None, config: dict[str, Any] | None = None) -> dict[str, Any]:
+    raw = dict(arguments) if isinstance(arguments, dict) else {}
+    route_policy = raw.get("route_policy") if isinstance(raw.get("route_policy"), dict) else {}
+    retrieval_mode = str(raw.get("retrieval_mode") or _legacy_retrieval_mode(raw, route_policy) or "auto").strip().lower()
+    if retrieval_mode not in {"auto", "specific_need", "personalized_feed", "broad_browse", "similar_to_item", "reference_with_constraints"}:
+        retrieval_mode = "auto"
+    profile_usage = str(raw.get("profile_usage") or _legacy_profile_usage(raw) or "balanced").strip().lower()
+    if profile_usage not in {"none", "light", "balanced", "strong"}:
+        profile_usage = "balanced"
+    expansion_policy = str(raw.get("expansion_policy") or "balanced").strip().lower()
+    if expansion_policy not in {"none", "narrow", "balanced", "broad"}:
+        expansion_policy = "balanced"
+    semantic_mode = _semantic_mode_from_policy(raw, route_policy, retrieval_mode, profile_usage)
+    use_history_profile = profile_usage != "none" and raw.get("use_history_profile", True) is not False
+    use_behavioral_recall = raw.get("use_behavioral_recall", True) is not False
+    normalized = {
+        **raw,
+        "retrieval_mode": retrieval_mode,
+        "profile_usage": profile_usage,
+        "expansion_policy": expansion_policy,
+        "reference_item_id": str(raw.get("reference_item_id") or raw.get("similar_to_item_id") or raw.get("target_item_id") or "").strip() or None,
+        "target_pool_size": _retrieve_target_pool_size(raw, config or {}),
+        "semantic_mode": semantic_mode,
+        "use_history_profile": use_history_profile,
+        "use_behavioral_recall": use_behavioral_recall,
+        "provider_policy": {
+            "semantic_mode": semantic_mode,
+            "traditional": "off" if retrieval_mode == "specific_need" and not use_behavioral_recall else "auto",
+            "reference": "prefer" if retrieval_mode in {"similar_to_item", "reference_with_constraints"} else "auto",
+            "fallback": str(route_policy.get("fallback") or "auto").strip().lower(),
+        },
+    }
+    return normalized
+
+
+
+def _legacy_retrieval_mode(raw: dict[str, Any], route_policy: dict[str, Any]) -> str:
+    if raw.get("reference_item_id") or raw.get("similar_to_item_id") or raw.get("target_item_id") or route_policy.get("similar_item") == "prefer":
+        return "similar_to_item"
+    if str(raw.get("query") or "").strip():
+        return "specific_need"
+    if raw.get("use_history_profile", True) is not False:
+        return "personalized_feed"
+    return "broad_browse"
+
+
+
+def _legacy_profile_usage(raw: dict[str, Any]) -> str:
+    if raw.get("use_history_profile") is False:
+        return "none"
+    profile_policy = raw.get("profile_policy") if isinstance(raw.get("profile_policy"), dict) else {}
+    weight = str(profile_policy.get("history_weight") or "").strip().lower()
+    return weight if weight in {"light", "balanced", "strong"} else "balanced"
+
+
+
+def _semantic_mode_from_policy(raw: dict[str, Any], route_policy: dict[str, Any], retrieval_mode: str, profile_usage: str) -> str:
+    semantic = str(raw.get("semantic_mode") or route_policy.get("semantic") or "").strip().lower()
+    if semantic in {"off", "auto", "query_intent", "history_profile", "hybrid_query_history"}:
+        return semantic
+    if retrieval_mode in {"specific_need", "reference_with_constraints"}:
+        return "hybrid_query_history" if profile_usage != "none" else "query_intent"
+    if retrieval_mode == "similar_to_item":
+        return "hybrid_query_history"
+    if retrieval_mode == "broad_browse":
+        return "history_profile" if profile_usage != "none" else "auto"
+    return "auto"
+
+
+
 def _retrieve_candidates_internal_output(output: dict[str, Any]) -> dict[str, Any]:
     candidates = output.get("candidates", []) if isinstance(output.get("candidates"), list) else []
     diagnostics = output.get("diagnostics", {}) if isinstance(output.get("diagnostics"), dict) else {}
@@ -860,12 +964,133 @@ def _retrieve_candidates_internal_output(output: dict[str, Any]) -> dict[str, An
     }
 
 
+def _attach_retrieve_route_decisions(
+    output: dict[str, Any],
+    call: AgentToolCall,
+    session: AgentSession,
+    sequence: dict[str, Any],
+    selected_route: str,
+) -> dict[str, Any]:
+    candidate_count = int(output.get("candidate_count") or len(_string_list(output.get("candidate_item_ids"))))
+    target_pool_size = _retrieve_target_pool_size(call.arguments, {})
+    summary = dict(output.get("retrieval_summary")) if isinstance(output.get("retrieval_summary"), dict) else {}
+    normalized_policy = _normalize_retrieve_policy(call.arguments)
+    summary["schema_version"] = "retrieve_candidates_output_v3"
+    summary.setdefault("target_pool_size", target_pool_size)
+    summary["retrieval_mode"] = normalized_policy["retrieval_mode"]
+    summary["profile_usage"] = normalized_policy["profile_usage"]
+    summary["expansion_policy"] = normalized_policy["expansion_policy"]
+    summary["returned_count"] = candidate_count
+    summary["underfill"] = candidate_count < int(summary.get("target_pool_size") or target_pool_size or 0)
+    route_decisions = _retrieve_route_decisions(normalized_policy, session, sequence, selected_route, candidate_count)
+    summary["route_count"] = sum(1 for decision in route_decisions if decision.get("status") == "used")
+    summary.setdefault("path_count", summary.get("route_count"))
+    return {**output, "retrieval_summary": summary, "route_decisions": route_decisions}
+
+
+def _retrieve_target_pool_size(arguments: dict[str, Any], config: dict[str, Any]) -> int:
+    value = arguments.get("target_pool_size", arguments.get("limit", config.get("candidate_pool_size", 50)))
+    try:
+        return max(1, min(int(value or 50), 500))
+    except (TypeError, ValueError):
+        return 50
+
+
+def _semantic_mode_from_arguments(arguments: dict[str, Any]) -> str:
+    normalized = _normalize_retrieve_policy(arguments)
+    provider_policy = normalized.get("provider_policy") if isinstance(normalized.get("provider_policy"), dict) else {}
+    semantic = str(provider_policy.get("semantic_mode") or "auto").strip().lower()
+    return semantic if semantic in {"off", "auto", "query_intent", "history_profile", "hybrid_query_history"} else "auto"
+
+
+def _route_policy_value(arguments: dict[str, Any], key: str, default: str = "auto") -> str:
+    route_policy = arguments.get("route_policy") if isinstance(arguments.get("route_policy"), dict) else {}
+    return str(route_policy.get(key) or default).strip().lower()
+
+
+def _retrieve_route_decisions(
+    arguments: dict[str, Any],
+    session: AgentSession,
+    sequence: dict[str, Any],
+    selected_route: str,
+    candidate_count: int,
+) -> list[dict[str, Any]]:
+    recent_items = len(_string_list(sequence.get("recent_item_sequence"))) or len(session.user_profile.liked_item_ids)
+    positive_items = len(_string_list(sequence.get("recent_positive_item_sequence"))) or len(session.user_profile.liked_item_ids)
+    provider_policy = arguments.get("provider_policy") if isinstance(arguments.get("provider_policy"), dict) else {}
+    query_available = bool(str(arguments.get("query") or "").strip())
+    reference_available = bool(arguments.get("reference_item_id"))
+    profile_enabled = arguments.get("profile_usage") != "none" and arguments.get("use_history_profile", True) is not False
+    backend_enabled = arguments.get("use_behavioral_recall", True) is not False
+    fallback_policy = str(provider_policy.get("fallback") or "auto").strip().lower()
+    return [
+        _route_decision(
+            "semantic_intent",
+            selected_route == "semantic_live",
+            provider_policy.get("semantic_mode") != "off" and (query_available or reference_available or profile_enabled),
+            "used business intent text" if selected_route == "semantic_live" else "available from query, reference item, or profile text",
+            candidate_count if selected_route == "semantic_live" else 0,
+        ),
+        _route_decision(
+            "profile_context",
+            backend_enabled and selected_route in {"online_backend", "agentic_fallback"},
+            profile_enabled and recent_items >= 1,
+            "uses recent preference context when available",
+            0,
+        ),
+        _route_decision(
+            "reference_context",
+            selected_route in {"semantic_live", "online_backend", "agentic_fallback"} and reference_available,
+            reference_available,
+            "uses the reference item as a similarity anchor",
+            candidate_count if selected_route == "semantic_live" and reference_available else 0,
+        ),
+        _route_decision(
+            "backend_recall",
+            selected_route == "online_backend" and backend_enabled,
+            backend_enabled and (recent_items >= 1 or positive_items >= 1),
+            "backend may expand candidates from eligible user context",
+            candidate_count if selected_route == "online_backend" else 0,
+        ),
+        _route_decision(
+            "fallback_safety",
+            selected_route in {"online_backend", "agentic_fallback"} and fallback_policy != "off",
+            fallback_policy != "off",
+            "keeps acquisition safe for cold start or underfilled pools",
+            candidate_count if selected_route in {"online_backend", "agentic_fallback"} else 0,
+        ),
+    ]
+
+
+def _route_decision(route: str, used: bool, eligible: bool, reason: str, returned_count: int) -> dict[str, Any]:
+    status = "used" if used else "skipped" if not eligible else "available"
+    return {"route": route, "status": status, "reason": reason, "eligible": eligible, "returned_count": int(returned_count or 0)}
+
+
+def _compact_route_decisions(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    decisions = []
+    for item in value:
+        if not isinstance(item, dict):
+            continue
+        decisions.append({
+            "route": str(item.get("route") or ""),
+            "status": str(item.get("status") or ""),
+            "reason": str(item.get("reason") or "")[:160],
+            "eligible": bool(item.get("eligible")),
+            "returned_count": int(item.get("returned_count") or 0),
+        })
+    return decisions
+
+
 def _public_retrieve_candidates_output(output: dict[str, Any]) -> dict[str, Any]:
     return {
         "candidate_item_ids": _string_list(output.get("candidate_item_ids")),
         "candidate_count": int(output.get("candidate_count") or 0),
         "retrieval_summary": dict(output.get("retrieval_summary")) if isinstance(output.get("retrieval_summary"), dict) else {},
-        "diagnostics": {"compact": True},
+        "route_decisions": _compact_route_decisions(output.get("route_decisions")),
+        "diagnostics": {"compact": True, "internal_only": True, "public_payload_allowed": False},
     }
 
 
@@ -877,6 +1102,7 @@ def _store_retrieve_candidates_tool_context(tool_context: dict[str, Any], output
         "candidate_count": int(output.get("candidate_count") or len(candidates)),
         "candidates": candidates,
         "retrieval_summary": dict(output.get("retrieval_summary")) if isinstance(output.get("retrieval_summary"), dict) else {},
+        "route_decisions": _compact_route_decisions(output.get("route_decisions")),
         "diagnostics": diagnostics,
     }
 
@@ -903,6 +1129,7 @@ def _retrieve_candidates_diagnostics_from_tool_context(tool_context: dict[str, A
         "candidate_count": int(payload.get("candidate_count") or 0),
         "candidate_item_count": len(_string_list(payload.get("candidate_item_ids"))),
         "retrieval_summary": dict(payload.get("retrieval_summary")) if isinstance(payload.get("retrieval_summary"), dict) else {},
+        "route_decisions": _compact_route_decisions(payload.get("route_decisions")),
         "diagnostics": diagnostics,
     }
 
@@ -1165,6 +1392,11 @@ def _planned_tool_calls(plan: Any) -> list[AgentToolCall]:
     return calls
 
 
+def _online_recommender_available(online_recommender: Any) -> bool:
+    readiness = online_recommender.readiness()
+    return bool(readiness.get("complete_pool500_available") or readiness.get("online_source_indexes_available"))
+
+
 def _tool_result(
     name: str,
     phase: str,
@@ -1228,16 +1460,23 @@ def _product_search_request_from_call(
 
 
 def _agentic_recall_request_from_call(call: AgentToolCall, session: AgentSession, turn: AgentTurn | None) -> AgenticRecallRequest:
-    arguments = call.arguments
+    arguments = _normalize_retrieve_policy(call.arguments)
     paths = [_recall_path_from_dict(path) for path in arguments.get("paths", []) if isinstance(path, dict)]
     if not paths:
+        query = str(arguments.get("query") or getattr(turn, "user_input", "") or "")
+        reference_item_id = str(arguments.get("reference_item_id") or "").strip() or None
+        mode = str(arguments.get("retrieval_mode") or "auto")
+        path_name = "similar_item_search" if mode == "similar_to_item" else "cheaper_alternative_search" if mode == "reference_with_constraints" else "constraint_catalog_search"
         paths = [RecallPathPlan(
-            name="constraint_catalog_search",
-            limit=int(arguments.get("limit", 50) or 50),
-            top_k=int(arguments.get("top_k", arguments.get("limit", 50)) or 50),
-            query=str(arguments.get("query") or getattr(turn, "user_input", "") or ""),
+            name=path_name,
+            limit=int(arguments.get("limit", arguments.get("target_pool_size", 50)) or 50),
+            top_k=int(arguments.get("top_k", arguments.get("limit", arguments.get("target_pool_size", 50))) or 50),
+            query=query,
             rules=_rules_from_active_constraints(session),
-            reason="default_agentic_recall_from_session_constraints",
+            reference_item_id=reference_item_id,
+            similar_to_item_id=reference_item_id if mode == "similar_to_item" else None,
+            target_item_id=reference_item_id if mode in {"similar_to_item", "reference_with_constraints"} else None,
+            reason=f"business_mode:{mode}",
         )]
     return AgenticRecallRequest(
         user_id=session.user_id,
@@ -1245,7 +1484,7 @@ def _agentic_recall_request_from_call(call: AgentToolCall, session: AgentSession
         target_pool_size=int(arguments.get("target_pool_size", 100) or 100),
         global_rules=dict(arguments.get("global_rules")) if isinstance(arguments.get("global_rules"), dict) else {"exclude_seen_items": True, "dedupe_by_parent_asin": True},
         paths=paths,
-        ranking_context=dict(arguments.get("ranking_context")) if isinstance(arguments.get("ranking_context"), dict) else {"query": getattr(turn, "user_input", "") or ""},
+        ranking_context=dict(arguments.get("ranking_context")) if isinstance(arguments.get("ranking_context"), dict) else {"query": getattr(turn, "user_input", "") or "", "retrieval_mode": arguments.get("retrieval_mode")},
     )
 
 

@@ -9,10 +9,13 @@ from rs_core.recsys.rag import RAG_STANDARD_FIELDS
 from rs_core.recsys.rag import (
     HybridCandidateRetriever,
     InMemoryCandidateCardRetriever,
+    QdrantCandidateRagVectorRetriever,
     RagPolicy,
     SQLiteBM25CandidateRetriever,
     build_rag_context_for_ranked_candidates,
 )
+from rs_core.recsys.vectorstores.qdrant_client import QdrantVectorStore
+from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_RAG_CHUNK_COLLECTION
 from rs_core.rsagent.runtime import AgentRuntime, AgentRuntimeHost
 from rs_core.rsagent.schema import AgentSession, AgentTurn
 from rs_core.workflow.hybrid_demo import ROOT
@@ -56,6 +59,7 @@ class EvidenceRAGFacade:
         index_path = _rag_index_path(rag_config)
         if index_path is not None and index_path.exists() and retriever_config == "hybrid":
             hybrid_config = rag_config.get("hybrid") if isinstance(rag_config.get("hybrid"), dict) else {}
+            vector_backend = _qdrant_rag_vector_backend(rag_config, hybrid_config)
             retriever = HybridCandidateRetriever(
                 index_path,
                 vector_index_path=_rag_vector_index_path(rag_config, index_path),
@@ -66,8 +70,9 @@ class EvidenceRAGFacade:
                 fusion_method=str(hybrid_config.get("fusion_method", "weighted")),
                 rrf_k=int(hybrid_config.get("rrf_k", 60)),
                 field_weights=_field_weights(hybrid_config.get("field_weights")),
+                vector_backend=vector_backend,
             )
-            retriever_name = "hybrid"
+            retriever_name = "hybrid_qdrant" if vector_backend is not None else "hybrid"
         elif index_path is not None and index_path.exists() and retriever_config != "in_memory_candidate_card":
             retriever = SQLiteBM25CandidateRetriever(index_path)
             retriever_name = "sqlite_bm25"
@@ -108,6 +113,23 @@ def _field_weights(value: Any) -> dict[str, float] | None:
     if not isinstance(value, dict):
         return None
     return {str(field): float(weight) for field, weight in value.items()}
+
+
+def _qdrant_rag_vector_backend(rag_config: dict[str, Any], hybrid_config: dict[str, Any]) -> QdrantCandidateRagVectorRetriever | None:
+    qdrant_config = hybrid_config.get("qdrant") or rag_config.get("qdrant")
+    if not isinstance(qdrant_config, dict) or not qdrant_config.get("enabled", False):
+        return None
+    store = QdrantVectorStore.from_config(qdrant_config)
+    return QdrantCandidateRagVectorRetriever(
+        store=store,
+        collection_name=str(qdrant_config.get("collection_name") or DEFAULT_RAG_CHUNK_COLLECTION),
+        embedding_model_name=str(qdrant_config.get("embedding_model_name") or rag_config.get("embedding_model_name") or "BAAI/bge-m3"),
+        embedding_method=str(qdrant_config.get("embedding_method") or "sentence_transformer_dense_v1"),
+        query_prefix=str(qdrant_config.get("query_prefix") or ""),
+        embedding_batch_size=int(qdrant_config.get("embedding_batch_size", 32) or 32),
+        normalize_embeddings=bool(qdrant_config.get("normalize_embeddings", True)),
+        top_k_multiplier=int(qdrant_config.get("top_k_multiplier", hybrid_config.get("vector_top_k_multiplier", 4)) or 4),
+    )
 
 
 def _rag_vector_index_path(rag_config: dict[str, Any], index_path: Path) -> Path | None:
