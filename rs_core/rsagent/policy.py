@@ -16,7 +16,7 @@ _SOURCE_ALIASES = {
     "category": "category",
 }
 _NEGATIVE_KEYWORDS = {"dislike", "avoid", "exclude", "don't like", "do not like", "不喜欢", "不要", "排除"}
-_POSITIVE_KEYWORDS = {"prefer", "like", "喜欢", "偏好"}
+_POSITIVE_KEYWORDS = {"prefer", "like", "喜欢", "偏好", "偏重", "优先", "更偏", "更想要", "给我看", "先看", "看看", "找", "展示", "来点", "换成"}
 _STOP_WORDS = {"i", "and", "or", "the", "a", "an", "for", "items", "item", "source", "sources", "category", "categories"}
 _KEYWORD_ALIASES = {
     "bluetooth": ["bluetooth"],
@@ -27,8 +27,13 @@ _KEYWORD_ALIASES = {
     "long_battery": ["long battery", "battery life", "long-lasting", "longlasting"],
     "cheap": ["cheap", "budget", "affordable", "low cost", "inexpensive"],
     "wired": ["wired", "cable", "corded"],
+    "desktop_organization": ["桌面整洁", "桌面收纳", "收纳", "整理"],
+    "cable_management": ["线缆管理", "理线", "走线", "线缆收纳"],
+    "compact": ["小体积", "小巧", "不占地方", "紧凑"],
+    "accessories": ["配件", "附件"],
+    "practical": ["实用", "好用"],
 }
-_USE_CASE_KEYWORDS = {"commute", "gift"}
+_USE_CASE_KEYWORDS = {"commute", "gift", "desktop_organization", "cable_management", "compact", "practical"}
 _PRICE_FIELDS = ["price", "price_value", "price_float", "price_display"]
 _DEFAULT_KEYWORD_TEXT_FIELDS = [
     "title_clean",
@@ -260,7 +265,10 @@ def _price_number(value: Any) -> float | None:
 
 
 def _intent_clauses(text: str) -> list[tuple[str, str]]:
-    pattern = re.compile(r"\b(don't like|do not like|dislike|avoid|exclude|prefer|like)\b|不喜欢|不要|排除|喜欢|偏好", re.IGNORECASE)
+    pattern = re.compile(
+        r"\b(don't like|do not like|dislike|avoid|exclude|prefer|like)\b|不喜欢|不要|排除|喜欢|偏好|偏重|优先|更偏|更想要|给我看|先看|看看|找|展示|来点|换成",
+        re.IGNORECASE,
+    )
     matches = list(pattern.finditer(text))
     clauses: list[tuple[str, str]] = []
     for index, match in enumerate(matches):
@@ -482,6 +490,7 @@ def _normalized_weight_map(values: dict[str, float]) -> dict[str, tuple[str, flo
 
 def _keyword_matches(text: str) -> list[tuple[str, str]]:
     normalized = _normalize_keyword_text(text)
+    raw_text = text.lower()
     matches: list[tuple[str, str]] = []
     occupied_tokens: set[str] = set()
     alias_entries = [
@@ -494,7 +503,7 @@ def _keyword_matches(text: str) -> list[tuple[str, str]]:
         alias_tokens = set(normalized_alias.split())
         if alias_tokens & occupied_tokens:
             continue
-        if _contains_keyword_alias(normalized, alias):
+        if _contains_keyword_alias(normalized, alias) or (re.search(r"[一-鿿]", alias) and alias in raw_text):
             matches.append((keyword, alias))
             occupied_tokens.update(alias_tokens)
     return matches
@@ -503,7 +512,7 @@ def _keyword_matches(text: str) -> list[tuple[str, str]]:
 def _canonical_keyword(value: str) -> str | None:
     normalized = _normalize_keyword_text(value)
     for keyword, aliases in _KEYWORD_ALIASES.items():
-        if keyword == normalized or any(_normalize_keyword_text(alias) == normalized for alias in aliases):
+        if (keyword == normalized and keyword != "accessories") or any(_normalize_keyword_text(alias) == normalized for alias in aliases):
             return keyword
     return None
 
@@ -571,7 +580,7 @@ def _contains_keyword_alias(text: str, alias: str) -> bool:
 
 
 def _normalize_keyword_text(text: str) -> str:
-    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9]+", " ", text.lower())).strip()
+    return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9一-鿿]+", " ", text.lower())).strip()
 
 
 def _configured_value_for_key(values: set[str], matched_value: str) -> str:

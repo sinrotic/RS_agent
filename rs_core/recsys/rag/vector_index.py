@@ -28,17 +28,10 @@ class SentenceTransformerEmbeddingBackend:
     model_name: str = DEFAULT_DENSE_MODEL_NAME
     query_prefix: str = ""
     passage_prefix: str = ""
+    _model: Any = field(default=None, init=False, repr=False)
 
     def encode(self, texts: list[str], *, normalize: bool = True, batch_size: int = 32) -> np.ndarray:
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as exc:
-            raise RuntimeError(
-                "sentence-transformers is required for dense RAG embeddings; "
-                "install requirements-training.txt or use vector_method='tfidf'."
-            ) from exc
-
-        model = SentenceTransformer(self.model_name)
+        model = self._load_model()
         embeddings = model.encode(
             texts,
             batch_size=batch_size,
@@ -47,6 +40,19 @@ class SentenceTransformerEmbeddingBackend:
             show_progress_bar=False,
         )
         return np.asarray(embeddings, dtype=np.float32)
+
+    def _load_model(self) -> Any:
+        if self._model is not None:
+            return self._model
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as exc:
+            raise RuntimeError(
+                "sentence-transformers is required for dense RAG embeddings; "
+                "install requirements-training.txt or use vector_method='tfidf'."
+            ) from exc
+        self._model = SentenceTransformer(self.model_name)
+        return self._model
 
     def encode_query(self, query: str, *, normalize: bool = True, batch_size: int = 32) -> np.ndarray:
         return self.encode([f"{self.query_prefix}{query}"], normalize=normalize, batch_size=batch_size)[0]

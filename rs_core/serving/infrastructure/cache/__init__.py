@@ -1,0 +1,1 @@
+"""Cache adapter skeleton package."""

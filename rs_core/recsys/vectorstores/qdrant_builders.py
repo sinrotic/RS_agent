@@ -7,6 +7,7 @@ from typing import Any, TypeVar
 
 from rs_core.common.io import write_json
 from rs_core.recsys.vectorstores.qdrant_client import QdrantVectorStore
+from rs_core.recsys.vectorstores.qdrant_config import compact_qdrant_config, merge_qdrant_config, qdrant_config_from_args, qdrant_config_from_env
 from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_QDRANT_DISTANCE, normalize_qdrant_distance
 
 T = TypeVar("T")
@@ -36,17 +37,6 @@ def infer_vector_size(vectors: Iterable[list[float]]) -> int:
     raise ValueError("cannot infer vector size from empty vectors")
 
 
-def qdrant_config_from_args(args: Any) -> dict[str, Any]:
-    config = {
-        "location": getattr(args, "qdrant_location", None),
-        "path": getattr(args, "qdrant_path", None),
-        "url": getattr(args, "qdrant_url", None),
-        "host": getattr(args, "qdrant_host", None),
-        "port": getattr(args, "qdrant_port", None),
-        "prefer_grpc": getattr(args, "prefer_grpc", None),
-    }
-    return {key: value for key, value in config.items() if value not in (None, "")}
-
 
 def add_qdrant_connection_args(parser: Any) -> None:
     parser.add_argument("--qdrant-location", default=None, help="Qdrant local location, e.g. :memory:")
@@ -54,7 +44,8 @@ def add_qdrant_connection_args(parser: Any) -> None:
     parser.add_argument("--qdrant-url", default=None, help="Qdrant server URL")
     parser.add_argument("--qdrant-host", default=None, help="Qdrant server host")
     parser.add_argument("--qdrant-port", type=int, default=None, help="Qdrant server port")
-    parser.add_argument("--prefer-grpc", action="store_true", help="Prefer gRPC when connecting to Qdrant")
+    parser.add_argument("--prefer-grpc", action="store_true", default=None, help="Prefer gRPC when connecting to Qdrant")
+    parser.add_argument("--qdrant-timeout", type=int, default=None, help="Qdrant client timeout in seconds")
 
 
 def build_store(qdrant_config: dict[str, Any] | None) -> QdrantVectorStore:

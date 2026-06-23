@@ -1,0 +1,1 @@
+"""Knowledge adapter skeleton package."""

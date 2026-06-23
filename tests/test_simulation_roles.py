@@ -25,6 +25,23 @@ def test_role_initial_prompt_includes_goal_and_preferences():
     assert "Avoid: bulky" in prompt
 
 
+def test_role_initial_prompt_prefers_natural_initial_request():
+    role = COMMUTER_PRACTICAL.__class__(
+        role_id="natural",
+        persona="A customer with private history.",
+        shopping_goal="Internal simulator goal, not user wording.",
+        category_preferences=("Audio",),
+        keyword_preferences=("bluetooth",),
+        initial_request="I need something practical for commuting, but I am not sure what to buy yet.",
+        private_context={"past_interactions_summary": {"recent_categories": ["Audio"]}},
+    )
+
+    prompt = role.initial_prompt()
+
+    assert prompt == "I need something practical for commuting, but I am not sure what to buy yet."
+    assert "Prefer categories" not in prompt
+
+
 def test_presets_expose_three_distinct_customer_roles():
     assert set(PRESET_ROLES) == {"commuter_practical", "gift_buyer", "price_sensitive"}
     assert get_preset_role("gift_buyer") is GIFT_BUYER
@@ -44,7 +61,7 @@ def test_policy_asks_for_concrete_items_when_display_has_no_items():
     action = RolePolicy().next_action(COMMUTER_PRACTICAL, state, _display(items=[]))
 
     assert action.type == RoleActionType.CHAT
-    assert "concrete items" in action.message
+    assert "concrete options" in action.message
     assert state.current_question == "Need more concrete options."
 
 
@@ -166,6 +183,7 @@ class _FakeClient:
 
     def complete(self, messages):
         assert messages[0]["role"] == "system"
+        assert "do not know the recommender's catalog" in messages[0]["content"]
         assert "display_items" in messages[1]["content"]
         return self.response
 

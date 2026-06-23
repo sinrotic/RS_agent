@@ -62,6 +62,10 @@ def test_concrete_request_recommends_without_blocking_clarification(tmp_path: Pa
 
     assert turn.diagnostics["conversation_intent"] == "recommend_request"
     assert turn.diagnostics["agent_action"] == "recommend_items"
+    tool_names = [event["tool_name"] for event in turn.diagnostics["agent_tool_events"]]
+    assert "call_rag_agent" in tool_names
+    assert "query_rag" not in tool_names
+    assert "get_item_evidence" not in tool_names
     assert turn.ranking
     assert session.conversation_state.pending_clarification == ""
 
@@ -75,6 +79,29 @@ def test_generic_quality_request_still_triggers_clarification(tmp_path: Path):
     assert turn.ranking == []
     assert turn.diagnostics["agent_action"] == "ask_clarifying_question"
     assert session.conversation_state.pending_clarification
+
+
+@pytest.mark.parametrize("user_input", ["看看", "随便看看", "先随便看看"])
+def test_chinese_broad_browse_recommends_without_specific_need(user_input: str):
+    plan = plan_dialogue_turn(user_input, AgentSession(session_id="s1", user_id="u1"))
+
+    assert plan.action == "recommend_items"
+    assert plan.should_recommend is True
+    assert plan.diagnostics["retrieval_query_source"] == "broad_browse_request"
+    tool_names = [call["name"] for call in plan.tool_calls]
+    assert tool_names == ["get_user_context", "retrieve_candidates", "rank_candidates", "build_recommendation_slate"]
+    retrieve_call = next(call for call in plan.tool_calls if call["name"] == "retrieve_candidates")
+    assert retrieve_call["arguments"]["retrieval_mode"] == "personalized_feed"
+    assert "query" not in retrieve_call["arguments"]
+
+
+@pytest.mark.parametrize("user_input", ["I like this item, show me more like this. item_id=item_1", "I prefer a gift under $50", "prefer commute"])
+def test_dialogue_supported_constraints_include_policy_supported_fields(user_input: str):
+    plan = plan_dialogue_turn(user_input, AgentSession(session_id="s1", user_id="u1"))
+
+    assert plan.intent == "preference_feedback"
+    assert plan.action == "revise_recommendation"
+    assert plan.should_recommend is True
 
 
 def test_clarification_answer_updates_constraints_and_recommends(tmp_path: Path):
@@ -186,6 +213,23 @@ def test_show_different_filters_prior_turn_items(tmp_path: Path):
     assert not first_items & {item["parent_asin"] for item in turn.ranking}
 
 
+def test_prior_recommendation_then_chinese_refinement_recommends(tmp_path: Path):
+    env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path)), limit_users=1)
+    session = env.start_session("u1")
+    env.converse(session, "想要耳机")
+
+    turn = env.converse(session, "更偏桌面整洁和线缆管理，给我看小体积配件")
+
+    assert turn.diagnostics["conversation_intent"] == "preference_feedback"
+    assert turn.diagnostics["agent_action"] == "revise_recommendation"
+    assert turn.diagnostics["should_recommend"] is True
+    assert turn.ranking
+    assert session.active_constraints.preferred_keywords["desktop_organization"] == 1.0
+    assert session.active_constraints.preferred_keywords["cable_management"] == 1.0
+    assert session.active_constraints.preferred_keywords["compact"] == 1.0
+    assert session.active_constraints.preferred_keywords["accessories"] == 1.0
+
+
 def test_rag_off_preserves_prior_explanation_output(tmp_path: Path):
     base_env = HybridRecommendationEnvironment.from_config(str(_write_dialogue_fixture(tmp_path / "base")), limit_users=1)
     base_session = base_env.start_session("u1")
@@ -218,7 +262,9 @@ def test_rag_shadow_builds_context_without_changing_explanation(tmp_path: Path):
     assert recommendation_turn.rag_context["metadata"]["evidence_mode"] == "shadow"
     records = session_to_rollout_records(session, env.sequences_by_user[session.user_id])
     assert recommendation_turn.diagnostics["rag"]["kept_evidence_count"] > 0
-    assert records[0]["metadata"]["rag_context"] == recommendation_turn.rag_context
+    assert "rag_context" not in records[0]["metadata"]
+    assert records[0]["metadata"]["rag_context_summary"]["evidence_count"] == len(recommendation_turn.rag_context["evidence"])
+    assert records[0]["metadata"]["rag_context_summary"]["raw_evidence_exported"] is False
     assert "rag_context" not in records[0]["display_response"]
     assert "商品信息显示" not in turn.assistant_response
     assert "consumed_by_explanation" not in recommendation_turn.rag_context["metadata"]

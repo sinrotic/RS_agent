@@ -24,6 +24,12 @@ qdrant-rag = [
     "qdrant-client",
     "sentence-transformers",
 ]
+artifacts = [
+    "minio",
+]
+cassandra = [
+    "cassandra-driver",
+]
 
 [tool.setuptools.packages.find]
 include = ["rs_core*"]

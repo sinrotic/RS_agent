@@ -10,6 +10,7 @@ from rs_core.serving.session_summary import (
     LLMSessionSummaryService,
     _build_summary_messages,
     _public_summary_input,
+    build_public_session_summary_input,
 )
 
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]
@@ -76,6 +77,19 @@ def test_public_summary_input_strips_internal_fields_and_redacts_sensitive_text(
     assert "tool_traces" not in serialized
     assert "raw_evidence" not in serialized
     assert "score_trace" not in serialized
+
+
+def test_public_session_summary_input_alias_matches_private_builder() -> None:
+    payload = _public_export_with_internal_noise()
+
+    safe_input = build_public_session_summary_input(payload)
+
+    assert safe_input == _public_summary_input(payload)
+    serialized = str(safe_input).lower()
+    assert "diagnostics" not in serialized
+    assert "raw_evidence" not in serialized
+    assert "score_trace" not in serialized
+    assert "agent_thoughts" not in serialized
 
 
 def test_summary_frontmatter_quotes_user_controlled_values(tmp_path: Path) -> None:

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.recsys.vectorstores.qdrant_builders import add_qdrant_connection_args, qdrant_config_from_args  # noqa: E402
+from rs_core.recsys.vectorstores.qdrant_builders import add_qdrant_connection_args, merge_qdrant_config, qdrant_config_from_args, qdrant_config_from_env  # noqa: E402
 from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_TWO_TOWER_COLLECTION  # noqa: E402
 from rs_core.recsys.vectorstores.qdrant_two_tower_build import build_qdrant_two_tower_item_index  # noqa: E402
 
@@ -29,10 +29,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> dict[str, object]:
     parser = build_parser()
     args = parser.parse_args(argv)
+    qdrant_config = merge_qdrant_config(qdrant_config_from_env(), qdrant_config_from_args(args))
     manifest = build_qdrant_two_tower_item_index(
         source_index_manifest_path=args.source_index_manifest,
         collection_name=args.collection_name,
-        qdrant_config=qdrant_config_from_args(args),
+        qdrant_config=qdrant_config,
         manifest_path=args.manifest,
         batch_size=args.batch_size,
         limit_items=args.limit_items,

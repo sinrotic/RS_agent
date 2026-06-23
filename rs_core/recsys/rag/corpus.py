@@ -4,7 +4,9 @@ from typing import Any
 
 RAG_STANDARD_FIELDS = ["title", "category_path", "description", "features"]
 RAG_COMPACT_DENSE_FIELD = "compact_text"
+RAG_PARENT_PROFILE_FIELD = "parent_profile"
 RAG_COMPACT_DENSE_SOURCE_FIELDS = ["title", "category_path", "description", "features", "full_text"]
+RAG_PARENT_PROFILE_SOURCE_FIELDS = ["title", "category_path", "store", "average_rating", "rating_number", "features", "description"]
 RAG_EXCLUDED_EVIDENCE_FIELDS = {"category", "main_category"}
 RAG_DEFAULT_FIELD_WEIGHTS = {
     "title": 0.65,
@@ -16,6 +18,7 @@ RAG_DEFAULT_FIELD_WEIGHTS = {
 RAG_EVIDENCE_FIELD_QUOTAS = {
     "title": 1,
     "category_path": 1,
+    RAG_PARENT_PROFILE_FIELD: 1,
 }
 
 _FIELD_SOURCES = {
@@ -28,6 +31,35 @@ _FIELD_SOURCES = {
     "features": ("features_text", "features"),
     "summary": ("summary",),
     "full_text": ("item_text", "full_text"),
+    "store": ("store", "brand"),
+    "average_rating": ("average_rating", "rating", "stars"),
+    "rating_number": ("rating_number", "rating_count", "reviews_count"),
+}
+
+_PARENT_PROFILE_LABELS = {
+    "title": "Title",
+    "category_path": "Category",
+    "store": "Store",
+    "average_rating": "Average rating",
+    "rating_number": "Rating count",
+    "features": "Features",
+    "description": "Description",
+    "summary": "Summary",
+}
+_PARENT_PROFILE_FORBIDDEN_KEY_TOKENS = {
+    "diagnostic",
+    "eval",
+    "future",
+    "ground",
+    "holdout",
+    "item_text",
+    "label",
+    "oracle",
+    "raw",
+    "target",
+    "test",
+    "truth",
+    "full_text",
 }
 
 
@@ -69,12 +101,71 @@ def build_compact_item_text(item: dict[str, Any], *, max_chars: int = 600) -> st
     return _clip_text(" | ".join(dict.fromkeys(parts)), max_chars)
 
 
+def build_parent_profile_text(
+    item: dict[str, Any],
+    *,
+    fields: list[str] | None = None,
+    max_chars: int = 1000,
+) -> tuple[str, list[str]]:
+    normalized = normalize_item_record(item)
+    selected_fields = fields or list(RAG_PARENT_PROFILE_SOURCE_FIELDS)
+    parts: list[str] = []
+    used_fields: list[str] = []
+    for field_name in selected_fields:
+        if field_name == "full_text":
+            continue
+        text = _public_parent_field_text(item, field_name)
+        if not text:
+            continue
+        label = _PARENT_PROFILE_LABELS.get(field_name, field_name.replace("_", " ").title())
+        parts.append(f"{label}: {text}")
+        used_fields.append(field_name)
+    return _clip_text("\n".join(parts), max_chars), used_fields
+
+
 def _first_text(item: dict[str, Any], source_fields: tuple[str, ...]) -> str:
     for field_name in source_fields:
         value = _stringify(item.get(field_name))
         if value:
             return value
     return ""
+
+
+def _public_parent_field_text(item: dict[str, Any], field_name: str) -> str:
+    for source_field in _FIELD_SOURCES.get(field_name, (field_name,)):
+        value = item.get(source_field)
+        if not _has_value(value):
+            continue
+        if _has_forbidden_parent_key(source_field):
+            continue
+        text = _stringify_public_parent_value(value)
+        if text:
+            return text
+    return ""
+
+
+def _stringify_public_parent_value(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, list):
+        return " > ".join(text for item in value if (text := _stringify_public_parent_value(item)))
+    if isinstance(value, dict):
+        parts: list[str] = []
+        for key, item in value.items():
+            if _has_forbidden_parent_key(str(key)):
+                continue
+            text = _stringify_public_parent_value(item)
+            if text:
+                parts.append(f"{key}: {text}")
+        return " ".join(parts).strip()
+    return str(value).strip()
+
+
+def _has_forbidden_parent_key(key: str) -> bool:
+    normalized = key.lower().replace("-", "_").replace(" ", "_")
+    tokens = {token for token in normalized.replace("/", "_").split("_") if token}
+    tokens.add(normalized)
+    return bool(tokens & _PARENT_PROFILE_FORBIDDEN_KEY_TOKENS)
 
 
 def _clip_text(text: str, max_chars: int) -> str:

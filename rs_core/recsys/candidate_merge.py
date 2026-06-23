@@ -692,7 +692,8 @@ def semantic_candidates_for_user(
         return _semantic_seed_aware_candidates_for_user(user_sequence, semantic_index, config)
 
     seen_items = set(user_sequence.get("recent_item_sequence", []))
-    seed_items = list(dict.fromkeys(reversed(user_sequence.get("recent_positive_item_sequence", [])[-10:])))
+    seed_window = int(config.get("semantic_seed_window", 10))
+    seed_items = list(dict.fromkeys(reversed(user_sequence.get("recent_positive_item_sequence", [])[-seed_window:])))
     seed_tokens: set[str] = set()
     seed_categories: set[str] = set()
     for item_id in seed_items:

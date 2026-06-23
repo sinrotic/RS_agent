@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.recsys.rag.qdrant_index import build_qdrant_rag_chunk_index  # noqa: E402
 from rs_core.recsys.rag.vector_index import DEFAULT_DENSE_MODEL_NAME, DEFAULT_RAG_CORPUS_SCOPE  # noqa: E402
-from rs_core.recsys.vectorstores.qdrant_builders import add_qdrant_connection_args, qdrant_config_from_args  # noqa: E402
+from rs_core.recsys.vectorstores.qdrant_builders import add_qdrant_connection_args, merge_qdrant_config, qdrant_config_from_args, qdrant_config_from_env  # noqa: E402
 from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_RAG_CHUNK_COLLECTION  # noqa: E402
 
 
@@ -39,10 +39,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> dict[str, object]:
     parser = build_parser()
     args = parser.parse_args(argv)
+    qdrant_config = merge_qdrant_config(qdrant_config_from_env(), qdrant_config_from_args(args))
     manifest = build_qdrant_rag_chunk_index(
         items_path=args.items,
         collection_name=args.collection_name,
-        qdrant_config=qdrant_config_from_args(args),
+        qdrant_config=qdrant_config,
         fields=list(args.fields) if args.fields else None,
         max_chunk_chars=args.max_chunk_chars,
         embedding_model_name=args.embedding_model_name,

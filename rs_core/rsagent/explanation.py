@@ -24,14 +24,14 @@ def build_recommendation_explanation(session: AgentSession, item_id: str | None 
         return STALE_RECOMMENDATION_TEXT
 
     title = _clean_text(item.get("title"))
-    item_label = f"{title}（{item['parent_asin']}）" if title else f"商品 {item['parent_asin']}"
+    item_label = _short_title(title) if title else "这件商品"
     rag_reason = _rag_reason(turn, item["parent_asin"], item)
     if rag_reason:
-        return f"最近一次推荐列表里推荐{item_label}，主要因为{rag_reason}。"
+        return f"我推荐{item_label}，主要是因为{rag_reason}。"
     reasons = _public_reasons(item)
     if reasons:
-        return f"最近一次推荐列表里推荐{item_label}，主要因为{'；'.join(reasons)}。"
-    return f"推荐{item_label}，因为它仍在最近一次推荐列表中，并且商品信息可以安全展示给你。"
+        return f"我推荐{item_label}，主要是因为{'；'.join(reasons)}。"
+    return f"我推荐{item_label}，主要是因为它适合作为当前需求下的一个稳妥备选。"
 
 
 def latest_recommendation_turn(session: AgentSession) -> AgentTurn | None:
@@ -94,18 +94,16 @@ def _rag_reason(turn: AgentTurn, item_id: str, display_item: dict[str, Any]) -> 
 
 def _public_reasons_for_fields(item: dict[str, Any], evidence_fields: set[str]) -> list[str]:
     reasons: list[str] = []
-    if "category" in evidence_fields or "category_path" in evidence_fields:
-        category = _clean_text(item.get("category"))
-        if category:
-            reasons.append(f"它属于你正在浏览的{category}类目")
+    title = _clean_text(item.get("title")) or ""
+    category = _clean_text(item.get("category")) or ""
     if "summary" in evidence_fields or "description" in evidence_fields:
         summary = _clean_text(item.get("summary")) or _clean_text(item.get("description"))
         if summary:
             reasons.append(_truncate_text(summary, RAG_EXPLANATION_MAX_TEXT_CHARS))
-    if "title" in evidence_fields:
-        title = _clean_text(item.get("title"))
-        if title:
-            reasons.append(f"标题信息与需求相关：{_truncate_text(title, RAG_EXPLANATION_MAX_TEXT_CHARS)}")
+    if ("title" in evidence_fields or "category" in evidence_fields or "category_path" in evidence_fields) and title:
+        reasons.append(_infer_public_use_case(title, category))
+    elif category:
+        reasons.append(f"它偏{category}场景，适合作为当前需求下的实用备选")
     return reasons
 
 
@@ -115,23 +113,47 @@ def _public_reasons(item: dict[str, Any]) -> list[str]:
     summary = _clean_text(item.get("summary"))
     features = [_clean_text(feature) for feature in item.get("features", [])]
     features = [feature for feature in features if feature]
-    store = _clean_text(item.get("store"))
-    rating = _clean_text(item.get("rating"))
     price = _clean_text(item.get("price"))
 
-    if category:
-        reasons.append(f"它属于你正在浏览的{category}类目")
     if summary:
         reasons.append(summary)
+    elif title := _clean_text(item.get("title")):
+        reasons.append(_infer_public_use_case(title, category or ""))
+    elif category:
+        reasons.append(f"它偏{category}场景，适合作为当前需求下的实用备选")
     if features:
-        reasons.append("包含" + "、".join(features[:3]) + "等商品特点")
-    if store:
-        reasons.append(f"来自{store}")
-    if rating:
-        reasons.append(f"展示评分为{rating}")
+        reasons.append("有" + "、".join(features[:2]) + "这些实用点")
     if price:
-        reasons.append(f"价格信息为{price}")
-    return reasons[:4]
+        reasons.append(f"价格是{price}，方便一起衡量预算")
+    return reasons[:3]
+
+
+def _short_title(title: str | None) -> str:
+    if not title:
+        return "这件商品"
+    cleaned = re.sub(r"\s*\([^)]*\)", " ", title)
+    cleaned = re.sub(r"\b\d+\s*(?:pack|pcs?|pieces|count|ct)\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:white|black|clear|charcoal|latest release)\b", " ", cleaned, flags=re.IGNORECASE)
+    parts = [part.strip(" -|,;:/") for part in re.split(r"\s[-|]\s|,\s*", cleaned) if part.strip(" -|,;:/")]
+    candidates: list[str] = []
+    for part in parts or [cleaned]:
+        part = re.sub(r"\s+", " ", part).strip()
+        part = re.sub(r"\s+with\s+.*$", "", part, flags=re.IGNORECASE).strip()
+        part = re.sub(r"\s+for\s+.*$", "", part, flags=re.IGNORECASE).strip()
+        part = re.sub(r"\s+by\s+.*$", "", part, flags=re.IGNORECASE).strip()
+        if len(part) >= 4 and re.search(r"[A-Za-z一-鿿]", part):
+            candidates.append(part)
+    label = min(candidates, key=len) if candidates else cleaned.strip()
+    return _truncate_text(label or title, 32)
+
+
+def _infer_public_use_case(title: str, category: str) -> str:
+    label = _short_title(title)
+    if category:
+        return f"它偏{category}场景，适合作为当前需求下的实用备选"
+    if label and label != "这件商品":
+        return f"它对应{label}这类用途，可以作为当前需求下的具体备选"
+    return "它适合作为当前需求下的实用备选"
 
 
 def _clean_text(value: Any) -> str | None:

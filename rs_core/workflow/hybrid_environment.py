@@ -7,6 +7,14 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
+from rs_core.agent_runtime.adapters.rag import (
+    RAG_AGENT_PRE_RETRIEVAL_STAGE,
+    RagAgentAdapter,
+    RagAgentInvocation,
+    RagQueryRewriteConfig,
+    RagQueryRewriter,
+)
+from rs_core.agent_runtime.core import AgentRuntimeConfig
 from rs_core.common.config import load_config
 from rs_core.recsys.candidate_merge import (
     load_category_candidates,
@@ -42,7 +50,6 @@ from rs_core.rsagent.tools import (
     DeepFMRankRequest,
     KeywordConstraint,
     ProductSearchRequest,
-    QueryRagOutput,
     RecallPathPlan,
     UnderstandUserNeedOutput,
     agentic_recall_candidates,
@@ -55,17 +62,14 @@ from rs_core.rsagent.tools import (
     validate_rank_candidates_arguments,
 )
 from rs_core.recsys.rag import (
-    HybridCandidateRetriever,
-    InMemoryCandidateCardRetriever,
     RagPolicy,
-    SQLiteBM25CandidateRetriever,
     SQLiteBM25QueryPlanningRetriever,
     build_query_rag_context_for_planning,
-    build_rag_context_for_ranked_candidates,
 )
 from rs_core.rsagent.context import ContextBudget, build_context_bundle
 from rs_core.rsagent.dialogue import apply_dialogue_plan, plan_dialogue_turn
 from rs_core.rsagent.inference_policy import RerankPolicyClient
+from rs_core.rsagent.llm_dialogue_planner import LLMDialoguePlanner, LLMDialoguePlannerConfig
 from rs_core.rsagent.policy import merge_feedback, normalize_feedback_input, parse_feedback
 from rs_core.rsagent.runtime import AgentRuntime
 from rs_core.rsagent.schema import AgentSession, AgentTurn
@@ -106,8 +110,10 @@ class HybridRecommendationEnvironment:
         self.tool_planner_system_prompt = build_agent_tool_planner_system_prompt()
         self.tool_planner_contract_sha = sha256(self.tool_planner_system_prompt.encode("utf-8")).hexdigest()
         self.runtime = AgentRuntime()
-        self.agent_orchestration_facade = AgentOrchestrationFacade(self.runtime)
+        self.agent_runtime_config = AgentRuntimeConfig.from_dict(self.config.get("agent_runtime") if isinstance(self.config.get("agent_runtime"), dict) else {})
+        self.agent_orchestration_facade = AgentOrchestrationFacade(self.runtime, self.agent_runtime_config)
         self.evidence_rag_facade = EvidenceRAGFacade()
+        self.rag_query_adapter = RagAgentAdapter()
 
     @classmethod
     def from_config(
@@ -186,12 +192,27 @@ class HybridRecommendationEnvironment:
         return self.agent_orchestration_facade.run_turn(self, session, user_input, explanation_item_id)
 
     def plan_dialogue(self, user_input: str, session: AgentSession, explanation_item_id: str | None = None) -> Any:
-        plan = plan_dialogue_turn(user_input, session, explanation_item_id=explanation_item_id)
+        fallback_plan = plan_dialogue_turn(user_input, session, explanation_item_id=explanation_item_id)
+        self._attach_tool_planner_contract(fallback_plan)
+        llm_config = LLMDialoguePlannerConfig.from_dict(_llm_dialogue_planner_config(self.config, self.agent_runtime_config.metadata))
+        if not llm_config.enabled or llm_config.mode == "disabled":
+            fallback_plan.diagnostics["llm_dialogue_planner"] = {"enabled": False, "mode": llm_config.mode, "status": "disabled"}
+            return fallback_plan
+        result = LLMDialoguePlanner(llm_config).plan(user_input, session, fallback_plan, explanation_item_id=explanation_item_id)
+        if llm_config.mode == "shadow":
+            fallback_plan.diagnostics["llm_dialogue_planner"] = {**result.diagnostics, "returned_plan": "fallback", "shadow_valid": result.valid}
+            return fallback_plan
+        if result.valid and result.plan is not None:
+            self._attach_tool_planner_contract(result.plan)
+            return result.plan
+        fallback_plan.diagnostics["llm_dialogue_planner"] = {**result.diagnostics, "returned_plan": "fallback"}
+        return fallback_plan
+
+    def _attach_tool_planner_contract(self, plan: Any) -> None:
         plan.diagnostics["_tool_planner_contract"] = {
             "sha256": self.tool_planner_contract_sha,
             "prompt_length": len(self.tool_planner_system_prompt),
         }
-        return plan
 
     def apply_dialogue_plan(self, session: AgentSession, plan: Any) -> Any:
         return apply_dialogue_plan(session, plan)
@@ -255,10 +276,7 @@ class HybridRecommendationEnvironment:
             if online_recommender is not None and _online_recommender_available(online_recommender):
                 return _tool_result(call.name, phase, "skipped", reason="rank_candidates_explicit_ids_unsupported_online")
         try:
-            result = self._dispatch_agent_tool_call(session, plan, phase, turn, call, active_tool_context)
-            if call.name == "query_rag" and result.status == "ok":
-                active_tool_context["query_rag"] = result.output
-            return result
+            return self._dispatch_agent_tool_call(session, plan, phase, turn, call, active_tool_context)
         except Exception as exc:
             return _tool_result(
                 call.name,
@@ -281,8 +299,10 @@ class HybridRecommendationEnvironment:
             return _tool_result(call.name, phase, "skipped", reason="unknown_tool")
         if call.name == "get_user_context":
             return _tool_result(call.name, phase, "ok", output=_get_user_context_output(session, call))
-        if call.name == "query_rag":
-            return _tool_result(call.name, phase, "ok", output=_query_rag_output(self.config, call))
+        if call.name == "call_rag_agent":
+            query_support = self._call_rag_agent_query_support(session, call, tool_context)
+            output = _public_call_rag_agent_output(query_support)
+            return _tool_result(call.name, phase, "ok", output=output)
         if call.name == "retrieve_candidates":
             normalized_policy = _normalize_retrieve_policy(call.arguments, self.config)
             call = AgentToolCall(name=call.name, arguments=normalized_policy, phase=call.phase, call_id=call.call_id)
@@ -317,9 +337,6 @@ class HybridRecommendationEnvironment:
             request = _deepfm_rank_request_from_call(call, session, turn)
             output = deepfm_rank_candidates(request).to_dict()
             return _tool_result(call.name, phase, "ok", output=_rank_candidates_output(output))
-        if call.name == "get_item_evidence":
-            output = _get_item_evidence_output(session, turn, call)
-            return _tool_result(call.name, phase, "ok", output=output)
         if call.name == "record_user_feedback":
             output = _record_user_feedback_output(session, call)
             return _tool_result(call.name, phase, "ok", output=output)
@@ -378,6 +395,106 @@ class HybridRecommendationEnvironment:
             return _tool_result(call.name, phase, "ok", output=output)
         return _tool_result(call.name, phase, "skipped", reason="unimplemented_tool")
 
+    def _call_rag_agent_query_support(self, session: AgentSession, call: AgentToolCall, tool_context: dict[str, Any]) -> dict[str, Any]:
+        query = str(call.arguments.get("query") or "").strip()
+        try:
+            support = self._rag_query_support(query)
+        except Exception as exc:
+            support = self.rag_query_adapter.build_query_support(
+                query=query,
+                applied=False,
+                reason=f"{type(exc).__name__}: {exc}",
+                metadata={"status": "error"},
+            ).to_dict()
+        retrieval_hints = support.get("retrieval_hints") if isinstance(support.get("retrieval_hints"), dict) else {}
+        applied = bool(retrieval_hints.get("applied"))
+        support_terms = _string_list(support.get("suggested_query_terms") or retrieval_hints.get("suggested_query_terms"))
+        payload = {
+            "query": query,
+            "reason": str(call.arguments.get("reason") or support.get("diagnostics", {}).get("reason") or ""),
+            "evidence": [{"field": "query_support", "text": " ".join(support_terms)}] if applied and support_terms else [],
+            "applied": applied,
+            "query_rewrite": support.get("query_rewrite"),
+            "semantic_query_hint": support.get("semantic_query_hint"),
+            "suggested_query_terms": support_terms,
+            "metadata": support.get("diagnostics") if isinstance(support.get("diagnostics"), dict) else {},
+        }
+        response = self.rag_query_adapter.invoke(RagAgentInvocation(
+            description="pre-retrieval RagAgent query support",
+            stage=RAG_AGENT_PRE_RETRIEVAL_STAGE,
+            prompt_or_task="Build internal query support before candidate retrieval.",
+            session_id=session.session_id,
+            request_id=call.call_id or f"rag-pre-{session.session_id}-{len(session.turns) + 1}",
+            payload=payload,
+        ))
+        query_support = response.query_support.to_dict() if response.query_support else support
+        tool_context["rag_agent_query_support"] = query_support
+        tool_context["query_rag"] = query_support
+        tool_context["rag_agent_query_support_alias"] = {"legacy_key": "query_rag", "status": "compatibility_alias"}
+        return query_support
+
+    def _rag_query_support(self, query: str) -> dict[str, Any]:
+        rag_config = self.config.get("rag") if isinstance(self.config.get("rag"), dict) else {}
+        fields = _string_list(rag_config.get("fields")) or list(RAG_STANDARD_FIELDS)
+        max_evidence_total = max(1, min(int(rag_config.get("query_support_max_evidence_total", rag_config.get("max_query_evidence_total", 8)) or 8), 20))
+        max_text_chars = max(40, min(int(rag_config.get("query_support_max_text_chars", rag_config.get("max_query_text_chars", 220)) or 220), 500))
+        index_path = _rag_index_path(rag_config)
+        if not query or index_path is None or not index_path.exists():
+            return self.rag_query_adapter.build_query_support(
+                query=query,
+                applied=False,
+                reason="missing_query_or_index",
+            ).to_dict()
+        rewrite_config = RagQueryRewriteConfig.from_dict(_rag_query_rewrite_config(self.config, self.agent_runtime_config.metadata))
+        rewrite_result = RagQueryRewriter(rewrite_config).rewrite(query)
+        retrieval_query = query
+        retrieval_query_source = "original_query"
+        if rewrite_config.enabled and rewrite_config.mode == "active" and rewrite_result.valid:
+            retrieval_query = rewrite_result.query_rewrite or rewrite_result.semantic_query_hint or query
+            retrieval_query_source = "rag_agent_query_rewrite"
+        elif rewrite_config.enabled and rewrite_config.mode == "shadow":
+            retrieval_query_source = "shadow_original_query"
+        elif rewrite_result.error and rewrite_result.error != "disabled":
+            retrieval_query_source = "fallback_original_query"
+        retriever = SQLiteBM25QueryPlanningRetriever(index_path, fields=fields)
+        context = build_query_rag_context_for_planning(
+            query=retrieval_query,
+            retriever=retriever,
+            policy=RagPolicy(
+                mode="shadow",
+                max_evidence_per_item=1,
+                max_evidence_total=max_evidence_total,
+                max_text_chars=max_text_chars,
+                allowed_fields=fields,
+            ),
+            metadata={
+                "retriever": "sqlite_bm25_query_planning",
+                "retrieval_query_source": retrieval_query_source,
+                "retrieval_scope": "query_planning",
+                "candidate_scoped": False,
+                "final_rag": False,
+                "used_for": "semantic_query_hint_only",
+            },
+        )
+        return self.rag_query_adapter.build_query_support(
+            query=query,
+            evidence=context.evidence,
+            applied=bool(context.evidence),
+            query_rewrite=rewrite_result.query_rewrite if rewrite_result.valid else None,
+            semantic_query_hint=rewrite_result.semantic_query_hint if rewrite_result.valid else None,
+            suggested_query_terms=rewrite_result.suggested_query_terms if rewrite_result.valid else None,
+            metadata={
+                "retriever": "sqlite_bm25_query_planning",
+                "retrieval_query_source": retrieval_query_source,
+                "retrieval_query_changed": retrieval_query != query,
+                "retrieval_scope": "query_planning",
+                "candidate_scoped": False,
+                "final_rag": False,
+                "used_for": "semantic_query_hint_only",
+                "query_rewrite": rewrite_result.diagnostics,
+            },
+        ).to_dict()
+
     def _semantic_live_retrieve_candidates(
         self,
         call: AgentToolCall,
@@ -397,7 +514,7 @@ class HybridRecommendationEnvironment:
             item_metadata=self.item_metadata,
             item_category=self.item_category,
             semantic_mode=semantic_mode,
-            query_rag_context=(tool_context or {}).get("query_rag"),
+            query_rag_context=(tool_context or {}).get("rag_agent_query_support") or (tool_context or {}).get("query_rag"),
         )
         if not query:
             return None
@@ -804,81 +921,6 @@ def _cold_start_sequence(user_id: str) -> dict[str, Any]:
     }
 
 
-def _query_rag_output(config: dict[str, Any], call: AgentToolCall) -> dict[str, Any]:
-    arguments = call.arguments
-    query = str(arguments.get("query") or "").strip()
-    rag_config = config.get("rag") if isinstance(config.get("rag"), dict) else {}
-    fields = _string_list(arguments.get("fields")) or _string_list(rag_config.get("fields")) or list(RAG_STANDARD_FIELDS)
-    max_evidence_total = max(1, min(int(arguments.get("max_evidence_total", 8) or 8), 20))
-    max_text_chars = max(40, min(int(arguments.get("max_text_chars", 220) or 220), 500))
-    index_path = _rag_index_path(rag_config)
-    if not query or index_path is None or not index_path.exists():
-        return QueryRagOutput(
-            query=query,
-            retrieval_hints=_query_rag_boundaries(applied=False),
-            diagnostics={"compact": True, "reason": "missing_query_or_index"},
-        ).to_dict()
-
-    retriever = SQLiteBM25QueryPlanningRetriever(index_path, fields=fields)
-    context = build_query_rag_context_for_planning(
-        query=query,
-        retriever=retriever,
-        policy=RagPolicy(
-            mode="shadow",
-            max_evidence_per_item=1,
-            max_evidence_total=max_evidence_total,
-            max_text_chars=max_text_chars,
-            allowed_fields=fields,
-        ),
-        metadata={"retriever": "sqlite_bm25_query_planning"},
-    )
-    evidence = context.evidence
-    suggested_terms = _query_rag_suggested_terms(query, evidence)
-    semantic_query_hint = " ".join(part for part in [query, " ".join(suggested_terms)] if part).strip()
-    return QueryRagOutput(
-        query=query,
-        query_rewrite=semantic_query_hint,
-        semantic_query_hint=semantic_query_hint,
-        suggested_query_terms=suggested_terms,
-        retrieval_hints={
-            **_query_rag_boundaries(applied=bool(evidence)),
-            "semantic_query": semantic_query_hint,
-            "suggested_query_terms": suggested_terms,
-        },
-        diagnostics={
-            "compact": True,
-            "evidence_count": len(evidence),
-            "retrieval_scope": "query_planning",
-            "candidate_scoped": False,
-        },
-    ).to_dict()
-
-
-def _query_rag_boundaries(*, applied: bool) -> dict[str, Any]:
-    return {
-        "applied": applied,
-        "retrieval_scope": "query_planning",
-        "candidate_generation_allowed": False,
-        "ranking_input_replacement_allowed": False,
-        "promotion_allowed": False,
-        "public_payload_allowed": False,
-    }
-
-
-def _query_rag_suggested_terms(query: str, evidence: list[Any]) -> list[str]:
-    existing = set(tokens(query))
-    blocked = existing | {"and", "with", "for", "the", "item", "product", "recommend"}
-    terms: list[str] = []
-    for row in evidence:
-        for token in tokens(f"{row.field} {row.text}"):
-            if token in blocked or token in terms or len(token) < 3:
-                continue
-            terms.append(token)
-            if len(terms) >= 8:
-                return terms
-    return terms
-
-
 def _normalize_retrieve_policy(arguments: dict[str, Any] | None, config: dict[str, Any] | None = None) -> dict[str, Any]:
     raw = dict(arguments) if isinstance(arguments, dict) else {}
     route_policy = raw.get("route_policy") if isinstance(raw.get("route_policy"), dict) else {}
@@ -1232,37 +1274,6 @@ def _rank_candidates_output_governance() -> dict[str, Any]:
     }
 
 
-def _get_item_evidence_output(session: AgentSession, turn: AgentTurn | None, call: AgentToolCall) -> dict[str, Any]:
-    source_turn = _source_turn(session, turn)
-    requested_ids = _string_list(call.arguments.get("item_ids"))
-    if not requested_ids:
-        requested_ids = _turn_final_item_ids(source_turn) or _turn_candidate_item_ids(source_turn)
-    max_per_item = max(1, int(call.arguments.get("max_evidence_per_item", 3) or 3))
-    max_total = max(1, int(call.arguments.get("max_evidence_total", 12) or 12))
-    max_text_chars = max(1, int(call.arguments.get("max_text_chars", call.arguments.get("max_evidence_text_chars", 180)) or 180))
-    evidence = _rag_evidence_by_item(source_turn, requested_ids, max_per_item, max_total, max_text_chars)
-    used_rag_context = bool(evidence)
-    if not evidence:
-        evidence = _display_card_evidence_by_item(source_turn, requested_ids, max_per_item, max_total, max_text_chars)
-    evidence_count = sum(len(rows) for rows in evidence.values())
-    return {
-        "evidence": evidence,
-        "item_count": len(evidence),
-        "evidence_count": evidence_count,
-        "diagnostics": {
-            "compact": True,
-            "source_turn_index": source_turn.turn_index if source_turn else None,
-            "used_rag_context": used_rag_context,
-            "budget": {
-                "max_evidence_per_item": max_per_item,
-                "max_evidence_total": max_total,
-                "max_text_chars": max_text_chars,
-                "retained_evidence_count": evidence_count,
-            },
-        },
-    }
-
-
 def _record_user_feedback_output(session: AgentSession, call: AgentToolCall) -> dict[str, Any]:
     feedback_text = normalize_feedback_input(str(call.arguments.get("feedback_text") or call.arguments.get("comment") or ""))
     action_type = str(call.arguments.get("action_type") or "").strip().lower()
@@ -1313,76 +1324,6 @@ def _source_turn(session: AgentSession, turn: AgentTurn | None) -> AgentTurn | N
     return turn
 
 
-def _turn_final_item_ids(turn: AgentTurn | None) -> list[str]:
-    return _item_ids(turn.recommendation.final_items) if turn else []
-
-
-def _rag_evidence_by_item(
-    turn: AgentTurn | None,
-    item_ids: list[str],
-    max_per_item: int,
-    max_total: int,
-    max_text_chars: int,
-) -> dict[str, list[dict[str, Any]]]:
-    if not turn or not isinstance(turn.rag_context, dict):
-        return {}
-    allowed_ids = set(item_ids)
-    evidence_by_item: dict[str, list[dict[str, Any]]] = {item_id: [] for item_id in item_ids}
-    retained = 0
-    for row in turn.rag_context.get("evidence", []) or []:
-        if retained >= max_total:
-            break
-        if not isinstance(row, dict):
-            continue
-        item_id = str(row.get("item_id") or "")
-        if not item_id or (allowed_ids and item_id not in allowed_ids):
-            continue
-        bucket = evidence_by_item.setdefault(item_id, [])
-        if len(bucket) >= max_per_item:
-            continue
-        bucket.append({
-            "field": row.get("field"),
-            "text": _truncate_text(row.get("text"), max_text_chars),
-        })
-        retained += 1
-    return {item_id: rows for item_id, rows in evidence_by_item.items() if rows}
-
-
-def _display_card_evidence_by_item(
-    turn: AgentTurn | None,
-    item_ids: list[str],
-    max_per_item: int,
-    max_total: int,
-    max_text_chars: int,
-) -> dict[str, list[dict[str, Any]]]:
-    if turn is None:
-        return {}
-    cards = _display_safe_item_cards([*turn.recommendation.final_items, *turn.ranking])
-    evidence: dict[str, list[dict[str, Any]]] = {}
-    retained = 0
-    for item_id in item_ids:
-        if retained >= max_total:
-            break
-        card = cards.get(item_id)
-        if not card:
-            continue
-        rows = []
-        for field in ("title", "category", "store", "summary", "features", "description"):
-            if retained >= max_total:
-                break
-            value = card.get(field)
-            if value in (None, "", []):
-                continue
-            text = "; ".join(value) if isinstance(value, list) else str(value)
-            rows.append({"field": field, "text": _truncate_text(text, max_text_chars)})
-            retained += 1
-            if len(rows) >= max_per_item:
-                break
-        if rows:
-            evidence[item_id] = rows
-    return evidence
-
-
 def _planned_tool_calls(plan: Any) -> list[AgentToolCall]:
     calls = normalize_agent_tool_calls(getattr(plan, "tool_calls", []))
     diagnostics = getattr(plan, "diagnostics", {})
@@ -1395,6 +1336,22 @@ def _planned_tool_calls(plan: Any) -> list[AgentToolCall]:
 def _online_recommender_available(online_recommender: Any) -> bool:
     readiness = online_recommender.readiness()
     return bool(readiness.get("complete_pool500_available") or readiness.get("online_source_indexes_available"))
+
+
+def _public_call_rag_agent_output(query_support: dict[str, Any]) -> dict[str, Any]:
+    retrieval_hints = query_support.get("retrieval_hints") if isinstance(query_support.get("retrieval_hints"), dict) else {}
+    terms = _string_list(query_support.get("suggested_query_terms") or retrieval_hints.get("suggested_query_terms"))
+    diagnostics = query_support.get("diagnostics") if isinstance(query_support.get("diagnostics"), dict) else {}
+    return {
+        "stage": str(query_support.get("call_stage") or RAG_AGENT_PRE_RETRIEVAL_STAGE),
+        "status": str(diagnostics.get("status") or "skipped"),
+        "applied": bool(retrieval_hints.get("applied")),
+        "term_count": len(terms),
+        "public_payload_allowed": False,
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+    }
 
 
 def _tool_result(
@@ -1625,13 +1582,6 @@ def _safe_float(value: Any, default: float) -> float:
         return default
 
 
-def _truncate_text(value: Any, max_chars: int) -> str:
-    text = "" if value in (None, "") else str(value).strip()
-    if len(text) <= max_chars:
-        return text
-    return text[:max_chars] + "..."
-
-
 def _string_list(value: Any) -> list[str]:
     if value in (None, ""):
         return []
@@ -1697,51 +1647,7 @@ def _build_turn_rag_context(
     ranked_items: list[dict[str, Any]],
     final_items: list[dict[str, Any]],
 ) -> dict[str, Any] | None:
-    rag_config = config.get("rag") if isinstance(config.get("rag"), dict) else {}
-    mode = str(rag_config.get("evidence_mode", "off"))
-    if mode not in {"shadow", "explain"}:
-        return None
-    max_evidence_per_item = int(rag_config.get("max_evidence_per_item", 3) or 3)
-    max_evidence_total = int(rag_config.get("max_evidence_total", 12) or 12)
-    max_text_chars = int(rag_config.get("max_text_chars", rag_config.get("max_evidence_text_chars", 180)) or 180)
-    fields = _string_list(rag_config.get("fields")) or list(RAG_STANDARD_FIELDS)
-    item_cards = _display_safe_item_cards([*ranked_items, *final_items])
-    candidate_item_ids = [item_id for item_id in _ranked_item_ids(ranked_items) if item_id in item_cards]
-    retriever_name = "in_memory_candidate_card"
-    retriever = InMemoryCandidateCardRetriever(item_cards, fields=fields)
-    retriever_config = str(rag_config.get("retriever", "")).strip().lower()
-    index_path = _rag_index_path(rag_config)
-    if index_path is not None and index_path.exists() and retriever_config == "hybrid":
-        hybrid_config = rag_config.get("hybrid") if isinstance(rag_config.get("hybrid"), dict) else {}
-        retriever = HybridCandidateRetriever(
-            index_path,
-            vector_index_path=_rag_vector_index_path(rag_config, index_path),
-            bm25_weight=float(hybrid_config.get("bm25_weight", 0.65)),
-            vector_weight=float(hybrid_config.get("vector_weight", 0.35)),
-            vector_dim=int(hybrid_config.get("vector_dim", 256)),
-            vector_top_k_multiplier=int(hybrid_config.get("vector_top_k_multiplier", 4)),
-            fusion_method=str(hybrid_config.get("fusion_method", "weighted")),
-            rrf_k=int(hybrid_config.get("rrf_k", 60)),
-            field_weights=_field_weights(hybrid_config.get("field_weights")),
-        )
-        retriever_name = "hybrid"
-    elif index_path is not None and index_path.exists() and retriever_config != "in_memory_candidate_card":
-        retriever = SQLiteBM25CandidateRetriever(index_path)
-        retriever_name = "sqlite_bm25"
-    context = build_rag_context_for_ranked_candidates(
-        query=query,
-        candidate_item_ids=candidate_item_ids,
-        retriever=retriever,
-        policy=RagPolicy(
-            mode=mode,
-            max_evidence_per_item=max_evidence_per_item,
-            max_evidence_total=max_evidence_total,
-            max_text_chars=max_text_chars,
-            allowed_fields=fields,
-        ),
-        metadata={"evidence_mode": mode, "retriever": retriever_name},
-    )
-    return context.to_dict()
+    return EvidenceRAGFacade().build_turn_rag_context(config, query, ranked_items, final_items)
 
 
 def _rag_index_path(rag_config: dict[str, Any]) -> Path | None:
@@ -1849,8 +1755,14 @@ def _enrich_items(items: list[dict[str, Any]], item_metadata: dict[str, dict[str
 def _rag_diagnostics(rag_context: dict[str, Any]) -> dict[str, Any]:
     metadata = rag_context.get("metadata") if isinstance(rag_context.get("metadata"), dict) else {}
     diagnostics = metadata.get("rag_diagnostics") if isinstance(metadata.get("rag_diagnostics"), dict) else {}
-    return {
+    small2big = metadata.get("small2big") if isinstance(metadata.get("small2big"), dict) else {}
+    result = {
         "evidence_mode": metadata.get("evidence_mode"),
+        "retriever": metadata.get("retriever"),
+        "retrieval_scope": "post_ranking_candidate_scoped_rag",
+        "candidate_scoped": True,
+        "final_rag": True,
+        "small2big_enabled": bool(small2big.get("enabled")),
         "kept_evidence_count": diagnostics.get("kept_evidence_count", 0),
         "dropped_non_candidate_evidence_count": diagnostics.get("dropped_non_candidate_evidence_count", 0),
         "dropped_policy_violation_count": diagnostics.get("dropped_policy_violation_count", 0),
@@ -1860,12 +1772,46 @@ def _rag_diagnostics(rag_context: dict[str, Any]) -> dict[str, Any]:
         "max_evidence_total": diagnostics.get("max_evidence_total"),
         "max_text_chars": diagnostics.get("max_text_chars"),
     }
+    if small2big.get("parent_field"):
+        result["small2big_parent_field"] = small2big.get("parent_field")
+    return result
 
 
 
 def _resolve_path(value: str | Path) -> Path:
     path = Path(value)
     return path if path.is_absolute() else ROOT / path
+
+
+def _llm_dialogue_planner_config(config: dict[str, Any], runtime_metadata: dict[str, Any]) -> dict[str, Any]:
+    runtime_value = runtime_metadata.get("llm_dialogue_planner") if isinstance(runtime_metadata, dict) else None
+    if isinstance(runtime_value, dict):
+        return runtime_value
+    agent_runtime = config.get("agent_runtime") if isinstance(config.get("agent_runtime"), dict) else {}
+    runtime_value = agent_runtime.get("llm_dialogue_planner") if isinstance(agent_runtime.get("llm_dialogue_planner"), dict) else None
+    if isinstance(runtime_value, dict):
+        return runtime_value
+    return {}
+
+
+
+def _rag_query_rewrite_config(config: dict[str, Any], runtime_metadata: dict[str, Any]) -> dict[str, Any]:
+    runtime_value = runtime_metadata.get("rag_query_rewrite") if isinstance(runtime_metadata, dict) else None
+    if isinstance(runtime_value, dict):
+        return runtime_value
+    rag_agent_value = runtime_metadata.get("rag_agent") if isinstance(runtime_metadata, dict) else None
+    if isinstance(rag_agent_value, dict) and isinstance(rag_agent_value.get("query_rewrite"), dict):
+        return rag_agent_value["query_rewrite"]
+    agent_runtime = config.get("agent_runtime") if isinstance(config.get("agent_runtime"), dict) else {}
+    runtime_value = agent_runtime.get("rag_query_rewrite") if isinstance(agent_runtime.get("rag_query_rewrite"), dict) else None
+    if isinstance(runtime_value, dict):
+        return runtime_value
+    rag_config = config.get("rag") if isinstance(config.get("rag"), dict) else {}
+    rewrite_value = rag_config.get("query_rewrite") if isinstance(rag_config.get("query_rewrite"), dict) else None
+    if isinstance(rewrite_value, dict):
+        return rewrite_value
+    return {}
+
 
 
 def _merge_nested(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, Any]:

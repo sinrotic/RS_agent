@@ -10,10 +10,12 @@ from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
 from rs_core.recsys.ranking import rank_candidates
 from rs_core.rsagent.inference_policy import (
     InferencePolicyError,
+    ModelOutputParseError,
     QWEN_POLICY_TYPE,
     RerankPolicyResult,
     RerankSignal,
     apply_optional_inference_policy,
+    resolve_inference_policy_config,
 )
 from rs_core.rsagent.rollout import turn_to_rollout_record
 from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
@@ -36,6 +38,21 @@ class FailingClient:
         raise InferencePolicyError("model failed")
 
 
+class FakeOpenAIClient:
+    def __init__(self, content: str) -> None:
+        self.content = content
+        self.calls: list[dict] = []
+
+    def chat_completion(self, **kwargs) -> dict:
+        self.calls.append(kwargs)
+        return {
+            "id": "chatcmpl-unit",
+            "model": kwargs["model"],
+            "choices": [{"message": {"content": self.content}, "finish_reason": "stop"}],
+            "usage": {"total_tokens": 11},
+        }
+
+
 def test_disabled_inference_policy_leaves_candidates_unchanged():
     candidates = merge_candidates([RecallCandidate("a", "popular", 1.0)])
 
@@ -50,6 +67,143 @@ def test_disabled_inference_policy_leaves_candidates_unchanged():
     assert updated == candidates
     assert diagnostics["inference_policy"]["enabled"] is False
     assert diagnostics["inference_policy"]["policy_type"] == "deterministic_baseline"
+
+
+def test_default_inference_policy_is_disabled_provider():
+    policy = resolve_inference_policy_config({})
+
+    assert policy["enabled"] is False
+    assert policy["provider"] == "disabled"
+    assert policy["available_providers"] == ["disabled", "openai_compatible", "local_transformers"]
+    assert policy["model"]["local_files_only"] is True
+
+
+def test_openai_compatible_env_policy_selects_provider(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_AGENT_INFERENCE_POLICY", "openai_compatible")
+    monkeypatch.setenv("RS_AGENT_OPENAI_COMPATIBLE_BASE_URL", "http://localhost:8000/v1")
+    monkeypatch.setenv("RS_AGENT_OPENAI_COMPATIBLE_MODEL", "qwen-unit")
+
+    policy = resolve_inference_policy_config({})
+
+    assert policy["enabled"] is True
+    assert policy["provider"] == "openai_compatible"
+    assert policy["openai_compatible"]["base_url"] == "http://localhost:8000/v1"
+    assert policy["openai_compatible"]["model"] == "qwen-unit"
+    assert policy["model"]["model_id"] == "qwen-unit"
+
+
+    policy = resolve_inference_policy_config(
+        {
+            "inference_policy": {
+                "enabled": True,
+                "provider": "openai_compatible",
+                "openai_compatible": {
+                    "api_base_env": "RS_AGENT_OPENAI_COMPATIBLE_BASE_URL",
+                    "api_key_env": "RS_AGENT_OPENAI_COMPATIBLE_API_KEY",
+                    "model_env": "RS_AGENT_OPENAI_COMPATIBLE_MODEL",
+                },
+            }
+        }
+    )
+
+    assert policy["enabled"] is True
+    assert policy["provider"] == "openai_compatible"
+    assert policy["openai_compatible"]["api_key_env"] == "RS_AGENT_OPENAI_COMPATIBLE_API_KEY"
+    assert policy["model"]["local_files_only"] is True
+
+
+def test_openai_compatible_provider_without_endpoint_falls_back_without_local_model_load(monkeypatch: pytest.MonkeyPatch):
+    candidates = merge_candidates([RecallCandidate("a", "popular", 1.0)])
+    monkeypatch.delenv("RS_AGENT_OPENAI_COMPATIBLE_BASE_URL", raising=False)
+    monkeypatch.delenv("RS_AGENT_OPENAI_COMPATIBLE_API_KEY", raising=False)
+
+    updated, diagnostics = apply_optional_inference_policy(
+        user_sequence={"user_id": "u1"},
+        candidates=candidates,
+        feedback_constraints=None,
+        config={"inference_policy": {"enabled": True, "provider": "openai_compatible"}},
+    )
+
+    assert updated == candidates
+    assert diagnostics["inference_policy"]["fallback_used"] is True
+    assert diagnostics["inference_policy"]["fallback_reason"] == "InferencePolicyError"
+    assert diagnostics["inference_policy"]["route"] == "openai_compatible"
+
+
+def test_openai_compatible_adapter_success_parses_signal():
+    from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+
+    candidates = merge_candidates([RecallCandidate("a", "popular", 1.0, category="Audio")])
+    client = OpenAICompatibleRerankClient(
+        {
+            "provider": "openai_compatible",
+            "policy_type": QWEN_POLICY_TYPE,
+            "model": {"model_id": "unit-model"},
+            "openai_compatible": {"model": "unit-model", "max_tokens": 64, "temperature": 0.0},
+        },
+        client=FakeOpenAIClient('{"signals":[{"item_id":"a","delta":0.4,"confidence":0.5,"reason":"match","tags":["audio"]}],"policy_notes":"ok"}'),
+    )
+
+    result = client.rerank(user_sequence={"user_id": "u1"}, feedback_constraints=None, candidates=candidates, config={})
+
+    assert result.signals == [RerankSignal("a", 0.4, confidence=0.5, reason="match", tags=["audio"])]
+    assert result.diagnostics["provider"] == "openai_compatible"
+    assert result.diagnostics["response_metadata"]["id"] == "chatcmpl-unit"
+
+
+def test_openai_compatible_adapter_invalid_json_falls_back():
+    from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+
+    candidates = merge_candidates([RecallCandidate("a", "popular", 1.0)])
+    client = OpenAICompatibleRerankClient(
+        {"provider": "openai_compatible", "model": {"model_id": "unit-model"}, "openai_compatible": {"model": "unit-model"}},
+        client=FakeOpenAIClient("not json"),
+    )
+
+    updated, diagnostics = apply_optional_inference_policy(
+        user_sequence={"user_id": "u1"},
+        candidates=candidates,
+        feedback_constraints=None,
+        config={"inference_policy": {"enabled": True, "provider": "openai_compatible"}},
+        client=client,
+    )
+
+    assert updated == candidates
+    assert diagnostics["inference_policy"]["fallback_used"] is True
+    assert diagnostics["inference_policy"]["fallback_reason"] == "ModelOutputParseError"
+
+
+def test_openai_compatible_adapter_invalid_json_raises_when_strict():
+    from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+
+    candidates = merge_candidates([RecallCandidate("a", "popular", 1.0)])
+    client = OpenAICompatibleRerankClient(
+        {"provider": "openai_compatible", "model": {"model_id": "unit-model"}, "openai_compatible": {"model": "unit-model"}},
+        client=FakeOpenAIClient("not json"),
+    )
+
+    with pytest.raises(ModelOutputParseError):
+        apply_optional_inference_policy(
+            user_sequence={"user_id": "u1"},
+            candidates=candidates,
+            feedback_constraints=None,
+            config={"inference_policy": {"enabled": True, "provider": "openai_compatible", "strict": True}},
+            client=client,
+        )
+
+
+def test_local_transformers_provider_keeps_local_files_only_default():
+    policy = resolve_inference_policy_config({"inference_policy": {"enabled": True, "provider": "local_transformers"}})
+
+    assert policy["provider"] == "local_transformers"
+    assert policy["model"]["model_id"] == "Qwen/Qwen3.5-4B"
+    assert policy["model"]["local_files_only"] is True
+
+
+def test_legacy_qwen_local_provider_aliases_to_local_transformers():
+    policy = resolve_inference_policy_config({"inference_policy": {"enabled": True, "provider": "qwen_local"}})
+
+    assert policy["provider"] == "local_transformers"
 
 
 def test_fake_qwen_signal_adds_agent_boost_and_rerank_event():
@@ -151,7 +305,7 @@ def test_only_after_feedback_allows_call_after_feedback():
 
     assert len(client.calls) == 1
     assert updated[0].source_scores["feedback_model_rerank"] == 0.2
-    assert diagnostics["inference_policy"]["route"] == "qwen_local"
+    assert diagnostics["inference_policy"]["route"] == "local_transformers"
     assert diagnostics["inference_policy"]["accepted_signal_count"] == 1
 
 

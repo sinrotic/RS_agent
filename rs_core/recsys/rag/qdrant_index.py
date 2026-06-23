@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import numpy as np
 
@@ -17,9 +18,7 @@ from rs_core.recsys.rag.vector_index import (
     TextEmbeddingBackend,
 )
 from rs_core.recsys.vectorstores.qdrant_builders import (
-    batched,
     build_store,
-    created_at_utc,
     qdrant_collection_manifest_base,
     validate_qdrant_build_controls,
     write_manifest_if_requested,
@@ -70,42 +69,41 @@ def build_qdrant_rag_chunk_index(
         raise ValueError("non-dry-run Qdrant RAG build requires --source-manifest for provenance validation")
 
     selected_fields = list(fields or DEFAULT_RAG_FIELDS)
-    item_row_count = 0
-    indexed_item_ids: set[str] = set()
-    chunks: list[RagItemChunk] = []
-    build_started_at = created_at_utc()
-    index_build_id = stable_qdrant_point_id("rag_build", item_file, selected_fields, max_chunk_chars, limit_items or "all", corpus_scope, build_started_at)
-    for item in iter_jsonl(item_file):
-        if limit_items is not None and item_row_count >= limit_items:
-            break
-        item_row_count += 1
-        item_chunks = chunk_item_record(
-            item,
-            fields=selected_fields,
-            max_chunk_chars=max_chunk_chars,
-            source="catalog_rag_chunk",
-        )
-        if item_chunks:
-            indexed_item_ids.update(chunk.item_id for chunk in item_chunks)
-            chunks.extend(item_chunks)
-
-    vector_size: int | None = None
-    upserted_chunk_count = 0
-    if not dry_run and chunks:
+    index_build_id = stable_qdrant_point_id("rag_build", item_file, selected_fields, max_chunk_chars, limit_items or "all", corpus_scope, uuid4().hex)
+    backend = None
+    store = None
+    if not dry_run:
         backend = embedding_backend or SentenceTransformerEmbeddingBackend(
             model_name=embedding_model_name,
             query_prefix=query_prefix,
             passage_prefix=passage_prefix,
         )
+
+    item_row_count = 0
+    indexed_item_ids: set[str] = set()
+    chunk_count = 0
+    upserted_chunk_count = 0
+    vector_size: int | None = None
+    stale_chunks_deleted = False
+    pending_chunks: list[RagItemChunk] = []
+
+    def flush_pending() -> None:
+        nonlocal store, upserted_chunk_count, vector_size
+        if dry_run or not pending_chunks:
+            pending_chunks.clear()
+            return
+        active_chunks = pending_chunks[:batch_size]
+        assert backend is not None
         vectors = _encode_chunks(
-            chunks,
+            active_chunks,
             backend=backend,
             normalize_embeddings=normalize_embeddings,
             embedding_batch_size=embedding_batch_size,
         )
-        _validate_vectors(chunks, vectors)
-        vector_size = len(vectors[0])
-        if vector_size:
+        _validate_vectors(active_chunks, vectors)
+        batch_vector_size = len(vectors[0])
+        if vector_size is None:
+            vector_size = batch_vector_size
             store = build_store(qdrant_config)
             store.ensure_collection(
                 QdrantCollectionSpec(
@@ -116,34 +114,61 @@ def build_qdrant_rag_chunk_index(
                     payload_indexes=QDRANT_RAG_PAYLOAD_INDEX_FIELDS,
                 )
             )
-            for batch in batched(zip(chunks, vectors, strict=True), batch_size):
-                store.upsert_points(
-                    collection_name=collection_name,
-                    points=[
-                        (
-                            stable_qdrant_point_id("rag", chunk.item_id, chunk.field, chunk.metadata.get("chunk_index", index)),
-                            vector,
-                            rag_chunk_payload(
-                                item_id=chunk.item_id,
-                                field=chunk.field,
-                                text=chunk.text,
-                                source=chunk.source,
-                                chunk_index=int(chunk.metadata.get("chunk_index", index)),
-                                corpus_scope=corpus_scope,
-                                embedding_method=SENTENCE_TRANSFORMER_VECTOR_METHOD,
-                                embedding_model_name=embedding_model_name,
-                                index_build_id=index_build_id,
-                                metadata=chunk.metadata,
-                            ),
-                        )
-                        for index, (chunk, vector) in enumerate(batch)
-                    ],
+        elif batch_vector_size != vector_size:
+            raise ValueError(f"RAG embedding dimension mismatch: expected {vector_size}, got {batch_vector_size}")
+        assert store is not None
+        store.upsert_points(
+            collection_name=collection_name,
+            points=[
+                (
+                    stable_qdrant_point_id("rag", corpus_scope, chunk.item_id, chunk.field, chunk.metadata.get("chunk_index", index)),
+                    vector,
+                    rag_chunk_payload(
+                        item_id=chunk.item_id,
+                        field=chunk.field,
+                        text=chunk.text,
+                        source=chunk.source,
+                        chunk_index=int(chunk.metadata.get("chunk_index", index)),
+                        corpus_scope=corpus_scope,
+                        embedding_method=SENTENCE_TRANSFORMER_VECTOR_METHOD,
+                        embedding_model_name=embedding_model_name,
+                        index_build_id=index_build_id,
+                        metadata=chunk.metadata,
+                    ),
                 )
-                upserted_chunk_count += len(batch)
-            store.delete_points_by_filter(
-                collection_name=collection_name,
-                query_filter=_stale_rag_build_filter(corpus_scope, index_build_id),
-            )
+                for index, (chunk, vector) in enumerate(zip(active_chunks, vectors, strict=True))
+            ],
+        )
+        upserted_chunk_count += len(active_chunks)
+        del pending_chunks[:batch_size]
+
+    for item in iter_jsonl(item_file):
+        if limit_items is not None and item_row_count >= limit_items:
+            break
+        item_row_count += 1
+        item_chunks = chunk_item_record(
+            item,
+            fields=selected_fields,
+            max_chunk_chars=max_chunk_chars,
+            source="catalog_rag_chunk",
+        )
+        if not item_chunks:
+            continue
+        indexed_item_ids.update(chunk.item_id for chunk in item_chunks)
+        chunk_count += len(item_chunks)
+        pending_chunks.extend(item_chunks)
+        while len(pending_chunks) >= batch_size:
+            flush_pending()
+    flush_pending()
+    if not dry_run and upserted_chunk_count > 0:
+        if store is None:
+            store = build_store(qdrant_config)
+        store.delete_points_by_filter(
+            collection_name=collection_name,
+            query_filter=_stale_rag_build_filter(corpus_scope, index_build_id),
+            ignore_missing=True,
+        )
+        stale_chunks_deleted = True
 
     manifest = qdrant_collection_manifest_base(
         schema_version=QDRANT_RAG_CHUNK_INDEX_MANIFEST_SCHEMA_VERSION,
@@ -161,10 +186,10 @@ def build_qdrant_rag_chunk_index(
             "max_chunk_chars": int(max_chunk_chars),
             "item_row_count": item_row_count,
             "indexed_item_count": len(indexed_item_ids),
-            "chunk_count": len(chunks),
+            "chunk_count": chunk_count,
             "upserted_chunk_count": upserted_chunk_count,
             "index_build_id": index_build_id,
-            "stale_chunks_deleted_for_corpus": bool(not dry_run and chunks),
+            "stale_chunks_deleted_for_corpus": stale_chunks_deleted,
             "limit_items": limit_items,
             "embedding_method": SENTENCE_TRANSFORMER_VECTOR_METHOD,
             "embedding_model_name": embedding_model_name,
@@ -200,11 +225,6 @@ def _encode_chunks(
     else:
         encoded = backend.encode(texts, normalize=normalize_embeddings, batch_size=embedding_batch_size)
     return [[float(value) for value in row] for row in np.asarray(encoded, dtype=np.float32).tolist()]
-
-
-def _validate_limit_items(limit_items: int | None) -> None:
-    if limit_items is not None and limit_items < 0:
-        raise ValueError("limit_items must be non-negative")
 
 
 def _validate_vectors(chunks: list[RagItemChunk], vectors: list[list[float]]) -> None:

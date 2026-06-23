@@ -9,7 +9,7 @@ import pytest
 from rs_core.common.io import write_jsonl
 from rs_core.display import validate_public_display_payload
 from rs_core.rsagent.long_memory import InMemoryLongMemoryStore, LongMemoryConfig
-from rs_core.serving.service import RecommendationService
+from rs_core.serving.application.recommendation_service import RecommendationService
 
 pytestmark = pytest.mark.serving
 
@@ -100,6 +100,52 @@ def test_service_long_memory_does_not_leak_between_users(tmp_path: Path):
     assert other.user_profile.liked_item_ids == []
     other_memory = store.load_user_memory("u2")
     assert other_memory is None or other_memory.entries == []
+
+
+def test_service_memory_agent_shadow_does_not_change_long_memory_restore(tmp_path: Path):
+    store = InMemoryLongMemoryStore()
+    service = RecommendationService(
+        str(_write_serving_fixture(tmp_path)),
+        limit_users=1,
+        long_memory_config=LongMemoryConfig(enabled=True),
+        long_memory_store=store,
+    )
+    service.env.agent_orchestration_facade.runtime_config.metadata["memory_agent"] = {"enabled": True, "mode": "shadow"}
+    first_session = service.start_session("u1")
+    first = service.chat(first_session, "For commute, prefer bluetooth and Audio")
+    liked_item = first.display["items"][0]["parent_asin"]
+
+    service.feedback(first_session, "like", liked_item)
+    second_session = service.start_session("u1")
+    second = service.get_agent_session(second_session)
+    second_display = service.chat(second_session, "Need bluetooth for commute").display
+    exported = service.export_session(second_session)
+
+    assert liked_item in second.active_constraints.liked_item_ids
+    assert liked_item in second.user_profile.liked_item_ids
+    assert "memory_agent_shadow" in service.get_agent_session(second_session).turns[-1].diagnostics
+    public_text = json.dumps({"display": second_display, "exported": exported}, ensure_ascii=False).lower()
+    assert "memory_agent" not in public_text
+    assert "long_memory" not in public_text
+    assert "typed_memory" not in public_text
+
+
+def test_service_memory_agent_shadow_fail_open_on_adapter_error(tmp_path: Path):
+    service = RecommendationService(str(_write_serving_fixture(tmp_path)), limit_users=1)
+    service.env.agent_orchestration_facade.runtime_config.metadata["memory_agent"] = {"enabled": True, "mode": "shadow"}
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("private memory path /tmp/memory.log")
+
+    service.env.agent_orchestration_facade.memory_shadow_adapter.attach_shadow_report = explode  # type: ignore[method-assign]
+    session_id = service.start_session("u1")
+
+    result = service.chat(session_id, "For commute, prefer bluetooth and Audio")
+
+    assert result.display["items"]
+    turn = service.get_agent_session(session_id).turns[-1]
+    assert turn.diagnostics["memory_agent_shadow"]["status"] == "error"
+    assert "memory_agent" not in json.dumps(result.display, ensure_ascii=False).lower()
 
 
 def test_service_long_memory_public_export_and_display_do_not_leak_internal_fields(tmp_path: Path):

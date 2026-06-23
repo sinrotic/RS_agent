@@ -41,16 +41,32 @@ class HybridCandidateRetriever:
         max_evidence_per_item: int = 3,
     ) -> list[RagEvidence]:
         candidate_ids = [str(item_id) for item_id in candidate_item_ids if str(item_id)]
-        if not candidate_ids or not query or not Path(self.index_path).exists():
+        if not candidate_ids or not query:
             return []
 
-        bm25_evidence = SQLiteBM25CandidateRetriever(self.index_path).retrieve(query, candidate_ids, max_evidence_per_item)
+        bm25_evidence = []
+        has_bm25_index = Path(self.index_path).exists()
+        has_vector_fallback = self._has_configured_vector_fallback()
+        if has_bm25_index:
+            try:
+                bm25_evidence = SQLiteBM25CandidateRetriever(self.index_path).retrieve(query, candidate_ids, max_evidence_per_item)
+            except sqlite3.Error:
+                if not has_vector_fallback:
+                    raise
+        elif not has_vector_fallback:
+            return []
         vector_evidence = self._vector_evidence(query, candidate_ids, max_evidence_per_item)
         return self._fuse(bm25_evidence, vector_evidence, max_evidence_per_item)
 
+    def _has_configured_vector_fallback(self) -> bool:
+        return self.vector_backend is not None or self.vector_index_path is not None or _manifest_vector_index_path(Path(self.index_path)) is not None
+
     def _vector_evidence(self, query: str, candidate_ids: list[str], max_evidence_per_item: int) -> list[RagEvidence]:
         if self.vector_backend is not None:
-            return self.vector_backend.retrieve(query, candidate_ids, max_evidence_per_item)
+            try:
+                return self.vector_backend.retrieve(query, candidate_ids, max_evidence_per_item)
+            except Exception:
+                return []
 
         vector_index_path = self.vector_index_path or _manifest_vector_index_path(Path(self.index_path))
         if vector_index_path and Path(vector_index_path).exists():

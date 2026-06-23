@@ -70,7 +70,7 @@ def apply_optional_inference_policy(
     if gate_reason:
         return candidates, {"inference_policy": _gated_diagnostics(policy, gate_reason)}
     try:
-        active_client = client or _build_qwen_client(policy)
+        active_client = client or _build_inference_policy_client(policy)
         result = active_client.rerank(
             user_sequence=user_sequence,
             feedback_constraints=feedback_constraints,
@@ -89,16 +89,43 @@ def resolve_inference_policy_config(config: dict[str, Any]) -> dict[str, Any]:
     raw = dict(config.get("inference_policy", {}) or {})
     env_policy = os.getenv("RS_AGENT_INFERENCE_POLICY")
     if env_policy:
-        raw["enabled"] = env_policy.lower() in {"qwen", "qwen_local", "on", "true", "1"}
-        if env_policy.lower() in {"off", "false", "0"}:
+        normalized_env_policy = env_policy.lower()
+        raw["enabled"] = normalized_env_policy in {"qwen", "qwen_local", "local_transformers", "openai_compatible", "openai", "vllm", "on", "true", "1"}
+        if normalized_env_policy in {"openai_compatible", "openai", "vllm"}:
+            raw["provider"] = "openai_compatible"
+        elif normalized_env_policy in {"qwen", "qwen_local", "local_transformers", "on", "true", "1"}:
+            raw.setdefault("provider", "local_transformers")
+        if normalized_env_policy in {"off", "false", "0"}:
             raw["enabled"] = False
     raw.setdefault("enabled", False)
-    raw.setdefault("provider", "qwen_local")
+    raw.setdefault("provider", "local_transformers" if raw.get("enabled") else "disabled")
+    if raw.get("provider") == "qwen_local":
+        raw["provider"] = "local_transformers"
+    raw.setdefault("available_providers", ["disabled", "openai_compatible", "local_transformers"])
     raw.setdefault("policy_type", QWEN_POLICY_TYPE if raw.get("enabled") else DEFAULT_POLICY_TYPE)
     raw.setdefault("strict", False)
+    openai_compatible = dict(raw.get("openai_compatible", {}) or {})
+    openai_compatible.setdefault("enabled", raw.get("provider") == "openai_compatible" and bool(raw.get("enabled")))
+    openai_compatible.setdefault("api_base_env", "RS_AGENT_OPENAI_COMPATIBLE_BASE_URL")
+    openai_compatible.setdefault("api_key_env", "RS_AGENT_OPENAI_COMPATIBLE_API_KEY")
+    openai_compatible.setdefault("model_env", "RS_AGENT_OPENAI_COMPATIBLE_MODEL")
+    if os.getenv(str(openai_compatible.get("api_base_env"))):
+        openai_compatible["base_url"] = os.getenv(str(openai_compatible.get("api_base_env")))
+    if os.getenv(str(openai_compatible.get("model_env"))):
+        openai_compatible["model"] = os.getenv(str(openai_compatible.get("model_env")))
+    openai_compatible.setdefault("timeout_seconds", 30.0)
+    openai_compatible["timeout_seconds"] = min(float(openai_compatible.get("timeout_seconds", 30.0)), 60.0)
+    openai_compatible.setdefault("allow_insecure_local_api_base", False)
+    openai_compatible.setdefault("temperature", 0.0)
+    openai_compatible.setdefault("max_tokens", 512)
+    openai_compatible["max_tokens"] = min(int(openai_compatible.get("max_tokens", 512)), 2048)
+    openai_compatible.setdefault("response_format", {"type": "json_object"})
+    raw["openai_compatible"] = openai_compatible
     model = dict(raw.get("model", {}) or {})
     if os.getenv("RS_AGENT_QWEN_MODEL_ID"):
         model["model_id"] = os.getenv("RS_AGENT_QWEN_MODEL_ID")
+    if raw.get("provider") == "openai_compatible" and openai_compatible.get("model"):
+        model["model_id"] = openai_compatible.get("model")
     model.setdefault("model_id", "Qwen/Qwen3.5-4B")
     local_files_only = os.getenv("RS_AGENT_QWEN_LOCAL_FILES_ONLY")
     if local_files_only is not None:
@@ -119,9 +146,12 @@ def resolve_inference_policy_config(config: dict[str, Any]) -> dict[str, Any]:
     raw["signals"] = signals
     prompt = dict(raw.get("prompt", {}) or {})
     prompt.setdefault("max_candidates", 50)
+    prompt["max_candidates"] = min(int(prompt.get("max_candidates", 50)), 100)
     prompt.setdefault("metadata_fields", ["title_clean", "main_category", "category", "description_text", "features_text"])
     prompt.setdefault("max_metadata_chars_per_field", 300)
+    prompt["max_metadata_chars_per_field"] = min(int(prompt.get("max_metadata_chars_per_field", 300)), 1000)
     prompt.setdefault("max_user_sequence_items", 20)
+    prompt["max_user_sequence_items"] = min(int(prompt.get("max_user_sequence_items", 20)), 50)
     raw["prompt"] = prompt
     if os.getenv("RS_AGENT_INFERENCE_STRICT"):
         raw["strict"] = os.getenv("RS_AGENT_INFERENCE_STRICT", "").lower() in {"1", "true", "yes", "on"}
@@ -189,7 +219,7 @@ def _apply_policy_result(candidates: list[MergedCandidate], result: RerankPolicy
     diagnostics = {
         "enabled": True,
         "policy_type": result.policy_type or policy.get("policy_type", QWEN_POLICY_TYPE),
-        "route": policy.get("provider", "qwen_local"),
+        "route": policy.get("provider", "local_transformers"),
         "fallback_used": bool(result.fallback_used),
         "accepted_signal_count": sum(len(signals) for signals in accepted_by_item.values()),
         "rejected_signal_count": len(rejected),
@@ -228,10 +258,21 @@ def _validate_signals(signals: list[RerankSignal], valid_item_ids: set[str], con
     return accepted, rejected
 
 
-def _build_qwen_client(policy: dict[str, Any]) -> RerankPolicyClient:
-    from rs_core.rsagent.qwen_client import QwenLocalClient
+def _build_inference_policy_client(policy: dict[str, Any]) -> RerankPolicyClient:
+    provider = str(policy.get("provider", "disabled"))
+    if provider == "local_transformers":
+        from rs_core.rsagent.qwen_client import QwenLocalClient
 
-    return QwenLocalClient(policy)
+        return QwenLocalClient(policy)
+    if provider == "openai_compatible":
+        from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+
+        return OpenAICompatibleRerankClient(policy)
+    raise ModelUnavailableError(f"inference provider {provider!r} is not available")
+
+
+def _build_qwen_client(policy: dict[str, Any]) -> RerankPolicyClient:
+    return _build_inference_policy_client(policy)
 
 
 def _disabled_diagnostics(policy: dict[str, Any]) -> dict[str, Any]:
@@ -239,6 +280,7 @@ def _disabled_diagnostics(policy: dict[str, Any]) -> dict[str, Any]:
         "enabled": False,
         "policy_type": DEFAULT_POLICY_TYPE,
         "route": "disabled",
+        "provider": "disabled",
         "fallback_used": False,
         "accepted_signal_count": 0,
         "rejected_signal_count": 0,
@@ -250,7 +292,7 @@ def _fallback_diagnostics(policy: dict[str, Any], error: Exception) -> dict[str,
     return {
         "enabled": True,
         "policy_type": policy.get("policy_type", QWEN_POLICY_TYPE),
-        "route": policy.get("provider", "qwen_local"),
+        "route": policy.get("provider", "local_transformers"),
         "fallback_used": True,
         "fallback_reason": error.__class__.__name__,
         "error": str(error),

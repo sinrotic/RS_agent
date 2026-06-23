@@ -10,9 +10,13 @@
   "itemcf_per_seed": 20,
   "category_per_user": 20,
   "semantic_enabled": true,
-  "semantic_per_user": 30,
+  "semantic_per_user": 60,
   "semantic_min_overlap": 1,
-  "semantic_text_fields": ["title_clean", "main_category", "categories_flat"],
+  "semantic_text_fields": [
+    "title_clean",
+    "main_category",
+    "categories_flat"
+  ],
   "popular_fallback_count": 50,
   "rank_weights": {
     "popular": 1.0,
@@ -29,7 +33,17 @@
   },
   "online_route": {
     "pool500_candidates_path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
-    "allowed_sources": ["popular", "category", "swing_recall", "itemcf_strong", "itemcf_weak", "two_tower", "semantic", "usercf_recall", "co_visit_fallback_repair"],
+    "allowed_sources": [
+      "popular",
+      "category",
+      "swing_recall",
+      "itemcf_strong",
+      "itemcf_weak",
+      "two_tower",
+      "semantic",
+      "usercf_recall",
+      "co_visit_fallback_repair"
+    ],
     "source_indexes": {
       "itemcf_weak": {
         "enabled": true,
@@ -65,11 +79,35 @@
       "final_pool500_ready_claimed": false
     }
   },
+  "rag": {
+    "evidence_mode": "explain",
+    "retriever": "sqlite_bm25",
+    "index_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.sqlite",
+    "manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.manifest.json",
+    "fields": [
+      "title",
+      "category",
+      "main_category",
+      "category_path",
+      "description",
+      "features"
+    ],
+    "max_evidence_per_item": 2,
+    "max_evidence_total": 8,
+    "max_text_chars": 180,
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false
+  },
   "deepfm_model": {
     "enabled": false,
     "mode": "shadow",
     "model_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/deepfm_model.json",
-    "feature_metadata_keys": ["cold_deepfm_features", "deepfm_features", "ranking_features"],
+    "feature_metadata_keys": [
+      "cold_deepfm_features",
+      "deepfm_features",
+      "ranking_features"
+    ],
     "require_all_features": true,
     "score_scale": 1.0,
     "diagnostic_only": true,
@@ -91,5 +129,91 @@
     "ranking_input_replacement_allowed": false,
     "promotion_allowed": false
   },
-  "strategy_name": "online_pool500_agent_service_v1"
+  "strategy_name": "online_pool500_agent_service_v1",
+  "online_retrieval": {
+    "enabled": true,
+    "mode": "local_trial_non_production",
+    "providers": {
+      "two_tower_qdrant": {
+        "enabled": false
+      },
+      "candidate_store_itemcf_strong": {
+        "enabled": true,
+        "source": "itemcf_strong",
+        "source_name": "itemcf_strong",
+        "seed_window": 20,
+        "limit_per_seed": 20
+      },
+      "candidate_store_itemcf_weak": {
+        "enabled": true,
+        "source": "itemcf_weak",
+        "source_name": "itemcf_weak",
+        "seed_window": 20,
+        "limit_per_seed": 20
+      },
+      "candidate_store_co_visit_repair": {
+        "enabled": true,
+        "source": "co_visit_fallback_repair",
+        "source_name": "co_visit_fallback_repair",
+        "seed_window": 20,
+        "limit_per_seed": 20
+      },
+      "candidate_store_usercf": {
+        "enabled": true,
+        "source": "usercf_recall",
+        "source_name": "usercf_recall",
+        "limit": 100
+      },
+      "candidate_store_category": {
+        "enabled": true,
+        "bucket_limit": 5,
+        "limit_per_bucket": 20
+      },
+      "semantic_token": {
+        "enabled": true,
+        "semantic_score_mode": "idf_seed_aware",
+        "semantic_per_user": 60,
+        "semantic_per_seed": 20,
+        "semantic_seed_window": 20,
+        "semantic_max_df_ratio": 0.35,
+        "semantic_category_weight": 2.0
+      },
+      "candidate_store_popular": {
+        "enabled": true,
+        "scope": "global",
+        "bucket": "",
+        "limit": 100
+      },
+      "semantic_vector": {
+        "enabled": false,
+        "collection_name": ""
+      },
+      "pool500_fallback": {
+        "enabled": true,
+        "prefer_candidate_store": false,
+        "fallback_only": true,
+        "candidates_path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
+        "allowed_sources": [
+          "popular",
+          "category",
+          "swing_recall",
+          "itemcf_strong",
+          "itemcf_weak",
+          "two_tower",
+          "semantic",
+          "usercf_recall",
+          "co_visit_fallback_repair"
+        ]
+      }
+    },
+    "governance": {
+      "rag_chunks_candidate_generation_allowed": false,
+      "production_ready_claimed": false
+    }
+  },
+  "semantic_score_mode": "idf_seed_aware",
+  "semantic_per_seed": 20,
+  "semantic_seed_window": 20,
+  "semantic_max_df_ratio": 0.35,
+  "semantic_category_weight": 2.0
 }

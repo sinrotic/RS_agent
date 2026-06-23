@@ -1,0 +1,42 @@
+{
+  "schema_version": "rs_agent_artifact_manifest_v1",
+  "artifact_id": "pool500_serving_hot010_stable_20260522",
+  "artifact_type": "candidate_pool",
+  "stage": "local_trial_serving",
+  "path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
+  "purpose": "Pool500 candidate artifact for local FastAPI serving trial and Agent recommendation orchestration.",
+  "serving_config_path": "configs/serving/online_service.local_qdrant.yaml",
+  "diagnostic_only": false,
+  "serving_allowed": true,
+  "production_ready_claimed": false,
+  "governance": {
+    "ranking_input_replacement_allowed": false,
+    "pool1000_allowed": false,
+    "promotion_allowed": false,
+    "final_pool500_ready_claimed": false,
+    "public_payload_allowed": false
+  },
+  "artifact_store": {
+    "storage_backend": "minio",
+    "local_path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
+    "artifact_uri": "minio://rs-artifacts-local/pool500_serving_hot010_stable_20260522/pool500_candidates.jsonl",
+    "minio_uri": "minio://rs-artifacts-local/pool500_serving_hot010_stable_20260522/pool500_candidates.jsonl",
+    "sha256": "6a363b9beb28b354a2cadf8421caef9ef0fc14ca16ceaaa5da0588b3dbc01505",
+    "size_bytes": 2215298,
+    "cache_policy": "local_trial_cache",
+    "uploaded_at": "2026-06-22T06:00:21Z",
+    "minio_reserved": true,
+    "s3_uri": null
+  },
+  "model_registry": {
+    "mlflow_reserved": true,
+    "registered_model_name": null,
+    "model_version": null,
+    "run_id": null
+  },
+  "resource_policy": {
+    "local_memory_cap_gb": 12,
+    "full_eval_allowed_by_default": false,
+    "requires_user_approval_for_full_refresh": true
+  }
+}

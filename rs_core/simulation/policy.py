@@ -11,12 +11,16 @@ class RolePolicy:
     def next_action(self, role: SimulatedCustomerRole, state: RoleState, display_response: dict[str, Any]) -> RoleAction:
         state.remember_display(display_response)
         items = display_response.get("items", [])
+        assistant_message = str(display_response.get("assistant_message") or "")
         if not items:
             state.current_question = "Need more concrete options."
-            return RoleAction.chat(f"Can you suggest concrete items for this goal: {role.shopping_goal}?")
+            return RoleAction.chat("Can you suggest a few concrete options for what I described? I do not have a specific product in mind yet.")
 
         best_item, best_score = self._best_item(role, items)
         best_id = str(best_item.get("parent_asin", "")) or None
+        if not _assistant_explains_display_items(assistant_message, items):
+            state.current_question = "Need item-specific reasons before accepting."
+            return RoleAction.why(best_id)
         state.satisfaction = best_score
 
         if best_score >= 2.0:
@@ -136,6 +140,7 @@ def _simulation_messages(role: SimulatedCustomerRole, state: RoleState, display_
         "decision_style": role.decision_style,
         "feedback_style": role.feedback_style,
         "memory": list(role.memory),
+        "private_context": role.private_context,
     }
     state_context = {
         "expressed_preferences": list(state.expressed_preferences),
@@ -148,9 +153,14 @@ def _simulation_messages(role: SimulatedCustomerRole, state: RoleState, display_
             "role": "system",
             "content": (
                 "You simulate a shopping customer in a recommender-system evaluation. "
+                "You know only your persona, your past interaction summary, and the currently displayed items. "
+                "You do not know the recommender's catalog or hidden candidate pool. "
                 "Choose exactly one next action as JSON. Allowed action_type values are "
                 "chat, why, show_different, dislike, accept. item_id must be one of the displayed parent_asin values when provided. "
-                "Do not invent products."
+                "For chat actions, write a natural customer message about your need, question, or constraint; do not recite category/keyword lists. "
+                "Only accept after the assistant has given concrete, item-specific public reasons that would satisfy a real customer. "
+                "If the recommendation is generic, too short, or does not explain why displayed products fit your need, ask why or request a clearer/different set instead. "
+                "Do not invent specific products unless they appear in displayed items or your past interaction summary."
             ),
         },
         {
@@ -168,6 +178,21 @@ def _parse_model_json(content: str) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("Model output must be a JSON object")
     return payload
+
+
+def _assistant_explains_display_items(message: str, items: list[dict[str, Any]]) -> bool:
+    normalized = message.lower()
+    if len(message.strip()) < 80:
+        return False
+    mentioned = 0
+    for item in items[:3]:
+        item_id = str(item.get("parent_asin") or "").lower()
+        title = str(item.get("title") or "").strip().lower()
+        title_token = title[:24] if len(title) >= 6 else title
+        if (item_id and item_id in normalized) or (title_token and title_token in normalized):
+            mentioned += 1
+    has_reason_word = any(token in normalized for token in ("because", "reason", "适合", "因为", "理由", "类目", "特点", "需求"))
+    return mentioned >= 1 and has_reason_word
 
 
 def _price_number(value: Any) -> float | None:

@@ -108,6 +108,103 @@ def test_build_qdrant_two_tower_item_index_rejects_invalid_manifest_before_upser
         )
 
 
+def test_build_qdrant_two_tower_item_index_requires_explicit_no_holdout(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    manifest_path = _write_youtube_source_manifest(tmp_path)
+    manifest = _base_manifest(tmp_path)
+    manifest.pop("no_holdout")
+    write_json(manifest_path, manifest)
+
+    def fail_build_store(_config):  # type: ignore[no-untyped-def]
+        raise AssertionError("invalid no_holdout should fail before Qdrant store creation")
+
+    monkeypatch.setattr("rs_core.recsys.vectorstores.qdrant_two_tower_build.build_store", fail_build_store)
+
+    with pytest.raises(ValueError, match="no_holdout=true"):
+        build_qdrant_two_tower_item_index(
+            source_index_manifest_path=manifest_path,
+            collection_name="test_two_tower_missing_no_holdout",
+            qdrant_config={"location": ":memory:"},
+        )
+
+
+
+def test_build_qdrant_two_tower_item_index_rejects_false_no_holdout(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    manifest_path = _write_youtube_source_manifest(tmp_path)
+    manifest = _base_manifest(tmp_path)
+    manifest["no_holdout"] = False
+    write_json(manifest_path, manifest)
+
+    def fail_build_store(_config):  # type: ignore[no-untyped-def]
+        raise AssertionError("invalid no_holdout should fail before Qdrant store creation")
+
+    monkeypatch.setattr("rs_core.recsys.vectorstores.qdrant_two_tower_build.build_store", fail_build_store)
+
+    with pytest.raises(ValueError, match="no_holdout=true"):
+        build_qdrant_two_tower_item_index(
+            source_index_manifest_path=manifest_path,
+            collection_name="test_two_tower_false_no_holdout",
+            qdrant_config={"location": ":memory:"},
+        )
+
+
+
+def test_build_qdrant_two_tower_item_index_deletes_stale_items_after_rebuild(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    store = QdrantVectorStore(build_qdrant_client(location=":memory:"))
+    monkeypatch.setattr("rs_core.recsys.vectorstores.qdrant_two_tower_build.build_store", lambda _config: store)
+    uuids = iter([type("FakeUuid", (), {"hex": "build-1"})(), type("FakeUuid", (), {"hex": "build-2"})()])
+    monkeypatch.setattr("rs_core.recsys.vectorstores.qdrant_two_tower_build.uuid4", lambda: next(uuids))
+    manifest_path = tmp_path / "source_index_manifest.json"
+    index_path = tmp_path / "two_tower_recall_index.jsonl"
+    embedding_path = tmp_path / "item_embeddings.jsonl"
+    manifest = _base_manifest(tmp_path)
+    write_json(manifest_path, manifest)
+    write_jsonl(
+        index_path,
+        [
+            {"parent_asin": "seed", "embedding": [1.0, 0.0]},
+            {"parent_asin": "stale", "embedding": [0.0, 1.0]},
+            {"parent_asin": "keep", "embedding": [0.9, 0.1]},
+        ],
+    )
+    write_jsonl(embedding_path, [
+        {"parent_asin": "seed", "embedding": [1.0, 0.0]},
+        {"parent_asin": "stale", "embedding": [0.0, 1.0]},
+        {"parent_asin": "keep", "embedding": [0.9, 0.1]},
+    ])
+
+    build_qdrant_two_tower_item_index(
+        source_index_manifest_path=manifest_path,
+        collection_name="test_two_tower_stale_rebuild",
+        qdrant_config={"location": ":memory:"},
+    )
+    write_jsonl(
+        index_path,
+        [
+            {"parent_asin": "seed", "embedding": [1.0, 0.0]},
+            {"parent_asin": "fresh", "embedding": [0.0, 1.0]},
+            {"parent_asin": "keep", "embedding": [0.9, 0.1]},
+        ],
+    )
+    write_jsonl(embedding_path, [
+        {"parent_asin": "seed", "embedding": [1.0, 0.0]},
+        {"parent_asin": "fresh", "embedding": [0.0, 1.0]},
+        {"parent_asin": "keep", "embedding": [0.9, 0.1]},
+    ])
+
+    build_qdrant_two_tower_item_index(
+        source_index_manifest_path=manifest_path,
+        collection_name="test_two_tower_stale_rebuild",
+        qdrant_config={"location": ":memory:"},
+    )
+
+    points = store.client.collections["test_two_tower_stale_rebuild"]["points"]
+    assert {point.payload["item_id"] for point in points} == {"seed", "fresh", "keep"}
+
+
+
 def test_build_qdrant_two_tower_item_index_rejects_bad_batch_before_qdrant(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     install_fake_qdrant(monkeypatch)
     manifest_path = _write_youtube_source_manifest(tmp_path)
@@ -124,6 +221,32 @@ def test_build_qdrant_two_tower_item_index_rejects_bad_batch_before_qdrant(monke
             qdrant_config={"location": ":memory:"},
             batch_size=0,
         )
+
+
+def test_build_qdrant_two_tower_item_index_zero_row_rebuild_preserves_existing_items(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    store = QdrantVectorStore(build_qdrant_client(location=":memory:"))
+    monkeypatch.setattr("rs_core.recsys.vectorstores.qdrant_two_tower_build.build_store", lambda _config: store)
+    uuids = iter([type("FakeUuid", (), {"hex": "build-1"})(), type("FakeUuid", (), {"hex": "build-2"})()])
+    monkeypatch.setattr("rs_core.recsys.vectorstores.qdrant_two_tower_build.uuid4", lambda: next(uuids))
+    manifest_path = _write_youtube_source_manifest(tmp_path)
+
+    build_qdrant_two_tower_item_index(
+        source_index_manifest_path=manifest_path,
+        collection_name="test_two_tower_zero_rebuild",
+        qdrant_config={"location": ":memory:"},
+    )
+    manifest = build_qdrant_two_tower_item_index(
+        source_index_manifest_path=manifest_path,
+        collection_name="test_two_tower_zero_rebuild",
+        qdrant_config={"location": ":memory:"},
+        limit_items=0,
+    )
+
+    assert manifest["selected_item_count"] == 0
+    assert manifest["stale_points_deleted_for_source"] is False
+    assert {point.payload["item_id"] for point in store.client.collections["test_two_tower_zero_rebuild"]["points"]} == {"seed", "match", "other"}
+
 
 
 def test_build_qdrant_two_tower_item_index_rejects_limited_durable_live_build(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
@@ -165,6 +288,7 @@ def _base_manifest(tmp_path) -> dict[str, object]:
         "index_scope": "FULL_DERIVED_INDEX",
         "source_status": "FULL_DERIVED_INDEX_DIAGNOSTIC",
         "train_only": True,
+        "no_holdout": True,
         "candidate_generation_allowed": False,
         "ranking_input_replacement_allowed": False,
         "ranking_replacement_allowed": False,

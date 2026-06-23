@@ -9,7 +9,9 @@ import pytest
 
 pytestmark = [pytest.mark.unit, pytest.mark.serving]
 
+from rs_core.agent_runtime.core import AgentRuntimeConfig, LoopMode
 from rs_core.common.io import write_jsonl
+from rs_core.recsys.rag import RAG_PARENT_PROFILE_FIELD, build_sqlite_bm25_index
 from rs_core.recsys.types import AgentDecision
 from rs_core.rsagent.context import build_context_bundle
 from rs_core.rsagent.reward import build_reward_evidence
@@ -17,6 +19,7 @@ from rs_core.rsagent.runtime import RUNTIME_TRACE_STEP_ORDER, AgentRuntime
 from rs_core.rsagent.schema import INTENT_RECOMMEND_REQUEST, AgentSession, AgentTurn, FeedbackConstraints
 from rs_core.rsagent.tools import AgentToolCall
 from rs_core.workflow.facades import AgentOrchestrationFacade
+from rs_core.workflow import hybrid_environment
 from rs_core.workflow.hybrid_environment import (
     HybridRecommendationEnvironment,
     _attach_retrieve_route_decisions,
@@ -40,6 +43,202 @@ def test_agent_orchestration_facade_delegates_to_runtime_host_seam():
     assert host.plan_calls == 1
     assert host.plan_inputs == [("prefer Audio", "s1", "ok_1")]
     assert host.build_recommendation_calls == 1
+    assert "agent_runtime_shadow" not in result.diagnostics
+
+
+def test_agent_orchestration_facade_shadow_mode_attaches_internal_report_without_extra_append():
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = _turn_with_items(session.active_constraints, [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"]}])
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(loop_mode=LoopMode.GENERIC_SHADOW))
+
+    result = facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert host.build_recommendation_calls == 1
+    shadow = result.diagnostics["agent_runtime_shadow"]
+    assert shadow["loop_mode"] == "generic_shadow"
+    assert shadow["write_mode"] == "legacy_only"
+    assert shadow["output_mode"] == "legacy_only"
+    assert shadow["external_tool_mode"] == "replay_legacy_results"
+    assert shadow["append_count"] == 1
+    assert shadow["trace_order_valid"] is True
+    assert shadow["trace_steps"] == RUNTIME_TRACE_STEP_ORDER
+
+
+def test_agent_orchestration_facade_rejects_generic_active_before_readiness_gates():
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = _turn_with_items(session.active_constraints, [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"]}])
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(loop_mode=LoopMode.GENERIC_ACTIVE))
+
+    with pytest.raises(RuntimeError, match="generic_active is not available"):
+        facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert session.turns == []
+    assert host.plan_calls == 0
+    assert host.build_recommendation_calls == 0
+
+
+def test_agent_orchestration_facade_rag_agent_shadow_is_internal_only_and_non_mutating():
+    session = AgentSession(session_id="s1", user_id="u1")
+    items = [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"], "title": "Bluetooth speaker"}]
+    turn = _turn_with_items(session.active_constraints, items)
+    turn.user_input = "prefer bluetooth speaker"
+    turn.rag_context = {
+        "query": "prefer bluetooth speaker",
+        "candidate_item_ids": ["ok_1"],
+        "metadata": {
+            "retriever": "hybrid_qdrant_small2big",
+            "evidence_mode": "explain",
+            "small2big": {"enabled": True, "parent_field": RAG_PARENT_PROFILE_FIELD},
+            "rag_diagnostics": {"kept_evidence_count": 2},
+        },
+        "evidence": [
+            {"item_id": "ok_1", "field": "features", "text": "Portable bluetooth audio.", "metadata": {}},
+            {
+                "item_id": "ok_1",
+                "field": RAG_PARENT_PROFILE_FIELD,
+                "text": "Title: Bluetooth speaker\nDescription: raw profile should not leak verbatim",
+                "metadata": {"requires_parent_context_agent": True, "parent_projection_fields": ["title", "features"]},
+            },
+        ],
+    }
+    original_candidates = [dict(item) for item in turn.candidates]
+    original_final_items = [dict(item) for item in turn.recommendation.final_items]
+    original_ranking = [dict(item) for item in turn.ranking]
+    original_response = turn.recommendation.agent_explanation
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(metadata={"rag_agent": {"enabled": True, "mode": "shadow"}}))
+
+    result = facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert result.candidates == original_candidates
+    assert result.recommendation.final_items == original_final_items
+    assert result.ranking == original_ranking
+    assert result.recommendation.agent_explanation == original_response
+    shadow = result.diagnostics["rag_agent_shadow"]
+    assert shadow["status"] == "ok"
+    assert shadow["candidate_generation_allowed"] is False
+    assert shadow["ranking_input_replacement_allowed"] is False
+    assert shadow["promotion_allowed"] is False
+    result.diagnostics["rag"] = hybrid_environment._rag_diagnostics(result.rag_context)
+    rag = result.diagnostics["rag"]
+    assert rag["retriever"] == "hybrid_qdrant_small2big"
+    assert rag["retrieval_scope"] == "post_ranking_candidate_scoped_rag"
+    assert rag["candidate_scoped"] is True
+    assert rag["final_rag"] is True
+    assert rag["small2big_enabled"] is True
+    assert rag["small2big_parent_field"] == RAG_PARENT_PROFILE_FIELD
+    support = result.diagnostics["rag_agent_support"]
+    assert support["public_payload_allowed"] is False
+    assert support["candidate_generation_allowed"] is False
+    assert support["ranking_input_replacement_allowed"] is False
+    assert support["promotion_allowed"] is False
+    assert support["item_support"]["ok_1"]
+    assert support["used_parent_profile_count"] == 1
+    assert "raw profile should not leak" not in json.dumps(support, ensure_ascii=False)
+    assert "rag_context" not in result.to_dict()
+
+
+def test_agent_orchestration_facade_memory_agent_shadow_is_internal_only_and_non_mutating():
+    session = AgentSession(session_id="s1", user_id="u1")
+    session.active_constraints.preferred_keywords["bluetooth"] = 1.0
+    session.active_constraints.use_cases["commute"] = 1.0
+    items = [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"], "title": "Bluetooth speaker"}]
+    turn = _turn_with_items(session.active_constraints, items)
+    turn.user_input = "need bluetooth for commute"
+    original_candidates = [dict(item) for item in turn.candidates]
+    original_final_items = [dict(item) for item in turn.recommendation.final_items]
+    original_ranking = [dict(item) for item in turn.ranking]
+    original_response = turn.recommendation.agent_explanation
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(metadata={"memory_agent": {"enabled": True, "mode": "shadow"}}))
+
+    result = facade.run_turn(host, session, "need bluetooth for commute", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert result.candidates == original_candidates
+    assert result.recommendation.final_items == original_final_items
+    assert result.ranking == original_ranking
+    assert result.recommendation.agent_explanation == original_response
+    shadow = result.diagnostics["memory_agent_shadow"]
+    assert shadow["public_payload_allowed"] is False
+    assert shadow["candidate_generation_allowed"] is False
+    assert shadow["ranking_input_replacement_allowed"] is False
+    assert shadow["promotion_allowed"] is False
+    support = result.diagnostics["memory_agent_support"]
+    assert support["public_payload_allowed"] is False
+    assert support["candidate_generation_allowed"] is False
+    assert support["ranking_input_replacement_allowed"] is False
+    assert support["promotion_allowed"] is False
+    assert support["recalled_memory"]["available_entry_count"] >= 1
+    assert "memory_agent_support" not in result.to_dict()
+
+
+def test_agent_orchestration_facade_memory_agent_errors_fail_open():
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = _turn_with_items(session.active_constraints, [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"]}])
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(metadata={"memory_agent": {"enabled": True, "mode": "shadow"}}))
+
+    def explode(*_args, **_kwargs):
+        raise RuntimeError("private memory path /tmp/memory.log")
+
+    facade.memory_shadow_adapter.attach_shadow_report = explode  # type: ignore[method-assign]
+
+    result = facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert result.diagnostics["memory_agent_shadow"]["status"] == "error"
+    assert "RuntimeError" in result.diagnostics["memory_agent_shadow"]["errors"][0]
+
+
+def test_agent_orchestration_facade_unsupported_memory_agent_mode_reports_error():
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = _turn_with_items(session.active_constraints, [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"]}])
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(metadata={"memory_agent": {"enabled": True, "mode": "active"}}))
+
+    result = facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert result.diagnostics["memory_agent_shadow"]["status"] == "error"
+    assert result.diagnostics["memory_agent_shadow"]["errors"] == ["Unsupported MemoryAgent mode: active"]
+
+
+def test_agent_orchestration_facade_rag_agent_config_errors_fail_closed_after_legacy_turn():
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = _turn_with_items(session.active_constraints, [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"]}])
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(metadata={"rag_agent": {"enabled": "maybe", "mode": "shadow"}}))
+
+    result = facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert result.diagnostics["rag_agent_shadow"]["status"] == "error"
+    assert "Invalid boolean config" in result.diagnostics["rag_agent_shadow"]["errors"][0]
+
+
+def test_agent_orchestration_facade_unsupported_rag_agent_mode_reports_error():
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = _turn_with_items(session.active_constraints, [{"parent_asin": "ok_1", "category": "Audio", "sources": ["popular"]}])
+    host = _StaticHost(turn)
+    facade = AgentOrchestrationFacade(host.runtime, AgentRuntimeConfig(metadata={"rag_agent": {"enabled": True, "mode": "active"}}))
+
+    result = facade.run_turn(host, session, "prefer Audio", explanation_item_id="ok_1")
+
+    assert result is turn
+    assert len(session.turns) == 1
+    assert result.diagnostics["rag_agent_shadow"]["status"] == "error"
+    assert result.diagnostics["rag_agent_shadow"]["errors"] == ["Unsupported RagAgent mode: active"]
 
 
 def test_environment_anonymous_sessions_get_independent_cold_start_identity(tmp_path: Path):
@@ -202,6 +401,89 @@ def test_agent_turn_to_dict_omits_hidden_rag_context_by_default():
     assert "rag_context" not in payload
 
 
+def test_rag_query_support_active_rewrite_uses_english_retrieval_query(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    index_path = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        index_path,
+        [{"parent_asin": "item1", "title": "Portable commuter electronics accessory", "features": "compact lightweight reliable daily travel"}],
+        fields=["title", "features"],
+    )
+    env = HybridRecommendationEnvironment.from_config(
+        str(_write_runtime_fixture(tmp_path)),
+        limit_users=1,
+        config_overrides={
+            "rag": {"index_path": str(index_path), "fields": ["title", "features"]},
+            "agent_runtime": {"rag_query_rewrite": {"enabled": True, "mode": "active", "model": "test-model"}},
+        },
+    )
+
+    class FakeRewriter:
+        def __init__(self, config):
+            self.config = config
+
+        def rewrite(self, query: str):
+            return SimpleNamespace(
+                valid=True,
+                query_rewrite="portable commuter electronics accessory lightweight reliable",
+                semantic_query_hint="portable commuter electronics accessory lightweight reliable",
+                suggested_query_terms=["portable", "commuter", "electronics", "lightweight"],
+                diagnostics={"status": "ok", "mode": self.config.mode},
+                error="",
+            )
+
+    monkeypatch.setattr(hybrid_environment, "RagQueryRewriter", FakeRewriter)
+
+    support = env._rag_query_support("请比较两类通勤电子配件")
+
+    assert support["query"] == "请比较两类通勤电子配件"
+    assert support["query_rewrite"] == "portable commuter electronics accessory lightweight reliable"
+    assert support["diagnostics"]["status"] == "ok"
+    assert support["diagnostics"]["evidence_count"] >= 1
+    assert support["diagnostics"]["retrieval_query_source"] == "rag_agent_query_rewrite"
+    assert support["diagnostics"]["retrieval_query_changed"] is True
+    assert support["retrieval_hints"]["candidate_generation_allowed"] is False
+
+
+def test_rag_query_support_shadow_rewrite_keeps_original_retrieval_query(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    index_path = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        index_path,
+        [{"parent_asin": "item1", "title": "Portable commuter electronics accessory", "features": "compact lightweight reliable daily travel"}],
+        fields=["title", "features"],
+    )
+    env = HybridRecommendationEnvironment.from_config(
+        str(_write_runtime_fixture(tmp_path)),
+        limit_users=1,
+        config_overrides={
+            "rag": {"index_path": str(index_path), "fields": ["title", "features"]},
+            "agent_runtime": {"rag_query_rewrite": {"enabled": True, "mode": "shadow", "model": "test-model"}},
+        },
+    )
+
+    class FakeRewriter:
+        def __init__(self, config):
+            self.config = config
+
+        def rewrite(self, query: str):
+            return SimpleNamespace(
+                valid=True,
+                query_rewrite="portable commuter electronics accessory lightweight reliable",
+                semantic_query_hint="portable commuter electronics accessory lightweight reliable",
+                suggested_query_terms=["portable", "commuter"],
+                diagnostics={"status": "ok", "mode": self.config.mode},
+                error="",
+            )
+
+    monkeypatch.setattr(hybrid_environment, "RagQueryRewriter", FakeRewriter)
+
+    support = env._rag_query_support("通勤电子配件")
+
+    assert support["diagnostics"]["status"] == "skipped"
+    assert support["diagnostics"]["evidence_count"] == 0
+    assert support["diagnostics"]["retrieval_query_source"] == "shadow_original_query"
+    assert support["query_rewrite"] == "portable commuter electronics accessory lightweight reliable"
+
+
 def test_semantic_live_query_consumes_query_rag_hint():
     query = _semantic_live_query_for_call(
         {"query": "commute speaker", "semantic_mode": "hybrid_query_history"},
@@ -226,6 +508,10 @@ def test_runtime_passes_single_turn_tool_context_between_phases():
     assert host.pre_context_seen == {"query_rag": {"semantic_query_hint": "portable bluetooth commute"}}
     assert host.build_context_seen == host.pre_context_seen
     assert host.post_context_seen == host.pre_context_seen
+    tool_names = {event["tool_name"] for event in turn.diagnostics["agent_tool_events"]}
+    assert tool_names == {"fake_pre", "fake_post"}
+    assert "query_rag" not in json.dumps(turn.diagnostics["agent_tool_trace"], ensure_ascii=False)
+    assert "get_item_evidence" not in json.dumps(turn.diagnostics["agent_tool_trace"], ensure_ascii=False)
 
 
 def test_retrieve_route_decisions_summarize_high_level_policy_without_source_scores():
@@ -501,7 +787,7 @@ def test_runtime_boundary_source_restrictions():
 
 
 def test_public_chat_feedback_and_export_do_not_expose_runtime_trace(tmp_path: Path):
-    from rs_core.serving.service import RecommendationService
+    from rs_core.serving.application.recommendation_service import RecommendationService
 
     service = RecommendationService(str(_write_runtime_fixture(tmp_path)), limit_users=1)
     session_id = service.start_session("u1")

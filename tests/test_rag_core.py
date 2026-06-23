@@ -14,10 +14,12 @@ from rs_core.recsys.rag import (
     HybridCandidateRetriever,
     InMemoryCandidateCardRetriever,
     LOCAL_VECTOR_METHOD,
+    RAG_PARENT_PROFILE_FIELD,
     RAG_STANDARD_FIELDS,
     SENTENCE_TRANSFORMER_VECTOR_METHOD,
     RagEvidence,
     RagPolicy,
+    Small2BigCandidateEvidenceRetriever,
     SQLiteBM25CandidateRetriever,
     SQLiteBM25QueryPlanningRetriever,
     SQLiteBM25Unavailable,
@@ -26,8 +28,12 @@ from rs_core.recsys.rag import (
     build_rag_context_for_ranked_candidates,
     build_sqlite_bm25_index,
     evidence_policy_violation_tokens,
+    validate_parent_profile_manifest,
     load_local_vector_index,
 )
+from rs_core.agent_runtime.adapters.rag import RagAgentAdapter
+from rs_core.recsys.types import AgentDecision
+from rs_core.rsagent.schema import AgentTurn, FeedbackConstraints
 from rs_core.workflow.facades import EvidenceRAGFacade
 
 
@@ -52,6 +58,41 @@ class FakeEmbeddingBackend:
             float(any(token in value for token in ("lamp", "light", "lighting"))),
             float(any(token in value for token in ("kettle", "hiking", "camping"))),
         ]
+
+
+class FakeVectorBackend:
+    def retrieve(self, query: str, candidate_item_ids, max_evidence_per_item: int = 3):  # type: ignore[no-untyped-def]
+        return [RagEvidence(str(candidate_item_ids[0]), "title", f"vector-only {query}", "qdrant_vector", score=1.0)]
+
+
+class FailingVectorBackend:
+    def retrieve(self, query: str, candidate_item_ids, max_evidence_per_item: int = 3):  # type: ignore[no-untyped-def]
+        raise RuntimeError("dense backend unavailable")
+
+
+class StaticEvidenceRetriever:
+    def __init__(self, evidence: list[RagEvidence]) -> None:
+        self.evidence = evidence
+        self.calls: list[tuple[str, list[str], int]] = []
+
+    def retrieve(self, query: str, candidate_item_ids, max_evidence_per_item: int = 3):  # type: ignore[no-untyped-def]
+        candidate_ids = [str(item_id) for item_id in candidate_item_ids]
+        self.calls.append((query, candidate_ids, max_evidence_per_item))
+        candidate_id_set = set(candidate_ids)
+        return [row for row in self.evidence if str(row.item_id) in candidate_id_set]
+
+
+def _valid_small2big_manifest() -> dict[str, object]:
+    return {
+        "schema_version": "small2big_parent_profile.v1",
+        "train_only": True,
+        "no_holdout": True,
+        "source_hash": "fixture-source-hash",
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+        "raw_profile_public_projection": True,
+    }
 
 
 def test_evidence_rag_facade_off_mode_does_not_build_context_or_expose_semantics():
@@ -105,6 +146,307 @@ def test_evidence_rag_facade_shadow_and_explain_preserve_candidate_scope_and_bou
         assert "ranking_replacement_allowed" not in serialized
         assert "public_payload_allowed" not in serialized
 
+
+def test_evidence_rag_facade_small2big_invalid_manifest_file_fails_closed(tmp_path):
+    manifest_path = tmp_path / "broken_manifest.json"
+    manifest_path.write_text("{not-json", encoding="utf-8")
+    ranked_items = [{"parent_asin": "i1", "title": "Titanium camping kettle", "category": "Camping"}]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "max_evidence_per_item": 1,
+                "small2big": {"enabled": True, "parent_store_manifest_path": str(manifest_path)},
+            }
+        },
+        "camping kettle",
+        ranked_items,
+        ranked_items,
+    )
+
+    assert context is not None
+    assert [row["field"] for row in context["evidence"]] == ["title"]
+    assert context["evidence"][0]["metadata"]["small2big"] == {"passed": False, "failure_reason": "missing_manifest"}
+
+
+def test_evidence_rag_facade_small2big_string_false_stays_disabled():
+    ranked_items = [{"parent_asin": "i1", "title": "Titanium camping kettle", "description_text": "Parent context"}]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "max_evidence_per_item": 1,
+                "small2big": {"enabled": "false", "manifest": _valid_small2big_manifest()},
+            }
+        },
+        "camping kettle",
+        ranked_items,
+        ranked_items,
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "in_memory_candidate_card"
+    assert context["metadata"]["small2big"] == {"enabled": False}
+    assert [row["field"] for row in context["evidence"]] == ["title"]
+
+
+def test_evidence_rag_facade_small2big_invalid_enabled_fails_closed():
+    ranked_items = [{"parent_asin": "i1", "title": "Titanium camping kettle", "description_text": "Parent context"}]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "max_evidence_per_item": 1,
+                "small2big": {"enabled": "maybe", "manifest": _valid_small2big_manifest()},
+            }
+        },
+        "camping kettle",
+        ranked_items,
+        ranked_items,
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "in_memory_candidate_card"
+    assert context["metadata"]["small2big"]["enabled"] is False
+    assert "Invalid boolean config" in context["metadata"]["small2big"]["error"]
+    assert [row["field"] for row in context["evidence"]] == ["title"]
+
+
+def test_evidence_rag_facade_small2big_zero_budget_does_not_expand_context_budget():
+    ranked_items = [{"parent_asin": "i1", "title": "Titanium camping kettle", "category": "Camping", "description_text": "Parent context"}]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "max_evidence_per_item": 1,
+                "max_evidence_total": 1,
+                "small2big": {
+                    "enabled": True,
+                    "manifest": _valid_small2big_manifest(),
+                    "max_parent_profiles_total": 0,
+                    "max_parent_profiles_per_item": 0,
+                },
+            }
+        },
+        "camping kettle",
+        ranked_items,
+        ranked_items,
+    )
+
+    assert context is not None
+    assert [row["field"] for row in context["evidence"]] == ["title"]
+    assert context["metadata"]["rag_diagnostics"]["max_evidence_per_item"] == 1
+    assert context["metadata"]["rag_diagnostics"]["max_evidence_total"] == 1
+
+
+def test_evidence_rag_facade_small2big_adds_parent_profile_without_changing_candidates():
+    ranked_items = [
+        {
+            "parent_asin": "i1",
+            "title": "Titanium camping kettle",
+            "category": "Camping",
+            "description_text": "Parent-level description for backpacking water boiling.",
+            "features_text": "Lightweight. Folding handle.",
+            "target_label": "must not leak",
+        },
+        {
+            "parent_asin": "i2",
+            "title": "Desk lamp",
+            "category": "Lighting",
+            "description_text": "Office light.",
+        },
+    ]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "max_evidence_per_item": 2,
+                "max_evidence_total": 4,
+                "max_text_chars": 400,
+                "small2big": {
+                    "enabled": True,
+                    "manifest": _valid_small2big_manifest(),
+                    "max_parent_profiles_total": 1,
+                    "max_parent_profiles_per_item": 1,
+                },
+            }
+        },
+        "camping kettle",
+        ranked_items,
+        ranked_items[:1],
+    )
+
+    assert context is not None
+    assert context["candidate_item_ids"] == ["i1", "i2"]
+    assert context["metadata"]["retriever"] == "in_memory_candidate_card_small2big"
+    assert context["metadata"]["small2big"]["enabled"] is True
+    assert context["metadata"]["small2big"]["parent_field"] == RAG_PARENT_PROFILE_FIELD
+    parent_rows = [row for row in context["evidence"] if row["field"] == RAG_PARENT_PROFILE_FIELD]
+    assert len(parent_rows) == 1
+    assert parent_rows[0]["item_id"] == "i1"
+    assert "Parent-level description" in parent_rows[0]["text"]
+    assert "target_label" not in parent_rows[0]["text"]
+    assert parent_rows[0]["metadata"]["promotion_allowed"] is False
+    assert parent_rows[0]["metadata"]["requires_parent_context_agent"] is True
+    assert {row["item_id"] for row in context["evidence"]} <= {"i1", "i2"}
+    assert context["metadata"]["rag_diagnostics"]["max_evidence_total"] == 5
+
+
+
+def test_evidence_rag_facade_hybrid_falls_back_to_bm25_when_qdrant_missing(tmp_path):
+    db = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        db,
+        [
+            {"parent_asin": "i1", "title": "Bluetooth audio speaker", "main_category": "Audio"},
+            {"parent_asin": "i2", "title": "Desk lamp", "main_category": "Lighting"},
+        ],
+    )
+    ranked_items = [
+        {"parent_asin": "i1", "title": "Bluetooth audio speaker", "category": "Audio"},
+        {"parent_asin": "i2", "title": "Desk lamp", "category": "Lighting"},
+    ]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "retriever": "hybrid",
+                "index_path": str(db),
+                "hybrid": {
+                    "qdrant": {
+                        "enabled": True,
+                        "collection_name": "missing_collection",
+                        "candidate_generation_allowed": False,
+                        "ranking_input_replacement_allowed": False,
+                        "promotion_allowed": False,
+                    }
+                },
+            }
+        },
+        "bluetooth audio",
+        ranked_items,
+        ranked_items[:1],
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "hybrid_bm25_fallback"
+    assert context["evidence"]
+    assert {row["item_id"] for row in context["evidence"]} <= {"i1", "i2"}
+
+
+def test_evidence_rag_facade_hybrid_qdrant_small2big_is_candidate_scoped(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    db = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        db,
+        [
+            {"parent_asin": "i1", "title": "Bluetooth audio speaker", "main_category": "Audio", "features": "portable wireless sound"},
+            {"parent_asin": "i2", "title": "Desk lamp", "main_category": "Lighting", "features": "office light"},
+        ],
+    )
+    ranked_items = [
+        {"parent_asin": "i1", "title": "Bluetooth audio speaker", "category": "Audio", "description": "Parent speaker profile"},
+        {"parent_asin": "i2", "title": "Desk lamp", "category": "Lighting", "description": "Parent lamp profile"},
+    ]
+    monkeypatch.setattr("rs_core.workflow.facades._safe_qdrant_rag_vector_backend", lambda rag_config, hybrid_config: FakeVectorBackend())
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "retriever": "hybrid",
+                "index_path": str(db),
+                "hybrid": {"qdrant": {"enabled": True, "collection_name": "rag_chunks"}},
+                "small2big": {
+                    "enabled": True,
+                    "manifest": _valid_small2big_manifest(),
+                    "max_parent_profiles_total": 2,
+                    "max_parent_profiles_per_item": 1,
+                },
+            }
+        },
+        "bluetooth audio",
+        ranked_items,
+        ranked_items[:1],
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "hybrid_qdrant_small2big"
+    assert context["metadata"]["small2big"]["enabled"] is True
+    parent_rows = [row for row in context["evidence"] if row["field"] == RAG_PARENT_PROFILE_FIELD]
+    assert parent_rows
+    assert {row["item_id"] for row in context["evidence"]} <= set(context["candidate_item_ids"])
+    assert all(row["metadata"].get("candidate_generation_allowed") is False for row in parent_rows)
+    assert all(row["metadata"].get("ranking_input_replacement_allowed") is False for row in parent_rows)
+    assert all(row["metadata"].get("promotion_allowed") is False for row in parent_rows)
+
+
+def test_evidence_rag_facade_hybrid_bm25_fallback_small2big_is_explicit(tmp_path):
+    db = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        db,
+        [
+            {"parent_asin": "i1", "title": "Bluetooth audio speaker", "main_category": "Audio", "features": "portable wireless sound"},
+            {"parent_asin": "i2", "title": "Desk lamp", "main_category": "Lighting", "features": "office light"},
+        ],
+    )
+    ranked_items = [
+        {"parent_asin": "i1", "title": "Bluetooth audio speaker", "category": "Audio", "description": "Parent speaker profile"},
+        {"parent_asin": "i2", "title": "Desk lamp", "category": "Lighting", "description": "Parent lamp profile"},
+    ]
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "retriever": "hybrid",
+                "index_path": str(db),
+                "hybrid": {"qdrant": {"enabled": True, "collection_name": "missing_collection"}},
+                "small2big": {
+                    "enabled": True,
+                    "manifest": _valid_small2big_manifest(),
+                    "max_parent_profiles_total": 2,
+                    "max_parent_profiles_per_item": 1,
+                },
+            }
+        },
+        "bluetooth audio",
+        ranked_items,
+        ranked_items[:1],
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "hybrid_bm25_fallback_small2big"
+    assert context["metadata"]["small2big"]["enabled"] is True
+    assert any(row["field"] == RAG_PARENT_PROFILE_FIELD for row in context["evidence"])
+
+
+def test_hybrid_retriever_falls_back_to_bm25_when_vector_backend_fails(tmp_path):
+    db = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        db,
+        [
+            {"parent_asin": "i1", "title": "Bluetooth audio speaker", "main_category": "Audio"},
+            {"parent_asin": "i2", "title": "Desk lamp", "main_category": "Lighting"},
+        ],
+    )
+
+    evidence = HybridCandidateRetriever(db, vector_backend=FailingVectorBackend()).retrieve(
+        "bluetooth audio",
+        ["i1", "i2"],
+        max_evidence_per_item=2,
+    )
+
+    assert evidence
+    assert {row.item_id for row in evidence} <= {"i1", "i2"}
+    assert {row.metadata.get("retriever") for row in evidence} == {"hybrid"}
+    assert all(row.metadata.get("bm25_rank") is not None for row in evidence)
+    assert all(row.metadata.get("vector_score") == 0.0 for row in evidence)
 
 
 def test_rag_policy_off_returns_empty_context():
@@ -289,6 +631,182 @@ def test_sqlite_bm25_index_maps_canonical_fields_and_preserves_chunk_text(tmp_pa
 
 def test_default_rag_fields_exclude_noisy_category_aliases():
     assert RAG_STANDARD_FIELDS == ["title", "category_path", "description", "features"]
+    assert RAG_PARENT_PROFILE_FIELD not in RAG_STANDARD_FIELDS
+
+
+def test_parent_profile_manifest_gate_fails_closed_without_required_training_provenance():
+    assert validate_parent_profile_manifest(None) == {"passed": False, "failure_reason": "missing_manifest"}
+    assert validate_parent_profile_manifest({**_valid_small2big_manifest(), "no_holdout": False}) == {
+        "passed": False,
+        "failure_reason": "invalid_no_holdout",
+    }
+    assert validate_parent_profile_manifest({**_valid_small2big_manifest(), "source_hash": ""}) == {
+        "passed": False,
+        "failure_reason": "missing_source_hash",
+    }
+    assert validate_parent_profile_manifest({**_valid_small2big_manifest(), "source_manifest_path": "outputs/holdout/oracle_labels.json"}) == {
+        "passed": False,
+        "failure_reason": "forbidden_source_manifest_path",
+    }
+    assert validate_parent_profile_manifest(_valid_small2big_manifest()) == {"passed": True, "failure_reason": None}
+
+
+def test_small2big_retriever_fails_closed_to_base_evidence_when_manifest_invalid():
+    base = StaticEvidenceRetriever([RagEvidence("i1", "title", "camp kettle", "candidate_card", score=2.0)])
+    retriever = Small2BigCandidateEvidenceRetriever(
+        base,
+        parent_records={"i1": {"parent_asin": "i1", "title": "camp kettle", "description": "full parent profile"}},
+        manifest=None,
+    )
+
+    evidence = retriever.retrieve("camp kettle", ["i1"], max_evidence_per_item=1)
+
+    assert [(row.item_id, row.field) for row in evidence] == [("i1", "title")]
+    assert evidence[0].metadata["small2big"] == {"passed": False, "failure_reason": "missing_manifest"}
+
+
+def test_small2big_retriever_backfills_parent_profile_for_base_hit_candidate_only():
+    base = StaticEvidenceRetriever(
+        [
+            RagEvidence("i1", "features", "compact titanium camping handle", "candidate_card", score=4.0),
+            RagEvidence("i2", "title", "unmatched lamp", "candidate_card", score=1.0),
+        ]
+    )
+    retriever = Small2BigCandidateEvidenceRetriever(
+        base,
+        parent_records={
+            "i1": {
+                "parent_asin": "i1",
+                "title": "Titanium camp kettle",
+                "categories_path": ["Sports", "Camping"],
+                "store": "TrailCo",
+                "features_text": {"public": "Lightweight body. Folding handle.", "holdout_label": "must not leak"},
+                "description_text": {"summary": "Boils water quickly for backpacking.", "full_text": "raw nested full text"},
+                "holdout_label": "must not leak",
+                "item_text": "raw full text is not allowlisted by default",
+            },
+            "i3": {"parent_asin": "i3", "title": "outside item"},
+        },
+        manifest=_valid_small2big_manifest(),
+    )
+
+    evidence = retriever.retrieve("camp kettle", ["i1", "i2"], max_evidence_per_item=2)
+
+    parent_rows = [row for row in evidence if row.field == RAG_PARENT_PROFILE_FIELD]
+    assert len(parent_rows) == 1
+    parent = parent_rows[0]
+    assert parent.item_id == "i1"
+    assert "Titanium camp kettle" in parent.text
+    assert "holdout_label" not in parent.text
+    assert "must not leak" not in parent.text
+    assert "raw full text" not in parent.text
+    assert parent.metadata["candidate_scoped"] is True
+    assert parent.metadata["candidate_generation_allowed"] is False
+    assert parent.metadata["ranking_input_replacement_allowed"] is False
+    assert parent.metadata["promotion_allowed"] is False
+    assert parent.metadata["direct_recommendation_input_allowed"] is False
+    assert parent.metadata["requires_parent_context_agent"] is True
+    assert parent.metadata["parent_projection_fields"] == ["title", "category_path", "store", "features", "description"]
+    assert parent.metadata["small2big"]["profile_added_count"] == 1
+    assert {row.item_id for row in evidence} <= {"i1", "i2"}
+
+
+def test_small2big_retriever_respects_zero_parent_budget():
+    base = StaticEvidenceRetriever([RagEvidence("i1", "title", "camp kettle", "candidate_card", score=2.0)])
+    retriever = Small2BigCandidateEvidenceRetriever(
+        base,
+        parent_records={"i1": {"parent_asin": "i1", "title": "camp kettle", "description": "full parent profile"}},
+        max_parent_profiles_total=0,
+        manifest=_valid_small2big_manifest(),
+    )
+
+    evidence = retriever.retrieve("camp kettle", ["i1"], max_evidence_per_item=1)
+
+    assert [(row.item_id, row.field) for row in evidence] == [("i1", "title")]
+    assert evidence[0].metadata["small2big"]["profile_added_count"] == 0
+    assert evidence[0].metadata["small2big"]["max_parent_profiles_total"] == 0
+
+
+def test_rag_agent_support_filters_parent_profile_from_direct_evidence_text():
+    turn = AgentTurn(
+        turn_index=1,
+        user_input="camping kettle",
+        feedback_constraints=FeedbackConstraints(),
+        recommendation=AgentDecision(
+            user_id="u1",
+            strategy_name="test",
+            trigger_reason="test",
+            agent_explanation="test",
+            risk_flags=[],
+            limitations=[],
+            final_items=[],
+        ),
+        candidates=[],
+        ranking=[],
+        fallback_used=False,
+        diagnostics={},
+        rag_context={
+            "candidate_item_ids": ["i1"],
+            "evidence": [
+                {"item_id": "i1", "field": "title", "text": "Camping kettle", "metadata": {}},
+                {
+                    "item_id": "i1",
+                    "field": RAG_PARENT_PROFILE_FIELD,
+                    "text": "Parent profile should be handled by dedicated agent",
+                    "metadata": {"requires_parent_context_agent": True, "direct_recommendation_input_allowed": False},
+                },
+            ]
+        },
+    )
+
+    RagAgentAdapter().attach_shadow_report(turn)
+
+    support = turn.diagnostics["rag_agent_support"]
+    assert support["item_support"]["i1"] == [
+        {"field": "title", "summary": "Camping kettle", "evidence_hint": "candidate-scoped title"},
+        {
+            "field": RAG_PARENT_PROFILE_FIELD,
+            "summary": "商品级画像可用字段: parent_profile",
+            "evidence_hint": "small2big parent profile compressed; raw text withheld",
+        },
+    ]
+    assert "Parent profile should be handled by dedicated agent" not in str(support)
+
+
+def test_small2big_context_policy_preserves_base_chunks_with_parent_budget_extension():
+    base = StaticEvidenceRetriever(
+        [
+            RagEvidence("i1", "features", "backpacking kettle", "candidate_card", score=5.0),
+            RagEvidence("i1", "description", "compact camping boil kit", "candidate_card", score=4.0),
+        ]
+    )
+    retriever = Small2BigCandidateEvidenceRetriever(
+        base,
+        parent_records={"i1": {"parent_asin": "i1", "title": "Kettle", "description_text": "x" * 120}},
+        parent_profile_max_chars=80,
+        max_parent_profiles_total=1,
+        base_max_evidence_per_item=2,
+        manifest=_valid_small2big_manifest(),
+    )
+
+    context = build_rag_context_for_ranked_candidates(
+        query="camping kettle",
+        candidate_item_ids=["i1"],
+        retriever=retriever,
+        policy=RagPolicy(
+            mode="explain",
+            max_evidence_per_item=3,
+            max_evidence_total=3,
+            max_text_chars=30,
+            allowed_fields=[*RAG_STANDARD_FIELDS, RAG_PARENT_PROFILE_FIELD],
+        ),
+    )
+
+    assert [row.field for row in context.evidence].count(RAG_PARENT_PROFILE_FIELD) == 1
+    assert {"features", "description"} <= {row.field for row in context.evidence}
+    parent = next(row for row in context.evidence if row.field == RAG_PARENT_PROFILE_FIELD)
+    assert parent.metadata["text_truncated"] is True
+    assert context.metadata["rag_diagnostics"]["truncated_text_count"] == 1
 
 
 def test_sqlite_bm25_index_streams_input_without_len(tmp_path):
@@ -510,6 +1028,53 @@ def test_hybrid_candidate_retriever_fuses_bm25_and_vector_scores(tmp_path):
     assert "hybrid_score" in evidence[0].metadata
 
 
+def test_hybrid_candidate_retriever_uses_vector_backend_when_bm25_missing(tmp_path):
+    evidence = HybridCandidateRetriever(
+        tmp_path / "missing.sqlite",
+        vector_backend=FakeVectorBackend(),
+    ).retrieve("sofa", candidate_item_ids=["i1"], max_evidence_per_item=1)
+
+    assert [(row.item_id, row.field, row.text, row.source) for row in evidence] == [("i1", "title", "vector-only sofa", "qdrant_vector")]
+    assert evidence[0].metadata["retriever"] == "hybrid"
+    assert evidence[0].metadata["vector_method"] == LOCAL_VECTOR_METHOD
+
+
+
+def test_hybrid_candidate_retriever_uses_local_vector_index_when_bm25_missing(tmp_path):
+    vector_index_path = tmp_path / "rag.vector.pkl"
+    build_local_vector_index(
+        vector_index_path,
+        [{"parent_asin": "i1", "title": "soft red sofa seat"}],
+        fields=["title"],
+        vector_method="tfidf",
+    )
+
+    evidence = HybridCandidateRetriever(
+        tmp_path / "missing.sqlite",
+        vector_index_path=vector_index_path,
+    ).retrieve("sofa", candidate_item_ids=["i1"], max_evidence_per_item=1)
+
+    assert evidence
+    assert [(row.item_id, row.field) for row in evidence] == [("i1", "title")]
+    assert evidence[0].metadata["retriever"] == "hybrid"
+    assert evidence[0].metadata["vector_method"] == LOCAL_VECTOR_METHOD
+
+
+
+def test_hybrid_candidate_retriever_uses_vector_backend_when_bm25_invalid(tmp_path):
+    index_path = tmp_path / "broken.sqlite"
+    index_path.write_text("not sqlite", encoding="utf-8")
+
+    evidence = HybridCandidateRetriever(
+        index_path,
+        vector_backend=FakeVectorBackend(),
+    ).retrieve("sofa", candidate_item_ids=["i1"], max_evidence_per_item=1)
+
+    assert [(row.item_id, row.field, row.text) for row in evidence] == [("i1", "title", "vector-only sofa")]
+    assert evidence[0].metadata["retriever"] == "hybrid"
+
+
+
 def test_hybrid_rag_context_selects_hybrid_retriever_from_config(tmp_path):
     from rs_core.workflow.hybrid_environment import _build_turn_rag_context
 
@@ -543,7 +1108,7 @@ def test_hybrid_rag_context_selects_hybrid_retriever_from_config(tmp_path):
     )
 
     assert context is not None
-    assert context["metadata"]["retriever"] == "hybrid"
+    assert context["metadata"]["retriever"] == "hybrid_bm25_fallback"
     assert context["metadata"]["rag_diagnostics"]["kept_evidence_count"] >= 1
     assert context["evidence"][0]["metadata"]["retriever"] == "hybrid"
 

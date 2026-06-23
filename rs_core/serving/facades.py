@@ -14,7 +14,7 @@ from rs_core.rsagent.long_memory import (
     snapshot_session_long_memory,
 )
 from rs_core.rsagent.schema import AgentSession
-from rs_core.serving.schema import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
+from rs_core.serving.schemas import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
 from rs_core.serving.session_summary import DisabledSessionSummaryService, SessionSummaryServiceProtocol
 
 PUBLIC_RESPONSE_FORBIDDEN_FIELDS = frozenset({
@@ -40,6 +40,7 @@ FEEDBACK_PROMPTS = {
     "dislike": "I don't like this item, try a different direction.",
     "show_different": "show me something different",
     "why": "why?",
+    "accept": "I will take this recommendation.",
 }
 
 

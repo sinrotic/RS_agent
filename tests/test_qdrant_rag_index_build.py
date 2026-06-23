@@ -138,6 +138,40 @@ def test_build_qdrant_rag_chunk_index_rejects_bad_batch_before_qdrant(monkeypatc
         )
 
 
+def test_build_qdrant_rag_chunk_index_requires_explicit_live_target(tmp_path) -> None:
+    items_path = tmp_path / "canonical_items.jsonl"
+    source_manifest_path = tmp_path / "dataset_manifest.json"
+    write_jsonl(items_path, [{"parent_asin": "i1", "title": "soft red sofa seat"}])
+    write_json(source_manifest_path, {"schema_version": "unit_dataset_manifest_v1", "train_only": True, "no_holdout": True})
+
+    with pytest.raises(ValueError, match="explicit target"):
+        build_qdrant_rag_chunk_index(
+            items_path=items_path,
+            collection_name="test_rag_missing_target",
+            source_manifest_path=source_manifest_path,
+            fields=["title"],
+            embedding_backend=FakeEmbeddingBackend(),
+        )
+
+
+def test_build_qdrant_rag_chunk_index_rejects_durable_limit_items(tmp_path) -> None:
+    items_path = tmp_path / "canonical_items.jsonl"
+    source_manifest_path = tmp_path / "dataset_manifest.json"
+    write_jsonl(items_path, [{"parent_asin": "i1", "title": "soft red sofa seat"}])
+    write_json(source_manifest_path, {"schema_version": "unit_dataset_manifest_v1", "train_only": True, "no_holdout": True})
+
+    with pytest.raises(ValueError, match="smoke builds"):
+        build_qdrant_rag_chunk_index(
+            items_path=items_path,
+            collection_name="test_rag_durable_limited",
+            qdrant_config={"path": str(tmp_path / "qdrant")},
+            source_manifest_path=source_manifest_path,
+            fields=["title"],
+            embedding_backend=FakeEmbeddingBackend(),
+            limit_items=1,
+        )
+
+
 def test_build_qdrant_rag_chunk_index_requires_explicit_train_no_holdout(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     install_fake_qdrant(monkeypatch)
     items_path = tmp_path / "canonical_items.jsonl"
@@ -180,6 +214,122 @@ def test_build_qdrant_rag_chunk_index_rejects_nested_forbidden_manifest_path(mon
             fields=["title"],
             embedding_backend=FakeEmbeddingBackend(),
         )
+
+
+def test_build_qdrant_rag_chunk_index_deletes_stale_same_count_chunks_after_rebuild(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    store = QdrantVectorStore(build_qdrant_client(location=":memory:"))
+    monkeypatch.setattr("rs_core.recsys.rag.qdrant_index.build_store", lambda _config: store)
+    uuids = iter([type("FakeUuid", (), {"hex": "build-1"})(), type("FakeUuid", (), {"hex": "build-2"})()])
+    monkeypatch.setattr("rs_core.recsys.rag.qdrant_index.uuid4", lambda: next(uuids))
+    items_path = tmp_path / "canonical_items.jsonl"
+    source_manifest_path = tmp_path / "dataset_manifest.json"
+    write_json(source_manifest_path, {"schema_version": "unit_dataset_manifest_v1", "train_only": True, "no_holdout": True})
+    write_jsonl(
+        items_path,
+        [
+            {"parent_asin": "i1", "title": "soft red sofa seat"},
+            {"parent_asin": "stale", "title": "bright desk lamp"},
+        ],
+    )
+
+    build_qdrant_rag_chunk_index(
+        items_path=items_path,
+        collection_name="test_rag_same_count_stale_rebuild",
+        qdrant_config={"location": ":memory:"},
+        source_manifest_path=source_manifest_path,
+        fields=["title"],
+        embedding_backend=FakeEmbeddingBackend(),
+    )
+    write_jsonl(
+        items_path,
+        [
+            {"parent_asin": "i1", "title": "soft red sofa seat"},
+            {"parent_asin": "fresh", "title": "camp kettle"},
+        ],
+    )
+
+    build_qdrant_rag_chunk_index(
+        items_path=items_path,
+        collection_name="test_rag_same_count_stale_rebuild",
+        qdrant_config={"location": ":memory:"},
+        source_manifest_path=source_manifest_path,
+        fields=["title"],
+        embedding_backend=FakeEmbeddingBackend(),
+    )
+
+    points = store.client.collections["test_rag_same_count_stale_rebuild"]["points"]
+    assert {point.payload["item_id"] for point in points} == {"i1", "fresh"}
+
+
+
+def test_build_qdrant_rag_chunk_index_zero_chunk_rebuild_preserves_existing_chunks(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    store = QdrantVectorStore(build_qdrant_client(location=":memory:"))
+    monkeypatch.setattr("rs_core.recsys.rag.qdrant_index.build_store", lambda _config: store)
+    uuids = iter([type("FakeUuid", (), {"hex": "build-1"})(), type("FakeUuid", (), {"hex": "build-2"})()])
+    monkeypatch.setattr("rs_core.recsys.rag.qdrant_index.uuid4", lambda: next(uuids))
+    items_path = tmp_path / "canonical_items.jsonl"
+    source_manifest_path = tmp_path / "dataset_manifest.json"
+    write_json(source_manifest_path, {"schema_version": "unit_dataset_manifest_v1", "train_only": True, "no_holdout": True})
+    write_jsonl(items_path, [{"parent_asin": "i1", "title": "soft red sofa seat"}])
+
+    build_qdrant_rag_chunk_index(
+        items_path=items_path,
+        collection_name="test_rag_zero_rebuild",
+        qdrant_config={"location": ":memory:"},
+        source_manifest_path=source_manifest_path,
+        fields=["title"],
+        embedding_backend=FakeEmbeddingBackend(),
+    )
+    write_jsonl(items_path, [])
+    manifest = build_qdrant_rag_chunk_index(
+        items_path=items_path,
+        collection_name="test_rag_zero_rebuild",
+        qdrant_config={"location": ":memory:"},
+        source_manifest_path=source_manifest_path,
+        fields=["title"],
+        embedding_backend=FakeEmbeddingBackend(),
+    )
+
+    assert manifest["chunk_count"] == 0
+    assert manifest["stale_chunks_deleted_for_corpus"] is False
+    assert {point.payload["item_id"] for point in store.client.collections["test_rag_zero_rebuild"]["points"]} == {"i1"}
+
+
+
+def test_build_qdrant_rag_chunk_index_isolates_point_ids_by_corpus_scope(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    install_fake_qdrant(monkeypatch)
+    store = QdrantVectorStore(build_qdrant_client(location=":memory:"))
+    monkeypatch.setattr("rs_core.recsys.rag.qdrant_index.build_store", lambda _config: store)
+    items_path = tmp_path / "canonical_items.jsonl"
+    source_manifest_path = tmp_path / "dataset_manifest.json"
+    write_json(source_manifest_path, {"schema_version": "unit_dataset_manifest_v1", "train_only": True, "no_holdout": True})
+    write_jsonl(items_path, [{"parent_asin": "i1", "title": "soft red sofa seat"}])
+
+    build_qdrant_rag_chunk_index(
+        items_path=items_path,
+        collection_name="test_rag_corpus_scope_ids",
+        qdrant_config={"location": ":memory:"},
+        source_manifest_path=source_manifest_path,
+        fields=["title"],
+        corpus_scope="scope_a",
+        embedding_backend=FakeEmbeddingBackend(),
+    )
+    build_qdrant_rag_chunk_index(
+        items_path=items_path,
+        collection_name="test_rag_corpus_scope_ids",
+        qdrant_config={"location": ":memory:"},
+        source_manifest_path=source_manifest_path,
+        fields=["title"],
+        corpus_scope="scope_b",
+        embedding_backend=FakeEmbeddingBackend(),
+    )
+
+    points = store.client.collections["test_rag_corpus_scope_ids"]["points"]
+    assert {point.payload["corpus_scope"] for point in points} == {"scope_a", "scope_b"}
+    assert len(points) == 2
+
 
 
 def test_build_qdrant_rag_chunk_index_deletes_stale_chunks_after_rebuild(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

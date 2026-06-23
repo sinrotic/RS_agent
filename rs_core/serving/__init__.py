@@ -1,6 +1,3 @@
-from rs_core.serving.facades import FeedbackSessionFacade, RecommendationFacade, RecallFacade
-from rs_core.serving.service import RecommendationService, SessionNotFoundError
-
 __all__ = [
     "FeedbackSessionFacade",
     "RecallFacade",
@@ -8,3 +5,15 @@ __all__ = [
     "RecommendationService",
     "SessionNotFoundError",
 ]
+
+
+def __getattr__(name: str):
+    if name in {"FeedbackSessionFacade", "RecallFacade", "RecommendationFacade"}:
+        from rs_core.serving import facades
+
+        return getattr(facades, name)
+    if name in {"RecommendationService", "SessionNotFoundError"}:
+        from rs_core.serving.application import recommendation_service
+
+        return getattr(recommendation_service, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

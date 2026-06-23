@@ -51,6 +51,25 @@ def test_parse_feedback_extracts_price_and_gift_constraints():
     assert feedback.unsupported_free_text == []
 
 
+def test_parse_feedback_extracts_actionable_chinese_refinement_keywords():
+    feedback = parse_feedback("更偏桌面整洁和线缆管理，给我看小体积配件，实用一点")
+
+    assert feedback.preferred_keywords == {
+        "desktop_organization": 1.0,
+        "cable_management": 1.0,
+        "compact": 1.0,
+        "accessories": 1.0,
+        "practical": 1.0,
+    }
+    assert feedback.use_cases == {
+        "desktop_organization": 1.0,
+        "cable_management": 1.0,
+        "compact": 1.0,
+        "practical": 1.0,
+    }
+    assert feedback.unsupported_free_text == []
+
+
 def test_recommend_for_user_applies_feedback_exclusion_and_boosts():
     sequence = {"user_id": "u1", "recent_item_sequence": [], "recent_positive_item_sequence": [], "recent_strong_positive_item_sequence": []}
     popular = [RecallCandidate("charger_1", "popular", 5.0, category="Accessories")]

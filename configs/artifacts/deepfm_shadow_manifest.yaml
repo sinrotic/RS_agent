@@ -1,0 +1,44 @@
+{
+  "schema_version": "rs_agent_deepfm_shadow_manifest_v1",
+  "artifact_id": "deepfm_shadow_remote_formal_20260609_history_features_neg4",
+  "artifact_type": "ranking_model_shadow_diagnostic",
+  "stage": "local_trial_serving",
+  "model_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/deepfm_model.json",
+  "artifact_report_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/offline_train_eval_report.json",
+  "purpose": "Diagnostic-only DeepFM shadow scoring contract for observing ranking signals without changing public recommendations.",
+  "serving_contract": {
+    "enabled": true,
+    "mode": "shadow_diagnostic",
+    "affect_ranking": false,
+    "score_scale": 0.0,
+    "public_payload_allowed": false,
+    "diagnostic_only": true,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false,
+    "replacement_allowed": false
+  },
+  "governance": {
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false,
+    "public_payload_allowed": false
+  },
+  "artifact_store": {
+    "storage_backend": "minio",
+    "local_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/deepfm_model.json",
+    "artifact_uri": "minio://rs-artifacts-local/deepfm_shadow_remote_formal_20260609_history_features_neg4/deepfm_model.json",
+    "minio_uri": "minio://rs-artifacts-local/deepfm_shadow_remote_formal_20260609_history_features_neg4/deepfm_model.json",
+    "sha256": "8260e6ca51d3b80990f9a1842c36c863ae5f2716f2ea4bac46423cedea51029f",
+    "size_bytes": 2677,
+    "cache_policy": "local_trial_cache",
+    "uploaded_at": "2026-06-22T06:00:52Z",
+    "minio_reserved": true,
+    "s3_uri": null
+  },
+  "model_registry": {
+    "mlflow_reserved": true,
+    "registered_model_name": null,
+    "model_version": null,
+    "run_id": null
+  }
+}

@@ -104,15 +104,18 @@ Windows 本地默认使用项目虚拟环境 `.venv`。下面两条命令是当�
 1. `architecture/SYSTEM_ARCHITECTURE.md`：系统总架构、三入口一底座、传统推荐底座与 Agent 编排关系。
 2. `architecture/ARCHITECTURE.md`：总体架构和分层职责。
 3. `architecture/IMPLEMENTATION_PLAN.md`：当前实现路线和阶段边界。
-4. `PROJECT_STRUCTURE.md`：目录职责和演进边界。
-5. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
-6. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
-7. `guides/QWEN_TRAINING_ENV_GUIDE.md`：Qwen QLoRA / SFT / GRPO 训练环境 scaffold 边界、命令和验证口径。
-8. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
+4. `architecture/TECH_STACK_SELECTION.md`：本地试运行级技术选型、组件边界和部署演进路线。
+5. `PROJECT_STRUCTURE.md`：目录职责和演进边界。
+6. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
+7. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
+8. `guides/QWEN_TRAINING_ENV_GUIDE.md`：Qwen QLoRA / SFT / GRPO 训练环境 scaffold 边界、命令和验证口径。
+9. `standards/AGENT_PROMPT_STANDARD.md`：RecommendationAgent、首页 Agent、RagAgent 等系统提示词规范。
+10. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
 
 ## 文档分区
 
 - `guides/`：文档、产物和配置路由规范。
+- `standards/`：工程规范和 Agent 提示词规范。
 - `architecture/`：架构、实现路线和模块边界。
 - `decisions/`：ADR 和阶段性技术决策。
 - `phases/`：阶段计划、阶段总结和长期路线。

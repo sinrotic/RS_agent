@@ -181,6 +181,10 @@ def _summary_config(config: dict[str, Any] | None) -> dict[str, Any]:
     return merged
 
 
+def build_public_session_summary_input(public_export: dict[str, Any]) -> dict[str, Any]:
+    return _public_summary_input(public_export)
+
+
 def _public_summary_input(public_export: dict[str, Any]) -> dict[str, Any]:
     timeline = public_export.get("public_timeline") if isinstance(public_export.get("public_timeline"), dict) else {}
     events = timeline.get("events") if isinstance(timeline.get("events"), list) else []

@@ -1,0 +1,341 @@
+{
+  "clean_dir": "data/processed/amazon_2023_recall_clean_10000",
+  "views_dir": "data/processed/amazon_2023_recall_views_10000",
+  "output_dir": "outputs/serving/online_service_local_qdrant",
+  "report_path": "outputs/serving/online_service_local_qdrant/report.md",
+  "evaluation_mode": "public_serving",
+  "serving_allowed": true,
+  "top_k": 5,
+  "candidate_pool_size": 500,
+  "itemcf_per_seed": 20,
+  "category_per_user": 20,
+  "semantic_enabled": true,
+  "semantic_per_user": 60,
+  "semantic_min_overlap": 1,
+  "semantic_text_fields": [
+    "title_clean",
+    "main_category",
+    "categories_flat"
+  ],
+  "popular_fallback_count": 50,
+  "rank_weights": {
+    "popular": 1.0,
+    "itemcf_weak": 2.0,
+    "itemcf_strong": 2.5,
+    "category": 0.8,
+    "semantic": 1.2,
+    "swing_recall": 1.1,
+    "usercf_recall": 0.8,
+    "co_visit_fallback_repair": 0.6,
+    "recent": 0.3,
+    "verified": 0.2,
+    "time_decay": 0.2
+  },
+  "online_route": {
+    "pool500_candidates_path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
+    "artifact_manifest_path": "configs/artifacts/pool500_serving_manifest.yaml",
+    "allowed_sources": [
+      "popular",
+      "category",
+      "swing_recall",
+      "itemcf_strong",
+      "itemcf_weak",
+      "two_tower",
+      "semantic",
+      "usercf_recall",
+      "co_visit_fallback_repair"
+    ],
+    "source_indexes": {
+      "itemcf_weak": {
+        "enabled": true,
+        "manifest_path": "outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json",
+        "allow_heavy_scan": false
+      },
+      "itemcf_strong": {
+        "enabled": true,
+        "manifest_path": "outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json",
+        "allow_heavy_scan": false
+      },
+      "usercf_recall": {
+        "enabled": true,
+        "manifest_path": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json"
+      },
+      "two_tower": {
+        "enabled": true,
+        "manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json",
+        "backend": "qdrant",
+        "qdrant": {
+          "enabled": true,
+          "url": "http://qdrant:6333",
+          "collection_name": "rs_agent_two_tower_items_v1"
+        }
+      },
+      "co_visit_fallback_repair": {
+        "enabled": true,
+        "manifest_path": "outputs/recall/pool500_method_sources/co_visit_fallback_repair/local_formal_co_visit_repair_20260525/source_index_manifest.json"
+      }
+    },
+    "source_exposure_mode": {
+      "usercf_recall": "source_index_lookup_pool500_supplemental",
+      "co_visit_fallback_repair": "artifact_backed_guarded_not_full_online_graph"
+    },
+    "governance": {
+      "ranking_input_replacement_allowed": false,
+      "pool1000_allowed": false,
+      "promotion_allowed": false,
+      "final_pool500_ready_claimed": false
+    }
+  },
+  "rag": {
+    "evidence_mode": "explain",
+    "retriever": "hybrid",
+    "index_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.sqlite",
+    "bm25_index_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.sqlite",
+    "manifest_path": "configs/artifacts/rag_qdrant_manifest.yaml",
+    "fallback_policy": {
+      "enabled": true,
+      "fallback_retriever": "sqlite_bm25",
+      "on_qdrant_unavailable": true,
+      "on_dependency_missing": true,
+      "on_empty_vector_results": true,
+      "report_fallback": true
+    },
+    "hybrid": {
+      "bm25_weight": 0.65,
+      "vector_weight": 0.35,
+      "vector_dim": 1024,
+      "vector_top_k_multiplier": 4,
+      "fusion_method": "weighted",
+      "rrf_k": 60,
+      "qdrant": {
+        "enabled": true,
+        "url": "http://qdrant:6333",
+        "collection_name": "rs_agent_rag_chunks_v1",
+        "embedding_model_name": "BAAI/bge-m3",
+        "embedding_method": "sentence_transformer_dense_v1",
+        "query_prefix": "",
+        "embedding_batch_size": 16,
+        "normalize_embeddings": true,
+        "top_k_multiplier": 4,
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "promotion_allowed": false
+      }
+    },
+    "qdrant": {
+      "enabled": true,
+      "url": "http://qdrant:6333",
+      "collection_name": "rs_agent_rag_chunks_v1",
+      "embedding_model_name": "BAAI/bge-m3",
+      "embedding_method": "sentence_transformer_dense_v1",
+      "candidate_generation_allowed": false,
+      "ranking_input_replacement_allowed": false,
+      "promotion_allowed": false
+    },
+    "small2big": {
+      "enabled": true,
+      "manifest": {
+        "schema_version": "small2big_parent_profile.v1",
+        "train_only": true,
+        "no_holdout": true,
+        "source_manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.manifest.json",
+        "candidate_generation_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "promotion_allowed": false,
+        "raw_profile_public_projection": true
+      },
+      "parent_fields": [
+        "title",
+        "category_path",
+        "store",
+        "brand",
+        "features",
+        "description"
+      ],
+      "parent_profile_max_chars": 1000,
+      "max_parent_profiles_total": 6,
+      "max_parent_profiles_per_item": 1,
+      "min_base_evidence_total": 1
+    },
+    "fields": [
+      "title",
+      "category",
+      "main_category",
+      "category_path",
+      "description",
+      "features",
+      "compact_text"
+    ],
+    "max_evidence_per_item": 2,
+    "max_evidence_total": 8,
+    "max_text_chars": 180,
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false
+  },
+  "agent_runtime": {
+    "rag_agent": {
+      "enabled": true,
+      "mode": "shadow",
+      "max_support_per_item": 3,
+      "max_text_chars": 220,
+      "attach_support_to_diagnostics": true
+    }
+  },
+  "deepfm_model": {
+    "enabled": false,
+    "mode": "shadow",
+    "model_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/deepfm_model.json",
+    "feature_metadata_keys": [
+      "cold_deepfm_features",
+      "deepfm_features",
+      "ranking_features"
+    ],
+    "require_all_features": true,
+    "score_scale": 1.0,
+    "diagnostic_only": true,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false
+  },
+  "deepfm_shadow": {
+    "enabled": true,
+    "mode": "shadow_diagnostic",
+    "manifest_path": "configs/artifacts/deepfm_shadow_manifest.yaml",
+    "model_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/deepfm_model.json",
+    "artifact_report_path": "outputs/ranking/deepfm_remote_formal_20260609_history_features_neg4/direct_deepfm/offline_train_eval_report.json",
+    "feature_strategy": "all_zero_safe",
+    "affect_ranking": false,
+    "score_scale": 0.0,
+    "public_payload_allowed": false,
+    "max_scored_candidates": 500,
+    "emit_internal_events": true,
+    "diagnostic_only": true,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false
+  },
+  "inference_policy": {
+    "enabled": false,
+    "provider": "disabled",
+    "available_providers": [
+      "disabled",
+      "openai_compatible",
+      "local_transformers"
+    ],
+    "policy_type": "deterministic_baseline",
+    "strict": false,
+    "openai_compatible": {
+      "enabled": false,
+      "note": "External OpenAI-compatible/vLLM endpoint only. Serving starts FastAPI only and does not start vLLM or Qwen.",
+      "api_base_env": "RS_AGENT_OPENAI_COMPATIBLE_BASE_URL",
+      "api_key_env": "RS_AGENT_OPENAI_COMPATIBLE_API_KEY",
+      "model_env": "RS_AGENT_OPENAI_COMPATIBLE_MODEL",
+      "timeout_seconds": 30.0,
+      "allow_insecure_local_api_base": true,
+      "temperature": 0.0,
+      "max_tokens": 512,
+      "response_format": {
+        "type": "json_object"
+      },
+      "probe_enabled": false
+    },
+    "local_transformers": {
+      "enabled": false,
+      "model_id": "Qwen/Qwen3.5-4B",
+      "local_files_only": true
+    }
+  },
+  "strategy_name": "online_pool500_agent_service_local_qdrant_v1",
+  "online_retrieval": {
+    "enabled": true,
+    "mode": "local_trial_non_production",
+    "providers": {
+      "two_tower_qdrant": {
+        "enabled": true,
+        "manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json",
+        "backend": "qdrant",
+        "qdrant": {
+          "enabled": true,
+          "url": "http://qdrant:6333",
+          "collection_name": "rs_agent_two_tower_items_v1"
+        }
+      },
+      "candidate_store_itemcf_strong": {
+        "enabled": true,
+        "source": "itemcf_strong",
+        "source_name": "itemcf_strong",
+        "seed_window": 20,
+        "limit_per_seed": 20
+      },
+      "candidate_store_itemcf_weak": {
+        "enabled": true,
+        "source": "itemcf_weak",
+        "source_name": "itemcf_weak",
+        "seed_window": 20,
+        "limit_per_seed": 20
+      },
+      "candidate_store_co_visit_repair": {
+        "enabled": true,
+        "source": "co_visit_fallback_repair",
+        "source_name": "co_visit_fallback_repair",
+        "seed_window": 20,
+        "limit_per_seed": 20
+      },
+      "candidate_store_usercf": {
+        "enabled": true,
+        "source": "usercf_recall",
+        "source_name": "usercf_recall",
+        "limit": 100
+      },
+      "candidate_store_category": {
+        "enabled": true,
+        "bucket_limit": 5,
+        "limit_per_bucket": 20
+      },
+      "semantic_token": {
+        "enabled": true,
+        "semantic_score_mode": "idf_seed_aware",
+        "semantic_per_user": 60,
+        "semantic_per_seed": 20,
+        "semantic_seed_window": 20,
+        "semantic_max_df_ratio": 0.35,
+        "semantic_category_weight": 2.0
+      },
+      "candidate_store_popular": {
+        "enabled": true,
+        "scope": "global",
+        "bucket": "",
+        "limit": 100
+      },
+      "semantic_vector": {
+        "enabled": false,
+        "collection_name": ""
+      },
+      "pool500_fallback": {
+        "enabled": true,
+        "prefer_candidate_store": false,
+        "fallback_only": true,
+        "candidates_path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
+        "allowed_sources": [
+          "popular",
+          "category",
+          "swing_recall",
+          "itemcf_strong",
+          "itemcf_weak",
+          "two_tower",
+          "semantic",
+          "usercf_recall",
+          "co_visit_fallback_repair"
+        ]
+      }
+    },
+    "governance": {
+      "rag_chunks_candidate_generation_allowed": false,
+      "production_ready_claimed": false
+    }
+  },
+  "semantic_score_mode": "idf_seed_aware",
+  "semantic_per_seed": 20,
+  "semantic_seed_window": 20,
+  "semantic_max_df_ratio": 0.35,
+  "semantic_category_weight": 2.0
+}

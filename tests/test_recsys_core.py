@@ -554,6 +554,29 @@ def test_online_service_enables_deepfm_shadow_diagnostic_only():
     assert config["deepfm_shadow"]["promotion_allowed"] is False
 
 
+def test_online_service_enables_rag_explain_by_default():
+    config = json.loads(Path("configs/serving/online_service.yaml").read_text(encoding="utf-8"))
+    rag_config = config["rag"]
+
+    assert rag_config["evidence_mode"] == "explain"
+    assert rag_config["retriever"] == "sqlite_bm25"
+    assert Path(rag_config["index_path"]).exists()
+    manifest_path = Path(rag_config["manifest_path"])
+    assert manifest_path.exists()
+    assert rag_config["fields"] == ["title", "category", "main_category", "category_path", "description", "features"]
+    assert rag_config["candidate_generation_allowed"] is False
+    assert rag_config["ranking_input_replacement_allowed"] is False
+    assert rag_config["promotion_allowed"] is False
+
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["retrieval_scope"] == "candidate_item_ids"
+    assert manifest["knowledge_base_role"] == "rag_evidence"
+    assert manifest["candidate_scoped"] is True
+    assert manifest["candidate_generation_allowed"] is False
+    assert manifest["ranking_input_replacement_allowed"] is False
+    assert manifest["promotion_allowed"] is False
+
+
 
 def test_policy_rerank_guard_defers_overexposed_source_and_records_event():
     candidates = [

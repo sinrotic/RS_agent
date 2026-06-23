@@ -317,7 +317,7 @@ def run_qwen_evaluation_harness(
 
 def _build_harness_inference_client(config: dict[str, Any], config_overrides: dict[str, Any]) -> RerankPolicyClient | None:
     policy = resolve_inference_policy_config(_merge_nested(config, config_overrides))
-    if not policy.get("enabled") or policy.get("provider") != "qwen_local":
+    if not policy.get("enabled") or policy.get("provider") != "local_transformers":
         return None
     from rs_core.rsagent.qwen_client import QwenLocalClient
 

@@ -127,7 +127,7 @@ def _build_cli_inference_client(config_path: str | Path, config_overrides: dict)
     if config_overrides:
         config = _merge_nested(config, config_overrides)
     policy = resolve_inference_policy_config(config)
-    if policy.get("enabled") and policy.get("provider") == "qwen_local":
+    if policy.get("enabled") and policy.get("provider") == "local_transformers":
         return QwenLocalClient(policy)
     return None
 

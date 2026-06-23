@@ -18,9 +18,10 @@ from rs_core.recsys.candidate_merge import (
     two_tower_candidates_for_user,
     usercf_candidates_for_user,
 )
+from rs_core.recsys.online_retrieval import CandidateRetrievalOrchestrator
 from rs_core.recsys.pool500_artifacts import Pool500ArtifactIndex, load_pool500_artifact_index
 from rs_core.recsys.vectorstores.qdrant_client import QdrantVectorStore
-from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_TWO_TOWER_COLLECTION, OptionalQdrantDependencyMissing
+from rs_core.recsys.vectorstores.qdrant_contracts import DEFAULT_TWO_TOWER_COLLECTION
 from rs_core.recsys.vectorstores.qdrant_two_tower import QdrantTwoTowerIndex
 from rs_core.recsys.types import MergedCandidate, RecallCandidate
 from rs_core.rsagent.policy import normalize_feedback_input, parse_feedback
@@ -56,6 +57,7 @@ class OnlinePool500Recommender:
         self._co_visit_lookup_error: str | None = None
         self._two_tower_index: Any | None = None
         self._two_tower_index_error: str | None = None
+        self._candidate_orchestrator: CandidateRetrievalOrchestrator | None = None
 
     @classmethod
     def from_environment(cls, env: HybridRecommendationEnvironment) -> OnlinePool500Recommender:
@@ -72,6 +74,7 @@ class OnlinePool500Recommender:
             "complete_pool500_available": False,
             "online_source_indexes_available": source_index_available,
             "online_source_indexes": source_indexes,
+            "candidate_retrieval": self._get_candidate_orchestrator().readiness(),
         }
         if not path:
             payload["pool500_artifact"] = {"enabled": False, "status": "not_configured"}
@@ -101,35 +104,22 @@ class OnlinePool500Recommender:
         extra_candidates: list[MergedCandidate] = []
         route_diagnostics: dict[str, Any] = {"route": "demo_compatible", "complete_pool500": bool(complete_pool500)}
         if complete_pool500:
-            source_index_candidates, source_index_diagnostics = self._source_index_candidates_for_sequence(normalized_sequence, config)
-            artifact_candidates, artifact_diagnostics = self._artifact_candidates_for_sequence(normalized_sequence)
-            if not artifact_diagnostics.get("pool500_artifact_enabled") and not _has_available_source_index(source_index_diagnostics):
+            if _has_online_retrieval_config(self.env.config):
+                retrieval = self._get_candidate_orchestrator().retrieve(
+                    normalized_sequence,
+                    config=config,
+                    candidate_pool_size=int(config.get("candidate_pool_size", 500)),
+                )
+                extra_candidates = _filter_live_candidates(retrieval.candidates)
                 route_diagnostics = {
-                    "route": "online_recall_degraded",
+                    "route": "online_retrieval_orchestrator",
                     "complete_pool500": True,
-                    **artifact_diagnostics,
-                    "online_source_indexes": source_index_diagnostics,
-                    "fallback_reason": "online_recall_unavailable",
+                    "candidate_retrieval": retrieval.diagnostics,
+                    "provider_results": _provider_result_diagnostics(retrieval.provider_results),
+                    "fallback_reason": "online_retrieval_fallback_provider" if retrieval.fallback_used else None,
                 }
             else:
-                extra_candidates = _merge_online_extra_candidates([*artifact_candidates, *source_index_candidates])
-                repair_candidates, repair_diagnostics = self._co_visit_underfill_repair_candidates_for_sequence(
-                    normalized_sequence,
-                    config,
-                    extra_candidates,
-                )
-                if repair_candidates:
-                    extra_candidates = _merge_online_extra_candidates([*extra_candidates, *repair_candidates])
-                route_diagnostics = {
-                    "route": "online_recall_with_source_indexes",
-                    "complete_pool500": True,
-                    **artifact_diagnostics,
-                    "source_index_candidate_count": len(source_index_candidates),
-                    "source_index_coverage": _candidate_source_coverage(source_index_candidates),
-                    "co_visit_underfill_repair": repair_diagnostics,
-                    "online_source_indexes": source_index_diagnostics,
-                    "fallback_reason": "missing_user_in_online_recall" if not extra_candidates else None,
-                }
+                extra_candidates, route_diagnostics = self._legacy_complete_pool500_candidates(normalized_sequence, config)
         result = recommend_for_user(
             normalized_sequence,
             self.env.popular,
@@ -180,28 +170,25 @@ class OnlinePool500Recommender:
         normalized_sequence = _normalize_sequence(user_sequence, user_sequence.get("user_id"))
         policy = retrieve_policy if isinstance(retrieve_policy, dict) else {}
         seen_items = (prior_turn_items or set()) | set(normalized_sequence.get("recent_item_sequence", []))
-        candidates: list[MergedCandidate] = []
-        index = self._maybe_pool500_index()
-        if index is not None:
-            candidates.extend(_filter_live_candidates(index.candidates_for_user(normalized_sequence["user_id"], seen_items=seen_items)))
         request_config = _request_config(self.env.config, top_k=5, candidate_pool_size=candidate_pool_size)
         source_sequence = _sequence_with_reference_seed(normalized_sequence, policy.get("reference_item_id"))
-        source_index_candidates, source_index_diagnostics = self._source_index_candidates_for_sequence(
-            source_sequence,
-            request_config,
-        )
-        candidates = _filter_live_candidates(_merge_online_extra_candidates([*candidates, *source_index_candidates]))
-        repair_candidates, repair_diagnostics = self._co_visit_underfill_repair_candidates_for_sequence(
-            normalized_sequence,
-            request_config,
-            candidates,
-        )
-        if repair_candidates:
-            candidates = _merge_online_extra_candidates([*candidates, *repair_candidates])
-        candidates = [candidate for candidate in candidates if candidate.item_id not in seen_items]
-        if candidate_pool_size is not None:
-            candidates = candidates[: int(candidate_pool_size)]
-        route = "online_source_index" if index is None and source_index_candidates else "pool500_artifact_online" if index is not None else "demo_compatible"
+        target_pool_size = candidate_pool_size or int(request_config.get("candidate_pool_size", 500))
+        if _has_online_retrieval_config(self.env.config):
+            retrieval = self._get_candidate_orchestrator().retrieve(
+                source_sequence,
+                config=request_config,
+                seen_items=seen_items,
+                prior_turn_items=prior_turn_items,
+                candidate_pool_size=target_pool_size,
+                retrieve_policy=policy,
+            )
+            candidates = _filter_live_candidates(retrieval.candidates)
+            route = "online_retrieval_orchestrator"
+            diagnostics = {"compact": True, "route": route, "candidate_retrieval": retrieval.diagnostics}
+        else:
+            candidates, legacy_diagnostics = self._legacy_recall_candidates(source_sequence, request_config, prior_turn_items=prior_turn_items, candidate_pool_size=target_pool_size)
+            route = "legacy_online_route_compat"
+            diagnostics = {"compact": True, "route": route, "online_route": legacy_diagnostics}
         return {
             "candidate_item_ids": [candidate.item_id for candidate in candidates],
             "candidate_count": len(candidates),
@@ -210,7 +197,7 @@ class OnlinePool500Recommender:
                 "target_pool_size": candidate_pool_size,
                 "path_count": len(_candidate_source_coverage(candidates)),
             },
-            "diagnostics": {"compact": True, "route": route, "online_source_indexes": source_index_diagnostics, "co_visit_underfill_repair": repair_diagnostics},
+            "diagnostics": diagnostics,
         }
 
     def tool_rank_candidates(self, turn: Any | None, *, return_top_k: int | None = None) -> dict[str, Any]:
@@ -248,6 +235,52 @@ class OnlinePool500Recommender:
             },
         }
 
+    def _get_candidate_orchestrator(self) -> CandidateRetrievalOrchestrator:
+        if self._candidate_orchestrator is None:
+            self._candidate_orchestrator = CandidateRetrievalOrchestrator.from_config(
+                self.env.config,
+                config_path=self.env.config_path,
+                semantic_index=self.env.semantic_index,
+            )
+        return self._candidate_orchestrator
+
+    def _legacy_complete_pool500_candidates(self, user_sequence: dict[str, Any], config: dict[str, Any]) -> tuple[list[MergedCandidate], dict[str, Any]]:
+        source_candidates, source_diagnostics = self._source_index_candidates_for_sequence(user_sequence, config)
+        artifact_candidates, artifact_diagnostics = self._artifact_candidates_for_sequence(user_sequence)
+        merged = _filter_live_candidates(merge_candidates([_merged_to_recall_candidate(candidate) for candidate in [*source_candidates, *artifact_candidates]], seen_items=set(user_sequence.get("recent_item_sequence", []))))
+        repair_candidates, repair_diagnostics = self._co_visit_underfill_repair_candidates_for_sequence(user_sequence, config, merged)
+        if repair_candidates:
+            merged = _filter_live_candidates(
+                merge_candidates([_merged_to_recall_candidate(candidate) for candidate in [*merged, *repair_candidates]], seen_items=set(user_sequence.get("recent_item_sequence", []))),
+                allow_sources={"co_visit_fallback_repair"},
+            )
+        return merged, {
+            "route": "legacy_online_route_compat",
+            "complete_pool500": True,
+            "source_indexes": source_diagnostics,
+            "pool500_artifact": artifact_diagnostics,
+            "co_visit_underfill_repair": repair_diagnostics,
+            "fallback_reason": _legacy_fallback_reason(source_candidates, artifact_candidates, artifact_diagnostics),
+        }
+
+    def _legacy_recall_candidates(
+        self,
+        user_sequence: dict[str, Any],
+        config: dict[str, Any],
+        *,
+        prior_turn_items: set[str] | None,
+        candidate_pool_size: int,
+    ) -> tuple[list[MergedCandidate], dict[str, Any]]:
+        source_candidates, source_diagnostics = self._source_index_candidates_for_sequence(user_sequence, config)
+        artifact_candidates, artifact_diagnostics = self._artifact_candidates_for_sequence(user_sequence)
+        seen_items = set(user_sequence.get("recent_item_sequence", [])) | set(prior_turn_items or set())
+        candidates = _filter_live_candidates(merge_candidates([_merged_to_recall_candidate(candidate) for candidate in [*source_candidates, *artifact_candidates]], seen_items=seen_items))
+        return candidates[:candidate_pool_size], {
+            "source_indexes": source_diagnostics,
+            "pool500_artifact": artifact_diagnostics,
+            "candidate_count_before_limit": len(candidates),
+        }
+
     def _get_pool500_index(self) -> Pool500ArtifactIndex:
         if self._pool500_index is not None:
             return self._pool500_index
@@ -272,9 +305,13 @@ class OnlinePool500Recommender:
             return None
 
     def _artifact_candidates_for_sequence(self, user_sequence: dict[str, Any]) -> tuple[list[MergedCandidate], dict[str, Any]]:
-        index = self._maybe_pool500_index()
-        if index is None:
+        path = _pool500_candidates_path(self.env.config, self.env.config_path)
+        if path is None:
             return [], {"pool500_artifact_enabled": False}
+        try:
+            index = self._get_pool500_index()
+        except Exception as exc:
+            return [], {"pool500_artifact_enabled": True, "pool500_artifact_error": _compact_error(exc)}
         seen_items = set(user_sequence.get("recent_item_sequence", []))
         candidates = _filter_live_candidates(index.candidates_for_user(str(user_sequence.get("user_id") or ""), seen_items=seen_items))
         return candidates, {
@@ -477,6 +514,19 @@ class OnlinePool500Recommender:
         return usercf_candidates_for_user(user_sequence, self._co_visit_lookup, source_config)
 
 
+def _provider_result_diagnostics(results: list[Any]) -> dict[str, Any]:
+    return {
+        result.provider_name: {
+            "status": result.status,
+            "available": result.available,
+            "candidate_count": len(result.candidates),
+            "fallback_used": result.fallback_used,
+        }
+        for result in results
+    }
+
+
+
 def _sequence_with_reference_seed(user_sequence: dict[str, Any], reference_item_id: Any) -> dict[str, Any]:
     item_id = str(reference_item_id or "").strip()
     if not item_id:
@@ -504,6 +554,31 @@ def _normalize_sequence(user_sequence: dict[str, Any], user_id: str | None) -> d
         else:
             raise ValueError(f"user_sequence.{key} must be a list when provided")
     return sequence
+
+
+def _has_online_retrieval_config(config: dict[str, Any]) -> bool:
+    retrieval = config.get("online_retrieval")
+    return isinstance(retrieval, dict) and bool(retrieval.get("enabled", False))
+
+
+def _legacy_fallback_reason(source_candidates: list[MergedCandidate], artifact_candidates: list[MergedCandidate], artifact_diagnostics: dict[str, Any]) -> str | None:
+    if artifact_diagnostics.get("pool500_artifact_error"):
+        return str(artifact_diagnostics.get("pool500_artifact_error"))
+    if artifact_diagnostics.get("pool500_artifact_enabled") and not artifact_candidates and not source_candidates:
+        return "pool500_artifact_empty_or_filtered"
+    return None
+
+
+def _merged_to_recall_candidate(candidate: MergedCandidate) -> RecallCandidate:
+    source = candidate.sources[0] if candidate.sources else "legacy_online_route"
+    score = max((float(value) for value in candidate.source_scores.values()), default=0.0)
+    return RecallCandidate(
+        item_id=candidate.item_id,
+        source=source,
+        score=score,
+        category=candidate.category,
+        metadata=dict(candidate.metadata),
+    )
 
 
 def _request_config(config: dict[str, Any], *, top_k: int, candidate_pool_size: int | None) -> dict[str, Any]:
@@ -559,15 +634,10 @@ def _two_tower_source_readiness_status(source_config: dict[str, Any], manifest_p
     qdrant_config = source_config.get("qdrant") if isinstance(source_config.get("qdrant"), dict) else {}
     if not qdrant_config.get("enabled", False):
         return {"available": Path(manifest_path).exists(), "status": "configured" if Path(manifest_path).exists() else "missing_manifest"}
-    try:
-        store = QdrantVectorStore.from_config(qdrant_config)
-        collection_name = str(qdrant_config.get("collection_name") or DEFAULT_TWO_TOWER_COLLECTION)
-        store.client.get_collection(collection_name=collection_name)
-    except OptionalQdrantDependencyMissing:
-        return {"available": False, "status": "qdrant_dependency_missing", "backend": "qdrant"}
-    except Exception:
-        return {"available": False, "status": "qdrant_unavailable", "backend": "qdrant"}
-    return {"available": Path(manifest_path).exists(), "status": "qdrant_configured" if Path(manifest_path).exists() else "missing_manifest", "backend": "qdrant"}
+    if not any(qdrant_config.get(key) not in (None, "") for key in ("location", "path", "url", "host")):
+        return {"available": False, "status": "qdrant_unavailable", "backend": "qdrant", "reason": "qdrant_target_missing"}
+    manifest_exists = Path(manifest_path).exists()
+    return {"available": manifest_exists, "status": "qdrant_configured" if manifest_exists else "missing_manifest", "backend": "qdrant"}
 
 
 def _load_two_tower_backend(manifest_path: Path, source_config: dict[str, Any]) -> Any:

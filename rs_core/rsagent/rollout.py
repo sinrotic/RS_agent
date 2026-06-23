@@ -28,11 +28,11 @@ def turn_to_rollout_record(turn: AgentTurn, session: AgentSession, user_sequence
         "turn_index": turn.turn_index,
         "prompt_context": prompt_context,
         "policy_type": policy_type,
-        "agent_decision": turn.recommendation.to_dict(),
+        "agent_decision": _safe_agent_decision(turn),
         "display_response": build_display_record(turn, session),
-        "ranking": turn.ranking,
-        "candidates": turn.candidates,
-        "diagnostics": turn.diagnostics,
+        "ranking": _safe_item_rows(turn.ranking),
+        "candidates": _safe_item_rows(turn.candidates),
+        "diagnostics": _safe_diagnostics(turn.diagnostics),
         "reward_evidence": reward_evidence,
         "reward": reward,
         "training_samples": _training_samples(turn, prompt_context, policy_type, reward, reward_evidence),
@@ -42,6 +42,41 @@ def turn_to_rollout_record(turn: AgentTurn, session: AgentSession, user_sequence
 
 def session_to_rollout_records(session: AgentSession, user_sequence: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     return [turn_to_rollout_record(turn, session, user_sequence) for turn in session.turns]
+
+
+def _safe_agent_decision(turn: AgentTurn) -> dict[str, Any]:
+    decision = turn.recommendation
+    return {
+        "user_id": decision.user_id,
+        "strategy_name": decision.strategy_name,
+        "trigger_reason": decision.trigger_reason,
+        "agent_explanation": decision.agent_explanation,
+        "risk_flags": list(decision.risk_flags),
+        "limitations": list(decision.limitations),
+        "final_items": _safe_item_rows(decision.final_items),
+    }
+
+
+def _safe_item_rows(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    safe_rows: list[dict[str, Any]] = []
+    for item in items:
+        safe_rows.append({
+            key: item[key]
+            for key in ("parent_asin", "item_id", "title", "title_clean", "category", "main_category")
+            if key in item and item[key] not in (None, "")
+        })
+    return safe_rows
+
+
+def _safe_diagnostics(diagnostics: dict[str, Any]) -> dict[str, Any]:
+    safe: dict[str, Any] = {}
+    for key in ("preferred_keywords", "disliked_keywords", "rag_agent_shadow", "rag_agent_support"):
+        if key in diagnostics:
+            safe[key] = diagnostics[key]
+    rag = diagnostics.get("rag") if isinstance(diagnostics.get("rag"), dict) else None
+    if rag is not None:
+        safe["rag"] = {key: rag[key] for key in ("kept_evidence_count", "evidence_count") if key in rag}
+    return safe
 
 
 def _record_metadata(turn: AgentTurn, inference_policy: dict[str, Any]) -> dict[str, Any]:
@@ -54,8 +89,26 @@ def _record_metadata(turn: AgentTurn, inference_policy: dict[str, Any]) -> dict[
         "model_id": inference_policy.get("model_id"),
     }
     if turn.rag_context is not None:
-        metadata["rag_context"] = turn.rag_context
+        metadata["rag_context_summary"] = _rag_context_summary(turn.rag_context)
     return metadata
+
+
+def _rag_context_summary(rag_context: dict[str, Any] | Any) -> dict[str, Any]:
+    context = rag_context if isinstance(rag_context, dict) else {}
+    evidence = [row for row in context.get("evidence", []) if isinstance(row, dict)]
+    metadata = context.get("metadata") if isinstance(context.get("metadata"), dict) else {}
+    small2big = metadata.get("small2big") if isinstance(metadata.get("small2big"), dict) else {}
+    return {
+        "present": True,
+        "candidate_scoped": True,
+        "public_payload_allowed": False,
+        "raw_evidence_exported": False,
+        "candidate_item_count": len(context.get("candidate_item_ids", []) or []),
+        "evidence_count": len(evidence),
+        "parent_profile_count": sum(1 for row in evidence if row.get("field") == "parent_profile"),
+        "evidence_mode": metadata.get("evidence_mode"),
+        "small2big_enabled": bool(small2big.get("enabled", False)),
+    }
 
 
 def _training_samples(
@@ -96,8 +149,8 @@ def _candidate_summary(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]
     return [
         {
             "item_id": str(candidate.get("item_id") or candidate.get("parent_asin")),
-            "sources": list(candidate.get("sources", [])),
             "category": candidate.get("category", ""),
+            "evidence_available": bool(candidate.get("sources")),
         }
         for candidate in candidates
     ]

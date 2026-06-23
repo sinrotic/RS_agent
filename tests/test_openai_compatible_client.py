@@ -104,7 +104,22 @@ def test_openai_compatible_client_rejects_insecure_remote_base_url(monkeypatch: 
         client.chat_completion(model="gpt-test", messages=[{"role": "user", "content": "hi"}])
 
 
-def test_openai_compatible_client_allows_explicit_insecure_localhost(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_openai_compatible_client_accepts_localhost_vllm_v1_url(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def fake_transport(url: str, _headers: dict[str, str], _payload: dict[str, Any], timeout_seconds: float) -> dict[str, Any]:
+        captured["url"] = url
+        captured["timeout_seconds"] = timeout_seconds
+        return {"choices": [{"message": {"content": "ok"}}]}
+
+    monkeypatch.setenv("RS_AGENT_GPT_SFT_API_KEY", "unit-test-key")
+    client = OpenAICompatibleClient(base_url="http://127.0.0.1:8000/v1", timeout_seconds=2.5, allow_insecure_local_api_base=True, transport=fake_transport)
+
+    client.chat_completion(model="qwen", messages=[{"role": "user", "content": "hi"}])
+
+    assert captured == {"url": "http://127.0.0.1:8000/v1/chat/completions", "timeout_seconds": 2.5}
+
+
     captured: dict[str, Any] = {}
 
     def fake_transport(url: str, _headers: dict[str, str], _payload: dict[str, Any], _timeout_seconds: float) -> dict[str, Any]:

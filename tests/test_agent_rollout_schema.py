@@ -8,14 +8,19 @@ import json
 from pathlib import Path
 
 from rs_core.common.io import read_jsonl, write_jsonl
+from rs_core.recsys.rag import RAG_PARENT_PROFILE_FIELD
+from rs_core.recsys.types import AgentDecision
 from rs_core.rsagent import cli
 from rs_core.rsagent.cli import run_cli_session
+from rs_core.rsagent.rollout import turn_to_rollout_record
+from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
 
 
 def test_cli_simulated_two_turn_writes_rollout_schema(tmp_path: Path):
     config = _write_agent_fixture(tmp_path)
     result = run_cli_session(
         str(config),
+        user_id="u1",
         limit_users=1,
         output_dir="agent_cli_test_schema",
         simulate_two_turn=True,
@@ -51,8 +56,8 @@ def test_cli_simulated_two_turn_writes_rollout_schema(tmp_path: Path):
     assert sft_sample["target_action"]["selected_item_ids"] == [item["parent_asin"] for item in rollouts[1]["agent_decision"]["final_items"]]
     assert set(sft_sample["target_action"]["selected_item_ids"]) <= set(sft_sample["target_action"]["allowed_item_ids"])
     assert sft_sample["candidate_summary"][0]["item_id"] == "speaker_1"
-    assert "itemcf_weak" in sft_sample["candidate_summary"][0]["sources"]
-    assert "feedback_source_itemcf_weak" in sft_sample["candidate_summary"][0]["sources"]
+    assert "sources" not in sft_sample["candidate_summary"][0]
+    assert sft_sample["candidate_summary"][0]["evidence_available"] is True
     assert sft_sample["target_explanation"] == rollouts[1]["agent_decision"]["agent_explanation"]
     assert reward_sample["reward"] == rollouts[1]["reward"]
     assert reward_sample["reward_evidence"] == rollouts[1]["reward_evidence"]
@@ -60,7 +65,7 @@ def test_cli_simulated_two_turn_writes_rollout_schema(tmp_path: Path):
     assert reward_sample["policy_type"] == rollouts[1]["policy_type"]
     assert reward_sample["risk_flags"] == rollouts[1]["agent_decision"]["risk_flags"]
     assert "diagnostics" in rollouts[1]
-    assert "boost_events" in rollouts[1]["diagnostics"]
+    assert "boost_events" not in rollouts[1]["diagnostics"]
     assert rollouts[1]["diagnostics"]["preferred_keywords"] == {"bluetooth": 1.0}
     assert rollouts[1]["diagnostics"]["disliked_keywords"] == {}
     assert rollouts[1]["prompt_context"]["feedback_constraints"]["preferred_keywords"] == {"bluetooth": 1.0}
@@ -72,15 +77,9 @@ def test_cli_simulated_two_turn_writes_rollout_schema(tmp_path: Path):
     assert first_items != second_items
     assert rollouts[1]["reward_evidence"]["feedback_constraints_satisfied"]["feedback_effect_observed"] is True
     for item in rollouts[1]["ranking"]:
-        assert "base_score" in item
-        assert "agent_boost" in item
-        assert "final_score" in item
-        assert item["score"] == item["final_score"]
+        assert {"score", "base_score", "agent_boost", "final_score", "sources"}.isdisjoint(item)
     for item in rollouts[1]["agent_decision"]["final_items"]:
-        assert "base_score" in item
-        assert "agent_boost" in item
-        assert "final_score" in item
-        assert item["score"] == item["final_score"]
+        assert {"score", "base_score", "agent_boost", "final_score", "sources"}.isdisjoint(item)
     display_records = read_jsonl(result["display_responses_path"])
     assert len(display_records) == 2
     assert display_records[1] == rollouts[1]["display_response"]
@@ -105,6 +104,58 @@ class FakeQwenLocalClient:
 
     def rerank(self, **kwargs):
         raise AssertionError("CLI construction should not load or call the model")
+
+
+def test_rollout_metadata_summarizes_rag_context_without_raw_evidence() -> None:
+    session = AgentSession(session_id="s1", user_id="u1")
+    turn = AgentTurn(
+        turn_index=1,
+        user_input="speaker",
+        feedback_constraints=FeedbackConstraints(),
+        recommendation=AgentDecision(
+            user_id="u1",
+            strategy_name="test",
+            trigger_reason="test",
+            agent_explanation="test",
+            risk_flags=[],
+            limitations=[],
+            final_items=[{"parent_asin": "i1"}],
+        ),
+        candidates=[{"item_id": "i1"}],
+        ranking=[{"parent_asin": "i1"}],
+        fallback_used=False,
+        diagnostics={},
+        rag_context={
+            "candidate_item_ids": ["i1"],
+            "evidence": [
+                {"item_id": "i1", "field": "features", "text": "raw feature evidence", "source": "sqlite_bm25", "score": 1.0},
+                {"item_id": "i1", "field": RAG_PARENT_PROFILE_FIELD, "text": "raw parent profile"},
+            ],
+            "metadata": {"evidence_mode": "explain", "retriever": "sqlite_bm25_small2big", "small2big": {"enabled": True}},
+        },
+    )
+    session.turns.append(turn)
+
+    record = turn_to_rollout_record(turn, session)
+
+    metadata = record["metadata"]
+    assert "rag_context" not in metadata
+    assert metadata["rag_context_summary"] == {
+        "present": True,
+        "candidate_scoped": True,
+        "public_payload_allowed": False,
+        "raw_evidence_exported": False,
+        "candidate_item_count": 1,
+        "evidence_count": 2,
+        "parent_profile_count": 1,
+        "evidence_mode": "explain",
+        "small2big_enabled": True,
+    }
+    payload = json.dumps(metadata, ensure_ascii=False)
+    assert "raw feature evidence" not in payload
+    assert "raw parent profile" not in payload
+    for blocked in ("retriever", "bm25", "qdrant", "hybrid", "source", "score", "manifest"):
+        assert blocked not in payload.lower()
 
 
 def test_cli_builds_one_lazy_qwen_client_for_qwen_policy(monkeypatch, tmp_path: Path):
@@ -133,7 +184,7 @@ def test_cli_builds_one_lazy_qwen_client_for_qwen_policy(monkeypatch, tmp_path: 
     assert captured["inference_client"] is FakeQwenLocalClient.instances[0]
     assert captured["inference_client"].loaded is False
     assert captured["inference_client"].policy_config["enabled"] is True
-    assert captured["inference_client"].policy_config["provider"] == "qwen_local"
+    assert captured["inference_client"].policy_config["provider"] == "local_transformers"
     assert captured["inference_client"].policy_config["model"]["model_id"] == "local-qwen"
     expected_overrides = cli._merge_nested(
         cli._cli_feedback_default_overrides(),
@@ -209,7 +260,7 @@ def _write_agent_fixture(root: Path, inference_policy: dict | None = None) -> Pa
     }])
     write_jsonl(clean / "canonical_interactions.valid.jsonl", [{"user_id": "u1", "parent_asin": "speaker_1", "label_binary": 1}])
     write_jsonl(views / "popular_recall.jsonl", [{"parent_asin": "charger_1", "category": "Accessories", "pop_score": 5}])
-    write_jsonl(views / "itemcf_recall_weak.jsonl", [{"src_item": "seed_audio", "dst_item": "speaker_1", "score": 2.0}])
+    write_jsonl(views / "itemcf_recall_weak.jsonl", [{"src_item": "seed_audio", "dst_item": "speaker_1", "score": 2.0, "category": "Audio", "title_clean": "Bluetooth speaker"}])
     write_jsonl(views / "itemcf_recall_strong.jsonl", [])
     write_jsonl(views / "category_recall_items.jsonl", [
         {"parent_asin": "seed_audio", "main_category": "Audio"},

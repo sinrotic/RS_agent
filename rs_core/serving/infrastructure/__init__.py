@@ -1,0 +1,1 @@
+"""Serving infrastructure adapter skeletons."""

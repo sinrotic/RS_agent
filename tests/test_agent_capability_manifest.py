@@ -8,16 +8,15 @@ import pytest
 
 from rs_core.common.io import write_jsonl
 from rs_core.rsagent.tools import AGENT_CAPABILITY_MANIFEST, AgentCapability
-from rs_core.serving.service import RecommendationService
+from rs_core.serving.application.recommendation_service import RecommendationService
 
 pytestmark = pytest.mark.unit
 
 EXPECTED_CAPABILITIES = {
     "get_user_context",
-    "query_rag",
+    "call_rag_agent",
     "retrieve_candidates",
     "rank_candidates",
-    "get_item_evidence",
     "record_user_feedback",
     "build_recommendation_slate",
 }

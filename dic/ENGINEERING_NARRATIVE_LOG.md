@@ -12,6 +12,366 @@
 - 不记录无意义的中间尝试，不堆 raw log。
 - 简单机械修改不需要单独记录。
 
+### 2026-06-22 - RSAgent dialogue / multi-turn SFT 边界收紧
+
+**任务：**
+修复 review 指出的 dialogue 工具契约与 multi-turn SFT 数据边界问题，覆盖 fallback retrieve 参数、中文泛浏览、supported constraints、terminal accept、`selected_item_ids` 语义、nested target 校验和 flat artifact 统计。
+
+**遇到的问题：**
+确定性 fallback 仍可能把 `semantic_mode/use_history_profile/use_behavioral_recall/route_policy` 等执行层 internal 字段暴露给 LLM planner；`看看/随便看看` 被当成具体 query；SFT 里 terminal accept 复用或错误生成 diagnostics、no-display accept 与 selected item 语义容易产生无 grounding 训练样本。
+
+**定位方式：**
+对照 `executor-grounding-gate` 的 8 条 review findings，沿 `rs_core/rsagent/dialogue.py`、`rs_core/rsagent/llm_dialogue_planner.py`、`rs_core/training/multi_turn_sft_generator.py` 和 serving feedback 支持范围逐项核查；验证中发现 `service.feedback(..., "accept", ...)` 在真实 serving 层未被 `FEEDBACK_PROMPTS` 支持，会导致 dry-run scene 全部被拒绝。
+
+**解决方式：**
+将 fallback `retrieve_candidates` 收敛到业务级字段，由 runtime normalize 推导内部策略；LLM planner 补链时复用 validator；中文泛浏览改走个性化浏览推荐但不生成 specific query；补齐 `liked_item_ids/max_price/use_cases` 支持。SFT 侧把推荐 turn 的 `selected_item_ids` 定义为 public display ids，dialogue-only 不选中反馈 item；validator 校验 nested selected 与 display/allowed 一致；flat artifact 明确为 display-only 并报告 dropped no-display turn。terminal accept 优先读取真实 diagnostics，若 serving 不支持 `accept` 则使用 accept-specific synthetic diagnostics，避免复用上一轮 recommendation diagnostics 或生成无展示 accept。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_agent_dialogue.py tests/test_llm_dialogue_planner.py tests/test_agent_tools.py tests/test_multi_turn_sft_generator.py -q`，结果 `102 passed in 8.99s`；运行 `./.venv/Scripts/python.exe -m pytest tests/test_agent_runtime.py tests/test_agent_runtime_contracts.py tests/test_agent_rollout_schema.py tests/test_rag_core.py -q`，结果 `105 passed in 2.81s`；运行 `./.venv/Scripts/python.exe -m ruff check rs_core/rsagent/dialogue.py rs_core/rsagent/llm_dialogue_planner.py rs_core/training/multi_turn_sft_generator.py tests/test_agent_dialogue.py tests/test_llm_dialogue_planner.py tests/test_agent_tools.py tests/test_multi_turn_sft_generator.py`，结果 `All checks passed!`。本轮未调用外部 API。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 的工具契约和训练监督边界一起治理”：LLM 只看到业务级工具参数，runtime 执行细节不外泄；没有召回/展示就不能推荐；SFT 样本只基于 public display 做 target supervision，并用 validator 和 manifest 统计把数据质量问题前置暴露。
+
+### 2026-06-22 - RSAgent 通过 call_rag_agent 调用 RagAgent 子 Agent
+
+**任务：**
+把原先隐式挂在 `retrieve_candidates` 前后的 RAG helper，改造成 RSAgent 内部的子 Agent 工具调用形态：RSAgent 计划并执行 `call_rag_agent`，由 RagAgent 返回 pre-retrieval query support 或 post-ranking candidate-scoped evidence support。
+
+**遇到的问题：**
+RagAgent 已经具备 shadow/internal-only loop，但调用方式仍偏 helper：pre 阶段通过 `tool_context["query_rag"]` 隐式注入，post 阶段由 facade 直接 `attach_shadow_report()`。这会让架构上看起来仍是低层 RAG 工具，而不是 RSAgent 主 Agent 调用子 Agent；同时必须防止 `query_rag/get_item_evidence/rag_search` 回流到 LLM planner 或 SFT 监督中。
+
+**定位方式：**
+对照仓库内 Claude Code `AgentTool` / `LocalAgentTaskState` / `SendMessageTool` 的实现，确认子 Agent 在 Claude Code 中也是通过工具 schema 发起、以 request/result envelope 和消息路由通信。再沿 `rs_core/rsagent/tools.py`、`dialogue.py`、`llm_dialogue_planner.py`、`rs_core/agent_runtime/adapters/rag.py`、`rs_core/workflow/hybrid_environment.py` 和 `facades.py` 梳理当前 RAG support 的入口与泄漏边界。
+
+**解决方式：**
+新增 hidden/internal `call_rag_agent` tool，参数只允许 `stage/query/reason/candidate_scope/max_support_per_item/max_text_chars`，并拒绝 provider/source/score/manifest/path/raw evidence 等低层字段；deterministic fallback 和 LLM planner 的推荐链路补齐为 `get_user_context -> call_rag_agent -> retrieve_candidates -> rank_candidates -> build_recommendation_slate`。RagAgent adapter 增加 `RagAgentInvocation`、`RagAgentMessageEnvelope`、`RagAgentResponse` 与 `invoke()/handle_message()`，旧 `build_query_support/run_shadow/attach_shadow_report` 保留为兼容 wrapper。runtime 执行 `call_rag_agent` 后优先写 `tool_context["rag_agent_query_support"]`，短期保留 `query_rag` alias；post-ranking facade 改为构造 invocation，再按 response 写入 diagnostics。SFT forbidden keys 和 tool supervision 只允许高层 `call_rag_agent`，不输出 raw support。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_agent_tools.py tests/test_llm_dialogue_planner.py tests/test_rag_agent_adapter.py tests/test_agent_dialogue.py tests/test_agent_runtime.py tests/test_agent_runtime_contracts.py tests/test_agent_rollout_schema.py tests/test_multi_turn_sft_generator.py tests/test_rag_core.py -q`，结果 `217 passed in 16.10s`；运行 `./.venv/Scripts/python.exe -m ruff check rs_core/rsagent/tools.py rs_core/rsagent/dialogue.py rs_core/rsagent/llm_dialogue_planner.py rs_core/agent_runtime/adapters/rag.py rs_core/workflow/hybrid_environment.py rs_core/workflow/facades.py rs_core/training/multi_turn_sft_generator.py tests/test_agent_tools.py tests/test_llm_dialogue_planner.py tests/test_rag_agent_adapter.py tests/test_agent_dialogue.py tests/test_multi_turn_sft_generator.py`，结果 `All checks passed!`。本轮未调用外部 API，query rewrite 相关路径仍使用 mock/fallback 测试。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 的工具编排从底层 RAG helper 升级为主 Agent 调子 Agent”：RSAgent 只看到业务级 `call_rag_agent`，RagAgent 内部处理 query rewrite、语义 hint 和候选内 evidence 压缩；通过 manifest 白名单、参数校验、internal-only response envelope、SFT forbidden keys 和 focused regression，把多 Agent 架构边界、grounding 能力和泄漏治理一起落地。
+
+### 2026-06-22 - RagAgent hybrid small2big 路由与 Qdrant 挂载纠偏
+
+**任务：**
+纠正 RagAgent/RAG 试运行路径：保留 SQLite BM25，启用 post-ranking hybrid + small2big + RagAgent internal summary，并把 Qdrant 从 Docker named volume 改为宿主机 bind mount，避免向量数据只留在容器内部状态。
+
+**遇到的问题：**
+此前试跑只覆盖 pre-retrieval SQLite BM25 query planning，容易被误读成最终 RAG；随后误启动过 BGE 重编码并写入 1600 条 partial Qdrant points。进一步排查发现仓库与本地 MinIO 只存在 BM25 SQLite/text chunk artifact，没有可直接导入的 RAG dense vector dump 或 Qdrant snapshot。
+
+**定位方式：**
+对比 `_rag_query_support()`、`EvidenceRAGFacade`、`online_service.local_qdrant.yaml` 与 Qdrant API collection 状态，确认 final RAG 必须看 `hybrid_qdrant_small2big`。只读搜索 `data/outputs/configs/artifacts/deploy/scripts`、MinIO bucket 和 Docker Qdrant storage，确认 `rag_bm25_compact_full.sqlite` 是 6,515,707 条文本 chunk 的 BM25/FTS 索引，manifest 中 `embedding_method=null`、`vector_index_path=null`，不是可导入 Qdrant 的 dense vectors。
+
+**解决方式：**
+为 local_qdrant 配置补齐 `rag.small2big` 与 RagAgent shadow；diagnostics/readiness 明确区分 query planning 与 post-ranking candidate-scoped final RAG；删除授权确认后的误写 partial collection。将 `deploy/local/docker-compose.yml` 的 Qdrant storage 从 named volume 改为 `${RS_QDRANT_STORAGE_PATH:-../../data/qdrant/storage}:/qdrant/storage`，并在 `.gitignore` 忽略 `data/qdrant/`，后续若有 Qdrant 数据文件可直接挂载宿主机目录。
+
+**验证结果：**
+`docker inspect local-qdrant-1` 显示挂载为 `bind D:\\sinrotic_code\\python_project\\summer\\RS_agent\\data\\qdrant\\storage -> /qdrant/storage`；Qdrant 当前 collections 为空，未混入 partial vectors。使用项目 `.venv` 运行 `tests/test_rag_core.py -k "small2big or hybrid" -q` 结果 `24 passed, 22 deselected`；运行 `tests/test_rag_agent_adapter.py tests/test_agent_runtime.py tests/test_qdrant_config_env.py -q` 结果 `73 passed`；`py_compile` 与 `ruff check` 通过。当前未宣称 dense hybrid 已生效，因为尚未找到已有 RAG dense vector artifact。
+
+**面试可讲点：**
+这段可以讲成“RAG 链路治理不只是打开向量库，而是把 query planning、candidate-scoped evidence、small2big parent context、RagAgent summary 和资产挂载边界分清”：fallback 不能冒充 hybrid，two-tower embedding 不能冒充 RAG chunk embedding，向量数据也应外部挂载以便复现和迁移。
+
+### 2026-06-22 - RSAgent grounding gate 与中文偏好细化验证
+
+**任务：**
+验证 RSAgent 在 no-tool/no-display 对话 turn 中不再无 grounding 生成商品推荐，同时确认已有推荐后的中文偏好细化会继续走推荐链路并返回真实展示商品。
+
+**遇到的问题：**
+此前 smoke 中第二轮中文细化被判为 unsupported/no-tool，`display_item_ids=[]`，但 SFT composer 仍可能生成商品列表；修复后还需要通过真实 HTTP serving surface 验证，而不只依赖单元测试。验证过程中发现 `configs/serving/online_service.yaml` 的本地首轮推荐冷路径超过 120s，不适合作为本机 active smoke；Git Bash here-doc 中文字面量还会在 Python stdin 中出现 mojibake，导致 parser 误判 unsupported。
+
+**定位方式：**
+先用项目默认 `.venv` 跑 focused pytest，覆盖中文 parser、dialogue routing、composer empty-display passthrough、target_action 与 validator 边界；再启动 `scripts/serving/run_service.py` 的本地 FastAPI app，用 `/session/start`、`/chat`、`/session/{id}` 黑盒验证真实 display response。对 shell 编码问题，用 `chr()` 码点构造中文请求，确认 `parse_feedback()` 输出 `desktop_organization/cable_management/compact/accessories` 且 `plan_dialogue_turn()` 为 `preference_feedback/revise_recommendation/should_recommend=true`。
+
+**解决方式：**
+验证使用轻量 `configs/demo/hybrid_demo/hybrid_demo_agent_local_smoke.yaml` 配置启动服务，首轮用稳定英文约束建立 prior recommendation，第二轮发送中文“更偏桌面整洁和线缆管理，给我看小体积配件”；另起会话发送纯解释类“为什么推荐？”作为 no-grounding probe，检查 `items=[]` 且 assistant 文案不是商品列表。
+
+**验证结果：**
+`./.venv/Scripts/python.exe -m pytest tests/test_agent_feedback.py tests/test_agent_dialogue.py tests/test_multi_turn_sft_generator.py -q` 结果 `50 passed in 9.00s`。active HTTP smoke：`first-chat` 返回 5 个展示商品，`chinese-refinement-chat` 返回 5 个展示商品，`GET /session/{id}` 显示两轮 display item counts 为 `[5, 5]`；no-grounding probe “为什么推荐？”返回 `display_item_count=0`，assistant_message 为“我现在还没有可以解释的最近推荐。你可以先让我推荐一些商品，然后再问为什么推荐其中某一件。”，`obvious_product_list=false`。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 的 grounding 边界不是只靠 prompt，而是由 runtime diagnostics、display items、composer gate、SFT target_action 和黑盒 serving smoke 共同约束”：真正推荐时必须有可展示商品支撑；纯对话或无工具 turn 只能透传澄清/解释文案，避免训练样本和前端展示出现无候选依据的幻觉商品列表。
+
+### 2026-06-22 - PostgreSQL 2y 只读访问 wrapper
+
+**任务：**
+为 local/trial PostgreSQL 2y 数据库补一层服务可注入的只读访问 wrapper，支持商品、用户序列、近期交互读取，并把可选数据层状态纳入 serving readiness。
+
+**遇到的问题：**
+项目当前 PostgreSQL 只完成 schema 与导入脚本，服务侧如果直接接 psycopg/ORM 会新增依赖和密钥泄漏面；同时 readiness 不能执行昂贵 full count，也不能让本地 Docker/PostgreSQL 不可用阻塞推荐主服务。
+
+**定位方式：**
+对齐 `scripts/data/import_recent2y_to_postgres.py` 的 compose/service/db/user 默认值、`deploy/local/postgres/init/001_schema.sql` 的 `products/interactions/user_sequences` 表结构，以及 `rs_core/serving/service.py` / `schema.py` 的 readiness 输出模式。
+
+**解决方式：**
+新增 `rs_core/data/postgres_dataset.py`：默认 Noop，开启后通过 `docker compose exec -T postgres psql` 执行只读 `SELECT`，使用 JSON 行输出解析；`SafePostgresDatasetStore` 对健康检查和读取 fail-open，公开状态只保留 status/backend/reason/error_type，不输出 DSN/password/stderr。近期交互 limit 在 wrapper 内夹到 200。`RecommendationService` 支持构造注入 store，并在 `/ready` schema 中追加可选 `postgres_dataset`。
+
+**验证结果：**
+新增 `tests/test_postgres_dataset.py` 覆盖 disabled factory、Safe fail-open、JSON 解析、limit clamp、summary 表存在性检查、readiness 注入、注入 store fail-open 和 `--require-ok` 门禁语义；使用项目 `.venv` 运行 `tests/test_postgres_dataset.py -q`，结果 `11 passed`。`py_compile`、`ruff check` 和默认关闭状态下的 smoke CLI 均通过。本轮不启动真实 Docker/PostgreSQL，不跑 full pytest。
+
+**面试可讲点：**
+这段可以讲成“把本地 2y 结构化数据接入服务而不把试运行能力伪装成生产数据库”：通过 stdlib + psql 包装、只读 SQL、public-safe readiness、fail-open 和 limit clamp，把数据可用性、密钥安全和本机资源边界分开治理。
+
+### 2026-06-22 - RagAgent 双语 RAG Query Rewrite 接入
+
+**任务：**
+把 RagAgent 的 pre-retrieval RAG support 从英文 BM25 query planning 扩展为可配置的双语 query rewrite：中文或中英混合 query 可先通过 OpenAI-compatible API 规范化为英文检索 query，再进入现有 RAG 召回规划。
+
+**遇到的问题：**
+实际试运行中文对比类商品查询时，中文 query 在 RAG query planning 中返回 skipped；英文 query 可以命中 evidence，但 suggested terms 存在泛词噪声。同时 RSAgent 已去 RAG 工具化，不能为了中文支持把 `query_rag` 重新暴露成 RSAgent hidden tool。
+
+**定位方式：**
+沿 `HybridRecommendationEnvironment._attach_rag_query_support()`、`_rag_query_support()`、`SQLiteBM25QueryPlanningRetriever` 和 `bm25.py::_fts_query()` 排查，确认中文 skipped 的直接原因是 BM25 FTS query 侧只提取 `[a-z0-9]+` token；同时复用 `OpenAICompatibleClient` 与 `LLMDialoguePlanner` 的 JSON/fallback/mock transport 模式作为最小安全接入点。
+
+**解决方式：**
+在 `rs_core/agent_runtime/adapters/rag.py` 新增 `RagQueryRewriteConfig`、`RagQueryRewriter` 和 rewrite result contract，支持 disabled/shadow/active 三模式、JSON 输出校验、内部字段泄漏拦截和 fail-soft fallback；扩展 `RagAgentAdapter.build_query_support()` 保留原始中文 query，同时输出英文 `query_rewrite` / `semantic_query_hint`。在 `rs_core/workflow/hybrid_environment.py` 中接入 `agent_runtime.rag_query_rewrite` 配置：active 模式用合法英文 rewrite 检索，shadow 只诊断不改检索 query，默认 disabled 不调用外部 API。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_rag_agent_adapter.py -q`，结果 `21 passed`；运行 `... -m pytest tests/test_agent_runtime.py -q`，结果 `43 passed`；运行 `... -m pytest tests/test_rag_agent_adapter.py tests/test_agent_runtime.py tests/test_openai_compatible_client.py tests/test_llm_dialogue_planner.py -q`，结果 `83 passed`；`py_compile` 与 `ruff check` 均通过。测试全部使用 mock/fake rewrite，不真实外发 API。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 与证据 Agent 的跨语言治理化解耦”：RSAgent 不直接持有 RAG tool，RagAgent 在内部阶段负责把中文需求转成英文检索语义并压缩证据，且通过 shadow/active/fallback、internal-only projection 和 governance flags 保证 RAG 只增强 grounding，不污染候选生成、排序和训练监督。
+
+### 2026-06-22 - Qdrant / MinIO / 外部推理服务化闭环
+
+**任务：**
+把在线推荐服务从“本地文件 + Qdrant 预留 + 推理默认关闭”推进到可验证的 local/trial 技术栈：Qdrant 统一向量后端入口、MinIO artifact store 纳管核心产物、外部 OpenAI-compatible/vLLM 推理 adapter 接入，同时保留 fallback 和资源边界。
+
+**遇到的问题：**
+原服务虽然 `/health`、轻量 `/recommend` 可用，但 Qdrant 连接目标主要写死在配置里，host/docker 切换不方便；MinIO 只在 manifest 中预留字段，没有 resolver/upload/verify；推理侧只有本地 Qwen lazy client，FastAPI 不适合默认加载重模型。若直接声明“在线服务通了”，容易把 fallback、本地试运行和生产能力混在一起。
+
+**定位方式：**
+沿 `rs_core/serving/service.py`、`rs_core/workflow/online_recommendation.py`、`rs_core/workflow/facades.py`、`rs_core/rsagent/inference_policy.py`、`rs_core/common/openai_compatible_client.py`、`configs/serving/online_service.local_qdrant.yaml` 和 `deploy/local/docker-compose.yml` 梳理 runtime 入口，确认最小安全方案是：env override 只覆盖连接层，manifest/config 保留 collection 与治理字段；artifact 先做 manifest + sha256 + resolver；推理采用外部 endpoint provider，不由 serving 启动模型。
+
+**解决方式：**
+新增 `qdrant_config_from_env()` / `merge_qdrant_config()`，在服务加载时同步覆盖 RAG、two_tower 和 semantic Qdrant 子配置，并让 `/ready` 只输出 public-safe target kind 与 fallback reason。新增 `rs_core/artifacts/manifest.py`、`resolver.py` 和 `scripts/artifacts/upload_to_minio.py`，支持 local/file/minio/s3 URI、cache 校验、dry-run patch、upload/verify 和 inventory。新增 `rs_core/rsagent/openai_rerank_client.py`，把外部 OpenAI-compatible/vLLM endpoint 接入 bounded rerank signal；`run_service.py` 明确只启动 FastAPI，不启动 vLLM/Qwen。
+
+**验证结果：**
+使用项目默认 `.venv` 执行轻量回归：`tests/test_qdrant_config_env.py tests/test_qdrant_cli_smoke.py` 结果 `8 passed`；`tests/test_artifact_resolver.py tests/test_artifact_upload_manifest.py` 结果 `8 passed`；`tests/test_inference_policy.py tests/test_openai_compatible_client.py` 及 serving readiness 相关用例结果 `36 passed`。本轮没有启动真实 MinIO/Qdrant 全量灌库或本地 Qwen/vLLM，避免超过本机 12GB/14GB 资源边界。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 的在线化拆成三条工程化链路”：Qdrant 负责向量检索但 fallback 明确可观测；MinIO 通过 manifest、hash 和 resolver 管理模型/索引等大产物；推理模型通过外部 OpenAI-compatible adapter 接入，FastAPI 只做编排和安全降级，从而把 local trial、服务治理和后续生产演进边界讲清楚。
+
+### 2026-06-22 - RSAgent LLM 对话 Planner 接入
+
+**任务：**
+把 `rsagent` 的意图判断和工具计划从纯规则函数推进到系统提示词驱动的 LLM planner，同时保留规则 planner 作为 fallback / shadow baseline，避免一次性替换主链路带来不可控风险。
+
+**遇到的问题：**
+此前 RecommendationAgent 系统提示词已经描述了如何理解当前需求、权衡用户历史和规划工具，但实际生产路径仍由 `rs_core/rsagent/dialogue.py::plan_dialogue_turn()` 生成规则计划。GPT 5.3 一条 smoke 样本中，用户明确提出 home office 的打印、整理和连接需求，第一轮仍被历史里的 iPhone cable 信号带偏，说明 prompt 没有进入 active planner，规则 planner 只判断“该推荐”，没有生成“如何推荐”的策略。
+
+**定位方式：**
+沿 `RecommendationService.chat()` → `FeedbackSessionFacade.chat()` → `HybridRecommendationEnvironment.converse()` → `AgentRuntime.run_turn()` 检查，确认最小安全接入点是 `rs_core/workflow/hybrid_environment.py::HybridRecommendationEnvironment.plan_dialogue()`；同时复用 `rs_core/common/openai_compatible_client.py`、`rs_core/rsagent/tools.py::build_agent_tool_planner_system_prompt()` 和 `DialoguePlan` contract，避免重写 runtime 或暴露工具 trace。
+
+**解决方式：**
+新增 `rs_core/rsagent/llm_dialogue_planner.py`，实现 `LLMDialoguePlannerConfig`、`LLMDialoguePlanner`、JSON 解析、`DialoguePlan` 转换与安全校验。LLM 只输出结构化内部 plan，校验 intent/action/tool manifest/phase/order、public response 泄漏和低层 provider/source/score/oracle 参数；推荐类 action 会补齐 `get_user_context`、`retrieve_candidates`、`rank_candidates`、`build_recommendation_slate` 工具链。`HybridRecommendationEnvironment.plan_dialogue()` 改为先生成规则 fallback，再按配置支持 disabled/shadow/active：默认关闭，shadow 只写诊断，active 仅在 LLM plan 通过校验时替换，否则回退规则计划。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_llm_dialogue_planner.py tests/test_agent_dialogue.py tests/test_agent_tools.py tests/test_multi_turn_sft_generator.py tests/test_openai_compatible_client.py -q`，结果 `88 passed`；运行 `./.venv/Scripts/python.exe -m pytest tests/test_agent_runtime.py tests/test_agent_runtime_contracts.py -q`，结果 `52 passed`；运行 `./.venv/Scripts/python.exe -m py_compile rs_core/rsagent/llm_dialogue_planner.py rs_core/workflow/hybrid_environment.py tests/test_llm_dialogue_planner.py` 通过。本轮未默认启动 500/1000 样本生成或 Qwen SFT，避免把 planner 修复扩大成外部 API/训练任务。
+
+**面试可讲点：**
+这段可以讲成“把推荐 Agent 从规则意图识别升级为可校验的 LLM planning”：LLM 根据系统提示词理解当前购物场景和历史时效，runtime 负责工具白名单、参数边界、泄漏拦截和 fallback；通过 shadow/active 开关让新 planner 能渐进上线，并用 home office 偏差样例证明为什么需要从规则判断转向提示词驱动的 Agent 决策。
+
+### 2026-06-22 - RSAgent 无工具推荐边界与中文偏好细化
+
+**任务：**
+修复真实 active smoke 中暴露的“未执行召回却由 composer 直接生成商品推荐”问题，并让中文偏好细化请求进入推荐工具链。
+
+**遇到的问题：**
+1 条 GPT 5.3 active multi-turn smoke 中，第二轮用户明确说“先偏重桌面整洁，先给我看桌面收纳、线缆管理和小体积配件”，内部却被判为 `unsupported / ask_clarifying_question / should_recommend=false`，没有执行推荐工具，`display_item_ids=[]`；但 `RecommendationAgentComposer` 仍生成了商品列表，前端无法展示真实商品卡，也会污染 SFT grounding 监督。
+
+**定位方式：**
+检查 `outputs/training/multi_turn_sft_gpt53_llm_planner_active_smoke/samples.jsonl` 的第二轮 tool supervision，确认没有 `retrieve_candidates/rank_candidates/build_recommendation_slate`；再沿 `rs_core/training/multi_turn_sft_generator.py::_run_one_scene()`、`RecommendationAgentComposer.compose()`、`_turn_record()` 和 `validate_multi_turn_sft_sample()` 排查，发现 composer 对 no-display turn 没有硬 gate，target_action 也默认写成 `public_display_grounded_response`。同时检查 `rs_core/rsagent/policy.py` 与 `dialogue.py`，确认中文 `偏重/给我看/线缆管理/小体积配件` 等信号没有稳定转成可执行偏好。
+
+**解决方式：**
+在 SFT 生成链路增加两层 grounding gate：`_compose_grounded_response()` 只有 `should_recommend=true` 且存在 display item ids 时才调用 composer，`RecommendationAgentComposer.compose()` 内部也对空 display passthrough；`_turn_record()` 对 no-recommend/no-display turn 写入 `dialogue_only_response` 或 `clarification_response`，`must_select_from_candidates=false`；validator 拒绝空 display 却要求候选选择、no-recommend 却使用推荐策略、以及 no-grounding 商品列表。中文偏好侧补充正向 cue 与关键词别名，使 `桌面整洁/桌面收纳/线缆管理/小体积/配件/实用` 进入 `preferred_keywords/use_cases`，并让后续细化请求触发完整推荐工具链。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python.exe -m pytest tests/test_multi_turn_sft_generator.py tests/test_agent_feedback.py tests/test_agent_dialogue.py -q`，结果 `51 passed`；运行 `./.venv/Scripts/python.exe -m pytest tests/test_llm_dialogue_planner.py tests/test_agent_tools.py tests/test_openai_compatible_client.py -q`，结果 `56 passed`。独立 verifier 复查 focused 代码与测试后确认核心边界已覆盖，同时指出更宽的 serving 回归中仍有 2 个 Qdrant readiness 相关既有失败，真实外部 API active smoke 因权限分类器阻止未重跑，未绕过该限制。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 必须由工具结果 grounding，而不是由语言模型凭上下文编造商品列表”：LLM 可以负责理解意图和生成话术，但商品推荐必须绑定召回、排序和 display slate；通过 composer gate、SFT validator 和中文偏好解析，把前端展示一致性、训练数据质量和 Agent 安全边界统一治理。
+
+### 2026-06-21 - 商品 RAG small2big parent profile 改造
+
+**任务：**
+把商品 RAG 从“字段级 small chunk 证据”升级为 small2big 模式：检索仍沿用 BM25/hybrid/Qdrant 等候选内 small chunk 逻辑，命中后按 `item_id/parent_asin` 回填受控商品级 `parent_profile`，为后续专用上下文 Agent 的截断、重排和总结提供输入。
+
+**遇到的问题：**
+字段长度统计显示 `features`、`description`、`item_text/full_text` 明显长尾，不能把完整 raw profile 直接并入推荐 Agent；同时 parent profile 不能变成新召回源、ranking replacement 或 promotion，也不能在 manifest 缺失、holdout 来源不清或预算不足时挤掉原 small chunk grounding。
+
+**定位方式：**
+梳理 `rs_core/recsys/rag/corpus.py`、`retriever.py`、`rs_core/workflow/facades.py` 和 legacy `hybrid_environment._build_turn_rag_context()`，确认最小安全接入点是 `CandidateEvidenceRetriever` wrapper：base retriever 先返回 candidate-scoped small evidence，再由 wrapper 只对 base-hit candidate 做 parent projection。前置统计还对齐了 full recent-window 商品字段长度分布和现有 BM25 chunk manifest 规模。
+
+**解决方式：**
+新增 wrapper-only `RAG_PARENT_PROFILE_FIELD="parent_profile"`、`build_parent_profile_text()`、`Small2BigCandidateEvidenceRetriever` 和 `validate_parent_profile_manifest()`。`parent_profile` 不加入 `RAG_STANDARD_FIELDS`，只在 small2big enabled 时临时加入 allowed fields；manifest gate 缺失或不满足 train-only/no-holdout/source hash 等条件时 fail closed，仅保留 base evidence；parent text 只投影 title/category/store/rating/features/description 等 allowlist 字段。`EvidenceRAGFacade` 负责包装现有 retriever、扩展 parent 独立预算，并把 legacy `_build_turn_rag_context()` 收敛为委托 facade，避免双实现分叉。
+
+**验证结果：**
+新增测试覆盖 `parent_profile` 不进入标准字段、manifest fail closed、wrapper 只对 base-hit candidate 回填、nested raw/holdout/full_text 不泄漏、`get_item_evidence` 默认过滤 parent profile、0 parent budget 保留、policy 截断与预算扩展、facade metadata/candidate scope。使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_rag_core.py -k "small2big or rag_facade or hybrid or bm25 or get_item_evidence"`，结果 `31 passed, 11 deselected`；运行 `... -m pytest tests/test_rag_core.py`，结果 `42 passed`；运行 `... -m pytest tests/test_qdrant_rag_index_build.py tests/test_agent_dialogue.py tests/test_display_contract.py tests/test_serving_facades.py tests/test_serving_trial_hardening.py`，结果 `159 passed`。code-reviewer 首轮指出 3 个 HIGH、2 个 MEDIUM 边界问题，修复后复审 `APPROVE`。
+
+**面试可讲点：**
+这段可以讲成“RAG 从 chunk 命中到商品级上下文回填的治理化升级”：small chunk 负责找准，parent profile 负责讲完整，但通过 wrapper-only contract、manifest gate、public projection、candidate scope 和预算隔离，保证它只是解释/上下文增强，不改变召回、排序和最终推荐结果，为后续专用上下文 Agent 留出清晰输入边界。
+
+### 2026-06-22 - Pool500 JSONL 主路升级为在线多路召回服务骨架
+
+**任务：**
+把原本依赖 Pool500 JSONL 的在线推荐候选来源，升级为 local/trial 的多路召回编排骨架，同时保留 JSONL 作为 rollback/backfill fallback。
+
+**遇到的问题：**
+原 `OnlinePool500Recommender` 同时承担 artifact、source index、工具候选和 readiness 逻辑，Pool500 artifact 容易被误解为在线主路；同时 RAG chunks collection 不能被拿来做 candidate generation，PostgreSQL/Qdrant 在本地不可用时也不能伪装成功或阻塞服务。
+
+**定位方式：**
+沿 `rs_core/workflow/online_recommendation.py`、`rs_core/recsys/candidate_merge.py::merge_candidates`、`rs_core/recsys/pool500_artifacts.py`、`rs_core/recsys/candidate_store/postgres.py` 和 `rs_core/serving/service.py` 梳理现有候选合并、fallback、public-safe readiness 与只读 SQL 约束。
+
+**解决方式：**
+新增 `CandidateRetrievalOrchestrator` 和 provider 骨架：Qdrant two-tower、Postgres item/user/category/popular、semantic vector governance gate、Pool500 fallback。编排层统一做 seen/prior-turn 过滤、quota/underfill/fallback diagnostics，并把 `recommend(... complete_pool500=True)` 与 `tool_retrieve_candidates` 切到 orchestrator；`/ready` 增加 public-safe `candidate_retrieval`，优先以其 availability 判断 route。PostgreSQL schema 补 candidate store 表和索引，导入脚本默认 dry-run，只做安全扫描。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_online_retrieval_orchestrator.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_online_retrieval_providers.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_candidate_store_postgres.py -q`，结果 `8 passed in 0.28s`；对修改 Python 文件运行 `py_compile` 通过。本轮没有启动 Qdrant/PostgreSQL、没有导入全量候选、没有跑训练或 full eval。
+
+**面试可讲点：**
+这段可以讲成“把批处理 Pool500 artifact 退到 fallback，把在线候选生成抽象成可治理的多路服务”：每一路 provider 都有可观测 readiness 和 fail-open 行为，RAG 明确只做解释 grounding 不做候选源，Postgres/Qdrant 本地试运行能力与生产可用性不混淆。
+
+### 2026-06-22 - RagAgent shadow 编排接入
+
+**任务：**
+在已有通用 `GenericAgentLoop` 雏形上编排专用 RagAgent，让它消费推荐 turn 内部的 `rag_context` 与 small2big `parent_profile`，产出候选内 compact grounded support，并以 shadow/internal-only 方式回传给 RSAgent。
+
+**遇到的问题：**
+small2big parent profile 可能明显长于普通 evidence，不能直接并入推荐 Agent 的公开响应或 SFT payload；同时 RagAgent 不能变相新增候选、替代排序输入或修改最终推荐，否则会破坏“RAG 只做候选内证据 grounding”的边界。
+
+**定位方式：**
+检查 `rs_core/agent_runtime/core/loop.py`、`output_adapter.py`、`rs_core/workflow/facades.py` 和 `rs_core/rsagent/schema.py`，确认最小安全接入点是 adapter 层：legacy RSAgent turn 完成后只读 `turn.rag_context`，通过 deny-by-default projection 生成 internal support，并把结果写入 `turn.diagnostics`，不触碰 `candidates/ranking/final_items/assistant_response`。
+
+**解决方式：**
+新增 `rs_core/agent_runtime/adapters/rag.py`，实现 `RagAgentConfig`、`RagAgentSupport`、`RagAgentShadowReport` 以及 deterministic `GenericAgentLoop` components：context builder 只保留候选内 evidence，planner 在无 evidence 时 skip，dispatcher 本地压缩 ordinary evidence 与 `parent_profile`，state updater 只生成 `append_allowed=False` 的 commit intent。`AgentOrchestrationFacade` 新增 `agent_runtime.metadata["rag_agent"]` 配置读取，启用后在 legacy turn 后运行 RagAgent shadow，并仅写入 `rag_agent_shadow/rag_agent_support` diagnostics。针对审查发现的导出边界问题，`rollout` metadata 不再写 raw `rag_context`，只保留 evidence 数量、候选数量、retriever、small2big enabled 等 allowlist summary；RagAgent support 也增加字段 allowlist、敏感文本 redaction、parent label allowlist 和显式 candidate boundary。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m py_compile rs_core/agent_runtime/adapters/rag.py rs_core/workflow/facades.py tests/test_rag_agent_adapter.py` 通过；修复 reviewer 首轮指出的 rollout raw `rag_context` 导出、ordinary evidence 原文复制、内部 field label、parent_profile fallback label、candidate boundary 扩宽和字符串 bool 配置问题后，继续修复 rollout safe serialization 与 SFT `candidate_summary.sources` 泄漏问题。最终运行 `... -m pytest tests/test_rag_agent_adapter.py tests/test_agent_runtime.py tests/test_agent_rollout_schema.py tests/test_rag_core.py tests/test_inference_policy.py tests/test_display_contract.py -q`，结果 `235 passed`；运行 `... -m pytest tests/test_agent_runtime_contracts.py tests/test_rag_core.py tests/test_serving_facades.py tests/test_agent_dialogue.py tests/test_training_data_contracts.py tests/test_agent_rollout_schema.py tests/test_display_contract.py -q`，结果 `206 passed`。测试覆盖无 `rag_context` skip、普通 evidence 压缩、parent profile raw text 不泄漏、public/SFT projection 为空、facade 接入不修改推荐结果、rollout 只导出 RAG summary、ranking/candidates/diagnostics safe serialization、SFT 不导出 raw sources。最终 code-reviewer 复审 `APPROVE`。
+
+**面试可讲点：**
+这段可以讲成“把 RAG evidence consumer 从推荐 Agent 主链路拆出来”：RagAgent 复用统一 agent loop，但首版只做 shadow/internal support，既让长上下文和商品级 profile 有专门的截断总结位置，又通过候选内约束、deny-by-default 输出投影和 non-mutating facade 测试保证推荐结果与公开 payload 不被污染。
+
+### 2026-06-22 - RAG/Qdrant 与多轮 SFT 审查修复
+
+**任务：**
+处理 RagAgent 落地后 teammate review 中的高优先级问题：Qdrant 空构建不能误删旧向量资产，多轮 SFT terminal accept 不能伪造已执行的反馈工具监督，也不能允许缺少候选 item 的接受动作通过验证。
+
+**遇到的问题：**
+RAG chunk 与 two-tower item 的 Qdrant rebuild 在本次构建产物为空时仍执行 stale delete，可能把上一版可用 collection 清空；多轮 SFT 生成中 terminal accept 直接追加终止 turn 并 break，没有实际调用 `service.feedback()`，但 `_terminal_tool_supervision()` 却写入成功的 `record_user_feedback` 事件，同时 accept 缺少 `item_id` 时会形成 `must_select_from_candidates=true` 但 `selected_item_ids=[]` 的训练样本。
+
+**定位方式：**
+沿 `rs_core/recsys/rag/qdrant_index.py`、`rs_core/recsys/vectorstores/qdrant_two_tower_build.py` 检查 stale cleanup 触发条件，确认应以本轮成功 upsert 作为删除旧点的前提；沿 `rs_core/training/multi_turn_sft_generator.py`、`rs_core/simulation/schema.py`、`rs_core/serving/facades.py` 检查 accept 动作、feedback API 与 SFT validator，确认监督信号必须来自真实 service diagnostics 或保持空监督，不能由 terminal helper 自造成功工具事件。
+
+**解决方式：**
+Qdrant builder 改为仅在 `upserted_chunk_count > 0` / `rows` 非空时执行 stale delete，零 chunk/零 row rebuild 只写 manifest 并保留旧 collection。多轮 SFT 生成在可终止 accept 前先保存当前展示、调用 `service.feedback(session_id, "accept", item_id, comment)`，再用真实 `_service_turn_diagnostics()` 生成 terminal turn；terminal helper 改为复用 `_tool_supervision()`，删除伪造 `_terminal_tool_supervision()`；模型 payload 的 accept 在已有展示商品时必须带 `item_id`；validator 对 `accept_displayed_item`/`action_type=accept` 强制 `selected_item_ids` 非空。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 Qdrant targeted 回归 `... -m pytest tests/test_qdrant_rag_index_build.py::test_build_qdrant_rag_chunk_index_zero_chunk_rebuild_preserves_existing_chunks tests/test_qdrant_two_tower_build.py::test_build_qdrant_two_tower_item_index_zero_row_rebuild_preserves_existing_items -q`，结果 `2 passed`；运行 `... -m pytest tests/test_qdrant_rag_index_build.py tests/test_qdrant_two_tower_build.py -q`，结果 `21 passed`。多轮 SFT accept 修复后运行 `... -m pytest tests/test_multi_turn_sft_generator.py::test_validate_multi_turn_sft_rejects_unknown_selected_item tests/test_multi_turn_sft_generator.py::test_simulated_user_prompt_uses_private_context_without_hidden_catalog tests/test_multi_turn_sft_generator.py::test_recommendation_composer_uses_openai_compatible_adapter tests/test_multi_turn_sft_generator.py::test_validate_multi_turn_sft_rejects_accept_without_selected_item tests/test_multi_turn_sft_generator.py::test_terminal_accept_supervision_uses_real_diagnostics tests/test_multi_turn_sft_generator.py::test_terminal_accept_supervision_does_not_fabricate_tool_success tests/test_multi_turn_sft_generator.py::test_role_action_from_payload_requires_accept_item_id_when_display_has_items -q`，结果 `7 passed`。
+
+**面试可讲点：**
+这段可以讲成“离线资产构建和训练样本生成的 fail-safe 治理”：向量资产迁移不能因为一次空输入就破坏线上可用索引，SFT 数据也不能把未执行的工具动作标成成功监督；通过空构建保护、真实 diagnostics 监督和候选内 accept 校验，把 RAG/Qdrant 与 Agent 训练数据链路都收束到可验证、可回滚的工程边界。
+
+### 2026-06-22 - RagAgent runtime 轻量合同修复
+
+**任务：**
+处理 RagAgent 与 `GenericAgentLoop` 审查中的低风险合同问题：evidence 分区效率、文本截断边界、mode 配置规范化，以及 internal trace projection 与实际 trace 不一致。
+
+**遇到的问题：**
+`RagContextBuilder` 先构造 parent evidence 再用 `row not in parent_evidence` 生成 small evidence，存在不必要的 O(n²) dict membership；`_truncate_text()` 先截断再追加省略号，可能超过配置的 `max_text_chars`；`mode` 未统一 strip/lower/validate，容易把 `" Shadow "` 当成 unsupported；`GenericAgentLoop` 在追加 `project_output` trace 前已经完成 internal projection，导致 `result.internal_output["trace_events"]` 比 `result.trace_events` 少最后一步。
+
+**定位方式：**
+沿 `rs_core/agent_runtime/adapters/rag.py` 检查 config/context/support 生成链路，沿 `rs_core/agent_runtime/core/loop.py` 检查 trace event 与 projection 的顺序，并用 `tests/test_rag_agent_adapter.py`、`tests/test_generic_agent_loop.py` 补齐对应合同断言。
+
+**解决方式：**
+将 RagAgent evidence 分区改为 single-pass，将 `mode` 配置收口为 `shadow` 的规范化校验，将文本截断改为总长度不超过 `max_text_chars` 的省略号策略；`GenericAgentLoop` 在追加 `project_output` 后重建 projection payload 并重新投影 public/SFT/internal 输出，保证 internal trace 与 result trace 一致。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_rag_agent_adapter.py tests/test_generic_agent_loop.py tests/test_agent_runtime.py -q`，结果 `56 passed`；运行 `... -m py_compile rs_core/agent_runtime/adapters/rag.py rs_core/agent_runtime/core/loop.py tests/test_rag_agent_adapter.py tests/test_generic_agent_loop.py` 通过。
+
+**面试可讲点：**
+这段可以讲成“Agent runtime 合同不是只看主功能，而要管边界一致性”：通过小范围测试把配置解析、上下文预算、trace 可观测性和 internal-only 输出投影固定下来，避免后续 RagAgent 从 shadow 走向更深集成时出现隐性 contract 漂移。
+
+### 2026-06-21 - 本地试运行级模型与服务部署骨架
+
+**任务：**
+把此前确定的“大厂风格”组件路线落成当前阶段可执行的 local/trial/non-production MVP：FastAPI serving + Qdrant + hybrid RAG + BM25 fallback + artifact manifests + DeepFM shadow contract + Agent/vLLM provider 预留。
+
+**遇到的问题：**
+MinIO/MLflow/vLLM/Triton/KServe 等组件不能一次性默认启动，否则会把本机试运行变成重资源生产化工程；同时 Qdrant 只能作为 RAG/vector backend 预留，不能在依赖缺失或 collection 未就绪时把 BM25 fallback 伪装成 Qdrant 成功。DeepFM 也必须保持 shadow diagnostic，不能影响主排序或公开 payload。
+
+**定位方式：**
+检查 `configs/serving/online_service.yaml`、`rs_core/serving/service.py`、`rs_core/workflow/facades.py`、`rs_core/rsagent/inference_policy.py` 和 Qdrant/RAG builder 测试，确认当前默认 serving 是轻量 FastAPI + BM25 RAG + pool500 路由，Qdrant 与 dense embedding 依赖应保持 optional profile；`/ready` 比 `/health` 更适合承载配置与依赖状态。
+
+**解决方式：**
+新增 `deploy/local/` 下 Docker Compose、serving Dockerfile、`.env.example` 和中文 README，默认 loopback 绑定并文档化 strict auth/token、`.venv` 命令和 Qdrant dry-run/tiny smoke/user-approved live build 三档。新增 `requirements-serving-qdrant.txt`、`requirements-serving-rag-dense.txt`、`configs/serving/online_service.local_qdrant.yaml` 与三份 artifact manifest。服务 readiness 增加 RAG、manifest、DeepFM shadow、Agent provider 状态；Agent provider 默认 `disabled`，`openai_compatible` 只做配置预留，`local_transformers` 保持 `local_files_only=True`；RAG facade 在 Qdrant backend 不可用时显式走 BM25 fallback。
+
+**验证结果：**
+使用项目默认 `.venv` 运行配置/manifest parse smoke 通过；针对首次失败的 readiness/RAG fallback 用例修复后，focused rerun `2 passed in 0.66s`。完整 targeted contract tests 首轮结果 `38 passed in 2.69s`；reviewer 提出 Docker dense RAG 依赖、vector backend 异常 fallback 和 `qdrant_client.__spec__ is None` readiness 崩溃两个高优先级问题后，补充回归用例并验证 `5 passed in 0.77s`，二次 reviewer 复核 `APPROVE` 且 0 issues。deslop 后最终 targeted contract tests：`41 passed in 2.97s`；对本轮 Python 变更运行 ruff，结果 `All checks passed!`。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 服务化不是堆组件，而是分层落地”：当前只把 FastAPI/Qdrant/RAG/manifest/安全边界做成可验证 local MVP，同时为 MinIO、MLflow、vLLM、Triton 和 KServe 预留接口；通过 readiness contract、fallback policy 和 shadow ranking contract 保证本地试运行不越权、不泄露内部诊断、不误触发重模型。
+
+### 2026-06-23 - Cassandra/Scylla 非向量召回 Candidate Store 接入
+
+**任务：**
+把非向量召回从纯 JSONL/PostgreSQL 试运行形态扩展为 Cassandra 协议的磁盘化 serving store，让 ItemCF、UserCF、popular、category 等 exact key -> topK 候选读取具备大规模 KV 演进路径，同时保留 Qdrant 负责向量召回。
+
+**遇到的问题：**
+向量型召回适合 Qdrant/ANN，但非向量召回本质是 `user_id/src_item/category -> topK candidates` 的宽行查表；如果用 ES/OpenSearch 承担主链路，会把倒排、refresh、segment merge 和搜索集群调参引入一个不需要全文相关性的 exact lookup 场景。直接全量 Redis 又会把持久化候选索引变成高内存成本缓存。
+
+**定位方式：**
+沿 `rs_core/recsys/online_retrieval/providers/postgres_*.py`、`rs_core/recsys/candidate_store/postgres.py`、`scripts/serving/import_candidate_store_to_postgres.py` 和 `deploy/local/docker-compose.yml` 梳理现有 provider/store/importer/deploy 模式，确认最小安全切入点是复用 `CandidateStore` Protocol，在 provider 层通过 factory 切换 backend，而不是重写 orchestrator 或替换 Qdrant。
+
+**解决方式：**
+新增 `rs_core/recsys/candidate_store/cassandra.py` 和 `factory.py`，支持 `RS_CANDIDATE_STORE_BACKEND=noop|postgres|cassandra`；Cassandra store 按 `store_version` 查询 `item_neighbors_by_seed/user_candidates_by_user/popular_candidates_by_scope/category_candidates_by_bucket/user_category_buckets_by_user`，异常 fail-open 并由 pool500 fallback 保底。新增 ScyllaDB local compose profile、CQL schema、optional `cassandra-driver` 依赖和 dry-run-first 的 `scripts/serving/import_candidate_store_to_cassandra.py`，写入模式要求 `store_version` 并拒绝 partial artifact。现有 `postgres_*` provider 暂保留命名，但底层改走统一 factory，readiness 可报告 `backend=cassandra`。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `tests/test_candidate_store_cassandra.py tests/test_import_candidate_store_to_cassandra.py tests/test_candidate_store_postgres.py tests/test_import_candidate_store_to_postgres.py tests/test_online_retrieval_providers.py tests/test_online_retrieval_orchestrator.py`，结果 `36 passed in 0.60s`；运行 `tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py`，结果 `76 passed in 2.07s`；对本轮变更 Python 文件运行 `ruff check`，结果 `All checks passed!`。本轮未启动真实 ScyllaDB/导入全量候选，避免本机资源扩大。
+
+**面试可讲点：**
+这段可以讲成“按访问模式选数据库”：向量相似度交给 Qdrant，非向量召回的全量候选索引用 Cassandra/Scylla 做磁盘化宽列 KV，Redis 后续只缓存热点，ES/OpenSearch 留给商品搜索和文本召回；同时通过 artifact source of truth、store version、dry-run importer、readiness 脱敏和 fail-open fallback，把大厂风格架构落成可验证、可回滚的本地工程闭环。
+
+### 2026-06-23 - Serving canonical import 第二阶段迁移收口
+
+**任务：**
+在保留 `rs_core.serving.app/schema/service/facts/adapter_contracts/boundary_map/manifest_gate` legacy shim 兼容的前提下，把 serving canonical 层、训练/评估脚本和普通测试迁到 canonical import，并用 BoundaryMap 与静态 guard 防止后续回退。
+
+**遇到的问题：**
+第一阶段已经形成类似 Spring Boot 的 API / DTO / Application Service / Domain / Infrastructure / Governance 分层，但 canonical 层和普通调用方仍可能经由 legacy facade 或 package-root convenience import 绕回旧路径；如果只移动文件不收紧 guard，后续 Agent 仍可能把新业务逻辑写回 shim。
+
+**定位方式：**
+按 `.omc/plans/serving-canonical-import-team-migration.md` 将迁移拆成 API imports、训练评估脚本、普通 serving/API 测试、domain/governance 测试、BoundaryMap/guard 和最终 verifier 六块并行推进；用 grep/AST guard 分类 `rs_core.serving.service/app/schema/adapter_contracts/boundary_map/facts/manifest_gate` 与 `from rs_core.serving import ...` 剩余引用。
+
+**解决方式：**
+`rs_core/serving/api/app.py` 改为从 `application.recommendation_service`、`runtime.config`、`facades` 和 `schemas` 取 canonical 依赖；训练/评估脚本与普通测试改用 canonical import；`rs_core/serving/__init__.py` 的 package-root convenience 改为 lazy 指向 canonical module；`rs_core/serving/domain/boundary_map.py` 与 `tests/test_serving_reorg_compatibility.py` 扩展 legacy shim 禁止集合和 package-root 绕行扫描。legacy shim 不删除，只保留给旧 uvicorn target、兼容性测试和 re-export identity 验证。
+
+**验证结果：**
+最终 verifier PASS：focused pytest `223 passed in 4.61s`；脚本 `py_compile` 退出 0；`ruff check rs_core/serving tests/test_serving_reorg_compatibility.py tests/test_serving_boundary_map.py` 输出 `All checks passed!`；`compileall -q rs_core/serving` 退出 0；legacy/canonical app identity smoke 通过。剩余 legacy 引用均已分类为 `legacy_shim_file`、`compatibility_test`、`run_service_target_string` 或显式边界/负向断言，未发现 `canonical_serving_dir`、`production_runtime`、`training_or_evaluation_direct_import`、`ordinary_test`、`unknown` 失败类。
+
+**面试可讲点：**
+这段可以讲成“架构重组不是一次性删除旧入口，而是在兼容窗口内收口依赖方向”：先把 serving 拆成清晰分层，再迁移调用方到 canonical import，最后用 BoundaryMap、AST guard、package-root guard 和 compatibility tests 固化新旧边界，既保证旧启动路径可用，又避免后续协作继续扩大 legacy facade 技术债。
+
+### 2026-06-21 - Agent 默认启用 RAG evidence
+
+**任务：**
+按用户要求让默认在线 Agent 启用 RAG，不再停留在需要手动 override 的状态，同时保持 RAG 只做候选内证据 grounding，不越权替代召回或排序。
+
+**遇到的问题：**
+当前 `configs/serving/online_service.yaml` 没有 `rag` 配置块，`EvidenceRAGFacade` 默认 `evidence_mode=off`，因此线上默认 Agent turn 不会构建 `rag_context`；但项目已有 full recent-window BM25 RAG 索引，不能误接成全库候选生成或 ranking replacement。
+
+**定位方式：**
+检查 `rs_core/workflow/facades.py` 中 `evidence_mode`、`retriever`、`index_path` 的选择逻辑，确认只要默认配置提供存在的 BM25 index 且设置 `evidence_mode=explain`，推荐后 evidence 会进入 `rag_context`；读取 `outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.manifest.json`，确认索引规模 `indexed_item_count=864288`、`chunk_count=6515707`，且 `retrieval_scope=candidate_item_ids`、`knowledge_base_role=rag_evidence`、三项治理开关均为 false。
+
+**解决方式：**
+在 `configs/serving/online_service.yaml` 新增默认 `rag` 配置：`evidence_mode=explain`、`retriever=sqlite_bm25`，指向 recent-window compact full BM25 索引和 manifest，字段限定为 `title/category/main_category/category_path/description/features`，并显式保留 `candidate_generation_allowed=false`、`ranking_input_replacement_allowed=false`、`promotion_allowed=false`。在 `tests/test_recsys_core.py` 增加配置合同测试，断言默认开启、索引/manifest 存在、manifest 仍是候选内 evidence 角色。
+
+**验证结果：**
+运行 `./.venv/Scripts/python.exe -m pytest tests/test_recsys_core.py::test_online_service_enables_rag_explain_by_default tests/test_rag_core.py tests/test_agent_dialogue.py::test_rag_explain_uses_evidence_without_mutating_recommendation_payload -q`，结果 `33 passed in 4.64s`。补充 verifier 只读复核，结论 `PASS`：默认 online_service Agent 已启用 candidate-scoped RAG evidence，索引存在，治理边界未见明显问题。
+
+**面试可讲点：**
+这段可以讲成“把 RAG 从可选能力推进到默认 Agent grounding 能力”：不是简单打开向量/文本检索，而是通过配置合同、manifest 审计和回归测试，确保 RAG 只增强推荐解释和商品证据，不污染候选生成与排序主链路。
+
 ### 2026-06-21 - 双 Agent 多轮 SFT 数据生成流水线
 
 **任务：**
@@ -44,13 +404,33 @@
 复用既有边界文件定位实现落点：two-tower 侧沿 `rs_core/recsys/vector_index.py::load_vector_index_artifact()` 与 `two_tower_source_manifest.py` / `two_tower_DSSM/source_manifest.py` 校验 source manifest；RAG 侧沿 `rs_core/recsys/rag/chunking.py::chunk_item_record()`、`rag/vector_index.py::SentenceTransformerEmbeddingBackend` 与既有 `QdrantCandidateRagVectorRetriever`。同时用 `tests/qdrant_fakes.py` 保证单元测试不依赖外部 Qdrant 服务或真实模型下载。
 
 **解决方式：**
-新增共享 `qdrant_builders.py`，提供 Qdrant CLI 参数、batch、manifest 和 store 构建辅助，并要求 live build 必须显式传入 Qdrant target，避免误写临时内存库；新增 `qdrant_two_tower_build.py`，只接受 `source_index_manifest.json`，校验后把 item embeddings 以包含 `source_name` 的稳定 point id 和 `two_tower_item_payload()` 写入 `rs_agent_two_tower_items_v1`，重建前清理同 source 旧点并预校验向量维度/finite 值；新增 `rag/qdrant_index.py`，要求非 dry-run 提供 source manifest 做 provenance/path 检查，将商品 JSONL chunk 后用可注入 embedding backend 编码，并以 `rag_chunk_payload()` 写入 `rs_agent_rag_chunks_v1`。两个 CLI 均支持 `--dry-run`、`--limit-items` 和 Qdrant connection flags；当前 `semantic` 仍保持 BM25F/token source，不做直接迁移。
+新增共享 `qdrant_builders.py`，提供 Qdrant CLI 参数、batch、manifest 和 store 构建辅助，并要求 live build 必须显式传入 Qdrant target，避免误写临时内存库；新增 `qdrant_two_tower_build.py`，只接受 `source_index_manifest.json`，校验后把 item embeddings 以包含 `source_name` 的稳定 point id 和 `two_tower_item_payload()` 写入 `rs_agent_two_tower_items_v1`，用包含 `uuid4` 的 `index_build_id` 标记新版本，并在 upsert 后删除同 source 的旧 build，空行重建也会执行 stale cleanup；新增 `rag/qdrant_index.py`，要求非 dry-run 提供 source manifest 且显式声明 `train_only=true/no_holdout=true`，递归扫描 provenance/path，将商品 JSONL 以 bounded batch 流式 chunk/embedding/upsert，并以包含 `corpus_scope` 的 point id 与 `rag_chunk_payload()` 写入 `rs_agent_rag_chunks_v1`，空 chunk 重建也会清理同 corpus 旧 evidence。两个 CLI 均支持 `--dry-run`、`--limit-items` 和 Qdrant connection flags；live `--limit-items` 仅允许 `:memory:` smoke，避免截断 durable collection；collection 创建时集中配置常用 payload filter indexes。当前 `semantic` 仍保持 BM25F/token source，不做直接迁移。
 
 **验证结果：**
-使用项目默认 `.venv` 运行 Qdrant targeted tests：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_qdrant_vectorstore_contract.py tests/test_qdrant_rag_retriever.py tests/test_qdrant_two_tower_index.py tests/test_qdrant_rag_index_build.py tests/test_qdrant_two_tower_build.py tests/test_qdrant_cli_smoke.py -q`，修复 reviewer 发现的临时内存 target、point id 冲突、同 source stale points、RAG provenance、`limit_items=0` 和向量预校验问题后，结果 `18 passed in 0.52s`。运行 serving/agent 相关回归：`test_serving_smoke.py`、`test_serving_recommend_from_sequence.py`、`test_agent_runtime.py`、`test_agent_tools.py`，结果 `147 passed in 2.96s`。补充真实 `qdrant-client` in-memory delete-by-filter smoke，确认同 source stale points 清理路径可用，输出 `real qdrant delete smoke passed`。针对本轮变更文件运行 ruff 通过；全量 `rs_core/scripts/tests` ruff 暴露两个既有 unrelated unused import，不属于本轮 Qdrant 迁移改动。
+使用项目默认 `.venv` 运行 Qdrant/RAG targeted tests：`D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_qdrant_vectorstore_contract.py tests/test_qdrant_rag_retriever.py tests/test_qdrant_two_tower_index.py tests/test_qdrant_rag_index_build.py tests/test_qdrant_two_tower_build.py tests/test_qdrant_cli_smoke.py tests/test_rag_core.py -q`，修复 reviewer 发现的临时内存 target、point id 冲突、two-tower 先删后写、durable `limit_items` 截断风险、bad batch size、RAG recursive provenance、RAG stale chunks、`limit_items=0`、向量预校验、two-tower `no_holdout` 显式治理、秒级 build id 重复、空重建 stale cleanup、RAG corpus_scope point id 隔离和 Hybrid RAG 缺失/损坏 BM25 时的 vector fallback 问题后，结果 `62 passed in 2.09s`。运行 serving/agent 相关回归：`test_serving_smoke.py`、`test_serving_recommend_from_sequence.py`、`test_agent_runtime.py`、`test_agent_tools.py`，结果 `147 passed in 2.32s`。补充真实 `qdrant-client` in-memory payload-index + stale-delete smoke，确认 payload index 创建与 build-id stale cleanup 路径可用，输出 `real qdrant payload-index stale-delete smoke passed`。针对本轮变更文件运行 ruff 通过；最终 code-reviewer 复审 `APPROVE`，HIGH/MEDIUM/LOW findings 均为 0。
 
 **面试可讲点：**
 这段可以讲成“向量数据库迁移不是换库，而是把数据治理和上线边界一起迁移”：RAG、two-tower 两类向量资产分别落到 Qdrant collection，但通过 payload flags、manifest validator、dry-run/smoke 和 local baseline 保证不会越权成为 ranking replacement 或 promotion 输入，体现推荐系统向量检索服务化中的可复现、可回滚和可治理迁移能力。
+
+### 2026-06-22 - 定制 Agent 注入机制升级为 Registry/Runner
+
+**任务：**
+把 RagAgent 从硬编码 adapter 调用推进到仿 Claude Code 的 `AgentDefinition → AgentRegistry → AgentRunner → GenericAgentLoop` 注入机制，同时保持现有 RagAgent API、shadow/internal-only/non-mutating 行为不变。
+
+**遇到的问题：**
+`GenericAgentLoop` 已经抽象出通用执行骨架，但 `RagAgentAdapter` 仍同时承担 definition、stage routing、runner、loop factory 和 response shaping。后续如果继续增加 MemoryAgent、FeedbackAgent 或 ExplanationAgent，会把 facade/adapter 扩展成多处硬编码。
+
+**定位方式：**
+对照仓库内 Claude Code custom agent 链路，确认其核心是把 custom agent 解析成可注册的 definition，再由 AgentTool/runAgent 统一选择和执行；同时检查 `rs_core/agent_runtime/core/loop.py`、`rs_core/agent_runtime/adapters/rag.py`、`rs_core/workflow/facades.py` 和相关测试，确认最小安全改造点是在 runtime core 新增领域无关 registry/runner，并让 RagAgentAdapter 作为兼容 shim 委托 runner。
+
+**解决方式：**
+新增 `rs_core/agent_runtime/core/definition.py`、`registry.py` 和 `runner.py`，提供 `AgentRunRequest`、`AgentRunResult`、`AgentDefinition`、`AgentRegistry`、`AgentRunner`，并保持 core 不 import 推荐/RAG/domain 模块。`RagAgentAdapter` 保留 `invoke()/handle_message()/build_loop()/build_query_support()` 等 API，但内部通过默认注册的 `rag_agent` definition 委托 `AgentRunner`；post-ranking 仍进入 `GenericAgentLoop`，pre-retrieval 仍保持轻量 direct stage，避免一次性扩大行为面。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runner.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_rag_agent_adapter.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_generic_agent_loop.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runtime_contracts.py -q`，结果 `46 passed in 0.50s`；运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_runtime.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_agent_tools.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_serving_facades.py -q`，结果 `86 passed in 0.80s`。
+
+**面试可讲点：**
+这段可以讲成“把推荐系统里的子 Agent 从硬编码 adapter 升级为可注册、可诊断、可权限收敛的 runtime 单元”：通用 loop 只负责编排，定制 agent 通过 definition/registry/runner 注入，既保留 RagAgent 的 internal-only 安全边界，又为后续多 Agent 编排留下清晰扩展点。
 
 ### 2026-06-21 - RS Agent 对话/工具编排与 SFT 前置体检
 
@@ -212,6 +592,26 @@
 **面试可讲点：**
 这段可以讲成“推荐系统从 demo 到受控试用的边界加固”：没有急着拆网关或微服务，而是在模块化单体中先落地线上系统常见的 trace、权限分层、debug 双隔离和可执行验收，既保持推荐主链路稳定，又能支持试用问题复盘和内部排查。
 
+### 2026-06-22 - Serving 文件架构整理 review blocker 收口
+
+**任务：**
+在 `rs_core/serving` 按 Clean/Hexagonal 分层轻拆后，处理 code-reviewer 对 `/ready` schema、BoundaryMap ownership 和 Qdrant helper import graph 的三类阻塞问题。
+
+**遇到的问题：**
+FastAPI `response_model=ReadinessResponse` 会过滤未声明字段，导致服务内部已返回的 `candidate_retrieval` 在 HTTP `/ready` 中静默丢失；BoundaryMap 虽然引入 canonical/compatibility paths，但 `owned_paths` 存在重复或目录/文件重叠 ownership；`runtime/config.py` 复用 `qdrant_builders` helper 时会把 serving runtime 轻量配置入口重新拖入 Qdrant/vectorstore import graph。
+
+**定位方式：**
+通过 code-reviewer 复核 serving reorganization 变更，结合 focused tests 和 import graph probe 定位：`schema.py::ReadinessResponse` 缺少字段，`domain/boundary_map.py::validate()` 只查模块名和精确 owned path，`runtime/config.py` 经 `rs_core.recsys.vectorstores.qdrant_builders` 间接触达 `qdrant_client`/RAG Qdrant 模块。
+
+**解决方式：**
+为 `ReadinessResponse` 增加 `candidate_retrieval` 并在 HTTP smoke 中断言保留 public-safe readiness 字段；将 Qdrant env/merge helper 抽到轻量 `rs_core.common.qdrant_config`，`rs_core.recsys.vectorstores.qdrant_config` 只做兼容 re-export，serving runtime 只依赖 common helper；将 `rs_core.serving.__init__` 改为 lazy `__getattr__`，避免导入子模块时 eager load `service`；BoundaryMap 增加 canonical path normalization、Windows separator normalization、重复 ownership 与目录/文件 overlap validation，并调整 default map 让 canonical ownership 唯一。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 focused review blocker tests：`tests/test_serving_boundary_map.py tests/test_serving_reorg_compatibility.py tests/test_serving_smoke.py::test_ready_returns_coarse_public_readiness tests/test_qdrant_config_env.py -q`，结果 `23 passed`；运行 serving contract/compatibility tests，结果 `37 passed`；运行 serving/governance regressions，结果 `138 passed`；运行 runtime seam regressions，结果 `81 passed`。code-reviewer 对 BoundaryMap 最后一轮复审 `PASS`，确认重复和 overlap ownership 已覆盖，default map 仍 valid。
+
+**面试可讲点：**
+这段可以讲成“架构整理不是简单搬文件，而是把边界变成可执行合同”：HTTP schema 防止 readiness 静默退化，BoundaryMap 用 canonical ownership 约束模块责任，runtime config 通过轻量 helper 和 import graph guard 避免基础设施依赖倒灌，从而让模块化单体既保持兼容，又具备后续接 Redis/MinIO/Qdrant/Postgres adapter 的清晰边界。
+
 ### 2026-06-16 - Recommendation Agent 工具规划提示词强化
 
 **任务：**
@@ -231,6 +631,26 @@
 
 **面试可讲点：**
 这段可以讲成“推荐 Agent 的工具层产品化和 prompt contract 收口”：LLM 不直接面对底层召回/排序方法，而是在系统提示词约束下使用少量隐藏业务工具；RAG 前置只做 query planning 和概念补全，排序后 evidence 只做解释 grounding，候选生成、排序和 public display 仍由推荐 backbone 与 display validator 控制。
+
+### 2026-06-22 - RSAgent 去 RAG 工具化与 RagAgent 子 Agent 化
+
+**任务：**
+按新的 Agent 编排边界，把 RSAgent 中直接暴露的 `query_rag` / `get_item_evidence` hidden tools 移除，改为由内部 RagAgent/runtime 在受控阶段提供 RAG query support 与候选证据 support，并更新 RagAgent prompt contract。
+
+**遇到的问题：**
+旧实现把 RAG 前置 query planning 和排序后 evidence grounding 都建模成 RSAgent 工具，容易让推荐 Agent 直接看到 RAG 工具名、工具 trace 和 evidence 工具边界；但直接删除 `query_rag` 又会丢失 `semantic_live` 依赖的 `semantic_query_hint`，影响已有召回行为。
+
+**定位方式：**
+对照 Claude Code 子 agent 通信模式（父 Agent 显式传上下文、子 Agent 中间工具调用不暴露、父 Agent 只接收最终结果），检查 `rs_core/rsagent/tools.py`、`rs_core/rsagent/dialogue.py`、`rs_core/workflow/hybrid_environment.py` 与 `rs_core/agent_runtime/adapters/rag.py`，确认最小安全方案是保留 runtime 内部兼容 key，但从 RSAgent manifest、capability、planner prompt 和 tool trace 中删除 RAG 工具。
+
+**解决方式：**
+RSAgent 工具集合收口为 `get_user_context -> retrieve_candidates -> rank_candidates -> build_recommendation_slate`，`record_user_feedback` 只处理显式反馈；`query_rag` / `get_item_evidence` 从 tool manifest、capability manifest、dialogue plan 和 dispatcher 中移除。RagAgent adapter 新增 `RagAgentQuerySupport` 与 `pre_retrieval_query_support` 阶段，运行时在 `retrieve_candidates` 前内部生成兼容的 `semantic_query_hint/suggested_query_terms`，写入内部 `tool_context["query_rag"]` 但不作为 RSAgent tool result。排序后 small2big evidence 继续由 RagAgent `post_ranking_evidence_support` 压缩到 internal diagnostics。RSAgent 中文 prompt 明确“不直接调用 RAG 工具”，RagAgent prompt 明确身份、作用、运行时机、行为边界、工作流程、输入和输出。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest tests/test_agent_tools.py tests/test_agent_capability_manifest.py tests/test_rag_agent_adapter.py -q`，结果 `55 passed`；运行 `... -m pytest tests/test_agent_runtime.py tests/test_serving_facades.py tests/test_agent_dialogue.py tests/test_serving_smoke.py -q`，结果 `122 passed`；运行 `... -m pytest tests/test_rag_core.py tests/test_qdrant_rag_index_build.py -q`，结果 `55 passed`；最终合并回归 `... -m pytest tests/test_agent_tools.py tests/test_agent_capability_manifest.py tests/test_rag_agent_adapter.py tests/test_agent_runtime.py tests/test_serving_facades.py tests/test_agent_dialogue.py tests/test_serving_smoke.py tests/test_rag_core.py tests/test_qdrant_rag_index_build.py -q`，结果 `232 passed`。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 与证据 Agent 的职责解耦”：RSAgent 只负责自然对话、候选召回、排序和展示安全输出；RagAgent 作为内部子 Agent 负责 query hint 与候选内 evidence 压缩。这样既保留 RAG 对召回语义的帮助，又避免 RAG 原始证据、检索实现和 small2big parent profile 污染推荐决策、公开回答或训练监督。
 
 ### 2026-06-16 - Recommendation Agent 用户/session 隔离与冷启动收口
 
@@ -430,7 +850,27 @@ Serving 层虽然以 `session_id` 存储会话，但匿名 `start_session()` 原
 使用项目默认 `.venv` 运行 targeted 回归：`tests/test_pool500_online_artifacts.py tests/test_serving_recommend_from_sequence.py tests/test_serving_smoke.py tests/test_recall_source_registry.py tests/test_agent_capability_manifest.py -q`，结果 `48 passed`；public display/leakage 回归 `tests/test_display_contract.py tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py -q`，结果 `87 passed`；co_visit governance 回归 `tests/test_pool500_co_visit_fallback_repair_source.py tests/test_pool500_co_visit_fallback_repair_task_gate.py -q`，结果 `7 passed`；ruff 检查通过。额外脚本验证 serving config 当前 artifact 可加载并包含两者 source counts。
 
 **面试可讲点：**
-这段可以讲成“召回服务化的灰度治理”：先利用统一 artifact route 把 UserCF 和 co-visit 作为可控 supplemental source 接入线上服务，同时用 `artifact_backed_pool500_only` 明确边界，避免把诊断/兜底任务证据误升格为完整在线索引或排序输入，体现了推荐系统上线时对能力开放和治理边界的分层设计。
+这段可以讲成“召回服务化的灰度治理”：先利用统一 artifact route 把 UserCF 和 co_visit 作为可控 supplemental source 接入线上服务，同时用 `artifact_backed_pool500_only` 明确边界，避免把诊断/兜底任务证据误升格为完整在线索引或排序输入，体现了推荐系统上线时对能力开放和治理边界的分层设计。
+
+### 2026-06-22 - RS Agent 服务架构 BoundaryMap 合同层
+
+**任务：**
+把本轮架构重组从访谈/计划落成可测试合同层：明确 RS Agent Core Service 的模块化单体边界、ServingFact、AdapterContract 和 ManifestGate，让首页推荐、Agent 推荐、在线 RAG query、artifact 读取和即时 feedback 保持同步主链路，同时把可异步任务留给 TaskAdapter/worker 边界。
+
+**遇到的问题：**
+现有服务已具备 FastAPI、RecommendationService、SQLite/JSONL persistence、route registry、Qdrant/MinIO/Postgres 配置线索，但这些能力分散在运行代码、配置和实验治理中；如果只靠文档说明，后续多窗口继续接召回、排序、RAG、数据库和对象存储时仍可能绕过边界。初版合同层还被 review 发现 3 个 fail-closed 漏洞：未知 manifest schema 可准入、绝对路径或 `../` 逃逸路径可准入、ServingFact 的 oracle/label 检查无法穿透 list。
+
+**定位方式：**
+用 team 勘察分工确认现状：`rs_core/serving/app.py` 与 `service.py` 是同步服务入口，`persistence.py` 已有 public-safe 审计能力，`configs/governance/current_route_registry.yaml`、`configs/serving/online_service*.yaml` 和 `configs/artifacts/*.yaml` 已承载 route/artifact/RAG 治理语义。实现后由 code-reviewer 对 `manifest_gate.py`、`facts.py` 和新增测试做对抗复核，明确 fail-closed 路径和 public-safe 递归检查缺口。
+
+**解决方式：**
+新增 `rs_core/serving/boundary_map.py`，声明 ServiceRuntimeApi、FastAPIApp、RecommendationService、CoreRecommendationRuntime、StateFactsStore、PersistenceStore、InfrastructureBackends、AdapterContract、ManifestGate、RouteRegistry、DeploymentGovernanceOptimization、ServingFact 等模块的 responsibility、owned paths、allowed/forbidden imports 和 required tests。新增 `adapter_contracts.py`，用 mock-only Store/Cache/Artifact/Knowledge/Task protocol 固化 contract-only 接入，KnowledgeAdapter 明确在线 query 同步、index refresh 异步。新增 `facts.py` 固化 serving fact 类型并递归拦截 oracle/label/holdout/training 等 public unsafe 字段。新增 `manifest_gate.py` 做 schema allowlist + repo/base-dir relative path gate + route entry shape gate，invalid/missing/escape 均 not admitted，不抛给主链路。
+
+**验证结果：**
+使用项目默认 `.venv` 运行新增合同测试：`.venv/Scripts/python -m pytest tests/test_serving_boundary_map.py tests/test_serving_adapter_contracts.py tests/test_serving_facts.py tests/test_serving_manifest_gate.py -q`，结果 `25 passed`。相关治理/持久化回归：`.venv/Scripts/python -m pytest tests/test_serving_persistence.py tests/test_serving_store_contracts.py tests/test_engineering_contracts.py -q`，结果 `62 passed`。核心服务/RAG 回归：`.venv/Scripts/python -m pytest tests/test_session_summary.py tests/test_rag_core.py tests/test_serving_smoke.py -q`，结果 `107 passed`。code-reviewer 首轮 `FAIL` 的 3 个 HIGH + 1 个 MEDIUM 已修复，复审 `PASS`，并补充运行 `tests/test_serving_facts.py tests/test_serving_manifest_gate.py -q`，结果 `16 passed`。
+
+**面试可讲点：**
+这段可以讲成“从 demo 服务到可演进模块化单体的 contract-first 架构治理”：没有急着把 Redis/MinIO/Qdrant/Postgres 全部真实接入，而是先用 BoundaryMap、AdapterContract、ServingFact 和 ManifestGate 把同步用户体验链路、异步后台任务、artifact 准入和 public-safe facts 固化成可测试边界；后续具体 agent 可以按合同替换后端或接入新 artifact，而不会破坏首页推荐和 Agent 推荐主链路。
 
 ### 2026-06-09 - pool500 在线召回 source 注册口径收口
 
@@ -471,6 +911,26 @@ Serving 层虽然以 `session_id` 存储会话，但匿名 `start_session()` 原
 
 **面试可讲点：**
 这段可以讲成“排序模型训练解阻不等于排序效果可声明”：先修复 DeepFM 训练数据从 bias-only 到 train-only history features，再把 eval 侧特征对齐；最后通过严格时序和 label-source gate 发现所谓 valid label 实际落在 train split，从而主动停止效果宣称。体现了推荐排序实验中比模型训练更关键的是 train/eval 口径、时序边界和 no-oracle 治理。
+
+### 2026-06-22 - RSAgent 推荐顾问系统提示词收口
+
+**任务：**
+把 RecommendationAgent 的系统提示词从短工具边界说明升级为更完整的推荐顾问工作合同，并将同类标签化 prompt 写法沉淀为项目规范，供首页 Agent、RagAgent 和后续自定义 Agent 复用。
+
+**遇到的问题：**
+前一版 prompt 更偏 hidden tool boundary，能约束不要泄露工具/分数/trace，但对“为什么推荐”“什么叫推荐成功”“如何权衡当前需求和历史商品”描述不足；真实单样本 smoke 中出现 home office 请求被历史 iPhone cable 关键词带偏的问题，说明 prompt 需要明确当前需求优先、历史证据要按时效/行为强度/生命周期/相关性加权，不能机械复述历史偏好。
+
+**定位方式：**
+对照已生成的 GPT 5.3 smoke 样本和现有 `rs_core/rsagent/tools.py` 中 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT` 的作用范围，确认本次先在 planner system prompt contract 层补齐推荐 Agent 的行为宪法；同时保留工具 manifest summary 的拼接方式，避免破坏现有 `build_agent_tool_planner_system_prompt()` contract。
+
+**解决方式：**
+将 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT` 改为标签化连续段落 prompt，包含 `Role_And_Duty`、`Why_This_Matters`、`Success_Standard`、`User_History_Use`、`Tool_Workflow`、`Clarification_Policy`、`Runtime_Boundary`、`Response_Style`、`Good_Output_Example` 和 `Bad_Output_Example`。其中 `User_History_Use` 明确用户历史不是静态标签，而是带时间、行为强度、商品生命周期和当前相关性的证据；`Tool_Workflow` 保留 `get_user_context`、`retrieve_candidates`、`rank_candidates`、`record_user_feedback`、`build_recommendation_slate` 在工作流中的位置，并继续隐藏低层 provider/RAG/source 细节。新增 `dic/standards/AGENT_PROMPT_STANDARD.md`，把同类 prompt 规范扩展到 RecommendationAgent、首页 Agent、RagAgent、模拟用户 Agent 和后续专用 Agent，并在 `dic/README.md` 推荐阅读顺序和文档分区中加入该规范。
+
+**验证结果：**
+使用项目默认 `.venv` 运行轻量导入验证：`./.venv/Scripts/python.exe - <<'PY' ...`，确认 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT` 包含 `<Role_And_Duty>` 与 `<Bad_Output_Example>`，`build_agent_tool_planner_system_prompt()` 仍以该 prompt 开头且继续包含 `retrieve_candidates` manifest summary，输出 `prompt_ok 2540 7123`。文档侧新增 `dic/standards/AGENT_PROMPT_STANDARD.md` 并在 `dic/README.md` 建立入口。未运行大范围 pytest，因为本次仅替换 prompt 常量和文档，且当前工作树已有多处并行未提交变更。
+
+**面试可讲点：**
+这段可以讲成“推荐 Agent 从工具边界约束升级到推荐策略合同”：不仅告诉模型不能泄露工具和分数，还把顾客满意、当前需求优先、历史证据时效、商品生命周期、候选弱时的诚实表达和正反输出范例写进系统 prompt，为后续 LLM planner、SFT 数据生成和推荐质量评估提供统一行为基线。
 
 ### 2026-06-09 - 真实 valid/test frozen eval 重建与 COLD/DeepFM 诊断
 
@@ -731,6 +1191,26 @@ Serving 层虽然以 `session_id` 存储会话，但匿名 `start_session()` 原
 
 **面试可讲点：**
 这段可以讲成“从修泄漏转向优化训练分布”：用户样本均衡解决高活用户支配，非对称时序保证因果训练，流行度加权负采样让模型学习热门商品中的真实偏好差异，K-Core 过滤降低稀疏噪声，是推荐召回模型从可运行到可泛化的关键工程步骤。
+
+### 2026-06-23 - 多轮 SFT 推荐解释人性化补强
+
+**任务：**
+修正本地 multi-turn SFT smoke 中“能生成但不够像真实导购”的问题，让推荐轮基于 public display 商品字段输出商品标题/类目/摘要理由，并让模拟用户在缺少具体理由时追问，而不是直接接受。
+
+**遇到的问题：**
+此前样本首轮 assistant 只输出 “I will use your request and recent context to build recommendations.”，解释轮又可能被 dialogue-only sanitizer 压成泛化澄清，导致用户看不到商品标题、描述或推荐理由；第三方 judge 不能靠大量硬编码规则判断“人性化”，否则会把模型评价标准错误固化成程序审美。
+
+**定位方式：**
+沿 `rs_core/training/multi_turn_sft_generator.py::RecommendationAgentComposer.compose()`、`_compose_grounded_response()`、`rs_core/display/builder.py::item_to_display_card()`、`rs_core/rsagent/explanation.py::build_recommendation_explanation()` 和 `rs_core/simulation/policy.py::RolePolicy.next_action()` 定位，确认 display card 已允许 `title/category/summary/description/features/price` 等 public 字段，问题主要在 deterministic composer 仍透传服务模板文案，以及模拟用户只按商品匹配分接受。
+
+**解决方式：**
+在 deterministic recommendation composer 中使用 display item 的 public 字段生成 2-3 个商品级推荐理由；让解释类 no-display turn 在有上一轮 display grounding 时保留安全解释，而不是一律替换成“暂不提供具体选项”；把模拟用户策略改成：如果 assistant 没有提到展示商品并给出理由，先发起 `why` 追问。第三方本地 judge 回收为安全/协议 smoke gate，只保留候选池、内部字段、label/oracle、低层 RAG 工具、明显商品属性编造等硬门禁；人性化、满意度、解释质量交给后续模型 judge 按 `dic/standards/AGENT_SCORING_FRAMEWORK.md` 判定。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python -m pytest tests/test_multi_turn_sft_generator.py -q`，结果 `37 passed in 8.64s`。重新生成本地 smoke：`./.venv/Scripts/python -m scripts.training.generate_multi_turn_sft --config .omc/multi_turn_sft_local_judge_smoke.yaml`，生成 2 条、拒绝 0 条、平均 4 轮；再运行 `./.venv/Scripts/python -m scripts.training.judge_sft_samples --input outputs/training/multi_turn_sft_local_judge_smoke/samples.jsonl --output outputs/training/multi_turn_sft_local_judge_smoke/judge_reports.jsonl --summary outputs/training/multi_turn_sft_local_judge_smoke/judge_summary.json`，`judge_satisfied=true`、`accept=2`、`hard_fail_count=0`。本轮未调用外部 API，也未加载大模型。
+
+**面试可讲点：**
+这段可以讲成“把 SFT 数据从链路可跑推进到交互可用”：推荐 Agent 的话术不再只是模板确认，而是绑定 display slate 的公开商品信息给出理由；模拟用户会对解释不足追问；程序 judge 负责安全边界，模型 judge 负责语义质量，避免把主观人性化评价硬编码成脆弱规则。
 
 ### 2026-05-26 - TwoTower 训练泄漏修复与在线用户塔投影
 
@@ -6797,3 +7277,240 @@ A ç»„ 3k è¯Šæ–­åˆ‡ç‰‡å·²ç”Ÿæˆ� 300000 è¡Œå€
 - è§£å†³æ–¹å¼�ï¼šæ–°å¢ž `dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md`ï¼Œæ˜Žç¡® COLD ä½œä¸º coarse rank / candidate compressionï¼ŒDeepFM ä½œä¸º fine rank / feature-cross scorerï¼›æ›´æ–° `configs/governance/current_route_registry.yaml`ï¼Œå°† `current_ranking_route` æ”¹ä¸º `current_engineering_main`ï¼Œè®°å½• required artifactsã€�fallback route å’Œ `effect_claim_allowed=false` è¾¹ç•Œã€‚
 - éªŒè¯�ç»“æžœï¼šä½¿ç”¨é¡¹ç›® `.venv` è¿�è¡Œ `.venv/Scripts/python.exe -m pytest tests/test_serving_smoke.py tests/test_serving_persistence.py tests/test_serving_run_service.py -q`ï¼Œç»“æžœ `69 passed`ï¼›å‰�ç«¯ `cd frontend && npm run lint` å·²é€šè¿‡ã€‚è·¯çº¿å›ºå®šä¸ºæ–‡æ¡£/æ²»ç�†å±‚å�˜æ›´ï¼Œæ²¡æœ‰æ”¹å�˜æœ�åŠ¡ guardrail å¯¹ public/private payload å’Œ fallback çš„çº¦æ�Ÿã€‚
 - é�¢è¯•å�¯è®²ç‚¹ï¼šè¿™æ®µå�¯ä»¥è®²æˆ�â€œå·¥ç¨‹ä¸»è·¯æ™‹å�‡ä¸Žæ•ˆæžœå£°æ˜Žè§£è€¦â€�ï¼šåœ¨ full/formal è®­ç»ƒå®Œæˆ�å�Žï¼Œä¸ºäº†æŽ¨è¿›æŽ¨è�� Agent äº§å“�é—­çŽ¯ï¼ŒæŠŠ COLDâ†’DeepFM å›ºå®šä¸ºå·¥ä¸šåˆ†å±‚å¼�ç²—æŽ’/ç²¾æŽ’ä¸»è·¯ï¼›å�Œæ—¶ä¿�ç•™ baseline fallbackï¼Œä¸�æŠŠå€™é€‰è¦†ç›–ä¸�è¶³ä¸‹çš„å€™é€‰å†…æ”¶ç›Šå¤¸å¤§æˆ�å…¨å±€æŒ‡æ ‡æ��å�‡ï¼Œä½“çŽ°äº†è·¯çº¿æ”¶å�£å’Œè¯�æ�®è¾¹ç•Œæ„�è¯†ã€‚
+
+
+## 2026-06-21 通用 Agent runtime Phase 1 契约层
+
+- 任务：在不替换现有推荐 `AgentRuntime.run_turn` 的前提下，先落地通用 `BaseAgentLoop` 的 Phase 1 契约层，为后续 Recommendation adapter、shadow 对比和 SimulatedUserAgent 验证做准备。
+- 遇到的问题：现有推荐 runtime 同时承担 trace、工具执行、turn 构建、diagnostics、reward/stop check 和 session summary 更新；如果直接泛化，容易把推荐域 schema、`session.turns.append` 写入语义、hidden tool/RAG 原始证据和 public/SFT 输出边界一起带入 generic core。
+- 定位方式：对照 `rs_core/rsagent/runtime.py` 的 `RUNTIME_TRACE_STEP_ORDER`、`rs_core/workflow/hybrid_environment.py` 的 tool summary/result 语义、`rs_core/rsagent/tools.py` 的业务工具字段，以及前序 Architect/Critic 评审要求，先把兼容性固化为可测试契约。
+- 解决方式：新增 `rs_core/agent_runtime/` 契约包，定义 `LoopMode`、`TraceEvent`、`ToolSummary`、`ToolResult`、`RuntimePatch`、`CommitIntent`、`ToolSpec` 和 deny-by-default `OutputAdapter`；RS ToolSpec 的业务字段只允许作为 `metadata.recommendation.*` opaque metadata 透传；新增 compatibility constants 锁定 legacy trace 13 步、tool summary/result 最小字段、四类 failure contract 与 OutputAdapter 可见性矩阵；新增 `.omc/handoffs/team-plan-to-team-exec-base-agent-loop.md` 记录阶段边界。
+- 验证结果：使用项目 `.venv` 运行 `PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -m pytest tests/test_agent_runtime_contracts.py -q`，结果 `11 passed in 0.13s`；独立 verifier 只读复核给出 `PASS`，确认 generic core 没有导入 recommendation/simulation/domain schema，trace order 与旧 runtime 对齐，OutputAdapter 默认 deny，append ownership 静态约束覆盖当前新增包。
+- 面试可讲点：这段可以讲成“先契约化再迁移的 Agent runtime 抽象”：面对推荐 Agent loop 非通用的问题，没有直接重写生产链路，而是先用 import boundary、trace golden、tool failure contract、OutputAdapter 白名单和 append 单一所有权把风险变成可测试边界；后续再用 `generic_shadow` 验证兼容，降低架构抽象对线上推荐和 SFT 数据链路的冲击。
+
+
+## 2026-06-22 Recommendation generic_shadow scaffold
+
+- 任务：在 Phase 1 通用 runtime 契约层之后，补一个最小 `generic_shadow` scaffold，让 Recommendation 链路可以在不替换旧 loop 的前提下挂接 shadow 兼容报告，并继续默认走 legacy。
+- 遇到的问题：如果 Phase 2 直接让 generic loop 接管推荐回合，会立刻触碰工具副作用、`session.turns.append`、public/SFT 输出和 trace 对齐风险；同时 `generic_active` 还没有经过 active readiness gates，不能被配置误开。
+- 定位方式：沿 `AgentOrchestrationFacade.run_turn()` 和 `HybridRecommendationEnvironment.__init__()` 检查 runtime 入口，确认最小插入点应在 legacy `runtime.run_turn()` 外层：先记录 turn 数，执行一次旧链路，再只读 legacy trace 生成 internal shadow report。
+- 解决方式：新增 `rs_core/agent_runtime/adapters/recommendation.py`，实现 `RecommendationShadowAdapter`/`RecommendationShadowReport`；`AgentOrchestrationFacade` 支持 `AgentRuntimeConfig`，默认 `legacy` 不加 shadow 字段，`generic_shadow` 只在 legacy turn 完成后附加 `agent_runtime_shadow` internal diagnostics，`generic_active` 在 readiness gates 前直接拒绝且不调用 host；`HybridRecommendationEnvironment` 从配置读取 `agent_runtime.loop_mode`，默认仍为 legacy。
+- 验证结果：使用项目 `.venv` 运行 `PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -m pytest tests/test_agent_runtime_contracts.py tests/test_agent_runtime.py::test_agent_orchestration_facade_delegates_to_runtime_host_seam tests/test_agent_runtime.py::test_agent_orchestration_facade_shadow_mode_attaches_internal_report_without_extra_append tests/test_agent_runtime.py::test_agent_orchestration_facade_rejects_generic_active_before_readiness_gates -q`，结果 `14 passed in 0.41s`；独立 verifier 只读复核给出 `PASS`，确认默认 legacy 无 shadow report，shadow 不额外 append、不重复执行工具，active guard 在 host 调用前生效，core 仍无 domain import。
+- 面试可讲点：这段可以讲成“高风险 runtime 迁移的 shadow-first 设计”：不是把新抽象直接切到线上，而是在 façade 外层先做只读 shadow report，用 feature flag 严格区分 legacy/shadow/active，并把 active 作为独立 gate；这样既能开始收集兼容性证据，又不会改变用户可见行为或推荐会话写入语义。
+
+
+## 2026-06-22 通用 GenericAgentLoop skeleton 与使用文档
+
+- **任务**：补齐领域无关的 `GenericAgentLoop` skeleton，并提供后续衍生新 Agent 的中文使用说明。
+- **遇到的问题**：原先只完成了 contract 与 Recommendation `generic_shadow` scaffold，还没有真正可复用的 input→context→plan→tools→response→patch/output 闭环；同时后续 Recommendation Agent、SimulatedUserAgent 需要明确工具、prompt、状态和输出边界。
+- **定位方式**：沿用前期 contract 测试约束，重点检查 `rs_core/agent_runtime/core/` 是否保持无领域导入、generic loop 是否不直接 `session.turns.append(...)`、public/SFT 投影是否默认 allowlist。
+- **解决方式**：新增 `rs_core/agent_runtime/core/loop.py`，定义 `AgentLoopInput`、`ToolCall`、`AgentPlan`、`AgentLoopResult` 和 `ContextBuilder`/`Planner`/`ToolDispatcher`/`ResponseComposer`/`StateUpdater` 协议；loop 只编排阶段并返回 `RuntimePatch`/`CommitIntent`，不提交领域状态。新增 `dic/GENERIC_AGENT_LOOP_USAGE.md` 说明组件边界、工具 metadata、输出投影和 Recommendation/SimulatedUserAgent 后续接入方式。
+- **验证结果**：轻量测试 `PYTHONIOENCODING=utf-8 ./.venv/Scripts/python.exe -m pytest tests/test_agent_runtime_contracts.py tests/test_generic_agent_loop.py -q` 通过，结果为 `13 passed in 0.16s`；独立 verifier 首轮指出顶层导出缺少 `OutputProjectionPolicy`/`ProjectionViolation`，修复后复核通过，确认 focused tests 与顶层导出均通过。
+- **面试可讲点**：这次不是直接把推荐 runtime 重写成“大而全”基类，而是先抽出可测试的通用 loop skeleton，把工具、prompt/context、输出安全和状态提交做成外置协议；通过 shadow/contract/fake-agent 测试降低迁移风险，为后续多 Agent 复用打下基础。
+
+### 2026-06-22 - æœ¬åœ°è¯•è¿�è¡ŒæŠ€æœ¯é€‰åž‹æ–‡æ¡£æ²‰æ·€
+
+**ä»»åŠ¡ï¼š**
+æŠŠæ­¤å‰�å›´ç»• FastAPIã€�PostgreSQLã€�Qdrantã€�Redisã€�MinIOã€�MLflowã€�vLLM/Qwen ç­‰ç»„ä»¶çš„æœ¬åœ°è¯•è¿�è¡Œçº§æŠ€æœ¯é€‰åž‹æ•´ç�†æˆ�å�¯å¤�è¿°çš„ä¸­æ–‡å·¥ç¨‹æ–‡æ¡£ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+è¿™äº›ç»„ä»¶å®¹æ˜“è¢«è¯¯è§£ä¸ºå·²ç»�å…¨éƒ¨ç”Ÿäº§åŒ–éƒ¨ç½²ï¼›å®žé™…å½“å‰�å�ªè�½åœ° local/trial/non-production MVPï¼ŒQdrant/PostgreSQL æ˜¯å‡†å¤‡å’Œå°�æ ·æœ¬è¯•è¿�è¡Œè¾¹ç•Œï¼ŒRedis/MinIO/MLflow/vLLM/KServe ç­‰æ›´å¤šæ˜¯å�Žç»­èƒ½åŠ›é¢„ç•™ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+å¯¹é½� `deploy/local/docker-compose.yml`ã€�`deploy/local/README.md`ã€�`deploy/local/postgres/init/001_schema.sql`ã€�`.env.example` ä»¥å�Šå½“å‰� RAG/Qdrant/fallback/Agent provider è¾¹ç•Œï¼Œç¡®è®¤æ–‡æ¡£éœ€è¦�åŒºåˆ†â€œå·²è�½åœ°ã€�å·²å‡†å¤‡ã€�ä»…é¢„ç•™ã€�æ˜Žç¡®ä¸�å�šâ€�ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢ž `dic/architecture/TECH_STACK_SELECTION.md`ï¼ŒæŒ‰ç»„ä»¶è¯´æ˜Žé€‰åž‹ç�†ç”±ã€�å½“å‰�çŠ¶æ€�ã€�é¡¹ç›®å†…è�Œè´£ã€�èµ„æº�/å®‰å…¨è¾¹ç•Œå’Œæ¼”è¿›é¡ºåº�ï¼›åœ¨ `dic/README.md` æŽ¨è��é˜…è¯»é¡ºåº�ä¸­åŠ å…¥è¯¥æ–‡æ¡£å…¥å�£ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+è¿�è¡Œè½»é‡�æ–‡æ¡£ smokeï¼Œç¡®è®¤æŠ€æœ¯é€‰åž‹æ–‡æ¡£åŒ…å�« PostgreSQLã€�Qdrantã€�Redisã€�MinIOã€�MLflowã€�vLLM/Qwenã€�SQLite BM25ã€�local/trial/non-production MVP ç­‰å…³é”®é”šç‚¹ï¼Œå¹¶ç¡®è®¤ `dic/README.md` å·²é“¾æŽ¥ `architecture/TECH_STACK_SELECTION.md`ï¼Œè¾“å‡º `tech stack doc smoke ok`ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œä¸�æ˜¯å †ç»„ä»¶ï¼Œè€Œæ˜¯æŒ‰æŽ¨è�� Agent çš„å·¥ç¨‹è¾¹ç•Œå�šåˆ†å±‚é€‰åž‹â€�ï¼šPostgreSQL ç®¡ç»“æž„åŒ–æ•°æ�®ï¼ŒQdrant ç®¡å�‘é‡�æ£€ç´¢ï¼ŒSQLite BM25 ç®¡ fallbackï¼ŒRedis/MinIO/MLflow/vLLM ä½œä¸ºæ˜Žç¡®é¢„ç•™ï¼Œå¹¶é€šè¿‡æ–‡æ¡£æŠŠæœ¬åœ°è¯•è¿�è¡Œã€�èµ„æº�é™�åˆ¶å’Œæœªæ�¥ç”Ÿäº§åŒ–è·¯çº¿æ‹†å¼€ã€‚
+
+### 2026-06-22 - PostgreSQL 2y æ•°æ�®åº“ D ç›˜å¤–æŒ‚è¿�ç§»
+
+**ä»»åŠ¡ï¼š**
+å°†å·²å¯¼å…¥å®Œæ•´ 2y æ•°æ�®çš„æœ¬åœ° PostgreSQL ä»Ž Docker named volume è¿�ç§»åˆ°é¡¹ç›® D ç›˜ç›®å½• `data/postgres/pgdata`ï¼Œé�¿å…�æ•°æ�®åº“å®žé™…å� ç”¨ Docker Desktop é»˜è®¤ C ç›˜æ•°æ�®åŒºï¼Œå¹¶æ–¹ä¾¿å�Žç»­æœ¬åœ°ç£�ç›˜å®¹é‡�ç®¡ç�†ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+Docker Compose çš„ `postgres_data:/var/lib/postgresql/data` named volume åœ¨ Windows Docker Desktop ä¸‹ç”± Docker å†…éƒ¨ç®¡ç�†ï¼Œç”¨æˆ·åœ¨é¡¹ç›®ç›®å½•ä¸­çœ‹ä¸�åˆ°æ•°æ�®æ–‡ä»¶ï¼Œä¸”å®¹æ˜“å� ç”¨ C ç›˜ï¼›å�Œæ—¶åº“é‡Œå·²ç»�å¯¼å…¥ 2y å…¨é‡�ç»“æž„åŒ–æ•°æ�®ï¼Œä¸�èƒ½é€šè¿‡ç›´æŽ¥é‡�å»ºå®¹å™¨å¯¼è‡´æ•°æ�®ä¸¢å¤±ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ£€æŸ¥ `deploy/local/docker-compose.yml` çš„ PostgreSQL volume é…�ç½®ï¼Œç¡®è®¤å½“å‰�ä½¿ç”¨ named volumeï¼›é€šè¿‡ SQL æ ¡éªŒæº�åº“ `products=887002`ã€�`interactions=11936005`ã€�`user_sequences=7080947`ã€�`interactions_without_product=0`ï¼Œå¹¶ç”¨ `pg_dump -Fc` ç”Ÿæˆ�è¿�ç§» dump ä½œä¸ºå�¯æ�¢å¤�ä¸­é—´æ€�ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+å°† compose ä¸­ PostgreSQL æ•°æ�®ç›®å½•æ”¹ä¸º bind mountï¼š`../../data/postgres/pgdata:/var/lib/postgresql/data`ï¼›æ–°å¢ž `.gitignore` å¿½ç•¥ `data/postgres/` å’Œ `data/postgres_migration/`ï¼›æ›´æ–° `deploy/local/README.md` ä¸Ž `dic/architecture/TECH_STACK_SELECTION.md` çš„æœ¬åœ°å­˜å‚¨è¯´æ˜Žã€‚è¿�ç§»æ‰§è¡Œæ—¶å…ˆ dump æ—§åº“ï¼Œå†�é‡�å»º PostgreSQL å®¹å™¨åˆ° D ç›˜å¤–æŒ‚ç›®å½•ï¼Œéš�å�Ž `pg_restore` æ�¢å¤�ï¼›æ—§ Docker named volume `local_postgres_data` ä¿�ç•™ä¸�åˆ ï¼Œä½œä¸ºå›žæ»šä¿�é™©ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+`docker inspect local-postgres-1` æ˜¾ç¤º `/var/lib/postgresql/data` å®žé™…æŒ‚è½½æº�ä¸º `D:\sinrotic_code\python_project\summer\RS_agent\data\postgres\pgdata`ã€‚æ�¢å¤�å�Ž SQL æ ¡éªŒé€šè¿‡ï¼š`products=887002`ã€�`interactions=11936005`ã€�`user_sequences=7080947`ï¼›split åˆ†å¸ƒä¸º `train=11538991`ã€�`valid=154867`ã€�`test=242147`ï¼›`distinct_users=7080947`ã€�`distinct_items=887002`ï¼›`interactions_without_product=0`ï¼›æ•°æ�®åº“å¤§å°�çº¦ `12GB`ã€‚æœ¬åœ° `data/postgres/pgdata` çº¦ `14GB`ï¼Œè¿�ç§» dump ä½�äºŽ `data/postgres_migration/rs_agent_pre_bind.dump` çº¦ `1.4GB`ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œæœ¬åœ°æ•°æ�®æœ�åŠ¡è�½åœ°æ—¶çš„å­˜å‚¨æ²»ç�†â€�ï¼šä¸�ä»…æŠŠ 2y JSONL è½¬æˆ�å�¯æŸ¥è¯¢çš„ PostgreSQLï¼Œè¿˜è¯†åˆ« Docker Desktop named volume çš„ç£�ç›˜ä½�ç½®é£Žé™©ï¼Œé€šè¿‡ dump/restoreã€�bind mountã€�gitignore å’Œå®Œæ•´ SQL æ ¡éªŒå®Œæˆ�æ— æ�Ÿè¿�ç§»ï¼Œå�Œæ—¶ä¿�ç•™æ—§ volume ä½œä¸ºå›žæ»šè·¯å¾„ï¼Œä½“çŽ°å·¥ç¨‹åŒ–æ•°æ�®è¿�ç§»çš„å®‰å…¨è¾¹ç•Œã€‚
+
+### 2026-06-22 - 2y æ•°æ�®å…¥åº“å�Žæœ¬åœ° full/2y æ–‡ä»¶æ¸…ç�†
+
+**ä»»åŠ¡ï¼š**
+åœ¨è¿œç¨‹å¤‡ä»½å®Œæˆ�ã€�PostgreSQL 2y æ•°æ�®åº“å¯¼å…¥å¹¶è¿�ç§»åˆ° D ç›˜å¤–æŒ‚ç›®å½•å�Žï¼Œæ¸…ç�†æœ¬åœ°ä¸�å†�éœ€è¦�çš„ full/2y æ–‡ä»¶å‰¯æœ¬ï¼Œå�ªä¿�ç•™ base æº�æ•°æ�®å’Œ PostgreSQL ç»“æž„åŒ–æ•°æ�®åº“ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+æœ¬åœ° D ç›˜æ­¤å‰�ç©ºé—´ç´§å¼ ï¼›å�Œæ—¶ä¸�èƒ½ç®€å�•åˆ é™¤åŽŸå§‹å¤„ç�†æ–‡ä»¶ï¼Œå¿…é¡»å…ˆè¯�æ˜Žè¿œç¨‹å¤‡ä»½å­˜åœ¨ã€�æ–°åº“å­—æ®µå’Œè¡Œæ•°å®Œæ•´ã€�PostgreSQL æ•°æ�®ç›®å½•å·²ä»Ž Docker named volume è¿�ç§»åˆ° D ç›˜ bind mountï¼Œä¸”åˆ é™¤ä¸�ä¼šå½±å“�æ•°æ�®åº“æœ�åŠ¡ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+åˆ é™¤å‰�å¤�æ ¸ PostgreSQLï¼š`products=887002`ã€�`interactions=11936005`ã€�`user_sequences=7080947`ï¼›split åˆ†å¸ƒ `train=11538991`ã€�`valid=154867`ã€�`test=242147`ï¼›`distinct_users=7080947`ã€�`distinct_items=887002`ï¼›`interactions_without_product=0`ï¼›å­—æ®µå±‚é�¢ç¡®è®¤æ ¸å¿ƒå­—æ®µè¿›å…¥ç»“æž„åŒ–åˆ—ï¼Œè¾…åŠ©å­—æ®µè¿›å…¥ `metadata` JSONBã€‚`docker inspect` ç¡®è®¤ `/var/lib/postgresql/data` æŒ‚è½½åˆ° `D:\sinrotic_code\python_project\summer\RS_agent\data\postgres\pgdata`ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+ç»�ç”¨æˆ·ç¡®è®¤å�Žåˆ é™¤æœ¬åœ°ä¸‰ä¸ªå·²å¤‡ä»½ä¸”ä¸�å†�ä½œä¸ºæœ¬åœ°ä¸»çº¿è¾“å…¥çš„ç›®å½•ï¼š`data/processed/amazon_2023_recall_clean_full`ã€�`data/processed/amazon_2023_recall_views_full_lightweight`ã€�`data/processed/amazon_2023_recall_recent_2y_1m_3m`ã€‚ä¿�ç•™ `data/processed/amazon_2023_base`ã€�`data/postgres/pgdata` å’Œ `data/postgres_migration`ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+åˆ é™¤å�Ž `df -h` æ˜¾ç¤º D ç›˜å�¯ç”¨ç©ºé—´ä»Žçº¦ `81G/93G` çº§åˆ«æ��å�‡åˆ° `218G`ï¼Œä½¿ç”¨çŽ‡é™�è‡³ `73%`ï¼›ä¸‰é¡¹ç›®å½•å�‡ä¸�å­˜åœ¨ï¼›`amazon_2023_base` å’Œ `data/postgres/pgdata` ä»�å­˜åœ¨ã€‚PostgreSQL åˆ é™¤å�Žä»�å�¯æŸ¥è¯¢ï¼Œè¡Œæ•°ä¿�æŒ� `products=887002`ã€�`interactions=11936005`ã€�`user_sequences=7080947`ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�æœ¬åœ°æ•°æ�®æœ�åŠ¡åŒ–å�Žçš„å­˜å‚¨æ”¶å�£ï¼šå…ˆè¿œç¨‹å¤‡ä»½ï¼Œå†�æŠŠ 2y JSONL è½¬æˆ� PostgreSQL ç»“æž„åŒ–æŸ¥è¯¢å±‚ï¼Œè¿�ç§»æ•°æ�®åº“åˆ° D ç›˜å�¯æŽ§ç›®å½•ï¼Œæœ€å�Žåœ¨å®Œæ•´æ€§æ ¡éªŒå�Žæ¸…ç�†å†—ä½™æ–‡ä»¶ï¼ŒæŠŠæœ¬åœ°ç£�ç›˜ä»Žâ€œå †åŽŸå§‹ä¸­é—´äº§ç‰©â€�è½¬ä¸ºâ€œbase æº�æ•°æ�® + å�¯æŸ¥è¯¢æ•°æ�®åº“ + å�¯å›žæ»š dumpâ€�çš„å·¥ç¨‹çŠ¶æ€�ã€‚
+
+### 2026-06-22 - serving åˆ†å±‚æž¶æž„è½»æ‹†ä¸Žå…¼å®¹ shim
+
+**ä»»åŠ¡ï¼š**
+æŒ‰å·²æ‰¹å‡† serving æ–‡ä»¶æž¶æž„è®¡åˆ’ï¼ŒæŠŠ `rs_core/serving` ä»Žæ‰�å¹³å…¥å�£æ•´ç�†ä¸º `api/application/domain/governance/infrastructure/runtime/schemas` åˆ†å±‚éª¨æž¶ï¼Œå¹¶ä¿�ç•™æ—§ import å…¼å®¹ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+`service.py` å�Œæ—¶æ‰¿è½½é…�ç½®è§£æž�ã€�readiness projection å’Œåº”ç”¨æœ�åŠ¡å…¥å�£ï¼›æ–°å¢žå�ˆå�Œå±‚ä»�åœ¨æ—§æ‰�å¹³è·¯å¾„ï¼Œå�Žç»­æŽ¥ RAG/Agent/infra æ—¶è¾¹ç•Œå®¹æ˜“æ¼‚ç§»ï¼Œä½†æœ¬è½®ä¸�èƒ½ç§»åŠ¨ `app.py/schema.py/persistence.py` æˆ–æŽ¥çœŸå®ž Redis/MinIO/Qdrant/Postgres/Queueã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+å¯¹ç…§ `.omc/plans/rs-agent-serving-file-architecture-ralplan.md` çš„ compatibility matrixï¼Œæ£€æŸ¥ `rs_core/serving/service.py`ã€�`boundary_map.py`ã€�`adapter_contracts.py`ã€�`facts.py`ã€�`manifest_gate.py` ä¸ŽçŽ°æœ‰ serving import seamã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢ž canonical åŒ…ç›®å½•å’Œ infrastructure skeletonï¼›å°† BoundaryMapã€�AdapterContractã€�ServingFactã€�ManifestGate è¿�ç§»åˆ° `domain/` ä¸Ž `governance/`ï¼Œæ—§è·¯å¾„å�ªä¿�ç•™ re-export shimï¼›æŠŠ `service.py` è½»æ‹†ä¸º `application/recommendation_service.py`ã€�`runtime/config.py`ã€�`runtime/readiness.py`ï¼ŒåŽŸ `rs_core.serving.service` ä½œä¸º public facade ç»§ç»­å¯¼å‡ºå…¼å®¹ç¬¦å�·ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ `python -m compileall -q rs_core/serving` é€šè¿‡ï¼›è¿�è¡Œ serving import compatibility smoke è¾“å‡º `serving import compatibility ok`ï¼›å¯¹ `domain/governance/runtime/infrastructure` å�š AST forbidden import scanï¼Œç»“æžœ `forbidden import scan ok`ã€‚æœ¬è½®æœªè¿�è¡Œé‡�æµ‹è¯•å¥—ï¼ŒæœªæŽ¥çœŸå®žå¤–éƒ¨ infraã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œåœ¨ä¸�ç ´å��çŽ°æœ‰ FastAPI å…¥å�£å’Œæµ‹è¯• monkeypatch seam çš„å‰�æ��ä¸‹ï¼Œç”¨ Clean/Hexagonal çš„ modular monolith æ–¹å¼�æ¸�è¿›æ²»ç�†æœ�åŠ¡å±‚â€�ï¼šcanonical path æ‰¿æ‹…æ–°è¾¹ç•Œï¼Œæ—§è·¯å¾„é€šè¿‡ shim ä¿�æŠ¤å¹¶è¡Œçª—å�£ï¼Œruntime/config/readiness å…ˆæ‹†å‡ºæ�¥ä¸ºå�Žç»­ RAGã€�Agent å’Œ infra adapter æŽ¥å…¥ç•™è�½ç‚¹ã€‚
+
+### 2026-06-22 - online retrieval æŽ¥å…¥ semantic_token å�¬å›ž
+
+**ä»»åŠ¡ï¼š**
+æŒ‰å·²æ‰¹å‡†è®¡åˆ’æŠŠæœ¬åœ° `semantic_index` çš„ token è¯­ä¹‰å�¬å›žå°�è£…æˆ� online retrieval providerï¼Œå¹¶æŽ¥å…¥ serving é…�ç½®ä¸Žè½»é‡�å›žå½’æµ‹è¯•ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+çº¿ä¸Šå€™é€‰ç¼–æŽ’å·²æœ‰ Postgresã€�two-towerã€�fallback å’Œ disabled `semantic_vector` éª¨æž¶ï¼Œä½†ç¼ºå°‘å�¯ç›´æŽ¥å¤�ç”¨çŽ°æœ‰ `semantic_candidates_for_user()` çš„ providerï¼›å�Œæ—¶ RAG chunks ä¸�èƒ½è¢«è¯¯ç”¨ä¸º candidate sourceï¼Œè¯­ä¹‰å�‘é‡�å€™é€‰ä»�éœ€ä¿�æŒ� disabled/skeletonã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ²¿ `rs_core/recsys/online_retrieval/provider.py`ã€�`orchestrator.py`ã€�`config.py`ã€�`providers/semantic_vector.py` ä¸Ž `candidate_merge.py` æŸ¥æ‰¾ provider/readiness/result æ¨¡å¼�ï¼Œå¹¶ç”¨ `tests/test_online_retrieval_providers.py`ã€�`tests/test_online_retrieval_orchestrator.py` å›ºåŒ– expected diagnostics å’Œ fallback è¯­ä¹‰ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢ž `semantic_token` providerï¼Œreadiness åŒºåˆ† `disabled/missing_semantic_index/ready`ï¼Œretrieve å�ˆå¹¶ request config ä¸Ž provider config å�Žå¼ºåˆ¶ `semantic_enabled=True`ï¼Œå�ªè°ƒç”¨æœ¬åœ° token è¯­ä¹‰ç´¢å¼•ï¼›orchestrator `from_config()` é€�ä¼  `semantic_index`ï¼Œé»˜è®¤ provider é¡ºåº�æ”¾åœ¨ `postgres_category` å�Žã€�`postgres_popular` å‰�ï¼›serving é…�ç½®è¡¥é½� `idf_seed_aware`ã€�seed windowã€�per-seedã€�per-user å’Œ df ratio å�‚æ•°ï¼Œä¿�ç•™ `semantic_vector` disabledã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pytest D:/sinrotic_code/python_project/summer/RS_agent/tests/test_online_retrieval_providers.py D:/sinrotic_code/python_project/summer/RS_agent/tests/test_online_retrieval_orchestrator.py`ï¼Œç»“æžœ `9 passed in 1.61s`ï¼›å¯¹ä¿®æ”¹çš„ Python æ–‡ä»¶è¿�è¡Œ `py_compile` æ— è¾“å‡ºé€šè¿‡ï¼›å¯¹ serving JSON é…�ç½®å�š `json.loads` ä¸Žå…³é”®å­—æ®µæ–­è¨€é€šè¿‡ã€‚æœªè¿�è¡Œ full eval/full buildã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œåœ¨ä¸�å¼•å…¥æ–°å�‘é‡�æœ�åŠ¡ã€�ä¸�è§¦ç¢° RAG candidate è¾¹ç•Œçš„å‰�æ��ä¸‹ï¼ŒæŠŠå·²æœ‰ç¦»çº¿ semantic token èƒ½åŠ›äº§å“�åŒ–ä¸ºå�¯è§‚æµ‹ providerâ€�ï¼šé€šè¿‡ readinessã€�provider_coverage å’Œ diagnostics æ˜Žç¡®ä¸Šçº¿çŠ¶æ€�ä¸Žå�¬å›žå�‚æ•°ï¼Œä¸ºå�Žç»­ A/Bã€�underfill åˆ†æž�å’Œå�‘é‡�è¯­ä¹‰å�¬å›žæ›¿æ�¢é¢„ç•™æŽ¥å�£ã€‚
+
+
+### 2026-06-22 - online retrieval 接入 semantic_token 召回（复审修正）
+
+- **任务**：补充记录 `semantic_token` 接入后的复审修正和最终验证结果，修正上一条记录中过早的验证口径。
+- **遇到的问题**：初版 provider 接入后，code review 发现两个诊断语义风险：`online_retrieval.enabled=false` 时仍可能进入 online route；fallback provider 只返回重复/seen 候选时，`fallback_used` 可能被 raw 返回量误报为 true。
+- **定位方式**：沿 `rs_core/workflow/online_recommendation.py` 的 route 判断、`rs_core/recsys/online_retrieval/orchestrator.py` 的 provider/fallback 编排和 `tests/test_online_retrieval_orchestrator.py` 的 coverage 逐项复查；用 local_qdrant smoke 检查 readiness/provider_coverage 是否能看到 `semantic_token`。
+- **解决方式**：`_has_online_retrieval_config()` 改为必须显式 `enabled=true`；orchestrator 在 `not self.enabled` 时直接返回 disabled diagnostics；fallback 阶段按 merge 前后 item id 差集计算净新增候选，并新增 `fallback_raw_candidate_count`/`fallback_net_new_candidate_count` 诊断。
+- **验证结果**：使用项目默认 `.venv` 运行聚焦回归 `tests/test_online_retrieval_providers.py tests/test_online_retrieval_orchestrator.py tests/test_hybrid_demo.py::test_semantic_idf_seed_aware_prefers_rare_seed_overlap_and_filters_seen_items -q`，结果 `13 passed in 3.61s`；运行 serving 相关回归 `tests/test_serving_recommend_from_sequence.py tests/test_serving_facades.py tests/test_qdrant_config_env.py -q`，结果 `33 passed in 1.17s`；复审代理针对 HIGH/MEDIUM 修复给出 `APPROVE`，并独立运行 provider/orchestrator 测试 `12 passed in 0.37s`；local_qdrant smoke exit code 0，`semantic_token` readiness 为 `ready`、`semantic_index_size=16753`、`candidate_count=20`，`pool500_fallback` 为 `not_needed`、`fallback_used=false`。本轮未运行 full eval/full build/全量 Qdrant build。
+- **面试可讲点**：这段可讲成“先把离线 token/IDF 语义召回服务化，再用 readiness、provider coverage 和 fallback 净新增诊断保证线上可观测性”的工程治理案例；重点不是堆模型，而是在不误用 RAG chunks、不启动重资源 ANN 构建的前提下，把 `/recommend`、`/recall` 和 Agent 工具的候选生成语义对齐。
+
+### 2026-06-22 - Serving API/Schema æ–‡ä»¶æž¶æž„äºŒé˜¶æ®µè¿�ç§»
+
+- **ä»»åŠ¡**ï¼šå°† serving å±‚çš„ schema ä¸Ž FastAPI app ä»Žæ ¹ç›®å½•æ—§å…¥å�£è¿�ç§»åˆ° canonical åˆ†å±‚ç›®å½•ï¼Œå�Œæ—¶ä¿�ç•™æ—§è·¯å¾„å…¼å®¹ã€‚
+- **é�‡åˆ°çš„é—®é¢˜**ï¼š`rs_core.serving.schema` ä¸Ž `rs_core.serving.app` æ˜¯å¤–éƒ¨è„šæœ¬ã€�æµ‹è¯•å’Œ uvicorn å…¥å�£ä¾�èµ–çš„ public seamï¼Œä¸�èƒ½ç›´æŽ¥æ�¬èµ°ï¼›legacy shim åˆ�ç‰ˆä½¿ç”¨ `import *`ï¼Œè§¦å�‘ ruff F403ã€‚
+- **å®šä½�æ–¹å¼�**ï¼šé€šè¿‡ focused compatibility testsã€�FastAPI smokeã€�legacy/canonical import smokeã€�ruff å’Œ compileall æ£€æŸ¥éªŒè¯�è¿�ç§»è¾¹ç•Œï¼›verifier å¤�æ ¸å�‘çŽ° star import diagnostics blockerã€‚
+- **è§£å†³æ–¹å¼�**ï¼šæ–°å¢ž canonical `rs_core/serving/schemas/models.py`ã€�`rs_core/serving/api/app.py`ï¼Œæ—§ `schema.py`/`app.py` ä¿�ç•™ä¸º shimï¼›æ›´æ–° BoundaryMap canonical owned paths ä¸Ž compatibility_pathsï¼›shim æ”¹ä¸ºåŸºäºŽ canonical module `__all__`/`dir()` çš„æ˜¾å¼� `globals()` æ³¨å…¥ï¼Œé�¿å…� `import *`ã€‚
+- **éªŒè¯�ç»“æžœ**ï¼š`ruff check rs_core/serving` é€šè¿‡ï¼›`compileall -q rs_core/serving` é€šè¿‡ï¼›`tests/test_serving_boundary_map.py tests/test_serving_reorg_compatibility.py tests/test_serving_smoke.py -q` ä¸º 72 passedï¼›`tests/test_postgres_dataset.py tests/test_serving_facades.py tests/test_serving_recommend_from_sequence.py -q` ä¸º 38 passedï¼›verifier æœ€ç»ˆ PASSã€‚
+- **é�¢è¯•å�¯è®²ç‚¹**ï¼šè¿™æ¬¡è¿�ç§»ä¸�æ˜¯æœºæ¢°ç§»åŠ¨æ–‡ä»¶ï¼Œè€Œæ˜¯åœ¨ä¿�æŒ�çº¿ä¸Šå…¥å�£å…¼å®¹çš„å‰�æ��ä¸‹ï¼ŒæŠŠ API/schema ownership çº³å…¥ BoundaryMapï¼Œè®©æž¶æž„è¾¹ç•Œå�¯æµ‹è¯•ã€�å�¯å¤�å®¡ã€�å�¯æ¸�è¿›æ¼”è¿›ã€‚
+
+
+#### æ”¶å�£è¡¥å…… - canonical import ä¸Ž shim public surface å›ºåŒ–
+
+- **ä»»åŠ¡**ï¼šåœ¨ API/schema è¿�ç§»é€šè¿‡å�Žç»§ç»­æ”¶å�£ï¼Œå‡�å°‘æ–° canonical å±‚å¯¹æ—§ shim çš„ä¾�èµ–ï¼Œå¹¶å›ºåŒ– legacy shim çš„ public surfaceã€‚
+- **è§£å†³æ–¹å¼�**ï¼šå°† `api/app.py`ã€�`application/recommendation_service.py`ã€�`facades.py` çš„ schema import æ”¹ä¸º `rs_core.serving.schemas`ï¼›ä¸º `domain/adapter_contracts.py`ã€�`domain/boundary_map.py`ã€�`domain/serving_fact.py`ã€�`governance/manifest_gate.py` å¢žåŠ æ˜Žç¡® `__all__`ï¼Œlegacy shim æ”¹ä¸ºæŒ‰ canonical `__all__` re-exportï¼›è¡¥å…… canonical å±‚ç¦�æ­¢å¯¼å…¥æ—§ `app.py`/`schema.py` shim çš„å…¼å®¹æµ‹è¯•ã€‚
+- **éªŒè¯�ç»“æžœ**ï¼š`ruff check rs_core/serving tests/test_serving_reorg_compatibility.py` é€šè¿‡ï¼›boundary/reorg tests ä¸º 20 passedï¼›serving smoke ä¸Žç›¸å…³å›žå½’ä¸º 92 passedï¼›import smoke é€šè¿‡ã€‚
+
+## 2026-06-22 - MemoryAgent Shadow æŽ¥å…¥å®šåˆ¶ Agent Runtime
+
+- ä»»åŠ¡ï¼šåœ¨ Registry/Runner æž¶æž„å·²æœ‰ `rag_agent` çš„åŸºç¡€ä¸Šï¼Œå®žçŽ°ç¬¬äºŒä¸ªå�¯å�¯åŠ¨å®šåˆ¶ Agentï¼š`memory_agent`ã€‚
+- é�‡åˆ°çš„é—®é¢˜ï¼šé€šç”¨ Agent æ³¨å…¥å±‚å·²ç»�æ�­å¥½ï¼Œä½†å¦‚æžœå�ªæœ‰ RagAgentï¼Œä¸€ä¸ª Agent çš„ runner åŒ–è¿˜ä¸�èƒ½è¯�æ˜Žå¤š Agent æ‰©å±•è·¯å¾„ï¼›å�Œæ—¶é•¿æœŸè®°å¿†èƒ½åŠ›å·²æœ‰ facade seamï¼Œä¸�èƒ½é‡�å¤�æ”¹å†™ä¸»æŒ�ä¹…åŒ–é€»è¾‘ã€‚
+- å®šä½�æ–¹å¼�ï¼šå¤�ç”¨ `rs_core/rsagent/long_memory.py` çš„ `snapshot_session_long_memory`ã€�`recall_relevant_long_memory`ï¼Œä»¥å�Š `rs_core/workflow/facades.py` çš„ shadow agent æŽ¥å…¥æ¨¡å¼�ï¼›ç”¨ display/session summary æµ‹è¯•ç¡®è®¤å†…éƒ¨è®°å¿†å­—æ®µä¸�ä¼šè¿›å…¥å…¬å¼€è¾“å‡ºã€‚
+- è§£å†³æ–¹å¼�ï¼šæ–°å¢ž `rs_core/agent_runtime/adapters/memory.py`ï¼Œé€šè¿‡ `AgentDefinition/AgentRunner` æ³¨å†Œ `memory_agent`ï¼Œå�ªæ”¯æŒ� internal-only shadow/fail-openï¼›åœ¨ `AgentOrchestrationFacade` ä¸­å�¯é€‰æŒ‚è½½ `agent_runtime.memory_agent`ï¼›è¡¥å…… display forbidden å­—æ®µå’Œ session summary public-safe helperã€‚
+- éªŒè¯�ç»“æžœï¼š`tests/test_memory_agent_adapter.py` 8 passedï¼›MemoryAgent runtime/display/session summary/long memory ç›¸å…³å›žå½’ 184 passedï¼›AgentRunner/RagAgent/runtime contract å›žå½’ 44 passedï¼›`git diff --check` æ—  whitespace errorï¼Œä»…ä¿�ç•™æ—¢æœ‰ LF/CRLF warningã€‚
+- é�¢è¯•å�¯è®²ç‚¹ï¼šæŠŠâ€œé•¿æœŸè®°å¿†â€�ä»Ž facade å†…éƒ¨å‡½æ•°å�‡çº§ä¸ºå�¯æ³¨å†Œã€�å�¯è§‚æµ‹ã€�å�¯æ�ƒé™�æ”¶æ•›çš„å­� Agentï¼Œå�Œæ—¶ä¿�æŒ�æŽ¨è��å€™é€‰ã€�æŽ’åº�ã€�å…¬å¼€è¯�æœ¯å’Œè®­ç»ƒè¾“å‡ºä¸�è¢«è®°å¿†è¯Šæ–­æ±¡æŸ“ã€‚
+
+
+## 2026-06-23 - Serving æž¶æž„è¿�ç§»å†²çª�å®¡æ ¸ä¸Žä¿®å¤�
+
+- **ä»»åŠ¡**ï¼šå®¡æ ¸ serving API/schema è¿�ç§»å�Žä¸Žå…¶ä»–ä»£ç �çš„å†²çª�ï¼Œå¹¶ä¿®å¤�å�¯ç ´å��å�Žç»­è¾¹ç•Œçš„ä¾�èµ–é—®é¢˜ã€‚
+- **é�‡åˆ°çš„é—®é¢˜**ï¼š`api/__init__.py` æ›¾å¯¼å‡ºå��ä¸º `app` çš„ FastAPI å¯¹è±¡ï¼Œå�¯èƒ½é�®è”½ `rs_core.serving.api.app` å­�æ¨¡å�—ï¼›`RecommendationService` æ›¾ç›´æŽ¥ä¾�èµ– `rs_core.data` Postgres dataset å®žçŽ°ï¼›canonical layer guard å¯¹å†…éƒ¨ infra import è¦†ç›–ä¸�è¶³ã€‚
+- **å®šä½�æ–¹å¼�**ï¼šé€šè¿‡ code-review å…³æ³¨ dotted import è¯­ä¹‰ã€�BoundaryMap ownership/compatibility_pathsã€�AST import guard ä¸Ž focused pytestï¼›å¤�æ ¸æ–‡ä»¶åŒ…æ‹¬ `rs_core/serving/api/__init__.py`ã€�`rs_core/serving/application/recommendation_service.py`ã€�`tests/test_serving_reorg_compatibility.py`ã€‚
+- **è§£å†³æ–¹å¼�**ï¼š`api` åŒ…æ”¹ä¸ºå¯¼å‡º `fastapi_app` convenience aliasï¼Œä¿�ç•™ `rs_core.serving.api.app` å­�æ¨¡å�—è¯­ä¹‰ï¼›æ–°å¢ž `rs_core.serving.infrastructure.stores.postgres_dataset` ä½œä¸º serving-owned Postgres seamï¼›core serving å±‚æ–°å¢ž `rs_core.data` ç¦�æ­¢å¯¼å…¥ guardï¼Œå…�è®¸è¯¥ä¾�èµ–å�ªå‡ºçŽ°åœ¨ infrastructure boundaryã€‚
+- **éªŒè¯�ç»“æžœ**ï¼š`pytest tests/test_serving_reorg_compatibility.py tests/test_serving_boundary_map.py -q` é€šè¿‡ 22 é¡¹ï¼›`pytest tests/test_serving_smoke.py tests/test_postgres_dataset.py tests/test_serving_facades.py tests/test_serving_recommend_from_sequence.py tests/test_serving_facts.py -q` é€šè¿‡ 98 é¡¹ï¼›`ruff check rs_core/serving tests/test_serving_reorg_compatibility.py tests/test_serving_boundary_map.py` é€šè¿‡ï¼›`compileall -q rs_core/serving` é€šè¿‡ï¼›import smoke ç¡®è®¤ legacy/canonical app/schema identity ä¸Ž `api_package.fastapi_app` seam æ­£å¸¸ã€‚
+- **é�¢è¯•å�¯è®²ç‚¹**ï¼šè¿™æ¬¡ä¸�æ˜¯ç®€å�•ç§»åŠ¨æ–‡ä»¶ï¼Œè€Œæ˜¯æŠŠè¿�ç§»å�Žçš„å…¼å®¹ shimã€�canonical ownershipã€�åŸºç¡€è®¾æ–½ä¾�èµ–æ–¹å�‘å’Œæµ‹è¯• guard ä¸€èµ·å›ºåŒ–ï¼Œé�¿å…�å�Žç»­ Agent/serving/RAG/æ•°æ�®æŽ¥å…¥ç»§ç»­äº’ç›¸ç©¿é€�ã€‚
+
+
+### 2026-06-23 - RS Agent Ã— æ¨¡æ‹Ÿç”¨æˆ· Agent å¤šè½® SFT ç”Ÿæˆ�ä¸Žç¬¬ä¸‰æ–¹ Judge é—­çŽ¯
+
+**ä»»åŠ¡ï¼š**
+è°ƒé€š RS Agent ä¸Žæ¨¡æ‹Ÿç”¨æˆ· Agent çš„å¤šè½®äº¤äº’å¼� SFT æ ·æœ¬ç”Ÿæˆ�é“¾è·¯ï¼Œå¹¶æŒ‰ `dic/standards/AGENT_SCORING_FRAMEWORK.md` ä¸­çš„ SFT è¯„ä»·æ ‡å‡†æ–°å¢žç¬¬ä¸‰æ–¹ Judgeï¼Œå¯¹æ ·æœ¬è¿›è¡Œç»“æž„åŒ–è´¨æ£€ï¼›å…¨ç¨‹ä½¿ç”¨æœ¬åœ°å°�æ ·æœ¬ smokeï¼Œé�¿å…�æœ¬æœºèµ„æº�åŽ‹åŠ›ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+çŽ°æœ‰å¤šè½® SFT ç”Ÿæˆ�å™¨å·²ç»�èƒ½é©±åŠ¨ `RecommendationService`ã€�æ¨¡æ‹Ÿç”¨æˆ·å’ŒæŽ¨è�� Agentï¼Œä½†è¯„ä»·é—­çŽ¯å�ªå�œç•™åœ¨ validator / manifest ç»Ÿè®¡å±‚é�¢ï¼Œç¼ºå°‘å�¯å¤�ç”¨çš„ç¬¬ä¸‰æ–¹æ ·æœ¬è´¨é‡�åˆ¤å®šã€‚å¤�å®¡è¿‡ç¨‹ä¸­è¿˜å�‘çŽ°å‡ ä¸ªè®­ç»ƒæ•°æ�®é£Žé™©ï¼šå€™é€‰æ± å¤–å•†å“�å�¯èƒ½å�ªå‡ºçŽ°åœ¨ assistant æ–‡æœ¬ä¸­ã€�å•†å“�å±žæ€§ç¼–é€ æ²¡æœ‰ç¡¬å¤±è´¥ã€�å¤–éƒ¨ composer prompt å�¯èƒ½æ�ºå¸¦è¿‡å¤šç§�æœ‰/ç›‘ç�£å­—æ®µã€�accept fallback å�¯èƒ½ä¼ªé€ å·¥å…·æˆ�åŠŸã€�stale display çš„ no-recommend turn å�¯èƒ½è¢« flatten æˆ�æ—§ç‰ˆ SFT æ ·æœ¬ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ²¿ `scripts/training/generate_multi_turn_sft.py` â†’ `rs_core/training/multi_turn_sft_generator.py` â†’ `rs_core/serving/service.py` æ¢³ç�†ç”Ÿæˆ�é“¾è·¯ï¼›å¯¹ç…§ `dic/standards/AGENT_SCORING_FRAMEWORK.md` çš„ SFT hard gateã€�æ�ƒé‡�å’Œå†³ç­–æ¡£ä½�ï¼ŒæŠŠè¯„ä»·ç»´åº¦è�½åˆ° `rs_core/training/sft_judge.py`ã€‚ä½¿ç”¨ code-reviewer / verifier åˆ†ç¦»å¤�å®¡ï¼Œç»“å�ˆ `tests/test_multi_turn_sft_generator.py` çš„å›žå½’ç”¨ä¾‹å®šä½� hard gate ä¸Ž artifact contract æ¼�æ´žã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢žæœ¬åœ° deterministic çš„ `ThirdPartySftJudgeAgent` å’Œ `scripts/training/judge_sft_samples.py`ï¼šå…ˆè·‘ schema / grounding / forbidden key / label-oracle / unsafe tool hard gateï¼Œå†�æŒ‰ SFT rubric è¾“å‡º `accept / accept_light / rewrite / reject`ã€�åˆ†é¡¹åˆ†æ•°å’Œ summaryã€‚ç”Ÿæˆ�å™¨ä¾§è¡¥å¼ºï¼šcomposer å¤–éƒ¨ API payload æœ€å°�åŒ–ï¼Œå�ªå�‘é€� public persona summaryã€�latest user messageã€�public display items å’Œ sanitized visible dialogueï¼›dialogue-only/no-recommend å›žå¤�ä¼šæ¸…ç�† ASINã€�item_id å’Œå�•å•†å“�æŽ¨è��è¯�æœ¯ï¼›flatten å�ªä¿�ç•™çœŸæ­£ display-grounded recommendation turnï¼›accept å��é¦ˆå¤±è´¥ä¸�å†�ä¼ªé€ æˆ� `record_user_feedback: ok`ã€‚serving feedback ç™½å��å�•è¡¥å…¥ `accept`ï¼Œè®©æ¨¡æ‹Ÿç»ˆæ­¢åŠ¨ä½œèƒ½èµ°çœŸå®ž feedback å…¥å�£ã€‚æ–°å¢ž `.omc/multi_turn_sft_local_judge_smoke.yaml` ä½œä¸º 2 æ�¡æ ·æœ¬ã€�æœ¬åœ° deterministicã€�æ— å¤–éƒ¨ API çš„å®‰å…¨ smoke é…�ç½®ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œè½»é‡�éªŒè¯�ï¼š`./.venv/Scripts/python -m pytest tests/test_multi_turn_sft_generator.py tests/test_serving_smoke.py -q` é€šè¿‡ï¼Œç»“æžœ `89 passed in 9.31s`ï¼›`compileall` è¦†ç›–æ–°å¢ž judgeã€�ç”Ÿæˆ�å™¨ã€�serving facade å’Œè„šæœ¬é€šè¿‡ã€‚è¿�è¡Œ `scripts/training/generate_multi_turn_sft.py --config .omc/multi_turn_sft_local_judge_smoke.yaml --limit 2` ç”Ÿæˆ� 2 æ�¡ã€�æ¯�æ�¡ 4 è½®æ ·æœ¬ï¼Œ`rejected_count=0`ã€�`api_called=false`ï¼›éš�å�Žè¿�è¡Œ `scripts/training/judge_sft_samples.py`ï¼Œ`judge_summary.json` æ˜¾ç¤º `sample_count=2`ã€�`decision_counts.accept=2`ã€�`hard_fail_count=0`ã€�`judge_satisfied=true`ã€‚verifier æœ€ç»ˆéªŒæ”¶å†�æ¬¡ç¡®è®¤ç›®æ ‡æµ‹è¯• `35 passed`ã€�compileall é€šè¿‡ã€�ä¸‰é¡¹ HIGH å¤�å®¡é—®é¢˜å�‡å·²ä¿®å¤�ã€‚æœ¬è½®æœªåŠ è½½æœ¬åœ°å¤§æ¨¡åž‹ã€�æœªè°ƒç”¨å¤–éƒ¨ APIã€�æœªè·‘å…¨é‡�è®­ç»ƒï¼Œèµ„æº�é£Žé™©æŽ§åˆ¶åœ¨ smoke çº§åˆ«ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå·¥ä½œå�¯ä»¥è®²æˆ�â€œæŠŠ Agent äº¤äº’è½¨è¿¹ä»Žèƒ½ç”Ÿæˆ�æŽ¨è¿›åˆ°å�¯è´¨æ£€ã€�å�¯è®­ç»ƒå‰�ç­›é€‰â€�ï¼šRS Agent è´Ÿè´£çœŸå®žå€™é€‰å±•ç¤ºå’Œå��é¦ˆé—­çŽ¯ï¼Œæ¨¡æ‹Ÿç”¨æˆ· Agent äº§ç”Ÿå¤šè½®éœ€æ±‚/è¿½é—®/æŽ¥å�—è¡Œä¸ºï¼Œç¬¬ä¸‰æ–¹ Judge æŒ‰ç¡¬é—¨ç¦�ä¸Ž rubric æŠŠæ ·æœ¬åˆ†å±‚ã€‚äº®ç‚¹ä¸�åœ¨äºŽä¸€æ¬¡ç”Ÿæˆ�å¾ˆå¤šæ•°æ�®ï¼Œè€Œæ˜¯æŠŠå€™é€‰æ± ä¸€è‡´æ€§ã€�è¯�æ�® groundingã€�å†…éƒ¨å­—æ®µæ³„æ¼�ã€�å·¥å…·ç›‘ç�£çœŸå®žæ€§å’Œ no-recommend è¾¹ç•Œéƒ½å�šæˆ�å�¯å›žå½’çš„å·¥ç¨‹ contractï¼Œä¸ºå�Žç»­ Qwen SFT / GRPO æ•°æ�®ç”Ÿäº§æ��ä¾›å�¯å®¡è®¡å…¥å�£ã€‚
+
+### 2026-06-23 - pool500 é�žå�‘é‡�å�¬å›žæŽ¥å…¥ Cassandra/Scylla fallback
+
+**ä»»åŠ¡ï¼š**
+åœ¨å·²å®Œæˆ� Cassandra/Scylla Candidate Store åŸºç¡€æŽ¥å…¥å�Žï¼Œç»§ç»­è¦†ç›–å®žé™…å�¬å›žè·¯ä¸­çš„ pool500 fallbackã€�popular/category/user category profile ç­‰é�žå�‘é‡�å€™é€‰ï¼Œé�¿å…�å�ªæœ‰ UserCF/ItemCF å±€éƒ¨æ•°æ�®åº“åŒ–ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+ç¬¬ä¸€é˜¶æ®µå¯¼å…¥å™¨å�ªè¦†ç›– `usercf_candidates` å’Œ `item_neighbors`ï¼Œ`pool500_candidates.jsonl` ä»�ä¸»è¦�ä¾�èµ– JSONL artifact fallbackï¼›å¦‚æžœç›´æŽ¥é»˜è®¤å†™å…¥å‰� 1000 è¡Œæˆ–æŠŠ pool500 è¡Œè¯¯åˆ†ç±»æˆ� UserCFï¼Œä¼šé€ æˆ�â€œå¯¼å…¥æˆ�åŠŸä½†çº¿ä¸Šè¯»ä¸�åˆ°/è¦†ç›–ä¸�å…¨â€�çš„éš�æ€§é£Žé™©ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ²¿ `Pool500FallbackProvider`ã€�`CandidateStore` Protocolã€�CQL schema å’Œ Cassandra importer çš„è¯»å†™è·¯å¾„æ ¸å¯¹è®¿é—®æ¨¡å¼�ï¼›é€šè¿‡ code review å�‘çŽ° `target_schema=auto` å¯¹ `user_id + item_id` çš„ pool500 è¡Œå­˜åœ¨è¯¯åˆ†ç±»é£Žé™©ï¼Œå†™å…¥æ¨¡å¼�ä¹Ÿéœ€è¦�æ‹’ç»� truncated artifactã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢ž `pool_candidates_by_user` CQL è¡¨å’Œ `CandidateStore.pool_candidates()` è¯»è·¯å¾„ï¼Œ`Pool500FallbackProvider` å¢žåŠ  `prefer_candidate_store` å¼€å…³ï¼Œé»˜è®¤ä¿�æŒ� JSONL å…¼å®¹ï¼Œå¼€å�¯å�Žä¼˜å…ˆè¯» Candidate Storeã€�ä¸ºç©ºæˆ–å¼‚å¸¸æ—¶å›žè�½ JSONLã€‚å¯¼å…¥å™¨è¡¥é½� `pool_candidates/popular/category/user_category_profiles`ï¼Œè‡ªåŠ¨è¯†åˆ«å¸¦ `sources/source_scores` çš„ pool500 è¡Œï¼Œå†™å…¥æ¨¡å¼�æ‹’ç»�æˆªæ–­ artifactï¼Œå¹¶å°† popular/category å†™å…¥ canonical source åˆ†åŒºï¼ŒåŽŸå§‹ source æ”¾å…¥ metadataã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ `.venv/Scripts/python -m pytest tests/test_candidate_store_cassandra.py tests/test_import_candidate_store_to_cassandra.py tests/test_online_retrieval_providers.py tests/test_online_retrieval_orchestrator.py`ï¼Œç»“æžœ `34 passed in 0.64s`ï¼›è¿�è¡Œ `.venv/Scripts/python -m ruff check rs_core/recsys/candidate_store/postgres.py rs_core/recsys/candidate_store/cassandra.py rs_core/recsys/online_retrieval/providers/pool500_fallback.py scripts/serving/import_candidate_store_to_cassandra.py tests/test_candidate_store_cassandra.py tests/test_import_candidate_store_to_cassandra.py tests/test_online_retrieval_providers.py`ï¼Œç»“æžœ `All checks passed!`ã€‚æœ¬è½®æœªå�¯åŠ¨çœŸå®ž Scyllaï¼Œä¹Ÿæœªæ‰§è¡Œ full importã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œæŠŠç¦»çº¿ artifact åž‹å�¬å›žå¹³æ»‘å�‡çº§æˆ�å�¯æœ�åŠ¡åŒ–çš„å®½åˆ—è¡¨å­˜å‚¨â€�ï¼šç¦»çº¿ artifact ä»�æ˜¯ source of truthï¼ŒCassandra/Scylla æ‰¿æ‹…åœ¨çº¿ topK lookupï¼›é€šè¿‡ versioned partitionã€�dry-run-first importerã€�fail-open provider å’Œ JSONL fallbackï¼Œä¿�è¯�æ•°æ�®åº“åŒ–è¿�ç§»æ—¢è¦†ç›–çœŸå®žå�¬å›žè·¯ï¼Œå�ˆä¸�ä¼šå› ä¸ºå±€éƒ¨å¯¼å…¥æˆ–æ•°æ�®åº“ä¸�å�¯ç”¨ç ´å��çº¿ä¸ŠæŽ¨è��ã€‚
+
+### 2026-06-23 - æ–¹æ³•çº§é�žå�‘é‡�å�¬å›ž Candidate Store ä¸»é“¾è·¯æŽ¥å…¥
+
+**ä»»åŠ¡ï¼š**
+çº æ­£â€œå�ªæŠŠ pool500 æ•´ä½“å¿«ç…§æ”¾å…¥æ•°æ�®åº“â€�çš„æž¶æž„å��å·®ï¼Œå°† ItemCF strong/weakã€�co-visit repairã€�UserCFã€�categoryã€�popular ç­‰æ–¹æ³•çº§é�žå�‘é‡�å�¬å›žæ˜¾å¼�æŽ¥å…¥ Candidate Store ä¸»é“¾è·¯ï¼Œpool500 å�ªä¿�ç•™ä¸º fallback/rollback å¿«ç…§ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+å¦‚æžœå�ªå¯¼å…¥ `pool500_candidates`ï¼Œåœ¨çº¿å�¬å›žä¼šç»•è¿‡å�„å�¬å›žæ–¹æ³•æœ¬èº«ï¼Œæ�Ÿå¤± source-level è°ƒå�‚ã€�è¯Šæ–­ã€�åŽ»é‡�å�ˆå¹¶å’ŒæŽ’åº�å‰�æ²»ç�†èƒ½åŠ›ï¼›è¿™ä¸Žâ€œæŒ‰å�¬å›žæ–¹æ³•å�–å€™é€‰ï¼Œå†� merge/dedup/rankâ€�çš„æŽ¨è��é“¾è·¯ä¸�ä¸€è‡´ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+æ²¿ `configs/serving/online_service*.yaml`ã€�`rs_core/recsys/online_retrieval/config.py`ã€�`orchestrator.py` å’Œå�„ provider æ£€æŸ¥ provider å‘½å��ã€�source æ˜ å°„ã€�fallback è°ƒåº¦ã€‚ç¡®è®¤æ—§é…�ç½®å�ªæœ‰å�•ä¸ª `postgres_item_neighbors`ï¼Œæ²¡æœ‰æ˜¾å¼�æ‹†åˆ† `itemcf_strong/itemcf_weak/co_visit_fallback_repair`ï¼Œå®¹æ˜“æŠŠæ–¹æ³•çº§å�¬å›žç®€åŒ–æˆ�æ³› item_neighborsã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+æ–°å¢žä¸­æ€§ provider å��ç§° `candidate_store_itemcf_strong`ã€�`candidate_store_itemcf_weak`ã€�`candidate_store_co_visit_repair`ã€�`candidate_store_usercf`ã€�`candidate_store_category`ã€�`candidate_store_popular`ï¼Œç”± orchestrator æ˜ å°„åˆ°å¯¹åº” CandidateStore sourceï¼›provider `from_config` ä¿�ç•™ provider_name/source_nameï¼Œä¾¿äºŽ diagnostics åŒºåˆ†å�„æ–¹æ³•ã€‚ä¸¤ä¸ª serving é…�ç½®ç§»é™¤æ—§ `postgres_*` providerï¼Œæ˜¾å¼�å£°æ˜Žæ–¹æ³•çº§ Candidate Store providerã€‚`pool500_fallback` å¢žåŠ å¹¶è¯»å�– `fallback_only`ï¼Œorchestrator å�Œæ—¶æŒ‰ `fallback_only` å’Œ role å°†å…¶å�ªä½œä¸º underfill fallback è°ƒç”¨ã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ `.venv/Scripts/python -m pytest tests/test_online_retrieval_orchestrator.py tests/test_online_retrieval_providers.py tests/test_candidate_store_cassandra.py tests/test_import_candidate_store_to_cassandra.py`ï¼Œç»“æžœ `37 passed in 0.57s`ï¼›è¿�è¡Œ `.venv/Scripts/python -m pytest tests/test_serving_smoke.py tests/test_serving_recommend_from_sequence.py`ï¼Œç»“æžœ `76 passed in 2.22s`ï¼›è¿�è¡Œ retrieval ç›¸å…³ ruff æ£€æŸ¥ï¼Œç»“æžœ `All checks passed!`ã€‚æœ¬è½®æœªå�¯åŠ¨çœŸå®ž Scyllaï¼Œä¹Ÿæœªæ‰§è¡Œ full importã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œæŠŠå�¬å›žæ•°æ�®åº“åŒ–ä»Žå€™é€‰æ± å¿«ç…§å�‡çº§ä¸ºæ–¹æ³•çº§ serving æž¶æž„â€�ï¼šæ¯�ä¸ªå�¬å›žæ–¹æ³•ç‹¬ç«‹è�½åº“ã€�ç‹¬ç«‹è¯Šæ–­ã€�åœ¨çº¿ç‹¬ç«‹å�–å€™é€‰ï¼Œå†�ç»Ÿä¸€ merge/dedup/rankï¼›pool500 å�ªå�šç¨³å®šå…œåº•å’Œå›žæ»šï¼Œä¸�æ›¿ä»£æ–¹æ³•çº§å�¬å›žï¼Œä»Žè€Œä¿�ç•™æŽ¨è��ç³»ç»Ÿè°ƒå�‚ä¸Žæ²»ç�†ç©ºé—´ã€‚
+

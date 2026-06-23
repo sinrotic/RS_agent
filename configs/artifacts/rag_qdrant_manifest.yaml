@@ -1,0 +1,56 @@
+{
+  "schema_version": "rs_agent_rag_qdrant_manifest_v1",
+  "artifact_id": "rag_qdrant_recent_window_compact_full_local_trial",
+  "artifact_type": "rag_vector_index_manifest",
+  "stage": "local_trial_serving",
+  "bm25_index_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.sqlite",
+  "source_manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.manifest.json",
+  "qdrant": {
+    "enabled": true,
+    "url": "http://qdrant:6333",
+    "collection_name": "rs_agent_rag_chunks_v1",
+    "embedding_model_name": "BAAI/bge-m3",
+    "embedding_method": "sentence_transformer_dense_v1",
+    "vector_size": 1024,
+    "distance": "Cosine"
+  },
+  "fallback_policy": {
+    "enabled": true,
+    "fallback_retriever": "sqlite_bm25",
+    "on_qdrant_unavailable": true,
+    "on_dependency_missing": true,
+    "on_empty_vector_results": true,
+    "report_fallback": true
+  },
+  "governance": {
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false,
+    "diagnostic_only": false,
+    "public_payload_allowed": false,
+    "no_holdout": true
+  },
+  "build_policy": {
+    "default_mode": "dry_run",
+    "tiny_smoke_allowed": true,
+    "live_build_requires_user_approval": true,
+    "full_index_allowed_by_default": false,
+    "local_memory_cap_gb": 12
+  },
+  "artifact_store": {
+    "storage_backend": "minio",
+    "local_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.sqlite",
+    "artifact_uri": "minio://rs-artifacts-local/rag_qdrant_recent_window_compact_full_local_trial/rag_bm25_compact_full.sqlite",
+    "minio_uri": "minio://rs-artifacts-local/rag_qdrant_recent_window_compact_full_local_trial/rag_bm25_compact_full.sqlite",
+    "sha256": "bdc5b6473a0b816a78664bb01d11818cc498845437b35218fb78e0654e170fd0",
+    "size_bytes": 5102026752,
+    "cache_policy": "local_trial_cache",
+    "uploaded_at": "2026-06-22T06:06:31Z",
+    "minio_reserved": true,
+    "s3_uri": null
+  },
+  "model_registry": {
+    "mlflow_reserved": true,
+    "run_id": null
+  }
+}

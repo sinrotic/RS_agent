@@ -2993,7 +2993,7 @@ def test_qwen_evaluation_harness_writes_three_mode_comparison(tmp_path: Path):
     comparison = json.loads(Path(result["comparison_path"]).read_text(encoding="utf-8"))
     assert comparison["mode_order"] == ["deterministic_baseline", "rule_feedback_rerank", "qwen_feedback_rerank"]
     assert comparison["modes"]["qwen_feedback_rerank"]["inference_policy"]["accepted_signal_count"] == 1
-    assert comparison["modes"]["qwen_feedback_rerank"]["inference_policy"]["routes"] == {"qwen_local": 1}
+    assert comparison["modes"]["qwen_feedback_rerank"]["inference_policy"]["routes"] == {"local_transformers": 1}
     assert comparison["rank_delta"]["comparable_cases"] == 1
     assert comparison["rank_delta"]["target_rank_improved_count"] == 1
     assert comparison["rank_delta"]["target_rank_delta_avg"] == 1.0
@@ -3027,7 +3027,7 @@ def test_qwen_evaluation_harness_writes_fallback_comparison_without_model_depend
     qwen_policy = comparison["modes"]["qwen_feedback_rerank"]["inference_policy"]
     assert qwen_policy["fallback_count"] == 1
     assert qwen_policy["accepted_signal_count"] == 0
-    assert qwen_policy["routes"] == {"qwen_local": 1}
+    assert qwen_policy["routes"] == {"local_transformers": 1}
     assert comparison["modes"]["qwen_feedback_rerank"]["paths"]["ranking_cases_path"].endswith("ranking_hit_cases.jsonl")
     assert Path(result["comparison_path"]).exists()
     assert Path(result["report_path"]).exists()

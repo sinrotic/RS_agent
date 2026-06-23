@@ -163,6 +163,7 @@ class AgentRuntime:
         turn.diagnostics.update({
             "conversation_intent": plan.intent,
             "agent_action": plan.action,
+            "should_recommend": bool(plan.should_recommend),
             "assistant_response": plan.assistant_response,
             **plan.diagnostics,
             **tool_diagnostics,

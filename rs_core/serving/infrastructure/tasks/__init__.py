@@ -1,0 +1,1 @@
+"""Task adapter skeleton package."""

@@ -15,17 +15,15 @@ from rs_core.rsagent.tools import (
     BrandConstraint,
     BuildRecommendationSlateInput,
     BuildRecommendationSlateOutput,
+    CallRagAgentInput,
+    CallRagAgentOutput,
     CategoryConstraint,
     DeepFMRankRequest,
     DisplayResponseDraft,
-    GetItemEvidenceInput,
-    GetItemEvidenceOutput,
     GetUserContextInput,
     GetUserContextOutput,
     KeywordConstraint,
     ProductSearchRequest,
-    QueryRagInput,
-    QueryRagOutput,
     RankCandidatesInput,
     RankCandidatesOutput,
     RecallConstraints,
@@ -50,6 +48,7 @@ from rs_core.rsagent.tools import (
     deepfm_rank_candidates,
     normalize_agent_tool_calls,
     validate_agent_tool_call,
+    validate_call_rag_agent_arguments,
     validate_rank_candidates_arguments,
 )
 
@@ -57,10 +56,9 @@ pytestmark = pytest.mark.unit
 
 EXPECTED_CORE_TOOLS = {
     "get_user_context",
-    "query_rag",
+    "call_rag_agent",
     "retrieve_candidates",
     "rank_candidates",
-    "get_item_evidence",
     "record_user_feedback",
     "build_recommendation_slate",
 }
@@ -82,11 +80,6 @@ def test_agent_tool_manifest_contains_core_business_tools():
 def test_agent_tool_schema_names_have_local_contracts_for_new_tools():
     assert GetUserContextInput(session_id="s1").to_dict()["include_recent_turns"] == 3
     assert GetUserContextOutput(session_id="s1", user_id="u1").to_dict()["turn_count"] == 0
-    query_rag_payload = QueryRagInput(query="通勤耳机", fields=["title"]).to_dict()
-    assert query_rag_payload["purpose"] == "query_planning"
-    assert query_rag_payload["scope"] == "catalog_knowledge"
-    assert query_rag_payload["fields"] == ["title"]
-    assert QueryRagOutput(semantic_query_hint="通勤 蓝牙").to_dict()["semantic_query_hint"] == "通勤 蓝牙"
     retrieve_payload = RetrieveCandidatesInput(
         query="通勤耳机",
         target_pool_size=500,
@@ -121,12 +114,12 @@ def test_agent_tool_schema_names_have_local_contracts_for_new_tools():
     assert retrieve_output["route_decisions"][0]["route"] == "semantic"
     assert RankCandidatesInput(candidate_item_ids=["i1"], return_top_k=1).to_dict()["return_top_k"] == 1
     assert RankCandidatesOutput(ranked_item_ids=["i1"]).to_dict()["ranked_item_count"] == 0
-    assert GetItemEvidenceInput(item_ids=["i1"]).to_dict()["max_evidence_per_item"] == 3
-    assert GetItemEvidenceOutput(evidence={"i1": [{"field": "title", "text": "耳机"}]}).to_dict()["item_count"] == 0
     assert RecordUserFeedbackInput(action_type="like", item_id="i1").to_dict()["item_id"] == "i1"
     assert RecordUserFeedbackOutput(applied=True).to_dict()["applied"] is True
     assert BuildRecommendationSlateInput(max_items=2).to_dict()["max_items"] == 2
     assert BuildRecommendationSlateOutput(display={"items": []}).to_dict()["item_count"] == 0
+    assert CallRagAgentInput(query="home office gear").to_dict()["candidate_scope"] == "current_turn_only"
+    assert CallRagAgentOutput(status="ok", applied=True).to_dict()["public_payload_allowed"] is False
     assert UnderstandUserNeedInput(user_input="推荐点耳机").to_dict()["user_input"] == "推荐点耳机"
     assert UnderstandUserNeedOutput(intent="recommend_request", action="recommend_items").to_dict()["confidence"] == 0.0
     assert DisplayResponseDraft(user_need_summary="通勤耳机").to_dict()["user_need_summary"] == "通勤耳机"
@@ -143,29 +136,13 @@ def test_agent_tool_specs_are_hidden_with_only_slate_public_payload_allowed():
         assert tool.public_payload_allowed is (tool.name in PUBLIC_PAYLOAD_TOOLS)
 
 
-def test_query_rag_declares_optional_planning_boundaries():
-    tool = next(tool for tool in AGENT_TOOL_MANIFEST if tool.name == "query_rag")
-
-    assert tool.stage == "query_planning"
-    assert tool.read_only is True
-    assert tool.hidden is True
-    assert tool.public_payload_allowed is False
-    assert tool.requires_candidate_pool is False
-    assert tool.can_search_catalog is True
-    assert tool.uses_rag_evidence is True
-    assert tool.routing_attributes["available_phase"] == "pre_recommendation"
-    assert tool.routing_attributes["candidate_pool_required"] is False
-    assert "concept_completion" in tool.routing_attributes["uses"]
-    assert "synonym_expansion" in tool.routing_attributes["uses"]
-    assert "query_rewrite_support" in tool.routing_attributes["uses"]
-    assert "concept completion" in tool.boundary_prompt
-    assert "attribute expansion" in tool.boundary_prompt
-    assert "scenario" in tool.boundary_prompt
-    assert "synonym" in tool.boundary_prompt
-    assert "category knowledge" in tool.boundary_prompt
-    assert "query rewrite" in tool.boundary_prompt
-    assert "never use query_rag as a replacement" in tool.boundary_prompt
-    assert "optionally call query_rag before retrieve_candidates" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+def test_rsagent_prompt_delegates_rag_to_internal_rag_agent():
+    assert "不要直接调用 RAG 工具" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "内部 RagAgent/runtime" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "RAG query support" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "候选证据 support" in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "query_rag" not in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "get_item_evidence" not in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
 
 
 def test_agent_tool_planner_system_prompt_payload_contains_hidden_tool_boundaries():
@@ -173,32 +150,17 @@ def test_agent_tool_planner_system_prompt_payload_contains_hidden_tool_boundarie
 
     assert prompt.startswith(AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT)
     assert "retrieve_candidates" in prompt
-    assert "query_rag" in prompt
+    assert "call_rag_agent" in prompt
+    assert "query_rag" not in prompt
+    assert "get_item_evidence" not in prompt
     assert "retrieval_mode" in prompt
     assert "reference_item_id" in prompt
-    assert "never use query_rag as a replacement" in prompt
-    assert "concept completion" in prompt
-    assert "attribute expansion" in prompt
-    assert "query rewrite" in prompt
-    assert "Ask a clarifying question before retrieval only when" in prompt
-    assert "After candidates are ranked" in prompt
-    assert "must not add new candidates" in prompt
-    assert "must not change ranking" in prompt
+    assert "内部 RagAgent/runtime" in prompt
+    assert "不要直接调用 RAG 工具" in prompt
+    assert "只有在缺失信息会导致无法进行有效推荐时" in prompt
     assert "tool traces" in prompt
     assert "public_payload_allowed" in prompt
     assert "public_output" in prompt
-
-
-def test_get_item_evidence_declares_post_ranking_grounding_boundary():
-    tool = next(tool for tool in AGENT_TOOL_MANIFEST if tool.name == "get_item_evidence")
-
-    assert tool.stage == "evidence"
-    assert tool.requires_candidate_pool is True
-    assert "after retrieval and ranking" in tool.boundary_prompt
-    assert "ground explanations" in tool.boundary_prompt
-    assert "must not add new candidates" in tool.boundary_prompt
-    assert "change ranking" in tool.boundary_prompt
-    assert "raw RAG/source diagnostics" in tool.boundary_prompt
 
 
 def test_retrieve_candidates_declares_business_mode_boundaries():
@@ -232,14 +194,11 @@ def test_dialogue_plan_passes_business_mode_boundary_to_retrieve_candidates():
     tool_names = [call["name"] for call in plan.tool_calls]
     assert tool_names == [
         "get_user_context",
-        "query_rag",
+        "call_rag_agent",
         "retrieve_candidates",
         "rank_candidates",
-        "get_item_evidence",
         "build_recommendation_slate",
     ]
-    query_rag_call = next(call for call in plan.tool_calls if call["name"] == "query_rag")
-    assert query_rag_call["arguments"] == {"query": "For commute, prefer bluetooth speaker", "purpose": "query_planning"}
 
     retrieve_call = next(call for call in plan.tool_calls if call["name"] == "retrieve_candidates")
     arguments = retrieve_call["arguments"]
@@ -249,18 +208,12 @@ def test_dialogue_plan_passes_business_mode_boundary_to_retrieve_candidates():
     assert arguments["expansion_policy"] == "balanced"
     assert arguments["target_pool_size"] == 500
     assert arguments["reference_item_id"] is None
-    assert arguments["semantic_mode"] == "hybrid_query_history"
-    assert arguments["use_history_profile"] is True
-    assert arguments["use_behavioral_recall"] is True
     assert arguments["profile_policy"] == {"use_current_query": True, "use_recent_history": True, "history_weight": "balanced"}
-    assert arguments["route_policy"] == {
-        "semantic": "hybrid_query_history",
-        "similar_item": "auto",
-        "user_neighbor": "auto",
-        "behavioral": "auto",
-        "fallback": "auto",
-    }
     assert arguments["query"] == "For commute, prefer bluetooth speaker"
+    assert "semantic_mode" not in arguments
+    assert "use_history_profile" not in arguments
+    assert "use_behavioral_recall" not in arguments
+    assert "route_policy" not in arguments
 
 
 def test_agent_capability_manifest_matches_tool_public_payload_policy():
@@ -294,8 +247,29 @@ def test_normalize_agent_tool_calls_accepts_strings_dicts_and_lists():
 def test_validate_agent_tool_call_reports_unknown_intent_and_phase_reasons():
     assert validate_agent_tool_call(AgentToolCall("missing_tool"), "recommend_request", "post_recommendation") == "unknown_tool"
     assert validate_agent_tool_call(AgentToolCall("retrieve_candidates"), "unsupported", "pre_recommendation") == "intent_not_allowed"
-    assert validate_agent_tool_call(AgentToolCall("query_rag"), "recommend_request", "pre_recommendation") is None
+    assert validate_agent_tool_call(AgentToolCall("query_rag"), "recommend_request", "pre_recommendation") == "unknown_tool"
+    assert validate_agent_tool_call(AgentToolCall("get_item_evidence"), "recommend_request", "post_recommendation") == "unknown_tool"
+    assert validate_agent_tool_call(AgentToolCall("rag_search"), "recommend_request", "pre_recommendation") == "unknown_tool"
     assert validate_agent_tool_call(AgentToolCall("rank_candidates"), "recommend_request", "pre_recommendation") == "candidate_pool_not_available"
+    assert validate_agent_tool_call(AgentToolCall("call_rag_agent", {"stage": "pre_retrieval_query_support", "query": "desk organizer"}), "recommend_request", "pre_recommendation") is None
+    assert validate_agent_tool_call(AgentToolCall("call_rag_agent", {"stage": "post_ranking_evidence_support"}), "recommend_request", "pre_recommendation") == "invalid_call_rag_agent_pre_stage"
+
+
+def test_call_rag_agent_argument_validation_rejects_low_level_rag_fields():
+    valid = validate_call_rag_agent_arguments({"stage": "pre_retrieval_query_support", "query": "home office gear"}, "pre_recommendation")
+    assert valid.valid is True
+    assert valid.normalized_arguments["candidate_scope"] == "current_turn_only"
+
+    provider = validate_call_rag_agent_arguments({"stage": "pre_retrieval_query_support", "query": "home office", "provider": "qdrant"}, "pre_recommendation")
+    assert provider.valid is False
+    assert provider.reason == "forbidden_call_rag_agent_argument:provider"
+
+    source = validate_call_rag_agent_arguments({"stage": "pre_retrieval_query_support", "query": "home office", "source_path": "data/rag.jsonl"}, "pre_recommendation")
+    assert source.valid is False
+    assert source.reason == "forbidden_call_rag_agent_argument:source_path"
+
+    legacy_value = validate_call_rag_agent_arguments({"stage": "pre_retrieval_query_support", "query": "home office", "reason": "use qdrant"}, "pre_recommendation")
+    assert legacy_value.valid is True
 
 
 def test_agent_tool_events_are_collected_from_diagnostics():

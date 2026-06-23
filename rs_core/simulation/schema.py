@@ -26,8 +26,12 @@ class SimulatedCustomerRole:
     decision_style: str = "balanced"
     feedback_style: str = "direct"
     memory: tuple[str, ...] = ()
+    initial_request: str = ""
+    private_context: dict[str, Any] = field(default_factory=dict)
 
     def initial_prompt(self) -> str:
+        if self.initial_request.strip():
+            return self.initial_request.strip()
         parts = [self.shopping_goal]
         if self.category_preferences:
             parts.append(f"Prefer categories: {', '.join(self.category_preferences)}.")

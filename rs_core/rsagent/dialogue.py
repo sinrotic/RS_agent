@@ -72,7 +72,6 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
             diagnostics={"explanation_source_turn": source_turn.turn_index if source_turn else None},
             tool_calls=[
                 {"name": "get_user_context", "phase": "pre_recommendation"},
-                {"name": "get_item_evidence", "phase": "post_recommendation"},
             ],
         )
 
@@ -87,6 +86,16 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
         )
 
     if _is_vague_recommendation_request(lowered):
+        if _is_broad_browse_request(lowered):
+            return DialoguePlan(
+                intent=INTENT_RECOMMEND_REQUEST,
+                action=ACTION_RECOMMEND_ITEMS,
+                assistant_response="I will use your recent context to show a few broadly relevant options.",
+                constraints_update=parsed,
+                should_recommend=True,
+                diagnostics={"retrieval_query_source": "broad_browse_request"},
+                tool_calls=_recommendation_tool_calls(INTENT_RECOMMEND_REQUEST, parsed, text),
+            )
         if _has_retrievable_query_terms(lowered):
             return DialoguePlan(
                 intent=INTENT_RECOMMEND_REQUEST,
@@ -117,43 +126,37 @@ def plan_dialogue_turn(user_input: str, session: AgentSession, explanation_item_
 
 def _recommendation_tool_calls(intent: str, constraints: FeedbackConstraints, query: str = "") -> list[dict[str, Any]]:
     retrieval_mode, reference_item_id = _retrieve_business_mode(query)
-    semantic_mode = "hybrid_query_history" if query else "history_profile"
+    query = query.strip()
+    has_retrievable_query = bool(query and _has_retrievable_query_terms(query.lower()))
     retrieve_arguments: dict[str, Any] = {
         "retrieval_mode": retrieval_mode,
         "profile_usage": "balanced",
         "expansion_policy": "balanced",
         "target_pool_size": 500,
         "reference_item_id": reference_item_id,
-        # Legacy fields are retained for runtime compatibility while the visible contract moves to business modes.
-        "semantic_mode": semantic_mode,
-        "use_history_profile": True,
-        "use_behavioral_recall": True,
         "profile_policy": {
-            "use_current_query": bool(query),
+            "use_current_query": has_retrievable_query,
             "use_recent_history": True,
             "history_weight": "balanced",
         },
-        "route_policy": {
-            "semantic": semantic_mode,
-            "similar_item": "prefer" if reference_item_id else "auto",
-            "user_neighbor": "auto",
-            "behavioral": "auto",
-            "fallback": "auto",
-        },
     }
-    if query:
+    if has_retrievable_query:
         retrieve_arguments["query"] = query
     tool_calls = [{"name": "get_user_context", "phase": "pre_recommendation"}]
-    if query:
+    if has_retrievable_query:
         tool_calls.append({
-            "name": "query_rag",
+            "name": "call_rag_agent",
             "phase": "pre_recommendation",
-            "arguments": {"query": query, "purpose": "query_planning"},
+            "arguments": {
+                "stage": "pre_retrieval_query_support",
+                "query": query,
+                "reason": "support_recommendation_query_planning",
+                "candidate_scope": "current_turn_only",
+            },
         })
     tool_calls.extend([
         {"name": "retrieve_candidates", "phase": "pre_recommendation", "arguments": retrieve_arguments},
         {"name": "rank_candidates", "phase": "post_recommendation"},
-        {"name": "get_item_evidence", "phase": "post_recommendation"},
         {"name": "build_recommendation_slate", "phase": "post_recommendation"},
     ])
     return tool_calls
@@ -200,7 +203,7 @@ def _clarification_constraints(text: str, parsed: FeedbackConstraints) -> Feedba
 
 
 def _prefix_before_intent(text: str) -> str:
-    match = re.search(r"\b(dislike|avoid|exclude|prefer|like)\b|不喜欢|不要|排除|喜欢|偏好", text, re.IGNORECASE)
+    match = re.search(r"\b(dislike|avoid|exclude|prefer|like)\b|不喜欢|不要|排除|喜欢|偏好|偏重|优先|更偏|更想要|给我看|先看|看看|找|展示|来点|换成", text, re.IGNORECASE)
     prefix = text[: match.start()] if match else text
     return prefix.strip(" ,.;:，。；：")
 
@@ -216,12 +219,19 @@ def _has_clarification_answer_signal(lowered: str, parsed: FeedbackConstraints) 
 
 
 def _is_vague_recommendation_request(lowered: str) -> bool:
-    return bool(re.search(r"\b(want|need|looking for|recommend|suggest|buy)\b|想要|推荐", lowered))
+    return bool(re.search(r"\b(want|need|looking for|recommend|suggest|buy)\b|想要|推荐|给我看|先看|看看|找|展示|来点|换成", lowered))
+
+
+def _is_broad_browse_request(lowered: str) -> bool:
+    cleaned = _remove_chinese_browse_terms(lowered)
+    cleaned = re.sub(r"\s+", "", cleaned)
+    return bool(lowered.strip()) and not cleaned
 
 
 def _has_retrievable_query_terms(lowered: str) -> bool:
     cleaned = re.sub(r"\b(i|want|need|am|looking|for|recommend|suggest|buy|me|some|something|anything|items?|products?)\b", " ", lowered)
     cleaned = re.sub(r"想要|推荐|买|东西|商品|一些|一个|一点", " ", cleaned)
+    cleaned = _remove_chinese_browse_terms(cleaned)
     generic_terms = {"good", "nice", "best", "great", "cool", "premium", "quality", "better"}
     tokens_left = [token for token in re.findall(r"[a-z0-9_]+", cleaned) if token not in generic_terms]
     if any(len(token) >= 3 or token in {"tv", "pc", "vr"} for token in tokens_left):
@@ -229,14 +239,21 @@ def _has_retrievable_query_terms(lowered: str) -> bool:
     return bool(re.search(r"[一-鿿]{2,}", cleaned))
 
 
+def _remove_chinese_browse_terms(text: str) -> str:
+    return re.sub(r"先随便看看|随便看看|随便逛逛|看一下|浏览一下|看看|逛逛|随便|先看|给我看|展示", " ", text)
+
+
 def _has_supported_constraint(constraints: FeedbackConstraints) -> bool:
     return bool(
-        constraints.disliked_item_ids
+        constraints.liked_item_ids
+        or constraints.disliked_item_ids
         or constraints.disliked_categories
         or constraints.preferred_categories
         or constraints.preferred_sources
         or constraints.preferred_keywords
         or constraints.disliked_keywords
+        or constraints.max_price is not None
+        or constraints.use_cases
         or constraints.filter_prior_turn_items
     )
 

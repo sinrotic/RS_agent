@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 
 from qdrant_fakes import install_fake_qdrant
 from rs_core.common.io import write_jsonl
-from rs_core.serving import app as serving_app
-from rs_core.serving.service import RecommendationService
+import rs_core.serving.api.app as serving_app
+from rs_core.serving.application.recommendation_service import RecommendationService
 
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]
 
@@ -377,6 +377,109 @@ def test_missing_co_visit_candidates_path_degrades_readiness(tmp_path: Path, mon
     assert internal["available"] is False
     assert internal["status"] == "missing_diagnostic_artifact"
     assert internal["candidate_generation_allowed"] is False
+
+
+
+def test_ready_handles_qdrant_dependency_probe_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _write_serving_fixture(tmp_path)
+    payload = json.loads(config.read_text(encoding="utf-8"))
+    payload["rag"] = {
+        "evidence_mode": "explain",
+        "retriever": "hybrid",
+        "index_path": str(tmp_path / "missing_bm25.sqlite"),
+        "hybrid": {"qdrant": {"enabled": True, "collection_name": "rs_agent_rag_chunks_v1"}},
+        "fallback_policy": {"enabled": True, "fallback_retriever": "sqlite_bm25"},
+    }
+    config.write_text(json.dumps(payload), encoding="utf-8")
+    service = RecommendationService(str(config), limit_users=1)
+    monkeypatch.setattr(serving_app, "get_service", lambda: service)
+    monkeypatch.setattr("rs_core.serving.runtime.readiness.importlib.util.find_spec", lambda _name: (_ for _ in ()).throw(ValueError("qdrant_client.__spec__ is None")))
+
+    with TestClient(serving_app.app) as test_client:
+        response = test_client.get("/ready")
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["rag"]["qdrant"]["dependency_available"] is False
+    assert "qdrant_dependency_missing" in result["rag"]["bm25_fallback"]["fallback_reasons"]
+
+
+
+def test_ready_reports_qdrant_rag_manifests_shadow_and_agent_provider(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    config = _write_serving_fixture(tmp_path)
+    rag_manifest = tmp_path / "rag_manifest.json"
+    pool_manifest = tmp_path / "pool_manifest.json"
+    deepfm_manifest = tmp_path / "deepfm_manifest.json"
+    rag_manifest.write_text(json.dumps({"schema_version": "test_rag_manifest"}), encoding="utf-8")
+    pool_manifest.write_text(json.dumps({"schema_version": "test_pool_manifest"}), encoding="utf-8")
+    deepfm_manifest.write_text(json.dumps({"schema_version": "test_deepfm_manifest"}), encoding="utf-8")
+    payload = json.loads(config.read_text(encoding="utf-8"))
+    payload["online_route"] = {"artifact_manifest_path": str(pool_manifest), "source_indexes": _write_source_index_fixture(tmp_path), "governance": SERVING_GOVERNANCE}
+    payload["rag"] = {
+        "evidence_mode": "explain",
+        "retriever": "hybrid",
+        "index_path": str(tmp_path / "missing_bm25.sqlite"),
+        "manifest_path": str(rag_manifest),
+        "fallback_policy": {"enabled": True, "fallback_retriever": "sqlite_bm25", "on_dependency_missing": True, "on_empty_vector_results": True},
+        "hybrid": {
+            "qdrant": {
+                "enabled": True,
+                "collection_name": "rs_agent_rag_chunks_v1",
+                "embedding_method": "sentence_transformer_dense_v1",
+                "candidate_generation_allowed": False,
+                "ranking_input_replacement_allowed": False,
+                "promotion_allowed": False,
+            }
+        },
+        "candidate_generation_allowed": False,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+    }
+    payload["deepfm_shadow"] = {
+        "enabled": True,
+        "mode": "shadow_diagnostic",
+        "manifest_path": str(deepfm_manifest),
+        "affect_ranking": False,
+        "score_scale": 0.0,
+        "public_payload_allowed": False,
+        "diagnostic_only": True,
+        "ranking_input_replacement_allowed": False,
+        "promotion_allowed": False,
+    }
+    payload["inference_policy"] = {"enabled": False, "provider": "disabled"}
+    config.write_text(json.dumps(payload), encoding="utf-8")
+    service = RecommendationService(str(config), limit_users=1)
+    monkeypatch.setattr(serving_app, "get_service", lambda: service)
+
+    with TestClient(serving_app.app) as test_client:
+        response = test_client.get("/ready")
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["rag"]["retriever"] == "hybrid"
+    assert result["rag"]["qdrant"]["enabled"] is True
+    assert result["rag"]["qdrant"]["collection_name"] == "rs_agent_rag_chunks_v1"
+    assert result["rag"]["qdrant"]["candidate_generation_allowed"] is False
+    assert result["rag"]["qdrant"]["ranking_input_replacement_allowed"] is False
+    assert result["rag"]["qdrant"]["promotion_allowed"] is False
+    assert result["rag"]["bm25_fallback"]["enabled"] is True
+    assert "qdrant_target_missing" in result["rag"]["bm25_fallback"]["fallback_reasons"]
+    assert "empty_vector_results" in result["rag"]["bm25_fallback"]["fallback_reasons"]
+    assert result["artifact_manifests"]["pool500_serving"] == {"configured": True, "exists": True, "status": "available"}
+    assert result["artifact_manifests"]["rag_qdrant"] == {"configured": True, "exists": True, "status": "available"}
+    assert result["artifact_manifests"]["deepfm_shadow"] == {"configured": True, "exists": True, "status": "available"}
+    assert result["deepfm_shadow"]["affect_ranking"] is False
+    assert result["deepfm_shadow"]["score_scale"] == 0.0
+    assert result["deepfm_shadow"]["public_payload_allowed"] is False
+    assert result["agent_provider"] == {
+        "enabled": False,
+        "provider": "disabled",
+        "available_providers": ["disabled", "openai_compatible", "local_transformers"],
+        "default_disabled": True,
+        "local_model_load_allowed_by_default": False,
+        "vllm_started_by_serving": False,
+    }
+    _assert_ready_no_internal_details(result)
 
 
 

@@ -8,6 +8,8 @@ __pycache__/
 .ruff_cache/
 .coverage
 htmlcov/
+build/
+*.egg-info/
 
 # Virtual environments
 .venv/
@@ -30,8 +32,15 @@ outputs/
 data/raw/
 data/processed/
 data/interim/
+data/postgres/
+data/postgres_migration/
+data/qdrant/
+data/scylla/
 configs/_tmp_*.yaml
+configs/**/_tmp_*.yaml
 configs/*.local.json
+configs/**/*.local.json
+configs/**/*.local.yaml
 *.parquet
 *.pkl
 *.pickle
@@ -43,6 +52,8 @@ configs/*.local.json
 # Environment and secrets
 .env
 .env.*
+!.env.example
+!deploy/local/.env.example
 *.pem
 *.key
 *.crt

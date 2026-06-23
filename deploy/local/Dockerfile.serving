@@ -1,0 +1,20 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    RS_SERVING_CONFIG=/app/configs/serving/online_service.local_qdrant.yaml
+
+COPY requirements-serving.txt requirements-serving-qdrant.txt requirements-serving-rag-dense.txt ./
+RUN pip install --no-cache-dir -r requirements-serving.txt \
+    && pip install --no-cache-dir -r requirements-serving-qdrant.txt \
+    && pip install --no-cache-dir -r requirements-serving-rag-dense.txt
+
+COPY rs_core ./rs_core
+COPY scripts ./scripts
+COPY configs ./configs
+COPY dic ./dic
+
+EXPOSE 8000
+CMD ["python", "scripts/serving/run_service.py", "--host", "127.0.0.1", "--port", "8000"]

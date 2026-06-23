@@ -10,8 +10,9 @@ from rs_core.serving.facades import (
     RecallFacade,
     SERVING_GOVERNANCE_GUARDRAILS,
 )
-from rs_core.serving.schema import RecallRequest, RecommendFromSequenceRequest
-from rs_core.workflow.hybrid_environment import _compact_deepfm_output, _query_rag_boundaries
+from rs_core.serving.schemas import RecallRequest, RecommendFromSequenceRequest
+from rs_core.agent_runtime.adapters.rag import RagAgentAdapter
+from rs_core.workflow.hybrid_environment import _compact_deepfm_output
 
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]
 
@@ -151,8 +152,13 @@ def test_serving_facade_governance_keeps_forbidden_route_promotions_disabled() -
     }
 
 
-def test_query_rag_boundaries_remain_shadow_only_and_not_public_payload() -> None:
-    boundaries = _query_rag_boundaries(applied=True)
+def test_rag_agent_query_support_boundaries_remain_internal_only() -> None:
+    support = RagAgentAdapter().build_query_support(
+        query="commute speaker",
+        evidence=[{"field": "features", "text": "portable bluetooth"}],
+        applied=True,
+    ).to_dict()
+    boundaries = support["retrieval_hints"]
 
     assert boundaries["applied"] is True
     assert boundaries["retrieval_scope"] == "query_planning"
@@ -160,6 +166,7 @@ def test_query_rag_boundaries_remain_shadow_only_and_not_public_payload() -> Non
     assert boundaries["ranking_input_replacement_allowed"] is False
     assert boundaries["promotion_allowed"] is False
     assert boundaries["public_payload_allowed"] is False
+    assert support["public_payload_allowed"] is False
 
 
 def test_deepfm_compact_output_does_not_expose_scores_features_or_diagnostics() -> None:

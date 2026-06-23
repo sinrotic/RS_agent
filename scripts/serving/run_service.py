@@ -35,8 +35,23 @@ def main() -> None:
     if args.config:
         os.environ["RS_SERVING_CONFIG"] = args.config
     _validate_serving_bind_security(args.host)
-    print("Starting RS Agent online service: in-memory sessions, single process, restart loses state, not production concurrency-safe.")
+    print("Starting RS Agent online service: FastAPI only; vLLM/Qwen external providers are not started by serving.")
+    print("Runtime note: in-memory sessions, single process, restart loses state, not production concurrency-safe.")
+    print(f"Agent inference provider status: {_agent_provider_status()}")
     uvicorn.run("rs_core.serving.app:app", host=args.host, port=args.port, reload=args.reload)
+
+
+def _agent_provider_status() -> str:
+    provider = os.environ.get("RS_AGENT_INFERENCE_POLICY", "disabled").strip().lower() or "disabled"
+    if provider in _FALSE_VALUES:
+        provider = "disabled"
+    endpoint_configured = bool(os.environ.get("RS_AGENT_OPENAI_COMPATIBLE_BASE_URL", "").strip())
+    model_configured = bool(os.environ.get("RS_AGENT_OPENAI_COMPATIBLE_MODEL", "").strip())
+    if provider in {"openai_compatible", "openai", "vllm"}:
+        return f"provider=openai_compatible endpoint_configured={endpoint_configured} model_configured={model_configured} probe=not_started"
+    if provider in {"qwen", "qwen_local", "local_transformers", "on", "true", "1"}:
+        return "provider=local_transformers lazy_load=true started_by_serving=false"
+    return "provider=disabled started_by_serving=false"
 
 
 def _validate_serving_bind_security(host: str) -> None:

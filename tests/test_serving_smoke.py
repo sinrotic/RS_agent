@@ -12,10 +12,11 @@ pytestmark = [pytest.mark.serving, pytest.mark.smoke]
 from rs_core.common.io import write_jsonl
 from rs_core.recsys.semantic_description import build_sqlite_semantic_description_index
 from rs_core.rsagent.tools import AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
-from rs_core.serving import app as serving_app
+import rs_core.serving.api.app as serving_app
+from rs_core.serving.application.recommendation_service import RecommendationService
 from rs_core.serving.facades import FeedbackSessionFacade, RecommendationFacade, RecallFacade
-from rs_core.serving.schema import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
-from rs_core.serving.service import RecommendationService, resolve_serving_config
+from rs_core.serving.runtime.config import resolve_serving_config
+from rs_core.serving.schemas import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 
 BLOCKED_PUBLIC_KEYS = {
@@ -293,7 +294,49 @@ def test_ready_returns_coarse_public_readiness(client: TestClient):
         "source_index_configured_count": 0,
         "pool500_artifact": {"enabled": True, "status": "ready"},
     }
+    assert set(payload["candidate_retrieval"]) == {
+        "enabled",
+        "available",
+        "status",
+        "configured_provider_count",
+        "available_provider_count",
+        "providers",
+    }
     _assert_ready_no_internal_details(payload)
+
+
+def test_ready_agent_provider_does_not_leak_secret_or_base_url(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("RS_AGENT_OPENAI_COMPATIBLE_BASE_URL", "http://localhost:8000/v1")
+    monkeypatch.setenv("RS_AGENT_OPENAI_COMPATIBLE_API_KEY", "sk-secret-ready")
+    monkeypatch.setenv("RS_AGENT_OPENAI_COMPATIBLE_MODEL", "qwen-secret-path")
+    service = RecommendationService(
+        str(_write_serving_fixture(tmp_path)),
+        limit_users=1,
+        config_overrides={
+            "inference_policy": {
+                "enabled": True,
+                "provider": "openai_compatible",
+                "openai_compatible": {
+                    "api_base_env": "RS_AGENT_OPENAI_COMPATIBLE_BASE_URL",
+                    "api_key_env": "RS_AGENT_OPENAI_COMPATIBLE_API_KEY",
+                    "model_env": "RS_AGENT_OPENAI_COMPATIBLE_MODEL",
+                    "probe_enabled": True,
+                },
+            }
+        },
+    )
+
+    payload = service.readiness()
+
+    assert payload["agent_provider"]["provider"] == "openai_compatible"
+    assert payload["agent_provider"]["endpoint_configured"] is True
+    assert payload["agent_provider"]["probe_enabled"] is True
+    assert payload["agent_provider"]["probe_status"] == "not_run_by_readiness"
+    serialized = json.dumps(payload)
+    assert "sk-secret-ready" not in serialized
+    assert "localhost" not in serialized
+    assert "8000" not in serialized
+    assert "qwen-secret-path" not in serialized
 
 
 def test_start_session_uses_unique_uuid_per_user(client: TestClient):
@@ -573,7 +616,8 @@ def test_chat_executes_internal_tool_without_public_leakage(tmp_path: Path):
     assert service.env.tool_planner_system_prompt.startswith(AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT)
     assert "retrieve_candidates" in service.env.tool_planner_system_prompt
     assert "semantic_live is available to every user" in service.env.tool_planner_system_prompt
-    assert "never use query_rag as a replacement" in service.env.tool_planner_system_prompt
+    assert "不要直接调用 RAG 工具" in service.env.tool_planner_system_prompt
+    assert "内部 RagAgent/runtime" in service.env.tool_planner_system_prompt
     assert "tool traces" in service.env.tool_planner_system_prompt
     assert planner_contract["sha256"] == service.env.tool_planner_contract_sha
     assert planner_contract["prompt_length"] == len(service.env.tool_planner_system_prompt)
@@ -584,9 +628,10 @@ def test_chat_executes_internal_tool_without_public_leakage(tmp_path: Path):
         "get_user_context",
         "retrieve_candidates",
         "rank_candidates",
-        "get_item_evidence",
         "build_recommendation_slate",
     } <= tool_names
+    assert "query_rag" not in tool_names
+    assert "get_item_evidence" not in tool_names
     assert "record_user_feedback" not in tool_names
     _assert_no_blocked_keys(result.display)
     _assert_no_blocked_public_terms(result.display)

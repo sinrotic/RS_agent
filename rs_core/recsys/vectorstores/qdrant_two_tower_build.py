@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from rs_core.common.io import iter_jsonl, read_json
 from rs_core.recsys.two_tower_DSSM.source_manifest import validate_two_tower_dssm_source_index_manifest
@@ -11,7 +12,6 @@ from rs_core.recsys.vector_index import VectorIndex, load_vector_index_artifact,
 from rs_core.recsys.vectorstores.qdrant_builders import (
     batched,
     build_store,
-    created_at_utc,
     infer_vector_size,
     qdrant_collection_manifest_base,
     validate_qdrant_build_controls,
@@ -46,8 +46,7 @@ def build_qdrant_two_tower_item_index(
     rows = list(_item_rows(index, limit_items=limit_items))
     vector_size = infer_vector_size([vector for _item_id, vector, _metadata in rows]) if rows else None
     _validate_vectors(rows, vector_size)
-    build_started_at = created_at_utc()
-    index_build_id = stable_qdrant_point_id("two_tower_build", index.source_name, manifest_file, len(rows), vector_size or "none", build_started_at)
+    index_build_id = stable_qdrant_point_id("two_tower_build", index.source_name, manifest_file, uuid4().hex)
 
     manifest = qdrant_collection_manifest_base(
         schema_version=QDRANT_TWO_TOWER_ITEM_INDEX_MANIFEST_SCHEMA_VERSION,
@@ -79,39 +78,42 @@ def build_qdrant_two_tower_item_index(
         }
     )
 
-    if not dry_run and rows:
+    if not dry_run:
         store = build_store(qdrant_config)
-        store.ensure_collection(
-            QdrantCollectionSpec(
-                collection_name=collection_name,
-                vector_size=int(vector_size or 0),
-                distance=DEFAULT_QDRANT_DISTANCE,
-                schema_version=QDRANT_TWO_TOWER_ITEM_SCHEMA_VERSION,
-                payload_indexes=QDRANT_TWO_TOWER_PAYLOAD_INDEX_FIELDS,
+        if rows:
+            store.ensure_collection(
+                QdrantCollectionSpec(
+                    collection_name=collection_name,
+                    vector_size=int(vector_size or 0),
+                    distance=DEFAULT_QDRANT_DISTANCE,
+                    schema_version=QDRANT_TWO_TOWER_ITEM_SCHEMA_VERSION,
+                    payload_indexes=QDRANT_TWO_TOWER_PAYLOAD_INDEX_FIELDS,
+                )
             )
-        )
-        for batch in batched(rows, batch_size):
-            store.upsert_points(
+            for batch in batched(rows, batch_size):
+                store.upsert_points(
+                    collection_name=collection_name,
+                    points=[
+                        (
+                            stable_qdrant_point_id("two_tower", index.source_name, item_id),
+                            vector,
+                            two_tower_item_payload(
+                                item_id=item_id,
+                                source_name=index.source_name,
+                                index_build_id=index_build_id,
+                                metadata=metadata | index.model_metadata,
+                            ),
+                        )
+                        for item_id, vector, metadata in batch
+                    ],
+                )
+        if rows:
+            store.delete_points_by_filter(
                 collection_name=collection_name,
-                points=[
-                    (
-                        stable_qdrant_point_id("two_tower", index.source_name, item_id),
-                        vector,
-                        two_tower_item_payload(
-                            item_id=item_id,
-                            source_name=index.source_name,
-                            index_build_id=index_build_id,
-                            metadata=metadata | index.model_metadata,
-                        ),
-                    )
-                    for item_id, vector, metadata in batch
-                ],
+                query_filter=_stale_same_source_filter(index.source_name, index_build_id),
+                ignore_missing=True,
             )
-        store.delete_points_by_filter(
-            collection_name=collection_name,
-            query_filter=_stale_same_source_filter(index.source_name, index_build_id),
-        )
-        manifest["stale_points_deleted_for_source"] = True
+            manifest["stale_points_deleted_for_source"] = True
 
     write_manifest_if_requested(manifest_path, manifest)
     return manifest
@@ -121,8 +123,12 @@ def _validate_source_manifest(path: Path) -> dict[str, Any]:
     raw = read_json(path)
     schema_version = raw.get("schema_version")
     if schema_version == "two_tower_dssm_source_index_v1":
-        return validate_two_tower_dssm_source_index_manifest(path)
-    return validate_two_tower_source_index_manifest(path)
+        manifest = validate_two_tower_dssm_source_index_manifest(path)
+    else:
+        manifest = validate_two_tower_source_index_manifest(path)
+    if manifest.get("no_holdout") is not True:
+        raise ValueError("two-tower Qdrant source manifest must explicitly set no_holdout=true")
+    return manifest
 
 
 def _load_source_index(path: Path, manifest: dict[str, Any]) -> VectorIndex:
@@ -182,11 +188,6 @@ def _item_rows(index: VectorIndex, *, limit_items: int | None) -> list[tuple[str
             continue
         rows.append((item_id, vector, {key: value for key, value in record.items() if key != "embedding"}))
     return rows
-
-
-def _validate_limit_items(limit_items: int | None) -> None:
-    if limit_items is not None and limit_items < 0:
-        raise ValueError("limit_items must be non-negative")
 
 
 def _validate_vectors(rows: list[tuple[str, list[float], dict[str, Any]]], vector_size: int | None) -> None:

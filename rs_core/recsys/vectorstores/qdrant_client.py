@@ -22,7 +22,16 @@ def qdrant_models() -> Any:
     return models
 
 
-def build_qdrant_client(*, location: str | None = None, path: str | None = None, url: str | None = None, host: str | None = None, port: int | None = None, prefer_grpc: bool | None = None) -> Any:
+def build_qdrant_client(
+    *,
+    location: str | None = None,
+    path: str | None = None,
+    url: str | None = None,
+    host: str | None = None,
+    port: int | None = None,
+    prefer_grpc: bool | None = None,
+    timeout: int | None = None,
+) -> Any:
     try:
         from qdrant_client import QdrantClient
     except ImportError as exc:  # pragma: no cover - depends on optional dependency state
@@ -34,6 +43,8 @@ def build_qdrant_client(*, location: str | None = None, path: str | None = None,
     kwargs: dict[str, Any] = {}
     if prefer_grpc is not None:
         kwargs["prefer_grpc"] = bool(prefer_grpc)
+    if timeout is not None:
+        kwargs["timeout"] = int(timeout)
     if path:
         return QdrantClient(path=str(path), **kwargs)
     if url:
@@ -60,6 +71,7 @@ class QdrantVectorStore:
                 host=config.get("host"),
                 port=config.get("port"),
                 prefer_grpc=config.get("prefer_grpc"),
+                timeout=config.get("timeout"),
             )
         )
 
@@ -135,13 +147,18 @@ class QdrantVectorStore:
         collection_name: str,
         query_filter: Any,
         wait: bool = True,
+        ignore_missing: bool = False,
     ) -> None:
         models = qdrant_models()
-        self.client.delete(
-            collection_name=collection_name,
-            points_selector=models.FilterSelector(filter=query_filter),
-            wait=wait,
-        )
+        try:
+            self.client.delete(
+                collection_name=collection_name,
+                points_selector=models.FilterSelector(filter=query_filter),
+                wait=wait,
+            )
+        except Exception as exc:
+            if not ignore_missing or not _is_missing_collection_error(exc):
+                raise
 
     def query_points(
         self,
