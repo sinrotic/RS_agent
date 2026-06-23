@@ -169,19 +169,41 @@ def _public_item_reason(item: dict[str, Any]) -> str:
     summary = _clean_public_text(item.get("summary")) or _clean_public_text(item.get("description"))
     features = [_clean_public_text(feature) for feature in item.get("features", []) if _clean_public_text(feature)]
     price = _clean_public_text(item.get("price"))
-    category = _clean_public_text(item.get("category"))
     label = _compact_public_title(title)
+    title_context = _public_title_context(title, label)
     if summary and summary.lower() not in title.lower():
         reasons.append(_truncate_public_text(summary, 54))
     elif features:
         reasons.append("有" + "、".join(features[:2]) + "这些实用点")
-    elif category:
-        reasons.append(f"偏{category}场景，适合作为实用型备选")
+    elif title_context:
+        reasons.append(f"从名称看，{title_context}，适合你先判断是不是要解决这一类具体小需求")
     elif label:
-        reasons.append(f"可以先重点看它对应的{label}这类用途")
+        reasons.append(f"名称比较明确，适合你先按{label}这个方向判断是否顺手")
     if price:
         reasons.append(f"价格是{price}，方便你一起衡量预算")
     return "；".join(reasons[:3])
+
+
+def _public_title_context(title: str, label: str) -> str:
+    if not title:
+        return ""
+    cleaned = re.sub(r"\s*\([^)]*\)", " ", title)
+    cleaned = re.sub(r"\b\d+\s*(?:pack|pcs?|pieces|count|ct)\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:white|black|clear|charcoal|latest release|made in)\b", " ", cleaned, flags=re.IGNORECASE)
+    phrases = [part.strip(" -|,;:/") for part in re.split(r"\s[-|]\s|,\s*", cleaned) if part.strip(" -|,;:/")]
+    useful_phrases = []
+    for phrase in phrases:
+        phrase = re.sub(r"\s+", " ", phrase).strip()
+        if label and phrase.lower() == label.lower():
+            continue
+        if len(phrase) < 6 or not re.search(r"[A-Za-z一-鿿]", phrase):
+            continue
+        useful_phrases.append(_truncate_public_text(phrase, 42))
+    if useful_phrases:
+        return "、".join(useful_phrases[:2])
+    if label:
+        return f"它主要对应{label}"
+    return ""
 
 
 def _clean_public_text(value: Any) -> str:
