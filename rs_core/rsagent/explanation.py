@@ -149,11 +149,34 @@ def _short_title(title: str | None) -> str:
 
 def _infer_public_use_case(title: str, category: str) -> str:
     label = _short_title(title)
-    if category:
-        return f"它偏{category}场景，适合作为当前需求下的实用备选"
+    context = _public_title_context(title, label)
+    if context:
+        return f"从名称看，{context}，适合作为当前需求下的具体备选"
     if label and label != "这件商品":
         return f"它对应{label}这类用途，可以作为当前需求下的具体备选"
     return "它适合作为当前需求下的实用备选"
+
+
+def _public_title_context(title: str, label: str) -> str:
+    if not title:
+        return ""
+    cleaned = re.sub(r"\s*\([^)]*\)", " ", title)
+    cleaned = re.sub(r"\b\d+\s*(?:pack|pcs?|pieces|count|ct)\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b(?:white|black|clear|charcoal|latest release|made in)\b", " ", cleaned, flags=re.IGNORECASE)
+    phrases = [part.strip(" -|,;:/") for part in re.split(r"\s[-|]\s|,\s*", cleaned) if part.strip(" -|,;:/")]
+    useful_phrases = []
+    for phrase in phrases:
+        phrase = re.sub(r"\s+", " ", phrase).strip()
+        if label and phrase.lower() == label.lower():
+            continue
+        if len(phrase) < 6 or not re.search(r"[A-Za-z一-鿿]", phrase):
+            continue
+        useful_phrases.append(_truncate_text(phrase, 42))
+    if useful_phrases:
+        return "、".join(useful_phrases[:2])
+    if label and label != "这件商品":
+        return f"它主要对应{label}"
+    return ""
 
 
 def _clean_text(value: Any) -> str | None:
