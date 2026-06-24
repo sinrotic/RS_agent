@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 pytestmark = [pytest.mark.unit, pytest.mark.serving]
 
@@ -144,6 +145,58 @@ def test_canonical_app_imports_expose_public_seam() -> None:
     assert not isinstance(api_package.app, FastAPI)
     assert api_package.app is canonical_app
     assert api_package.get_service is canonical_app.get_service
+    assert api_package.create_app is canonical_app.create_app
+    assert isinstance(canonical_app.create_app(), FastAPI)
+
+
+def test_dependency_override_uses_canonical_get_service_callable() -> None:
+    canonical_app = importlib.import_module("rs_core.serving.api.app")
+
+    class FakeService:
+        def readiness(self) -> dict[str, object]:
+            return {
+                "status": "ready",
+                "service": "fake-serving",
+                "mode": "test",
+                "session_state": "fake",
+                "online_route": {"status": "fake"},
+            }
+
+    canonical_app.app.dependency_overrides[canonical_app.get_service] = lambda: FakeService()
+    try:
+        with TestClient(canonical_app.app) as client:
+            response = client.get("/ready")
+    finally:
+        canonical_app.app.dependency_overrides.clear()
+        canonical_app.get_service.cache_clear()
+
+    assert response.status_code == 200
+    assert response.json()["mode"] == "test"
+
+
+def test_canonical_app_route_table_keeps_public_contract() -> None:
+    canonical_app = importlib.import_module("rs_core.serving.api.app")
+    route_table = {
+        (route.path, tuple(sorted(route.methods - {"HEAD", "OPTIONS"})))
+        for route in canonical_app.app.routes
+        if getattr(route, "include_in_schema", False)
+    }
+
+    assert route_table == {
+        ("/health", ("GET",)),
+        ("/ready", ("GET",)),
+        ("/session/start", ("POST",)),
+        ("/chat", ("POST",)),
+        ("/feedback", ("POST",)),
+        ("/session/end", ("POST",)),
+        ("/recommend", ("POST",)),
+        ("/feed/refresh", ("POST",)),
+        ("/session/{session_id}", ("GET",)),
+        ("/recall", ("POST",)),
+        ("/demo/e2e", ("POST",)),
+        ("/simulation/scene", ("POST",)),
+        ("/simulation/batch", ("POST",)),
+    }
 
 
 def test_boundary_map_marks_canonical_contracts_owned_and_deleted_shims_absent() -> None:
@@ -154,7 +207,7 @@ def test_boundary_map_marks_canonical_contracts_owned_and_deleted_shims_absent()
     compatibility_paths = {path for module in boundary_map.modules for path in module.compatibility_paths}
 
     assert {
-        "rs_core/serving/api/app.py",
+        "rs_core/serving/api/",
         "rs_core/serving/schemas/models.py",
         "rs_core/serving/domain/boundary_map.py",
         "rs_core/serving/domain/adapter_contracts.py",

@@ -11,7 +11,16 @@
 ```text
 rs_core/serving/
 ├── api/
-│   └── app.py                    # HTTP/FastAPI 入口，类似 Controller
+│   ├── app.py                    # canonical FastAPI composition root，保留 uvicorn target
+│   ├── factory.py                # create_app()，集中组装 middleware / exception / routers
+│   ├── dependencies.py           # service factory、request_id、auth/env gate 依赖
+│   ├── exceptions.py             # HTTP exception translation
+│   ├── middleware.py             # request-id middleware
+│   └── routers/                  # 按 endpoint surface 拆分 APIRouter
+│       ├── recommendation.py     # session/chat/feedback/recommend/feed/session export
+│       ├── runtime.py            # health/ready/recall
+│       ├── demo.py               # demo endpoint
+│       └── simulation.py         # simulation endpoints
 ├── schemas/
 │   └── models.py                 # Request/Response DTO
 ├── application/
@@ -37,7 +46,7 @@ rs_core/serving/
 
 | Spring Boot 常见分层 | 当前 serving 对应位置 | 职责 |
 | --- | --- | --- |
-| `controller` | `rs_core/serving/api/app.py` | FastAPI endpoint、HTTP request/response、health/ready/session/chat/feedback/recommend/recall/simulation 路由 |
+| `controller` / router | `rs_core/serving/api/app.py`、`factory.py`、`dependencies.py`、`routers/` | FastAPI app assembly、HTTP request/response、dependency override seam、request-time auth/env gate、health/ready/session/chat/feedback/recommend/recall/demo/simulation 路由 |
 | `dto` / `request` / `response` | `rs_core/serving/schemas/models.py`、`rs_core/serving/schemas/__init__.py` | API request/response Pydantic DTO |
 | `service` | `rs_core/serving/application/recommendation_service.py` | session、chat、feedback、recall、recommend、readiness 等业务编排 |
 | `domain` / `contract` | `rs_core/serving/domain/` | BoundaryMap、AdapterContract、ServingFact、StateFactsStore 等核心合同和边界 |
@@ -51,6 +60,9 @@ rs_core/serving/
 后续新代码必须使用 canonical 路径：
 
 - FastAPI app canonical：`rs_core.serving.api.app`
+- FastAPI app factory：`rs_core.serving.api.factory.create_app`
+- FastAPI dependency seam：`rs_core.serving.api.dependencies.get_service`
+- FastAPI routers：`rs_core.serving.api.routers.*`
 - API DTO canonical：`rs_core.serving.schemas`
 - Application service canonical：`rs_core.serving.application.recommendation_service`
 - BoundaryMap canonical：`rs_core.serving.domain.boundary_map`
@@ -76,9 +88,15 @@ rs_core/serving/
 
 ### 1. API 层只做入口，不直接接外部基础设施
 
-`rs_core/serving/api/app.py` 负责 FastAPI route、HTTP 参数和 response DTO，不应直接 import 或构造 Redis、MinIO、Qdrant、Psycopg、Celery、RQ 等真实基础设施客户端。
+`rs_core/serving/api/` 负责 FastAPI app assembly、router、HTTP 参数、response DTO、request-id middleware、exception translation 和 dependency seam，不应直接 import 或构造 Redis、MinIO、Qdrant、Psycopg、Celery、RQ 等真实基础设施客户端。`rs_core.serving.api.app:app` 仍是对外 uvicorn target；新增 endpoint 时优先放入对应 `routers/*.py`，不要把所有路由重新堆回 `app.py`。
 
-### 2. DTO 独立放在 schemas 层
+### 2. FastAPI app factory 与 dependency override seam
+
+`create_app()` 是当前 API 层的组装入口，集中注册 CORS、middleware、exception handler 和 routers。所有 router 默认随 app 注册，debug/demo/simulation/recall 等能力通过 request-time env gate 和 token gate 控制，不应在 import/include 阶段用 `os.getenv()` 条件跳过路由，否则会破坏 route table contract 和测试覆盖。
+
+`get_service` 是推荐服务的 canonical dependency seam。测试或后续集成应优先通过 FastAPI `dependency_overrides` 或 canonical seam 注入 fake service，避免在业务代码里新增旧根目录 shortcut。
+
+### 3. DTO 独立放在 schemas 层
 
 后续新增 request/response DTO 时，默认放在：
 
@@ -88,7 +106,7 @@ rs_core/serving/schemas/models.py
 
 并同步更新 `models.__all__`，让 `rs_core.serving.schemas` 与 `rs_core.serving.schemas.models` 保持 canonical export 一致。
 
-### 3. Application service 不直接穿透到底层数据实现
+### 4. Application service 不直接穿透到底层数据实现
 
 `RecommendationService` 是 serving application service，负责业务编排，但不应直接 import `rs_core.data`、真实 DB client 或外部 infra client。
 
@@ -108,15 +126,15 @@ from rs_core.serving.infrastructure.stores.postgres_dataset import (
 from rs_core.data import ...
 ```
 
-### 4. Infrastructure 层是外部能力 seam
+### 5. Infrastructure 层是外部能力 seam
 
 `rs_core/serving/infrastructure/` 可以包装底层实现，但应把这些能力暴露为 serving-owned protocol / factory / adapter seam。真实 backend 依赖应尽量 lazy import，并通过测试 guard 控制依赖方向。
 
-### 5. Governance 层负责优化产物准入
+### 6. Governance 层负责优化产物准入
 
 召回、排序、RAG、DeepFM、artifact manifest、route registry 等进入 serving runtime 前，应通过 governance / manifest gate 进行准入，不应由 endpoint 或 service 随意硬编码路径绕过。
 
-### 6. 已删除旧 shim 不应恢复为 canonical owner
+### 7. 已删除旧 shim 不应恢复为 canonical owner
 
 `rs_core/serving/app.py`、`schema.py`、`service.py`、`facts.py` 等旧路径已经删除。BoundaryMap 中这些文件不应出现在 `owned_paths` 或 `compatibility_paths`；测试只允许在 deleted legacy guard 的 denylist 中保留这些字符串。
 
@@ -162,7 +180,7 @@ D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pyte
 
 后续 Agent 在修改 serving 代码前，应先判断改动属于哪一层：
 
-1. HTTP endpoint / request handling：优先改 `rs_core/serving/api/app.py`。
+1. HTTP endpoint / request handling：优先改 `rs_core/serving/api/routers/*.py`；只有 app assembly、uvicorn target 或 package export 需要改 `rs_core/serving/api/app.py` / `factory.py`。
 2. Request/response DTO：优先改 `rs_core/serving/schemas/models.py`。
 3. 业务编排：优先改 `rs_core/serving/application/recommendation_service.py` 或相邻 application module。
 4. 核心合同、fact、boundary：优先改 `rs_core/serving/domain/`。

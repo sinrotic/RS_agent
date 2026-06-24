@@ -7564,3 +7564,12 @@ Docker Compose çš„ `postgres_data:/var/lib/postgresql/data` named volume å�
 
 **é�¢è¯•å�¯è®²ç‚¹ï¼š**
 è¿™æ®µå�¯ä»¥è®²æˆ�â€œä»Žå€™é€‰æ± å¿«ç…§è¿�ç§»åˆ°æ–¹æ³•çº§åœ¨çº¿å�¬å›žå­˜å‚¨â€�ï¼šç¦»çº¿ artifact ä»�æ˜¯ source of truthï¼ŒScylla å�ªæ˜¯å�¯é‡�å»ºçš„ serving indexï¼›æ¯�ä¸ªå�¬å›žæ–¹æ³•ç‹¬ç«‹è�½åº“å’Œè¯Šæ–­ï¼Œåœ¨çº¿æŒ‰ source å�–å€™é€‰å�Žç»Ÿä¸€åŽ»é‡�æŽ’åº�ï¼›å�Œæ—¶é€šè¿‡ fallback-only pool500ã€�store_versionã€�dry-run importerã€�Python ç‰ˆæœ¬å…¼å®¹å’Œ public-safe readinessï¼ŒæŠŠæ•°æ�®åº“è¿�ç§»å�šæˆ�å�¯å›žæ»šã€�å�¯éªŒè¯�ã€�å�¯æ¼”è¿›çš„æŽ¨è��ç³»ç»Ÿå·¥ç¨‹é—­çŽ¯ã€‚
+
+### 2026-06-24 - FastAPI adapter 结构化拆分与 canonical app factory
+
+- **任务**：在 serving canonical-only 收口后，把单文件 `rs_core.serving.api.app` 继续拆成更符合 FastAPI 大型应用组织方式的 adapter 层结构，同时保持 `rs_core.serving.api.app:app` 对外启动入口不变。
+- **遇到的问题**：原 `app.py` 同时承载路由、鉴权 gate、request-id、exception handler 和 service 初始化，继续增长会把 HTTP adapter 与推荐业务编排重新耦合；同时需要保留现有测试对 `rs_core.serving.api.app.get_service` 的 monkeypatch seam，避免一次性破坏回归用例。
+- **定位方式**：对照 FastAPI 官方 `APIRouter` / app factory / dependency override 模式，沿 `tests/test_serving_reorg_compatibility.py`、`tests/test_serving_boundary_map.py`、`tests/test_serving_smoke.py` 和 `scripts/serving/run_service.py` 核对 route table、uvicorn target、dependency seam 与 BoundaryMap owner。
+- **解决方式**：新增 `factory.py`、`dependencies.py`、`middleware.py`、`exceptions.py` 和 `routers/` 子包；`app.py` 缩小为 canonical composition root，导出 `app/create_app/get_service`；`runtime/recommendation/demo/simulation` 路由分文件管理并使用 `Depends(get_service)` 注入服务；debug/demo/simulation/recall 采用 request-time env/token gate，而不是 include-time 条件注册；BoundaryMap 改为由 `FastAPIApp` 拥有整个 `rs_core/serving/api/` 目录。
+- **验证结果**：已运行 `.venv/Scripts/python -m pytest tests/test_serving_reorg_compatibility.py tests/test_serving_boundary_map.py tests/test_serving_run_service.py tests/test_serving_smoke.py -q`，结果 `100 passed`；focused serving/agent regression suite 结果 `250 passed`；`ruff check` 与 `compileall -q rs_core/serving` 通过；独立 verifier 给出 `PASS`，code-reviewer 未发现 HIGH/CRITICAL 阻塞项。
+- **面试可讲点**：这段可以讲成“把 FastAPI 从业务中心降回 HTTP adapter”的结构化治理：保留稳定启动入口和推荐核心服务，同时引入 app factory、router 分层、FastAPI dependency override seam、request-time gate 和 route table contract，让后续新增 Agent/RAG/仿真/debug endpoint 不再把所有逻辑堆回单文件。

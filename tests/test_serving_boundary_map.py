@@ -165,7 +165,8 @@ def test_serving_api_and_schema_boundaries_use_canonical_files_only() -> None:
     assert "rs_core/serving/schema.py" not in schema_module.owned_paths
 
     app_module = modules["FastAPIApp"]
-    assert "rs_core/serving/api/app.py" in app_module.owned_paths
+    assert "rs_core/serving/api/" in app_module.owned_paths
+    assert "rs_core/serving/api/app.py" not in app_module.owned_paths
     assert "rs_core.serving.service" not in app_module.allowed_imports
     assert "rs_core.serving.application.recommendation_service" in app_module.allowed_imports
     assert "rs_core.serving.runtime.config" in app_module.allowed_imports
@@ -173,6 +174,7 @@ def test_serving_api_and_schema_boundaries_use_canonical_files_only() -> None:
     assert "rs_core.serving.schemas" in app_module.allowed_imports
     assert "rs_core/serving/app.py" not in app_module.compatibility_paths
     assert "rs_core/serving/app.py" not in app_module.owned_paths
+    assert app_module.compatibility_paths == ()
 
 
 def test_deleted_legacy_shims_are_not_boundary_paths() -> None:
