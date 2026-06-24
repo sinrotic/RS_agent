@@ -29,15 +29,9 @@ rs_core/serving/
 ├── runtime/
 │   ├── config.py                 # serving config 解析与 env override
 │   └── readiness.py              # public readiness 摘要
-│
-├── app.py                        # legacy shim，兼容旧 uvicorn 入口
-├── schema.py                     # legacy shim，兼容旧 DTO import
-├── service.py                    # compatibility facade
-├── facts.py                      # legacy shim
-├── adapter_contracts.py          # legacy shim
-├── boundary_map.py               # legacy shim
-└── manifest_gate.py              # legacy shim
 ```
+
+旧根目录 shim 已删除，后续不再通过 `rs_core.serving.app/schema/service/facts/adapter_contracts/boundary_map/manifest_gate` 接入。
 
 ## 与 Spring Boot 分层的类比
 
@@ -52,9 +46,9 @@ rs_core/serving/
 
 注意：本项目不是照搬 Spring Boot，也没有 Java/Spring IoC 容器。这里采用的是 Python + FastAPI 的模块化单体，并结合 Clean Architecture / Hexagonal Architecture 的依赖方向控制。
 
-## 当前 canonical 路径与 legacy shim
+## 当前 canonical 路径与已删除旧入口
 
-后续新代码应优先使用 canonical 路径：
+后续新代码必须使用 canonical 路径：
 
 - FastAPI app canonical：`rs_core.serving.api.app`
 - API DTO canonical：`rs_core.serving.schemas`
@@ -66,7 +60,7 @@ rs_core/serving/
 - Manifest gate canonical：`rs_core.serving.governance.manifest_gate`
 - Postgres dataset serving seam：`rs_core.serving.infrastructure.stores.postgres_dataset`
 
-以下路径保留为兼容 shim，不建议新业务代码继续依赖：
+以下旧路径已物理删除，不应在新代码、脚本或普通测试中继续依赖：
 
 - `rs_core.serving.app`
 - `rs_core.serving.schema`
@@ -76,7 +70,7 @@ rs_core/serving/
 - `rs_core.serving.boundary_map`
 - `rs_core.serving.manifest_gate`
 
-例外：兼容性测试、旧启动入口和迁移验证可以继续使用 legacy shim。
+例外：deleted legacy guard 测试可以把这些路径作为 denylist 字符串，用 subprocess import-fail probe 防止旧 shim 被重新恢复。
 
 ## 关键边界约定
 
@@ -92,7 +86,7 @@ rs_core/serving/
 rs_core/serving/schemas/models.py
 ```
 
-并同步更新 `models.__all__`，让 `rs_core.serving.schemas` 和 legacy `rs_core.serving.schema` 能保持对象 identity。
+并同步更新 `models.__all__`，让 `rs_core.serving.schemas` 与 `rs_core.serving.schemas.models` 保持 canonical export 一致。
 
 ### 3. Application service 不直接穿透到底层数据实现
 
@@ -122,9 +116,9 @@ from rs_core.data import ...
 
 召回、排序、RAG、DeepFM、artifact manifest、route registry 等进入 serving runtime 前，应通过 governance / manifest gate 进行准入，不应由 endpoint 或 service 随意硬编码路径绕过。
 
-### 6. Legacy shim 只能服务兼容，不应重新成为 canonical owner
+### 6. 已删除旧 shim 不应恢复为 canonical owner
 
-`rs_core/serving/app.py`、`schema.py`、`facts.py` 等旧路径只用于兼容旧 import、旧 uvicorn target、旧测试 seam。BoundaryMap 中这些文件应出现在 `compatibility_paths`，而不是重新出现在 canonical `owned_paths`。
+`rs_core/serving/app.py`、`schema.py`、`service.py`、`facts.py` 等旧路径已经删除。BoundaryMap 中这些文件不应出现在 `owned_paths` 或 `compatibility_paths`；测试只允许在 deleted legacy guard 的 denylist 中保留这些字符串。
 
 ## 测试与回归要求
 
@@ -174,8 +168,8 @@ D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m pyte
 4. 核心合同、fact、boundary：优先改 `rs_core/serving/domain/`。
 5. 外部数据/缓存/检索/对象存储/队列 seam：优先改 `rs_core/serving/infrastructure/`。
 6. artifact / route / manifest 准入：优先改 `rs_core/serving/governance/`。
-7. 旧根目录文件一般只作为兼容 shim，不要把新业务逻辑塞回旧文件。
+7. 已删除旧根目录 shim 不应恢复；新增业务逻辑必须进入对应 canonical 分层。
 
 面试表述可概括为：
 
-> 我们把原本 demo-style 的 serving 模块，参考 Spring Boot 常见的 controller-service-dto-repository 分层思想，重组为 FastAPI API 层、schemas DTO 层、application service 层、domain contract 层、infrastructure adapter 层和 governance 准入层。通过 BoundaryMap、legacy shim、import guard 和 focused regression tests 固化依赖方向，既保留旧启动和旧 import 兼容，又为后续接入 RAG、PostgreSQL、Redis、MinIO、Qdrant、Queue 和推荐优化 artifact 留出清晰边界。
+> 我们把原本 demo-style 的 serving 模块，参考 Spring Boot 常见的 controller-service-dto-repository 分层思想，重组为 FastAPI API 层、schemas DTO 层、application service 层、domain contract 层、infrastructure adapter 层和 governance 准入层。随后进一步删除旧根目录 shim，把兼容测试反转为 deleted legacy guard，并通过 BoundaryMap、import guard 和 focused regression tests 固化 canonical-only 依赖方向，为后续接入 RAG、PostgreSQL、Redis、MinIO、Qdrant、Queue 和推荐优化 artifact 留出清晰边界。

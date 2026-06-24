@@ -1212,6 +1212,26 @@ Serving 层虽然以 `session_id` 存储会话，但匿名 `start_session()` 原
 **面试可讲点：**
 这段可以讲成“把 SFT 数据从链路可跑推进到交互可用”：推荐 Agent 的话术不再只是模板确认，而是绑定 display slate 的公开商品信息给出理由；模拟用户会对解释不足追问；程序 judge 负责安全边界，模型 judge 负责语义质量，避免把主观人性化评价硬编码成脆弱规则。
 
+### 2026-06-24 - RSAgent 提示词去固定话术化
+
+**任务：**
+根据用户反馈，继续收口 RSAgent 和 SFT composer 的提示词：不要把大量固定用户措辞或固定触发表达写进代码，因为真实用户可能用任意方式表达需求、反馈和不满意。
+
+**遇到的问题：**
+上一版提示词已经强化了真人导购和多轮收束，但仍容易把自然语言反馈写成若干固定示例或触发清单，导致模型可能过拟合模板；测试也不应只断言某个长句是否存在，而应覆盖抽象行为原则。
+
+**定位方式：**
+检查 `rs_core/rsagent/tools.py::AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`、`rs_core/training/multi_turn_sft_generator.py::RecommendationAgentComposer` 以及对应测试，确认需要保留工程边界词和工具协议，但自然语言用户表达必须改成基于上下文语义判断。
+
+**解决方式：**
+将多轮反馈策略改为抽象语义原则：当上下文显示用户仍在探索、偏好变化、满意度不足或决策未推进时，承接反馈、调整推荐策略、说明本轮差异，并用一个具体但开放的问题收窄关键维度；面向顾客侧只表达自然导购视角，不暴露内部推荐机制。composer prompt 也改为基于 visible dialogue 的语义状态判断弱进展和偏好变化，而不是匹配固定用户短语。测试改为断言存在 `Multi_Turn_Feedback_Policy`、`Customer_Facing_Language` 和语义判断原则。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 `./.venv/Scripts/python -m pytest tests/test_agent_tools.py tests/test_multi_turn_sft_generator.py -q`，结果 `75 passed in 12.45s`。静态检索确认 RSAgent 主 prompt 不再包含先前的具体用户示例和具体商品示例；composer prompt 保留的是“固定短语匹配不可取”的抽象原则。
+
+**面试可讲点：**
+这段可以讲成“把 prompt 从关键词触发升级为语义策略合同”：自然语言用户输入不可枚举，所以 Agent 不应靠固定话术表工作，而应基于上下文判断探索、偏好变化、满意度和决策进展；程序只守工具、候选池和泄漏边界，导购策略交给模型按抽象原则执行。
+
 ### 2026-05-26 - TwoTower 训练泄漏修复与在线用户塔投影
 
 **任务：**
@@ -7514,3 +7534,33 @@ Docker Compose çš„ `postgres_data:/var/lib/postgresql/data` named volume å�
 **é�¢è¯•å�¯è®²ç‚¹ï¼š**
 è¿™æ®µå�¯ä»¥è®²æˆ�â€œæŠŠå�¬å›žæ•°æ�®åº“åŒ–ä»Žå€™é€‰æ± å¿«ç…§å�‡çº§ä¸ºæ–¹æ³•çº§ serving æž¶æž„â€�ï¼šæ¯�ä¸ªå�¬å›žæ–¹æ³•ç‹¬ç«‹è�½åº“ã€�ç‹¬ç«‹è¯Šæ–­ã€�åœ¨çº¿ç‹¬ç«‹å�–å€™é€‰ï¼Œå†�ç»Ÿä¸€ merge/dedup/rankï¼›pool500 å�ªå�šç¨³å®šå…œåº•å’Œå›žæ»šï¼Œä¸�æ›¿ä»£æ–¹æ³•çº§å�¬å›žï¼Œä»Žè€Œä¿�ç•™æŽ¨è��ç³»ç»Ÿè°ƒå�‚ä¸Žæ²»ç�†ç©ºé—´ã€‚
 
+### 2026-06-23 - Serving legacy shim 物理删除与 canonical-only 收口
+
+- **任务**：在 serving canonical import 主路已收口后，继续物理删除旧根目录 shim，避免后续 Agent 或业务代码继续把新逻辑写回 `rs_core.serving.app/schema/service/...` 旧入口。
+- **遇到的问题**：旧 shim 仍保留在目录中，视觉和架构上都会制造“双入口”；同时 `rs_core.serving.app` 曾通过 `sys.modules` alias 转发，普通同进程 import 检查可能被缓存污染。
+- **定位方式**：沿 `tests/test_serving_reorg_compatibility.py`、`tests/test_serving_boundary_map.py`、`scripts/serving/run_service.py` 和 `rs_core/serving/domain/boundary_map.py` 核对剩余 legacy 引用，先保护无关脏工作区，再分离 serving-only 修改。
+- **解决方式**：删除 `app.py/schema.py/service.py/facts.py/adapter_contracts.py/boundary_map.py/manifest_gate.py` 旧 shim；`run_service.py` 改用 `rs_core.serving.api.app:app`；BoundaryMap 移除旧 shim compatibility_paths；compatibility 测试反转为 canonical import pass + deleted legacy subprocess import-fail guard。
+- **验证结果**：已运行 `.venv/Scripts/python -m pytest tests/test_serving_reorg_compatibility.py tests/test_serving_boundary_map.py tests/test_serving_run_service.py -q`，结果 `44 passed`；最终 focused serving suite 覆盖 serving/agent/simulation 相关测试，结果 `237 passed`；`py_compile`、`ruff check`、`compileall` 均通过。
+- **面试可讲点**：这不是单纯删文件，而是把“canonical + legacy shim 兼容”的过渡态升级为 canonical-only contract；通过 subprocess import probe、BoundaryMap 语义反转和 focused tests 防止旧入口回流，体现了架构迁移中的可回滚、可验证和防回归设计。
+
+
+
+### 2026-06-24 - æ–¹æ³•çº§å�¬å›žåˆ‡æ�¢åˆ° Scylla CandidateStore æ”¶å�£
+
+**ä»»åŠ¡ï¼š**
+æŠŠé�žå�‘é‡�å�¬å›ž serving å�Žç«¯åˆ‡åˆ° Scylla/Cassandra CandidateStoreï¼Œå¹¶ç¡®ä¿�çº¿ä¸Šå�¬å›žä»�æŒ‰ `itemcf_strong/itemcf_weak/co_visit_fallback_repair/usercf_recall/category/popular` ç­‰æ–¹æ³•çº§ source åˆ†åˆ«è¯»å�–ï¼Œå†�ç”± orchestrator merge/dedup/rankï¼›`pool500_candidates.jsonl` å�ªä¿�ç•™ä¸º fallback/rollback å¿«ç…§ã€‚
+
+**é�‡åˆ°çš„é—®é¢˜ï¼š**
+æœ€åˆ�é£Žé™©æ˜¯æŠŠ `pool500` æ•´ä½“å¿«ç…§å½“æˆ�ä¸»å�¬å›žè¡¨ï¼Œä¼šç»•è¿‡æ–¹æ³•çº§å�¬å›žè¯Šæ–­ä¸Žè°ƒåº¦ï¼›çœŸå®ž Scylla smoke å�ˆæš´éœ² Python 3.13 ä¸‹ `cassandra-driver` ä»�ä¾�èµ–å·²ç§»é™¤çš„ `asyncore` é»˜è®¤è¿žæŽ¥ç±»ã€‚review è¿›ä¸€æ­¥æŒ‡å‡º importer éœ€è¦�åŒºåˆ† pool500 merged rows ä¸Žæ–¹æ³•çº§ per-user rowsï¼Œprovider é»˜è®¤è·¯ç”±ä¹Ÿä¸�èƒ½åœ¨é…�ç½®ç¼ºçœ�æ—¶å›žåˆ°æ—§ bucket/global è¡¨ã€‚
+
+**å®šä½�æ–¹å¼�ï¼š**
+é€šè¿‡ Scylla manifestã€�`user_candidates_by_user` / `item_neighbors_by_seed` ç›´è¯» smoke å’Œ orchestrator provider coverage æ ¸å¯¹æ¯�ä¸ªæ–¹æ³• source æ˜¯å�¦çœŸå®žå�¯è¯»ï¼›ç”¨ targeted pytest/ruff ä¿�æŠ¤ importer åˆ†ç±»ã€�provider `lookup_mode`ã€�çœŸå®ž serving config å’Œ fallback-only è¡Œä¸ºï¼›ç”¨ç‹¬ç«‹ code-reviewer/verifier å¤�æŸ¥ pool500 vs method rowsã€�Python 3.13 compatibility å’Œè·¯ç”±é»˜è®¤å€¼ã€‚
+
+**è§£å†³æ–¹å¼�ï¼š**
+åœ¨ runtime ä¸Ž importer ä¸­è¡¥ `cassandra.io.asyncioreactor.AsyncioConnection` compatibility shimï¼Œå�Œæ—¶æ³¨å†Œ `cassandra.io.asyncorereactor` å’Œ `cassandra.io.asyncoreactor`ï¼›importer æ”¯æŒ� `source_override` å�‚ä¸Žåˆ†ç±»ï¼Œ`pool_name` ä¼˜å…ˆè¯†åˆ« poolï¼Œæ–¹æ³•çº§ `sources/source_scores` ä¸�å†�è¯¯å†™ pool è¡¨ï¼›provider å¢žåŠ å¹¶é…�ç½® `lookup_mode=user_candidates`ï¼Œè®© co-visit/category/popular ä»Ž `user_candidates_by_user` è¯»ï¼ŒItemCF strong/weak ç»§ç»­èµ° `item_neighbors_by_seed`ã€‚orchestrator ä¸º `candidate_store_*` provider è®¾ç½®å®‰å…¨é»˜è®¤ source/lookup_modeï¼Œpool500 fallback ç»§ç»­ `fallback_only=true` ä¸” CandidateStore fallback ä¹Ÿé�µå®ˆ allowed_sourcesã€‚
+
+**éªŒè¯�ç»“æžœï¼š**
+ä½¿ç”¨é¡¹ç›®é»˜è®¤ `.venv` è¿�è¡Œ `.venv/Scripts/python -m pytest tests/test_import_candidate_store_to_cassandra.py tests/test_online_retrieval_providers.py tests/test_online_retrieval_orchestrator.py tests/test_candidate_store_cassandra.py`ï¼Œç»“æžœ `45 passed, 1 warning in 2.64s`ï¼›è¿�è¡Œ ruff focused æ£€æŸ¥ï¼Œç»“æžœ `All checks passed!`ã€‚çœŸå®ž Scylla direct read æ˜¾ç¤º health `status=ok`ï¼Œå…­ç±»æ–¹æ³• source å�‡èƒ½é‡‡æ ·è¯»å‡ºå€™é€‰ï¼šcategoryã€�popularã€�co_visit_fallback_repairã€�usercf_recallã€�itemcf_strongã€�itemcf_weakã€‚orchestrator smoke è¿”å›ž `candidate_count=50`ã€�`fallback_used=false`ã€�`underfilled_before_fallback=false`ã€�`pool500_fallback.status=not_needed`ï¼Œæ–¹æ³•çº§ provider ä¸­ itemcf/co_visit/category/popular å�‡è¿”å›žå€™é€‰ï¼Œusercf åœ¨è¯¥ smoke ç”¨æˆ·ä¸ºç©ºä½† direct read å·²éªŒè¯� source æ•°æ�®å­˜åœ¨ã€‚
+
+**é�¢è¯•å�¯è®²ç‚¹ï¼š**
+è¿™æ®µå�¯ä»¥è®²æˆ�â€œä»Žå€™é€‰æ± å¿«ç…§è¿�ç§»åˆ°æ–¹æ³•çº§åœ¨çº¿å�¬å›žå­˜å‚¨â€�ï¼šç¦»çº¿ artifact ä»�æ˜¯ source of truthï¼ŒScylla å�ªæ˜¯å�¯é‡�å»ºçš„ serving indexï¼›æ¯�ä¸ªå�¬å›žæ–¹æ³•ç‹¬ç«‹è�½åº“å’Œè¯Šæ–­ï¼Œåœ¨çº¿æŒ‰ source å�–å€™é€‰å�Žç»Ÿä¸€åŽ»é‡�æŽ’åº�ï¼›å�Œæ—¶é€šè¿‡ fallback-only pool500ã€�store_versionã€�dry-run importerã€�Python ç‰ˆæœ¬å…¼å®¹å’Œ public-safe readinessï¼ŒæŠŠæ•°æ�®åº“è¿�ç§»å�šæˆ�å�¯å›žæ»šã€�å�¯éªŒè¯�ã€�å�¯æ¼”è¿›çš„æŽ¨è��ç³»ç»Ÿå·¥ç¨‹é—­çŽ¯ã€‚

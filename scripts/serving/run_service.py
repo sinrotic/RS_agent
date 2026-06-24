@@ -38,7 +38,7 @@ def main() -> None:
     print("Starting RS Agent online service: FastAPI only; vLLM/Qwen external providers are not started by serving.")
     print("Runtime note: in-memory sessions, single process, restart loses state, not production concurrency-safe.")
     print(f"Agent inference provider status: {_agent_provider_status()}")
-    uvicorn.run("rs_core.serving.app:app", host=args.host, port=args.port, reload=args.reload)
+    uvicorn.run("rs_core.serving.api.app:app", host=args.host, port=args.port, reload=args.reload)
 
 
 def _agent_provider_status() -> str:

@@ -24,7 +24,7 @@ def build_recommendation_explanation(session: AgentSession, item_id: str | None 
         return STALE_RECOMMENDATION_TEXT
 
     title = _clean_text(item.get("title"))
-    item_label = _short_title(title) if title else "这件商品"
+    item_label = _public_item_label(item, title)
     rag_reason = _rag_reason(turn, item["parent_asin"], item)
     if rag_reason:
         return f"我推荐{item_label}，主要是因为{rag_reason}。"
@@ -126,6 +126,16 @@ def _public_reasons(item: dict[str, Any]) -> list[str]:
     if price:
         reasons.append(f"价格是{price}，方便一起衡量预算")
     return reasons[:3]
+
+
+def _public_item_label(item: dict[str, Any], title: str | None) -> str:
+    parent_asin = _clean_text(item.get("parent_asin"))
+    if not parent_asin:
+        return _short_title(title) if title else "这件商品"
+    short_title = _short_title(title) if title else "这件商品"
+    if short_title == "这件商品":
+        return parent_asin
+    return f"{parent_asin}（{short_title}）"
 
 
 def _short_title(title: str | None) -> str:

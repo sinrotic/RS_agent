@@ -28,7 +28,7 @@ routes:
     status: provisional_current
     authority_refs: ["dic/README.md", "dic/PROJECT_STRUCTURE.md"]
     config_paths: ["configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml"]
-    workflow_paths: ["rs_core/serving/service.py", "rs_core/rsagent/runtime.py"]
+    workflow_paths: ["rs_core/serving/application/recommendation_service.py", "rs_core/rsagent/runtime.py"]
     script_paths: ["scripts/serving/run_service.py", "scripts/evaluation/run_simulation_evaluation.py"]
     required_output_paths: []
     promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion
@@ -38,7 +38,7 @@ routes:
     status: provisional_current
     authority_refs: ["dic/README.md", "dic/architecture/ARCHITECTURE.md", "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"]
     config_paths: ["configs/serving/online_service.yaml"]
-    workflow_paths: ["rs_core/serving/service.py", "rs_core/workflow/online_recommendation.py", "rs_core/workflow/hybrid_environment.py"]
+    workflow_paths: ["rs_core/serving/application/recommendation_service.py", "rs_core/workflow/online_recommendation.py", "rs_core/workflow/hybrid_environment.py"]
     script_paths: ["scripts/serving/run_service.py"]
     required_output_paths: ["outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl"]
     promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion

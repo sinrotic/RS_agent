@@ -110,7 +110,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("rs_core.serving", "rs_core.common", "fastapi"),
             forbidden_imports=("redis", "minio", "qdrant_client", "psycopg"),
             required_tests=("tests/test_serving_smoke.py", "tests/test_serving_boundary_map.py"),
-            compatibility_paths=("rs_core/serving/schema.py", "rs_core/serving/schemas/__init__.py"),
+            compatibility_paths=("rs_core/serving/schemas/__init__.py",),
         ),
         BoundaryModule(
             name="FastAPIApp",
@@ -131,7 +131,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             ),
             forbidden_imports=("redis", "minio", "qdrant_client", "psycopg"),
             required_tests=("tests/test_serving_smoke.py",),
-            compatibility_paths=("rs_core/serving/app.py", "rs_core/serving/api/__init__.py"),
+            compatibility_paths=("rs_core/serving/api/__init__.py",),
         ),
         BoundaryModule(
             name="RecommendationService",
@@ -140,7 +140,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("rs_core.serving", "rs_core.workflow", "rs_core.rsagent", "rs_core.common"),
             forbidden_imports=("redis", "minio", "qdrant_client", "psycopg"),
             required_tests=("tests/test_serving_smoke.py", "tests/test_serving_facades.py"),
-            compatibility_paths=("rs_core/serving/service.py",),
+            compatibility_paths=(),
         ),
         BoundaryModule(
             name="CoreRecommendationRuntime",
@@ -173,7 +173,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("typing", "dataclasses", "pathlib", "rs_core.common", "rs_core.data"),
             forbidden_imports=("redis", "minio", "qdrant_client", "psycopg"),
             required_tests=("tests/test_serving_adapter_contracts.py",),
-            compatibility_paths=("rs_core/serving/adapter_contracts.py",),
+            compatibility_paths=(),
         ),
         BoundaryModule(
             name="AdapterContract",
@@ -182,7 +182,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("typing", "dataclasses", "pathlib"),
             forbidden_imports=("redis", "minio", "qdrant_client", "psycopg", "celery"),
             required_tests=("tests/test_serving_adapter_contracts.py",),
-            compatibility_paths=("rs_core/serving/adapter_contracts.py",),
+            compatibility_paths=(),
         ),
         BoundaryModule(
             name="ManifestGate",
@@ -191,7 +191,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("rs_core.common.config", "pathlib", "dataclasses"),
             forbidden_imports=("rs_core.recsys", "rs_lab", "qdrant_client"),
             required_tests=("tests/test_serving_manifest_gate.py",),
-            compatibility_paths=("rs_core/serving/manifest_gate.py",),
+            compatibility_paths=(),
         ),
         BoundaryModule(
             name="RouteRegistry",
@@ -200,7 +200,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("rs_core.serving.governance.manifest_gate", "rs_core.common.config"),
             forbidden_imports=("rs_core.recsys", "rs_lab"),
             required_tests=("tests/test_serving_manifest_gate.py",),
-            compatibility_paths=("rs_core/serving/manifest_gate.py",),
+            compatibility_paths=(),
         ),
         BoundaryModule(
             name="DeploymentGovernanceOptimization",
@@ -209,7 +209,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("rs_core.serving.domain.boundary_map", "rs_core.serving.governance.manifest_gate"),
             forbidden_imports=("rs_core.serving.service",),
             required_tests=("tests/test_serving_boundary_map.py", "tests/test_serving_manifest_gate.py"),
-            compatibility_paths=("rs_core/serving/boundary_map.py", "rs_core/serving/manifest_gate.py"),
+            compatibility_paths=(),
         ),
         BoundaryModule(
             name="ServingFact",
@@ -218,7 +218,7 @@ DEFAULT_BOUNDARY_MAP: Final[BoundaryMap] = BoundaryMap(
             allowed_imports=("dataclasses", "datetime", "typing"),
             forbidden_imports=("rs_core.evaluation", "rs_lab", "pandas", "sklearn"),
             required_tests=("tests/test_serving_facts.py",),
-            compatibility_paths=("rs_core/serving/facts.py",),
+            compatibility_paths=(),
         ),
     )
 )

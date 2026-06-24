@@ -6,6 +6,16 @@ from rs_core.serving.domain.boundary_map import REQUIRED_BOUNDARY_MODULES, Bound
 
 pytestmark = [pytest.mark.unit, pytest.mark.serving]
 
+DELETED_LEGACY_PATHS = {
+    "rs_core/serving/adapter_contracts.py",
+    "rs_core/serving/app.py",
+    "rs_core/serving/boundary_map.py",
+    "rs_core/serving/facts.py",
+    "rs_core/serving/manifest_gate.py",
+    "rs_core/serving/schema.py",
+    "rs_core/serving/service.py",
+}
+
 
 def test_default_boundary_map_covers_required_serving_layers() -> None:
     boundary_map = default_boundary_map()
@@ -146,12 +156,12 @@ def test_boundary_map_reports_overlap_without_trailing_slash() -> None:
     assert "overlapping owned path: rs_core/serving/api/app.py owned by FastAPIApp overlaps rs_core/serving/api owned by ServiceRuntimeApi" in result.errors
 
 
-def test_serving_api_and_schema_boundaries_use_canonical_files_with_legacy_shims() -> None:
+def test_serving_api_and_schema_boundaries_use_canonical_files_only() -> None:
     modules = default_boundary_map().by_name()
 
     schema_module = modules["ServiceRuntimeApi"]
     assert "rs_core/serving/schemas/models.py" in schema_module.owned_paths
-    assert "rs_core/serving/schema.py" in schema_module.compatibility_paths
+    assert "rs_core/serving/schema.py" not in schema_module.compatibility_paths
     assert "rs_core/serving/schema.py" not in schema_module.owned_paths
 
     app_module = modules["FastAPIApp"]
@@ -161,8 +171,17 @@ def test_serving_api_and_schema_boundaries_use_canonical_files_with_legacy_shims
     assert "rs_core.serving.runtime.config" in app_module.allowed_imports
     assert "rs_core.serving.facades" in app_module.allowed_imports
     assert "rs_core.serving.schemas" in app_module.allowed_imports
-    assert "rs_core/serving/app.py" in app_module.compatibility_paths
+    assert "rs_core/serving/app.py" not in app_module.compatibility_paths
     assert "rs_core/serving/app.py" not in app_module.owned_paths
+
+
+def test_deleted_legacy_shims_are_not_boundary_paths() -> None:
+    boundary_map = default_boundary_map()
+    owned_paths = {path for module in boundary_map.modules for path in module.owned_paths}
+    compatibility_paths = {path for module in boundary_map.modules for path in module.compatibility_paths}
+
+    assert DELETED_LEGACY_PATHS.isdisjoint(owned_paths)
+    assert DELETED_LEGACY_PATHS.isdisjoint(compatibility_paths)
 
 
 def test_state_facts_store_owns_canonical_grouping_not_legacy_shim() -> None:
@@ -170,6 +189,7 @@ def test_state_facts_store_owns_canonical_grouping_not_legacy_shim() -> None:
 
     assert "rs_core/serving/domain/state_facts_store.py" in module.owned_paths
     assert "rs_core/serving/facts.py" not in module.owned_paths
+    assert "rs_core/serving/facts.py" not in module.compatibility_paths
 
 
 def test_infrastructure_backends_forbid_real_network_clients() -> None:
@@ -178,7 +198,7 @@ def test_infrastructure_backends_forbid_real_network_clients() -> None:
     assert {"redis", "minio", "qdrant_client", "psycopg"}.issubset(module.forbidden_imports)
     assert "rs_core/serving/infrastructure/" in module.owned_paths
     assert "rs_core/serving/domain/adapter_contracts.py" not in module.owned_paths
-    assert "rs_core/serving/adapter_contracts.py" in module.compatibility_paths
+    assert "rs_core/serving/adapter_contracts.py" not in module.compatibility_paths
 
 
 def test_core_runtime_uses_canonical_adapter_contract_boundary() -> None:

@@ -1,10 +1,34 @@
 from __future__ import annotations
 
+import argparse
+
 import pytest
 
 from scripts.serving import run_service
 
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]
+
+
+def test_run_service_uses_canonical_fastapi_app_target(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_uvicorn_run(target: str, **kwargs: object) -> None:
+        captured["target"] = target
+        captured["kwargs"] = kwargs
+
+    monkeypatch.setattr(
+        run_service,
+        "parse_args",
+        lambda: argparse.Namespace(host="127.0.0.1", port=8765, reload=False, config=None),
+    )
+    monkeypatch.setattr(run_service.uvicorn, "run", fake_uvicorn_run)
+
+    run_service.main()
+
+    assert captured == {
+        "target": "rs_core.serving.api.app:app",
+        "kwargs": {"host": "127.0.0.1", "port": 8765, "reload": False},
+    }
 
 
 def test_loopback_bind_allows_local_dev_without_strict_auth(monkeypatch: pytest.MonkeyPatch) -> None:

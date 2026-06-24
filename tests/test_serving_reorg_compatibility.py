@@ -33,7 +33,7 @@ SERVING_CORE_SCAN_DIRS = (
     PROJECT_ROOT / "rs_core" / "serving" / "governance",
     PROJECT_ROOT / "rs_core" / "serving" / "runtime",
 )
-LEGACY_SERVING_SHIM_IMPORTS = {
+DELETED_LEGACY_SERVING_MODULES = {
     "rs_core.serving.adapter_contracts",
     "rs_core.serving.app",
     "rs_core.serving.boundary_map",
@@ -53,58 +53,67 @@ LEGACY_SERVING_SHIM_IMPORT_MEMBERS = {
 }
 PACKAGE_ROOT_CONVENIENCE_MEMBERS = {"RecommendationService", "SessionNotFoundError"}
 FORBIDDEN_INTERNAL_INFRA_IMPORTS = {"rs_core.data"}
+CANONICAL_SERVING_MODULES = {
+    "rs_core.serving.api.app",
+    "rs_core.serving.schemas",
+    "rs_core.serving.schemas.models",
+    "rs_core.serving.application.recommendation_service",
+    "rs_core.serving.domain.adapter_contracts",
+    "rs_core.serving.domain.boundary_map",
+    "rs_core.serving.domain.serving_fact",
+    "rs_core.serving.governance.manifest_gate",
+}
+DELETED_LEGACY_PATHS = {
+    "rs_core/serving/adapter_contracts.py",
+    "rs_core/serving/app.py",
+    "rs_core/serving/boundary_map.py",
+    "rs_core/serving/facts.py",
+    "rs_core/serving/manifest_gate.py",
+    "rs_core/serving/schema.py",
+    "rs_core/serving/service.py",
+}
 
 
-def test_legacy_and_canonical_contract_imports_share_objects() -> None:
-    from rs_core.serving.adapter_contracts import MockKnowledgeAdapter
-    from rs_core.serving.boundary_map import default_boundary_map
-    from rs_core.serving.domain.adapter_contracts import MockKnowledgeAdapter as CanonicalMockKnowledgeAdapter
-    from rs_core.serving.domain.boundary_map import default_boundary_map as canonical_boundary_map
-    from rs_core.serving.domain.serving_fact import ServingFact as CanonicalServingFact
-    from rs_core.serving.facts import ServingFact
-    from rs_core.serving.governance.manifest_gate import ManifestGate as CanonicalManifestGate
-    from rs_core.serving.manifest_gate import ManifestGate
+@pytest.mark.parametrize("module_name", sorted(DELETED_LEGACY_SERVING_MODULES))
+def test_deleted_legacy_serving_modules_are_not_importable(module_name: str) -> None:
+    probe = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            f"import importlib; importlib.invalidate_caches(); importlib.import_module({module_name!r})",
+        ],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert default_boundary_map is canonical_boundary_map
-    assert MockKnowledgeAdapter is CanonicalMockKnowledgeAdapter
-    assert ServingFact is CanonicalServingFact
-    assert ManifestGate is CanonicalManifestGate
+    assert probe.returncode != 0, probe.stdout + probe.stderr
+    assert "ModuleNotFoundError" in probe.stderr or "No module named" in probe.stderr
 
 
-def test_legacy_and_canonical_schema_imports_share_objects() -> None:
-    legacy_schema = importlib.import_module("rs_core.serving.schema")
+@pytest.mark.parametrize("module_name", sorted(CANONICAL_SERVING_MODULES))
+def test_canonical_serving_modules_are_importable(module_name: str) -> None:
+    probe = subprocess.run(
+        [sys.executable, "-c", f"import importlib; importlib.import_module({module_name!r})"],
+        cwd=PROJECT_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert probe.returncode == 0, probe.stdout + probe.stderr
+
+
+def test_canonical_schema_package_reexports_model_symbols() -> None:
     canonical_schema = importlib.import_module("rs_core.serving.schemas")
     canonical_models = importlib.import_module("rs_core.serving.schemas.models")
 
     for symbol in canonical_models.__all__:
-        assert getattr(legacy_schema, symbol) is getattr(canonical_schema, symbol)
         assert getattr(canonical_schema, symbol) is getattr(canonical_models, symbol)
 
 
-def test_service_facade_reexports_public_compatibility_symbols() -> None:
-    service = importlib.import_module("rs_core.serving.service")
-    expected_symbols = {
-        "DEFAULT_CONFIG",
-        "SERVING_CONFIG_ENV",
-        "PROJECT_ROOT",
-        "RecommendationService",
-        "ChatResult",
-        "DemoRoundtripResult",
-        "SessionNotFoundError",
-        "SessionEndedError",
-        "resolve_serving_config",
-        "feedback_prompt",
-        "first_item_id",
-        "display_change_summary",
-        "display_item_ids",
-    }
-
-    for symbol in expected_symbols:
-        assert hasattr(service, symbol), f"rs_core.serving.service must re-export {symbol}"
-    assert expected_symbols.issubset(set(service.__all__))
-
-
-def test_recommendation_service_init_keeps_legacy_signature_parameters() -> None:
+def test_recommendation_service_init_keeps_public_signature_parameters() -> None:
     from rs_core.serving.application.recommendation_service import RecommendationService
 
     expected_parameters = [
@@ -123,25 +132,21 @@ def test_recommendation_service_init_keeps_legacy_signature_parameters() -> None
     assert [name for name in signature.parameters if name != "self"] == expected_parameters
 
 
-def test_legacy_and_canonical_app_imports_share_public_seam() -> None:
-    legacy_app = importlib.import_module("rs_core.serving.app")
+def test_canonical_app_imports_expose_public_seam() -> None:
     canonical_app = importlib.import_module("rs_core.serving.api.app")
     api_package = importlib.import_module("rs_core.serving.api")
 
     dotted_app = __import__("rs_core.serving.api.app", fromlist=["__name__"])
 
-    assert legacy_app is canonical_app
     assert dotted_app is canonical_app
-    assert isinstance(legacy_app.app, FastAPI)
-    assert legacy_app.app is canonical_app.app
+    assert isinstance(canonical_app.app, FastAPI)
     assert api_package.fastapi_app is canonical_app.app
     assert not isinstance(api_package.app, FastAPI)
     assert api_package.app is canonical_app
-    assert legacy_app.get_service is canonical_app.get_service
     assert api_package.get_service is canonical_app.get_service
 
 
-def test_boundary_map_marks_canonical_contracts_owned_and_legacy_shims_compatible() -> None:
+def test_boundary_map_marks_canonical_contracts_owned_and_deleted_shims_absent() -> None:
     from rs_core.serving.domain.boundary_map import default_boundary_map
 
     boundary_map = default_boundary_map()
@@ -156,16 +161,8 @@ def test_boundary_map_marks_canonical_contracts_owned_and_legacy_shims_compatibl
         "rs_core/serving/domain/serving_fact.py",
         "rs_core/serving/governance/manifest_gate.py",
     }.issubset(owned_paths)
-    assert {
-        "rs_core/serving/app.py",
-        "rs_core/serving/schema.py",
-        "rs_core/serving/boundary_map.py",
-        "rs_core/serving/adapter_contracts.py",
-        "rs_core/serving/facts.py",
-        "rs_core/serving/manifest_gate.py",
-    }.issubset(compatibility_paths)
-    assert "rs_core/serving/app.py" not in owned_paths
-    assert "rs_core/serving/schema.py" not in owned_paths
+    assert DELETED_LEGACY_PATHS.isdisjoint(owned_paths)
+    assert DELETED_LEGACY_PATHS.isdisjoint(compatibility_paths)
 
 
 def test_canonical_serving_layers_do_not_import_external_backend_clients() -> None:
@@ -207,22 +204,6 @@ def test_canonical_serving_layers_do_not_import_legacy_shims_or_package_root_sho
             violations.extend(_legacy_shim_imports(source_path, tree))
 
     assert violations == []
-
-
-def test_legacy_contract_shims_reexport_declared_canonical_public_symbols() -> None:
-    shim_pairs = [
-        ("rs_core.serving.adapter_contracts", "rs_core.serving.domain.adapter_contracts"),
-        ("rs_core.serving.boundary_map", "rs_core.serving.domain.boundary_map"),
-        ("rs_core.serving.facts", "rs_core.serving.domain.serving_fact"),
-        ("rs_core.serving.manifest_gate", "rs_core.serving.governance.manifest_gate"),
-    ]
-
-    for legacy_name, canonical_name in shim_pairs:
-        legacy_module = importlib.import_module(legacy_name)
-        canonical_module = importlib.import_module(canonical_name)
-        assert legacy_module.__all__ == canonical_module.__all__
-        for symbol in canonical_module.__all__:
-            assert getattr(legacy_module, symbol) is getattr(canonical_module, symbol)
 
 
 def test_runtime_config_import_does_not_load_qdrant_vectorstore_graph() -> None:
@@ -282,10 +263,10 @@ def _legacy_shim_imports(source_path: Path, tree: ast.AST) -> list[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                if alias.name in LEGACY_SERVING_SHIM_IMPORTS:
+                if alias.name in DELETED_LEGACY_SERVING_MODULES:
                     violations.append(f"{source_path.relative_to(PROJECT_ROOT)}:{node.lineno} imports {alias.name}")
         elif isinstance(node, ast.ImportFrom):
-            if node.module in LEGACY_SERVING_SHIM_IMPORTS:
+            if node.module in DELETED_LEGACY_SERVING_MODULES:
                 violations.append(f"{source_path.relative_to(PROJECT_ROOT)}:{node.lineno} imports from {node.module}")
             elif node.module == "rs_core.serving":
                 imported_members = {alias.name for alias in node.names}
