@@ -39,9 +39,6 @@ LEGACY_COMPATIBILITY_IMPORT_WHITELIST = {
     },
     "rs_core/online/contracts/__init__.py": {"rs_core.serving.schemas"},
     "rs_core/online/engine/__init__.py": {"rs_core.serving.schemas"},
-    "rs_core/online/recall/candidate_merge.py": {
-        "rs_core.recsys.two_tower_query",
-    },
     "rs_core/online/runtime/pool500.py": {
         "rs_core.display.builder",
         "rs_core.workflow.hybrid_demo",

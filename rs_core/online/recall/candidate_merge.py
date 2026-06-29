@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.io import iter_jsonl, read_json
-from rs_core.recsys.two_tower_query import apply_user_tower_projection, build_two_tower_query_for_user
+from rs_core.online.recall.two_tower_query import apply_user_tower_projection, build_two_tower_query_for_user
 from rs_core.common.recsys_types import MergedCandidate, RecallCandidate
 from rs_core.online.recall.vector_index import VectorIndex, VectorSearchIndex, load_vector_index_artifact
 
