@@ -16,11 +16,11 @@
 
 | 阶段 | 目标 | 允许做 | 禁止提前做 |
 |---|---|---|---|
-| Phase 0 | 本地/受控试用闭环 | FastAPI 单进程、SQLite/JSONL、local artifact、SQLite FTS5、trial hardening、结构化日志 | PostgreSQL runtime、Redis、RQ、MinIO、Prometheus、Kafka、ClickHouse |
-| Phase 1a | 生产兼容合同与 SQL DDL baseline | Store contract、Trace ID、Failure Policy、SQL DDL baseline、schema mapping、governance tests | Alembic、PostgreSQL runtime adapter、测试数据库强依赖 |
-| Phase 1b | PostgreSQL facts 最小落地 | CanonicalFactsStore、Store failure policy runtime、ServingOperationUnitOfWork、PG contract tests | Redis、RQ、ArtifactStore 替换、KnowledgeStore pgvector、Prometheus |
+| Phase 0 | 本地/受控试用闭环 | FastAPI 单进程、SQLite/JSONL、local artifact、SQLite FTS5、trial hardening、结构化日志 | MySQL runtime、Redis、RQ、MinIO、Prometheus、Kafka、ClickHouse |
+| Phase 1a | 生产兼容合同与 SQL DDL baseline | Store contract、Trace ID、Failure Policy、SQL DDL baseline、schema mapping、governance tests | Alembic、MySQL runtime adapter、测试数据库强依赖 |
+| Phase 1b | MySQL facts 最小落地 | CanonicalFactsStore、Store failure policy runtime、ServingOperationUnitOfWork、SQL contract tests | Redis、RQ、ArtifactStore 替换、KnowledgeStore 向量后端、Prometheus |
 | Phase 1c | 可替换后端扩展 | Redis、RQ、ArtifactStore、KnowledgeStore、Prometheus client | Kafka/ClickHouse 进入 serving 强依赖 |
-| Phase 2 | 生产数据闭环 | Kafka/Redpanda、ClickHouse、MinIO/S3、pgvector/OpenSearch/Qdrant、Grafana、多实例 | 在未触发规模/多消费者/生产观测需求前提前推进 |
+| Phase 2 | 生产数据闭环 | Kafka/Redpanda、ClickHouse、MinIO/S3、OpenSearch/Qdrant、Grafana、多实例 | 在未触发规模/多消费者/生产观测需求前提前推进 |
 
 ### Qdrant 向量基础层提前通道（2026-06-21）
 
@@ -38,9 +38,9 @@
 
 - `proceed_phase0`：仅批准 Phase 0。
 - `proceed_phase0_1a`：批准 Phase 0 + Phase 1a。**当前建议最多批准到此阶段**。
-- `proceed_phase1b`：单独批准 Phase 1b；必须先确认 PostgreSQL 测试环境与 `/recommend degraded` 字段位置。
+- `proceed_phase1b`：单独批准 Phase 1b；必须先确认 MySQL 测试环境与 `/recommend degraded` 字段位置。
 - `proceed_phase1c`：单独批准 Redis/RQ/ArtifactStore/KnowledgeStore/Prometheus。
-- `proceed_phase2`：单独批准 Kafka/ClickHouse/Celery/MinIO/S3/pgvector/Grafana 等生产扩展。
+- `proceed_phase2`：单独批准 Kafka/ClickHouse/Celery/MinIO/S3/Qdrant/OpenSearch/Grafana 等生产扩展。
 
 ## 4. Phase 0 必守边界
 
@@ -63,7 +63,7 @@
 
 - 默认采用 **SQL DDL baseline**。
 - Alembic 不进入 Phase 1a，除非用户显式选择作为独立 decision。
-- 不实现 PostgreSQL runtime adapter。
+- 不实现 MySQL runtime adapter。
 - 不要求测试数据库。
 - 验证重点是 SQL 文件存在性、表/索引/约束 lint、SQLite/target schema mapping。
 
@@ -71,7 +71,7 @@
 
 进入 Phase 1b 前必须再次确认：
 
-- PostgreSQL 测试环境：本地、远程，还是可跳过集成测试。
+- MySQL 测试环境：本地、远程，还是可跳过集成测试。
 - `/recommend degraded` 放在 response body、metadata、header，还是仅 internal trace。
 - active session 是否要求跨服务重启恢复。
 
@@ -96,7 +96,7 @@
 
 ## 9. 本轮 `proceed_phase0_1a` 落地状态（2026-06-20）
 
-本轮只执行 Phase 0 + Phase 1a，未引入 PostgreSQL runtime adapter、Redis/RQ、MinIO、Prometheus、Kafka/ClickHouse、pgvector 或多实例生产化。
+本轮只执行 Phase 0 + Phase 1a，未引入 MySQL runtime adapter、Redis/RQ、MinIO、Prometheus、Kafka/ClickHouse、Qdrant/OpenSearch 或多实例生产化。
 
 已落地内容：
 
@@ -105,7 +105,7 @@
 - Retention/cleanup：在 `SQLiteJsonlServingPersistenceStore.cleanup_expired_public_records()` 中实现 session/public timeline 7 天、request log 14 天、feedback/comment 90 天的清理函数；simulation namespace 7 天作为 Phase 0 policy 常量保留，待 simulation 数据独立 namespace runtime 化。
 - Phase 1a Store contract：新增 `rs_core/serving/store_contracts.py`，固化 `LocalAuditStore` fail-open、`CanonicalFactsStore` fail-closed、`DerivedSink` fail-open/retry，并禁止 `SafeServingPersistenceStore` 包裹 strict canonical facts store。
 - Phase 1a Trace/RAG contract：固化 `http_request_id`、`operation_id`、`event_id`、`turn_id`、`artifact_manifest_id` 职责，以及 PlanningEvidence 与 FinalExplanationEvidence 分离边界。
-- Phase 1a SQL DDL baseline：新增 `configs/serving/schema/phase1a_serving_baseline.sql` 与 `sqlite_to_phase1a_mapping.json`，只作为 schema contract，不包含 Alembic 或 PostgreSQL runtime adapter。
+- Phase 1a SQL DDL baseline：新增 `configs/serving/schema/phase1a_serving_baseline.sql` 与 `sqlite_to_phase1a_mapping.json`，只作为 schema contract，不包含 Alembic 或 MySQL runtime adapter。
 
 验证证据：
 
@@ -113,4 +113,4 @@
 - `D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe -m ruff check ...`（本轮改动 Python 文件）：`All checks passed!`。
 - 独立 code-reviewer 最终复审 `APPROVE`，HIGH/MEDIUM/LOW findings 均为 0。
 
-保留边界：Phase 1b/1c/2 仍需单独批准；`.omc/plans/open-questions.md` 中 PostgreSQL 测试环境、`/recommend degraded` 字段位置、RAG evidence_status、active session 跨重启恢复、MinIO 需求仍为后续 gate。
+保留边界：Phase 1b/1c/2 仍需单独批准；`.omc/plans/open-questions.md` 中 MySQL 测试环境、`/recommend degraded` 字段位置、RAG evidence_status、active session 跨重启恢复、MinIO 需求仍为后续 gate。

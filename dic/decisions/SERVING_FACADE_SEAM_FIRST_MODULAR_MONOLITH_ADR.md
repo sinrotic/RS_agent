@@ -2,7 +2,7 @@
 
 - 日期：2026-06-14
 - 状态：Accepted
-- 决策范围：Serving 层 P0/P1 contract skeleton、facade 边界、路由不变性、治理约束
+- 决策范围：Serving 层 contract skeleton、facade 边界、runtime composition、split app 路由不变性、candidate import 分层、治理约束
 
 ## 背景
 
@@ -57,13 +57,23 @@ Serving 层收敛为以下 facade 总 seam：
 
 现有 `/recall`、`/recommend`、`/chat`、`/feedback` 的入口和职责不在本轮调整，facade 只是在现有路由之下增加更清晰的实现分层。
 
+### 6. Serving canonicalization 的补充收口
+
+- `rs_core.serving.runtime.composition` 与 `rs_core.serving.runtime.split_engines` 是 runtime 构造/cache 的 canonical owner；`api/dependencies.py` 保留 FastAPI auth、request/env helper；旧 `services/runtime.py` 已删除。
+- `rs_core.serving.api.split_factory` 和 `routers/online.py` / `routers/agent.py` 承载 split online/agent route implementation；`rs_core.serving.api.online_app`、`rs_core.serving.api.agent_app` 只做薄部署入口。
+- `RankRequest`、`RagQueryRequest` 统一放在 `rs_core.serving.schemas.models`。
+- candidate import 拆成 `candidate_import_plan.py` pure plan/normalize、`candidate_store_mysql.py` / `candidate_store_cassandra.py` backend writer、`scripts/serving/import_candidate_store_to_*.py` CLI wrapper。
+- route implementation canonicalization 不代表主 `rs_core.serving.api.factory.create_app()` 合并 split routes；`/rank`、`/rag/query` 仍不得进入 public serving 主 app。
+
 ## 边界说明
 
 - 不拆微服务。
-- 不改 `rs_core/serving/app.py` 的路由集合。
+- 不恢复旧 `rs_core/serving/app.py`；canonical app target 是 `rs_core/serving/api/app.py`。
+- 不改主 `rs_core.serving.api.factory.create_app()` 的 public route table。
 - 不把 facade 写成新的业务耦合层。
 - 不放松 ranking / pool1000 / promotion 的治理门禁。
 - 不把 RAG evidence、score、source、diagnostics 暴露到 public payload。
+- 不把 `rs_core.data.runtime.worker`、`rs_core.offline.runtime.worker` 纳入本轮 serving canonicalization。
 
 ## 影响
 
@@ -84,6 +94,10 @@ Serving 层收敛为以下 facade 总 seam：
 - `dic/decisions/SERVING_CONTRACT_OFFLINE_ONLINE_ADR.md`
 - `.omc/handoffs/team-plan-to-team-exec-service-architecture-facades.md`
 - `dic/ENGINEERING_NARRATIVE_LOG.md`
+- `dic/SERVING_ARCHITECTURE.md`
+- `tests/services/test_serving_boundary_map.py`
+- `tests/services/test_serving_reorg_compatibility.py`
+- `tests/contracts/test_architecture_migration_boundaries.py`
 
 ## 面试可讲点
 

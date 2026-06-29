@@ -5,10 +5,10 @@
 ## 1. 目录职责
 
 - `rs_core/`：核心源码，只放稳定主路、可复用业务逻辑和工程模块。
-- `rs_core/dataproc/`：召回前稳定数据底座，承载清洗、视图、校验等可复用数据处理能力。
+- `rs_core/data/pipelines/`：召回前稳定数据底座，承载清洗、视图、校验等可复用数据处理能力；旧 `rs_core/dataproc/` 已归档。
 - `rs_lab/`：实验资产层，承载尚未进入核心库但需要复用、测试和治理的召回/排序/phase/batch/sidecar 实验逻辑。
 - `scripts/`：稳定命令入口，只做参数解析与流程触发，不堆业务实现；统一使用 `main()` 和 `if __name__ == "__main__"` 入口保护。历史入口放在 `scripts/archive/`。
-- `scripts/data/`：数据处理 CLI 与编排入口，只负责参数解析、调用 `rs_core/dataproc` 或 `rs_lab` 能力、打印/写出摘要，不沉淀核心数据处理逻辑。
+- `scripts/data/`：数据处理 CLI 与编排入口，只负责参数解析、调用 `rs_core/data/pipelines` 或 `rs_lab` 能力、打印/写出摘要，不沉淀核心数据处理逻辑。
 - `configs/`：配置集中管理，避免把实验参数散落在代码里。
 - `outputs/`：运行产物、日志、评估结果和临时报告，不放源码。
 - `tests/`：测试代码，按 unit、smoke、slow、gpu、experiment、serving、frontend 等层级标记。
@@ -55,7 +55,7 @@
 ## 6. `scripts/`、`scripts/data/` 与 `rs_lab/` 使用规范
 
 - `scripts/` 只放命令入口，不放可复用业务逻辑；阶段性实验逻辑先进入 `rs_lab/`，稳定主路能力再晋升到 `rs_core/`。
-- 召回前稳定数据底座归属 `rs_core/dataproc/`；`scripts/data/` 只保留 CLI、编排、默认路径、摘要输出和入口保护。
+- 召回前稳定数据底座归属 `rs_core/data/pipelines/`；`scripts/data/` 只保留 CLI、编排、默认路径、摘要输出和入口保护。
 - 脚本中允许保留 `argparse`、默认路径、环境检查调用、调用 `rs_core.workflow` 或 `rs_lab.experiments`、最终打印/写出摘要、`main()` 和入口保护。
 - 算法、数据转换、候选生成、评估指标、实验 gate、artifact audit、registry/report 数据结构构建、被多个脚本或测试 import 的实验 helper 必须迁入 `rs_lab/` 或 `rs_core/`，不得继续堆在 `scripts/`。
 - 新测试默认 import `rs_core` 或 `rs_lab`；只有验证 CLI wrapper 入口形态时才 import `scripts`。

@@ -204,7 +204,7 @@
 | --- | --- | --- | --- | --- |
 | ItemCF/co-visit（`itemcf_weak`、`itemcf_strong`、`co_visit_fallback_repair`） | `EXECUTED_PASS` | `same_contract_verified` | `fallback` | 固定合同下有完整候选池 artifact，能提供候选覆盖，但本轮 `exclusive_hit_users=0`，不满足晋升条件 |
 | UserCF | `not_implemented_current_entrypoint` | `document_only` | `defer` | 代码检索未发现成熟 `UserCF`/`usercf` 召回入口；旧日志也记录 Swing/UserCF 没有成熟入口，不能伪造结果 |
-| ALS / BPR / implicit MF | `missing_implementation_or_dependency` | `document_only` | `defer` | 代码和依赖检索未发现 ALS/BPR/implicit MF 召回入口；`requirements-training.txt` 仅声明 `torch`，未声明 `implicit`、LightFM、Surprise、Cornac 等可直接复用的 CPU MF 库 |
+| ALS / BPR / implicit MF | `missing_implementation_or_dependency` | `document_only` | `defer` | 代码和依赖检索未发现 ALS/BPR/implicit MF 召回入口；训练依赖已迁移到 `pyproject.toml` 的 `training` optional dependencies |
 | hybrid/source blending | `EXECUTED_PASS` | `same_contract_verified` | `document_only` | 本次 pool200 experimental baseline 同时启用 co-visit、category long-tail、semantic title/category 等 source blending，但这是组合候选池评估，不是单独融合策略晋升证据 |
 
 ### 11.4 下一步

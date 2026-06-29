@@ -29,7 +29,7 @@
 ## 最小使用示例
 
 ```python
-from rs_core.agent_runtime.core import (
+from rs_core.agent.runtime_core import (
     AgentLoopInput,
     AgentPlan,
     GenericAgentLoop,

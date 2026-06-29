@@ -67,8 +67,8 @@ get_item_evidence
 
 ## 代码落点
 
-- 工具契约与 manifest：`rs_core/rsagent/tools.py`
-- 对话规划默认工具链：`rs_core/rsagent/dialogue.py`
+- 工具契约与 manifest：`rs_core/agent/tools/__init__.py`
+- 对话规划默认工具链：`rs_core/agent/dialogue/__init__.py`
 - 工具 dispatch 与内部复用：`rs_core/workflow/hybrid_environment.py`
 - public display allowlist / forbidden terms：`rs_core/display/builder.py`
 - 测试覆盖：`tests/test_agent_tools.py`、`tests/test_agent_capability_manifest.py`、`tests/test_agent_dialogue.py`、`tests/test_agent_runtime.py`、`tests/test_display_contract.py`、`tests/test_serving_smoke.py`

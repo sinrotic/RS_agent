@@ -122,7 +122,7 @@
 当前固定入口：
 
 ```bash
-./.venv/Scripts/python.exe -m rs_core.rsagent.cli \
+./.venv/Scripts/python.exe -m rs_core.agent.cli \
   --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
   --limit-users 3 \
   --simulate-two-turn \
@@ -145,7 +145,7 @@
 固定入口：
 
 ```bash
-./.venv/Scripts/python.exe -m rs_core.rsagent.cli \
+./.venv/Scripts/python.exe -m rs_core.agent.cli \
   --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
   --limit-users 3 \
   --simulate-conversation \

@@ -12,11 +12,11 @@
 - `configs/training/qwen_qlora_sft_smoke.yaml`：SFT smoke 配置，默认 `dry_run: true` 且 `sft.max_steps: 0`。
 - `configs/training/qwen_grpo_smoke.yaml`：GRPO smoke 配置，默认 `dry_run: true` 且 `grpo.max_steps: 0`。
 
-这些配置通过 `rs_core.common.config.load_config` 加载，并由 `rs_core.training.config.load_training_config` 合并安全默认值和校验。
+这些配置通过 `rs_core.common.config.load_config` 加载，并由 `rs_core.offline.training.config.load_training_config` 合并安全默认值和校验。
 
 ## 数据 contract
 
-`rs_core/training/data_contracts.py` 提供两类 synthetic smoke 样本：
+`rs_core/offline/training/data_contracts.py` 提供两类 synthetic smoke 样本：
 
 - `synthetic_sft_samples()`：镜像 `rs_core/rsagent/rollout.py` 中 `training_samples.sft_sample` 的结构。
 - `synthetic_grpo_samples()`：包装 prompt、completion、target_action 和 reward_sample，服务 GRPO reward adapter smoke。
@@ -25,7 +25,7 @@
 
 ## Reward adapter
 
-`rs_core/training/reward_adapter.py` 将 `rs_agent_reward_sample_v1` 风格的 reward/evidence 转成 GRPO 可用的标量 reward：
+`rs_core/offline/training/reward_adapter.py` 将 `rs_agent_reward_sample_v1` 风格的 reward/evidence 转成 GRPO 可用的标量 reward：
 
 - 若已有 `reward.total`，直接使用并裁剪到 `[-1, 1]`。
 - 若只有 `reward_evidence`，按现有 `rs_core/rsagent/reward.py` 的思路重建轻量分数。

@@ -43,14 +43,14 @@ deploy/local/
 | 组件 | 当前定位 | 当前状态 | 主要用途 |
 |---|---|---|---|
 | FastAPI | 服务编排层 | 已落地 | `/health`、`/ready`、推荐/反馈/session API |
-| PostgreSQL | 结构化数据服务层 | 本地基础已准备，不默认导入数据 | 商品、交互、用户序列、会话、反馈、推荐日志、artifact/eval 元信息 |
+| MySQL | 结构化数据服务层 | local/trial schema、wrapper、导入脚本已准备，默认不导入全量数据 | 商品、交互、用户序列、会话、反馈、推荐日志、artifact/eval 元信息 |
 | Qdrant | 向量数据库 | local/trial profile + env override + readiness fallback 已接入，未默认灌库 | 商品/RAG chunk/two_tower 向量检索、hybrid RAG dense backend |
 | SQLite BM25 | 本地文本检索 fallback | 已使用 | Qdrant 不可用时提供 BM25 evidence fallback |
 | Redis | 缓存/队列/短状态预留 | 暂不启动 | 后续缓存热门商品、session 加速、任务状态、轻量队列 |
 | MinIO | 对象存储 / artifact store | local/trial 可选 profile + manifest/resolver/upload dry-run 已接入 | 模型、索引、评估报告、embedding、Qdrant snapshot 等大文件 |
 | MLflow | 实验追踪 / Model Registry | manifest 预留 | 训练 run、模型版本、指标、artifact lineage |
 | vLLM / Qwen | LLM 推理服务 | 外部 OpenAI-compatible adapter 已接入，默认 disabled | 后续 Agent 策略、rerank signal、对话能力增强 |
-| Docker Compose | 本地试运行编排 | 已准备 | 本机启动 Qdrant/PostgreSQL/serving 等 local profile |
+| Docker Compose | 本地试运行编排 | 已准备 | 本机启动 Qdrant/MySQL/serving 等 local profile |
 | Kubernetes / KServe | 生产化部署预留 | 当前不做 | 后续服务编排、弹性伸缩、模型服务治理 |
 
 ---
@@ -84,20 +84,20 @@ FastAPI 当前承担：
 
 ---
 
-## 5. PostgreSQL：结构化数据服务层
+## 5. MySQL：结构化数据服务层
 
-### 为什么选 PostgreSQL
+### 为什么当前切到 MySQL
 
-PostgreSQL 是后端主数据库的成熟选择，适合存结构化业务数据：
+MySQL 是当前 local/trial SQL 结构化库主路径，适合承接商品、交互、用户序列、候选库和 Agent 服务侧事实表：
 
-- 支持标准 SQL 和复杂查询。
-- `jsonb` 适合存 Agent feedback、推荐日志、候选列表等半结构化字段。
+- 支持标准 SQL、事务和常见线上服务部署形态。
+- `JSON` 字段适合存 Agent feedback、推荐日志、候选列表等半结构化元数据。
 - 服务端并发和事务能力强于 SQLite。
 - 后续可与前端、Agent session、评估记录、artifact registry 统一打通。
 
 ### 在本项目中存什么
 
-PostgreSQL 适合存：
+MySQL 适合存：
 
 - `products`：商品基础信息。
 - `interactions`：用户行为、标签、时间窗、split。
@@ -107,18 +107,19 @@ PostgreSQL 适合存：
 - `recommendation_logs`：推荐请求和展示结果。
 - `artifact_registry`：artifact 路径、版本、hash、指标摘要。
 - `eval_runs`：评估 run 和指标摘要。
+- `item_neighbors`、`usercf_candidates`、`popular_candidates`、`category_candidates`：在线召回结构化候选。
 
 本地 schema 初始化文件：
 
 ```text
-deploy/local/postgres/init/001_schema.sql
+deploy/local/mysql/init/001_schema.sql
 ```
 
-服务侧只读访问通过 `rs_core/data/postgres_dataset.py` 的 local/trial wrapper 实现：默认关闭，开启后使用 `docker compose exec -T postgres psql` 执行白名单式轻量 `SELECT`，用于 `/ready` 的 `postgres_dataset` 状态、商品查询、用户序列和近期交互读取。该方案刻意不引入 psycopg/ORM，不打印 DSN/password；PostgreSQL 不可用时 fail-open 为 degraded，避免把可选数据层故障扩大成推荐服务不可用。
+服务侧只读访问通过 `rs_core/data/mysql_dataset.py` 的 local/trial wrapper 实现：默认关闭，开启后使用 `docker compose exec -T mysql sh -lc 'MYSQL_PWD="$MYSQL_PASSWORD" mysql ...'` 执行白名单式轻量 `SELECT`，用于 `/ready` 的 `structured_dataset` 状态、商品查询、用户序列和近期交互读取。该方案刻意不引入 ORM，不打印 DSN/password/command/stderr；MySQL 不可用时 fail-open 为 degraded，避免把可选数据层故障扩大成推荐服务不可用。
 
 ### 不适合存什么
 
-PostgreSQL 不建议直接存：
+MySQL 不建议直接存：
 
 - 原始巨大 JSONL / CSV / Parquet 文件。
 - 模型 checkpoint。
@@ -127,47 +128,36 @@ PostgreSQL 不建议直接存：
 - Qdrant snapshot。
 - 大型离线索引 artifact。
 
-这些应放在文件系统或后续 MinIO；PostgreSQL 只存路径、版本、hash 和指标摘要。
+这些应放在文件系统或后续 MinIO；MySQL 只存路径、版本、hash 和指标摘要。
 
 ### 当前状态
 
-本地 PostgreSQL 使用 Docker Compose 启动，并将数据目录 bind mount 到 D 盘项目目录：
+本地 MySQL 使用 Docker Compose 启动，并将数据目录 bind mount 到 D 盘项目目录：
 
 ```text
-data/postgres/pgdata
+db/mysql
 ```
 
 启动命令：
 
 ```bash
-docker compose -f deploy/local/docker-compose.yml --profile postgres up -d postgres
+docker compose -f deploy/local/docker-compose.yml --profile mysql up -d mysql
 ```
 
-该目录只作为 local/trial 数据库运行目录，已被 `.gitignore` 忽略；迁移或备份 dump 可临时放在 `data/postgres_migration`。如果从 Docker named volume 迁移，必须先 dump/restore 并校验行数、split 和 `interactions_without_product=0`，确认新库可用前不删除旧 volume。
-
-已采用低资源参数：
-
-```text
-shared_buffers=512MB
-work_mem=16MB
-maintenance_work_mem=256MB
-max_connections=10
-max_parallel_workers=2
-max_parallel_maintenance_workers=1
-```
+该目录只作为 local/trial 数据库运行目录，已被 `.gitignore` 忽略；迁移或备份 dump 可临时放在 `data/mysql_migration`。本地 `.env` 只保存占位或本机密钥，真实密码不得写进命令行或提交。
 
 ### 2y 数据导入策略
 
-本地磁盘不足时，不应一边保留 full/2y 文件，一边直接导入 PostgreSQL。推荐流程：
+本地磁盘不足时，不应一边保留 full/2y 文件，一边直接导入 MySQL。推荐流程：
 
 1. 远程备份 full/2y 数据。
 2. 校验远程备份完整。
 3. 本地只保留 base 或必要数据副本。
-4. 释放磁盘后启动 PostgreSQL。
+4. 释放磁盘后启动 MySQL。
 5. 先做 tiny smoke 导入。
 6. 再流式/分批导入 2y 核心结构化表。
 
-导入时不要使用一次性全量 `pandas.read_json(..., lines=True)`，而应流式读取、批量 COPY/INSERT、后建索引。
+导入时不要使用一次性全量 `pandas.read_json(..., lines=True)`，而应流式读取、批量 INSERT，必要时后建索引。
 
 ---
 
@@ -203,8 +193,8 @@ configs/artifacts/rag_qdrant_manifest.yaml
 当前已经准备：
 
 - `deploy/local/docker-compose.yml` 中的 Qdrant 服务。
-- Qdrant optional dependency profile：`requirements-serving-qdrant.txt`。
-- dense RAG embedding profile：`requirements-serving-rag-dense.txt`。
+- Qdrant optional dependency profile：`pyproject.toml` 中的 `qdrant` / `qdrant-rag` optional dependencies。
+- dense RAG embedding profile：`pyproject.toml` 中的 `qdrant-rag` optional dependencies。
 - hybrid RAG + Qdrant + BM25 fallback 配置。
 - `RS_QDRANT_*` env override，可同时覆盖 RAG/two_tower/semantic Qdrant 连接目标。
 - `/ready` Qdrant dependency / target kind / manifest / fallback 状态，且不泄漏 URL/path。
@@ -274,7 +264,7 @@ Redis 适合解决高频短状态问题：
 - session 仍是 single-process/in-memory。
 - 没有多 worker 并发服务。
 - 没有生产级任务队列。
-- 磁盘和资源优先给数据备份、PostgreSQL、Qdrant smoke。
+- 磁盘和资源优先给数据备份、MySQL、Qdrant smoke。
 
 ### 后续引入时机
 
@@ -307,16 +297,16 @@ MinIO 是 S3-compatible object storage，适合存大文件和长期产物：
 当前已从“仅预留字段”推进到 **local/trial 可选 profile + manifest resolver**：
 
 - `deploy/local/docker-compose.yml` 增加 `minio` profile，端口只绑定 loopback。
-- `rs_core/artifacts/manifest.py` 支持 manifest 读取、public-safe status、本地 sha256/size 计算和 artifact_store patch。
-- `rs_core/artifacts/resolver.py` 支持 local / `file://` / `s3://` / `minio://` URI，下载到 cache 后校验 sha256/size，并显式报告 fallback。
+- `rs_core/data/artifacts/manifest.py` 支持 manifest 读取、public-safe status、本地 sha256/size 计算和 artifact_store patch。
+- `rs_core/data/artifacts/resolver.py` 支持 local / `file://` / `s3://` / `minio://` URI，下载到 cache 后校验 sha256/size，并显式报告 fallback。
 - `scripts/artifacts/upload_to_minio.py` 支持 manifest/inventory dry-run、upload、verify；dry-run 不联网，适合作为默认验证入口。
 - 核心 Pool500、RAG、DeepFM shadow manifest 已补充 `local_path`、`artifact_uri`、`minio_uri`、`sha256`、`size_bytes`、`cache_policy`、`uploaded_at` 等字段。
 
 仍不默认上传 Qwen/LoRA，也不声明 production-ready；真实上传前需要确认本地 MinIO 已启动、bucket 已准备且密钥只保存在本地 `.env`。
 
-### 和 PostgreSQL 的关系
+### 和 MySQL 的关系
 
-PostgreSQL 存：
+MySQL 存：
 
 ```text
 artifact_id / artifact_type / path / version / sha256 / metrics_json
@@ -375,7 +365,7 @@ Qwen3.5-4B + 8-bit QLoRA SFT + GRPO
 
 ### 为什么不默认启动
 
-本机资源有限，直接启动 Qwen/vLLM 会和数据导入、Qdrant、PostgreSQL、训练任务抢资源；当前 deterministic baseline + tool orchestration 更适合先打通全链路。
+本机资源有限，直接启动 Qwen/vLLM 会和数据导入、Qdrant、MySQL、训练任务抢资源；当前 deterministic baseline + tool orchestration 更适合先打通全链路。
 
 ---
 
@@ -392,7 +382,7 @@ base 原始/基础数据
         |
         | 流式导入核心表
         v
-PostgreSQL
+MySQL
         |
         | embedding / chunk build
         v
@@ -408,7 +398,7 @@ MinIO 或远程文件系统
 
 - 保留 `amazon_2023_base` 作为本地基础数据。
 - full 数据集不再作为当前主线输入。
-- 2y 数据集用于 PostgreSQL/推荐主链路。
+- 2y 数据集用于 MySQL/推荐主链路。
 - full 和 2y 在远程备份校验后，本地可按需要删除副本释放磁盘。
 
 ---
@@ -421,7 +411,7 @@ MinIO 或远程文件系统
 
 - FastAPI serving。
 - Qdrant compose/profile/config。
-- PostgreSQL compose/schema 基础。
+- MySQL compose/schema 基础。
 - RAG manifest / BM25 fallback。
 - DeepFM shadow diagnostic contract。
 
@@ -433,11 +423,11 @@ MinIO 或远程文件系统
 - 校验远程文件数、大小、关键 manifest。
 - 本地暂不删除，等待确认。
 
-### Step 3：PostgreSQL tiny smoke
+### Step 3：MySQL tiny smoke
 
 后续执行：
 
-- 启动 PostgreSQL 空库。
+- 启动 MySQL 空库。
 - 导入小样本 products/interactions/user_sequences。
 - 验证按用户、商品、时间窗查询。
 - 验证 schema 和索引。
@@ -463,7 +453,7 @@ MinIO 或远程文件系统
 
 后续执行：
 
-- Agent 查询 PostgreSQL 中的用户历史、商品详情、反馈。
+- Agent 查询 MySQL 中的用户历史、商品详情、反馈。
 - Qdrant 提供 evidence。
 - 前端消费统一 display contract。
 
@@ -473,13 +463,13 @@ MinIO 或远程文件系统
 
 可以这样概括：
 
-> 我没有把推荐 Agent 做成一个只靠大模型输出的 demo，而是按真实推荐系统拆成数据层、召回排序层、RAG grounding 层和 Agent 编排层。结构化数据用 PostgreSQL 管，向量检索用 Qdrant 管，大文件和模型产物后续放 MinIO，实验和模型版本后续接 MLflow，Redis 作为缓存和短状态层预留。当前本地只落地 non-production MVP：FastAPI 服务、Qdrant 配置、PostgreSQL schema、BM25 fallback 和 manifest 治理，避免一上来启动重模型或全量索引，把资源风险和工程边界控制住。
+> 我没有把推荐 Agent 做成一个只靠大模型输出的 demo，而是按真实推荐系统拆成数据层、召回排序层、RAG grounding 层和 Agent 编排层。结构化数据用 MySQL 管，向量检索用 Qdrant 管，大文件和模型产物后续放 MinIO，实验和模型版本后续接 MLflow，Redis 作为缓存和短状态层预留。当前本地只落地 non-production MVP：FastAPI 服务、Qdrant 配置、MySQL schema、BM25 fallback 和 manifest 治理，避免一上来启动重模型或全量索引，把资源风险和工程边界控制住。
 
 ---
 
 ## 15. 当前明确不做
 
-- 不把 PostgreSQL 当作原始大文件仓库。
+- 不把 MySQL 当作原始大文件仓库。
 - 不把 Qdrant fallback 伪装成向量召回成功。
 - 不用 Redis 代替持久化数据库。
 - 不默认启动 MinIO/MLflow/vLLM/KServe。

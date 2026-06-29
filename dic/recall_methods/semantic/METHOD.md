@@ -171,9 +171,9 @@ D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe scripts
 
 `diagnose_semantic_description_recall.py` 的检索与打分逻辑已抽到正式模块：
 
-- `rs_core/recsys/semantic_description/scoring.py`：保留 `tokens`、`fixture_query_terms`、`evaluate_intent`、`score_record` 及 strict intent scorer，并加入 `PreparedFixture` / `PreparedRecord` 缓存。
-- `rs_core/recsys/semantic_description/retrieval.py`：保留 train-visible inverted index lookup、candidate ordered unique、record loading 与 `(-score, item_id)` 排序，并将候选合并改成流式去重。
-- `rs_core/recsys/semantic_description/engine.py`：提供 diagnostic / live retrieval 可复用入口；脚本层变成 thin wrapper。
+- `rs_core/agent/rag/semantic_description/scoring.py`：保留 `tokens`、`fixture_query_terms`、`evaluate_intent`、`score_record` 及 strict intent scorer，并加入 `PreparedFixture` / `PreparedRecord` 缓存。
+- `rs_core/agent/rag/semantic_description/retrieval.py`：保留 train-visible inverted index lookup、candidate ordered unique、record loading 与 `(-score, item_id)` 排序，并将候选合并改成流式去重。
+- `rs_core/agent/rag/semantic_description/engine.py`：提供 diagnostic / live retrieval 可复用入口；脚本层变成 thin wrapper。旧 `rs_core/recsys/semantic_description` active package 已删除。
 
 等效验证：
 

@@ -106,4 +106,4 @@ RagAgent 的职责是整理、压缩和约束商品证据，不是召回器、�
 
 ## 8. 与代码的落点
 
-当前 RecommendationAgent 的提示词落在 `rs_core/rsagent/tools.py` 的 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`，并通过 `build_agent_tool_planner_system_prompt()` 与 hidden tool manifest summary 拼接。后续首页 Agent、RagAgent 或其他专用 Agent 如果进入通用 `GenericAgentLoop`，应按本文档的标签规范维护各自 prompt，并在 adapter 层保证 public/SFT/internal projection 边界不被 prompt 文本绕过。
+当前 RecommendationAgent 的提示词落在 `rs_core/agent/tools/__init__.py` 的 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`，并通过 `build_agent_tool_planner_system_prompt()` 与 hidden tool manifest summary 拼接。旧 `rs_core/rsagent` active package 已删除；后续首页 Agent、RagAgent 或其他专用 Agent 如果进入通用 `GenericAgentLoop`，应按本文档的标签规范维护各自 prompt，并在 adapter 层保证 public/SFT/internal projection 边界不被 prompt 文本绕过。

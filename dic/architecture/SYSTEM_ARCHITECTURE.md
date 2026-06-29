@@ -296,13 +296,13 @@ Public response 不应泄露：
 
 | 大厂推荐系统能力 | 当前项目对应 |
 |---|---|
-| 数据清洗与样本构建 | `rs_core/dataproc/`、`configs/recall/*/dataset_policy.yaml` |
+| 数据清洗与样本构建 | `rs_core/data/pipelines/`、`configs/recall/*/dataset_policy.yaml` |
 | 离线召回构建 | `rs_lab/experiments/recall/`、`outputs/recall/`、source indexes |
 | Artifact / route registry | `configs/governance/current_route_registry.yaml`、method registry |
 | 在线召回服务 | `POST /recall` + `OnlinePool500Recommender.tool_retrieve_candidates()` |
 | 传统推荐接口 | `POST /recommend` |
-| Agent 编排服务 | `POST /chat`、`rs_core/rsagent/`、tool runtime |
-| RAG / evidence | `rs_core/recsys/rag/`、`query_rag`、`get_item_evidence` |
+| Agent 编排服务 | `POST /chat`、`rs_core/agent/`、tool runtime |
+| RAG / evidence | `rs_core/agent/rag/`、`query_rag`、`get_item_evidence` |
 | 展示 contract | `rs_core/display/`、React Demo |
 | 反馈闭环 | `/feedback`、Session Replay、simulation |
 | 评估与治理 | pytest、route gate、simulation batch、工程叙事日志 |

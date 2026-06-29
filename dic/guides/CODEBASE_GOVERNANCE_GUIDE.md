@@ -54,7 +54,7 @@ Agent demo / serving 默认入口晋升前，必须满足：
 - 展示层 contract 清楚，不直接依赖推荐内部临时字段。
 - Agent runtime 不直接嵌入治理细节。
 
-后续可以增加轻量 route resolver 读取 registry，为 serving 或 Agent demo 提供默认 config；但 `rs_core/rsagent/runtime.py` 应继续聚焦对话 loop、状态和诊断，不承载 registry schema、CI allowlist 或 phase 判断。
+后续可以增加轻量 route resolver 读取 registry，为 serving 或 Agent demo 提供默认 config；但 `rs_core/agent/runtime/__init__.py` 应继续聚焦对话 loop、状态和诊断，不承载 registry schema、CI allowlist 或 phase 判断。旧 `rs_core/rsagent` active package 已删除，新增 Agent runtime 能力必须进入 canonical `rs_core/agent/*`。
 
 ## 5. stable workflow promotion
 

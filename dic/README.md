@@ -44,7 +44,7 @@
 ### Agent feedback demo
 
 ```bash
-./.venv/Scripts/python.exe -m rs_core.rsagent.cli \
+./.venv/Scripts/python.exe -m rs_core.agent.cli \
   --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
   --limit-users 3 \
   --simulate-two-turn \
@@ -57,7 +57,7 @@
 ### Conversational Agent MVP demo
 
 ```bash
-./.venv/Scripts/python.exe -m rs_core.rsagent.cli \
+./.venv/Scripts/python.exe -m rs_core.agent.cli \
   --config configs/demo/hybrid_demo/hybrid_demo_electronics_1000_lopo_semantic_title.yaml \
   --limit-users 3 \
   --simulate-conversation \
@@ -89,6 +89,19 @@ Windows 本地默认使用项目虚拟环境 `.venv`。下面两条命令是当�
 ./.venv/Scripts/python.exe scripts/ci/validate_engineering_contracts.py
 ```
 
+### 迁移 / hardening 快速验证入口
+
+迁移后 hardening 默认先跑轻量边界、lint 和前端 build，不默认启动重 infra、重训练或全量评估：
+
+```bash
+./.venv/Scripts/python.exe -m pytest tests/contracts/test_architecture_migration_boundaries.py tests/services/test_serving_reorg_compatibility.py tests/agent/test_agent_runtime_contracts.py -q
+./.venv/Scripts/python.exe -m ruff check rs_core services scripts/data/engine_cli.py scripts/artifacts/engine_cli.py scripts/training/offline_engine_cli.py scripts/evaluation/offline_engine_cli.py scripts/experiments/engine_cli.py scripts/ci/generate_frontend_types.py tests/contracts/test_architecture_migration_boundaries.py
+npm --prefix frontend run build
+git diff --check
+```
+
+Docker gateway smoke 使用 `deploy/docker-compose.yml` 的 `frontend`、`online`、`agent`、`gateway` profiles，验证后必须执行 `down` 清理容器；infra profile 和 full-data/full-training 任务只在显式需要时手动或远程运行。
+
 ## 当前不做
 
 - 不把双塔向量召回默认并入主路；DSSM / YouTubeDNN 需要通过 valid/test、LOPO sanity 和 latency strict gate 后才进入人工晋升评审
@@ -106,11 +119,16 @@ Windows 本地默认使用项目虚拟环境 `.venv`。下面两条命令是当�
 3. `architecture/IMPLEMENTATION_PLAN.md`：当前实现路线和阶段边界。
 4. `architecture/TECH_STACK_SELECTION.md`：本地试运行级技术选型、组件边界和部署演进路线。
 5. `PROJECT_STRUCTURE.md`：目录职责和演进边界。
-6. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
-7. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
-8. `guides/QWEN_TRAINING_ENV_GUIDE.md`：Qwen QLoRA / SFT / GRPO 训练环境 scaffold 边界、命令和验证口径。
-9. `standards/AGENT_PROMPT_STANDARD.md`：RecommendationAgent、首页 Agent、RagAgent 等系统提示词规范。
-10. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
+6. `architecture/RS_AGENT_ARCHITECTURE_MIGRATION_PLAN.md`：五模块服务化迁移任务、完成口径和最终验收证据入口。
+7. `architecture/RS_AGENT_POST_MIGRATION_HARDENING_PLAN.md`：迁移完成后的 hardening、旧路径退役、真实主入口收束和 CI/部署强化计划。
+8. `architecture/RS_AGENT_COMPATIBILITY_BOUNDARY_STATUS.md`：旧目录兼容状态、owner 和废弃条件。
+9. `architecture/RS_AGENT_PHASE5_OFFLINE_ENTRYPOINT_CENSUS.md`：Offline Phase 5 入口、已退役 evaluation/simulation 边界与 legacy training/experiment 调用点清单。
+10. `architecture/RS_AGENT_MIGRATION_VALIDATION_EVIDENCE.md`：迁移 smoke、lint、前端 build 与边界验证证据。
+11. `phases/RANKING_LONG_RUNNING_EXPLORATION_PLAN.md`：排序长期探索路线。
+12. `OPTIMIZATION_NARRATIVE.md`：优化过程、诊断证据和阶段判断。
+13. `guides/QWEN_TRAINING_ENV_GUIDE.md`：Qwen QLoRA / SFT / GRPO 训练环境 scaffold 边界、命令和验证口径。
+14. `standards/AGENT_PROMPT_STANDARD.md`：RecommendationAgent、首页 Agent、RagAgent 等系统提示词规范。
+15. `ENGINEERING_NARRATIVE_LOG.md`：面试导向工程叙事日志。
 
 ## 文档分区
 

@@ -12,6 +12,226 @@
 - 不记录无意义的中间尝试，不堆 raw log。
 - 简单机械修改不需要单独记录。
 
+### 2026-06-29 - Two-tower source manifest 迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/two_tower_source_manifest.py` 中的 two-tower source index manifest schema、governance flags、路径安全检查与 row-count 校验迁入 `rs_core/online/recall/two_tower_source_manifest.py`，并删除旧 active module。
+
+**遇到的问题：**
+`two_tower_source_manifest.py` 是 vector index loader、two-tower source index build、recall experiments 和 tests 共同依赖的召回 artifact governance 边界。前一波 vector index 迁移后，它成为新 `rs_core/online/recall/vector_index.py` 唯一剩余的 manifest 旧依赖；继续保留在 `rs_core.recsys` 会让 online recall canonical owner 仍回流历史 namespace。
+
+**定位方式：**
+用 import census 扫描 `rs_core.recsys.two_tower_source_manifest` 调用点，覆盖 `scripts/recall/build_two_tower_source_index.py`、`rs_core/recsys/vectorstores/two_tower_source_build.py`、`rs_core/online/recall/vector_index.py`、rs_lab two-tower experiments 和 source manifest tests；用 architecture boundary test 检查 canonical import 不进入 legacy whitelist，并新增旧 path-not-exists guard。
+
+**解决方式：**
+将 `rs_core/recsys/two_tower_source_manifest.py` 物理移动为 `rs_core/online/recall/two_tower_source_manifest.py`，批量改写 active source imports 为 `rs_core.online.recall.two_tower_source_manifest`，删除旧 active module；清理 architecture whitelist 中误加入的 canonical manifest import，新增 `test_retired_recsys_two_tower_source_manifest_module_is_deleted()`；同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory，把 two_tower_source_manifest 从 recsys 剩余对象中移除。
+
+**验证结果：**
+focused two-tower manifest / vector index / architecture tests 结果 `134 passed`；Ruff 对迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.two_tower_source_manifest=[]`，并保持 `rs_core.recsys.vector_index=[]`、`rs_core.recsys.ltr=[]`、`rs_core.recsys.types=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/two_tower_source_manifest.py` 不存在、新 `rs_core/online/recall/two_tower_source_manifest.py` 存在；compileall 通过，scoped `git diff --check` 无输出，新增 diff 行 placeholder scan 为空。独立 verifier 只读复核结论为 PASS。
+
+**面试可讲点：**
+这段可以讲成“把 two-tower 召回 artifact 的治理 contract 从历史 recsys 收敛到 online recall owner”：不仅移动 manifest validator，还把 source index build、vector index loader 和实验调用点统一切到 canonical path，用 path guard、AST census、focused tests 和独立 verifier 证明 artifact governance 边界不再依赖旧 namespace。
+
+### 2026-06-29 - Vector index 主实现迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/vector_index.py` 中的 two-tower/local vector index artifact loader、向量搜索、批量搜索、归一化、dot score 与 user/item vector 读取能力迁入 `rs_core/online/recall/vector_index.py`，并删除旧 active module。
+
+**遇到的问题：**
+`vector_index.py` 是 candidate merge、two-tower query/build、recall experiments 和 tests 共同依赖的召回侧基础能力，但仍位于历史 `rs_core.recsys` namespace；迁移后新文件仍需要读取未收束的 `two_tower_source_manifest`，因此必须把该残留依赖显式登记，而不能继续把 `vector_index` 自身当成 legacy whitelist。
+
+**定位方式：**
+用 import census 扫描 `rs_core.recsys.vector_index` 调用点，覆盖 `rs_core/online/recall/candidate_merge.py`、`rs_core/recsys/two_tower_query.py`、`rs_core/recsys/vectorstores/*`、`rs_core/workflow/two_tower_training.py`、rs_lab recall experiments 和 two-tower tests；用 architecture boundary test 检查旧 path guard、新 canonical file 的 remaining dependency whitelist 和文档状态。
+
+**解决方式：**
+将 `rs_core/recsys/vector_index.py` 物理移动为 `rs_core/online/recall/vector_index.py`，批量改写 active source imports 为 `rs_core.online.recall.vector_index`，删除旧 active module；清理 candidate merge whitelist 中误加入的 canonical vector import，仅允许新 vector index 文件临时依赖 `rs_core.recsys.two_tower_source_manifest`；新增 `test_retired_recsys_vector_index_module_is_deleted()`，并同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory。
+
+**验证结果：**
+focused vector index / two-tower / architecture tests 结果 `171 passed`；Ruff 对迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.vector_index=[]`，并保持 `rs_core.recsys.ltr=[]`、`rs_core.recsys.types=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/vector_index.py` 不存在、新 `rs_core/online/recall/vector_index.py` 存在；compileall 通过，scoped `git diff --check` 无输出，新增 diff 行 placeholder scan 为空。全文件 placeholder scan 曾命中 `tests/test_two_tower_training.py` 既有 skip 字符串，非本轮新增 blocker。独立 verifier 只读复核结论为 PASS。
+
+**面试可讲点：**
+这段可以讲成“把召回侧向量检索基础设施从历史 recsys namespace 收敛到 online recall owner”：移动真实 VectorIndex 实现、改写 two-tower 与实验调用点、删除旧路径，并用 AST census、path guard、focused tests、ruff、compileall 和独立 verifier 证明本地向量召回入口已经归属 canonical online recall；同时把尚未迁的 two-tower manifest 明确为下一步边界。
+
+### 2026-06-29 - Recsys LTR 主实现迁入 Online ranking canonical owner
+
+**任务：**
+将 `rs_core/recsys/ltr.py` 中的 LTR 特征提取、线性/LightGBM 打分、pairwise/pointwise 轻量训练、feature/leakage gate 与模型读写工具迁入 `rs_core/online/ranking/ltr.py`，并删除旧 active module。
+
+**遇到的问题：**
+LTR 能力已经是 online ranking 与 COLD→DeepFM diagnostic chain 的真实排序依赖，但仍作为历史 `rs_core.recsys` module 被 ranking、workflow LTR training、rs_lab ranking/recall experiments 和 tests 共同引用；迁移时还要避免把 `rs_core.online.ranking.ltr` 这种 canonical import 留在 legacy whitelist，否则 architecture guard 会把新 owner 误标为旧依赖。
+
+**定位方式：**
+用 import census 扫描 `rs_core.recsys.ltr` 调用点，覆盖 `rs_core/online/ranking/{ranking,cold_deepfm}.py`、`rs_core/workflow/ltr_training.py`、`rs_lab/experiments/*` 和 `tests/test_ltr.py`；用 architecture boundary test 检查 whitelist、旧 path-not-exists guard 和文档治理状态。
+
+**解决方式：**
+将 `rs_core/recsys/ltr.py` 物理移动到 `rs_core/online/ranking/ltr.py`，批量改写 active source imports 为 `rs_core.online.ranking.ltr`，删除旧 active module；清理 architecture whitelist 中误加入的 canonical LTR import，新增 `test_retired_recsys_ltr_module_is_deleted()`；同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory，把 LTR 从 recsys 剩余残留对象中移除。
+
+**验证结果：**
+focused LTR/ranking/architecture tests 结果 `251 passed`；Ruff 对 LTR 迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.ltr=[]`，并保持 `rs_core.recsys.types=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/ltr.py` 不存在、新 `rs_core/online/ranking/ltr.py` 存在；compileall 通过，迁移范围 placeholder scan 为空，scoped `git diff --check` 无输出。独立 verifier 只读复核结论为 PASS。
+
+**面试可讲点：**
+这段可以讲成“把排序特征与 LTR 训练/打分工具从历史推荐底座收敛到 online ranking owner”：通过真实文件迁移、调用点清零、旧路径删除、path guard 和 focused 验证，让 online ranking 不再依赖 `rs_core.recsys.ltr`，同时保留 LightGBM 可选依赖与轻量训练 smoke 的资源安全边界。
+
+### 2026-06-29 - Recsys shared types 迁入 Common canonical owner
+
+**任务：**
+将 `rs_core/recsys/types.py` 中跨 online、agent、workflow/offline 使用的 `RecallCandidate`、`MergedCandidate`、`RankingResult`、`AgentDecision`、`EvaluationSummary` 等 shared dataclass types 迁入 `rs_core/common/recsys_types.py`，并删除旧 active module。
+
+**遇到的问题：**
+`types.py` 虽然不是单一 online 实现，但被 recall、ranking、agent rerank、evaluation、workflow 和实验入口共同依赖；如果继续留在 `rs_core.recsys`，新 canonical owner 仍会通过历史 namespace 共享基础类型。迁移还会误把 `rs_core.common.recsys_types` 写入 legacy whitelist，需要区分 canonical common import 和真正残留的 `rs_core.recsys.*` 依赖。
+
+**定位方式：**
+用 import census / grep 盘点 `rs_core.recsys.types` 调用点，并重点检查 `tests/contracts/test_architecture_migration_boundaries.py` 的 whitelist 与 path-not-exists guard；文档侧同步复核 compatibility boundary、hardening plan 和 Online Phase 2 inventory，确保 `types` 不再被列为后续 recsys 残留对象。
+
+**解决方式：**
+将旧 `rs_core/recsys/types.py` 物理移动为 `rs_core/common/recsys_types.py`，批量改写 repo 内 Python imports 为 `rs_core.common.recsys_types`，删除旧 active module；清理 architecture whitelist 中误加入的 canonical common import，仅保留真实 legacy dependency，并新增 `test_retired_recsys_types_module_is_deleted()`；同步更新架构治理文档，把后续 recsys 残留边界收窄到 ltr、vector_index、two_tower、vectorstores 和 evaluation 等仍未迁模块。
+
+**验证结果：**
+focused recsys types 迁移套件结果 `343 passed`；Ruff 对迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.types=[]`，并保持 `rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/types.py` 不存在、新 `rs_core/common/recsys_types.py` 存在；compileall 通过，迁移范围 placeholder scan 为空。`git diff --check` 仅输出既有 LF/CRLF warnings，无 whitespace error。独立 verifier 只读复核结论为 PASS；其 caveat 是未在 verifier 内重跑全部命令，但已核对现有证据和文件状态一致。
+
+**面试可讲点：**
+这段可以讲成“把跨层共享类型从历史推荐底座抽到 common 边界”：不仅改 import，还删除旧 active path、清理 legacy whitelist、防止旧路径恢复，并用 focused tests、ruff、AST census、path guard、compileall 和独立 verifier 证明 shared type owner 已真实收敛，不再把 common 类型伪装成 recsys 残留依赖。
+
+### 2026-06-29 - Pool500 artifact 主实现迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/pool500_artifacts.py` 的 pool500 candidate artifact loader、oracle/internal-field guard、per-user candidate index 与 readiness 输出主实现迁入 `rs_core/online/recall/pool500_artifacts.py`，并删除旧 active module。
+
+**遇到的问题：**
+`pool500_artifacts.py` 是 online runtime 和 online retrieval pool500 fallback provider 的真实 artifact 读取入口，但仍位于历史 `rs_core.recsys` namespace；迁移时必须保证 `/online/runtime/pool500.py`、online retrieval provider 和 artifact tests 全部切到 canonical online recall path，同时保留对 `rs_core.recsys.types` 的残留依赖为后续类型收束边界。
+
+**定位方式：**
+用 grep/AST census 盘点 `rs_core.recsys.pool500_artifacts` 调用点，重点覆盖 `rs_core/online/runtime/pool500.py`、`rs_core/online/recall/online_retrieval/providers/pool500_fallback.py` 和 `tests/test_pool500_online_artifacts.py`；用 architecture boundary tests 检查旧 module 删除 guard、新 canonical file whitelist-only 约束和 docs coverage。
+
+**解决方式：**
+将 `rs_core/recsys/pool500_artifacts.py` 物理移动到 `rs_core/online/recall/pool500_artifacts.py`，批量改写 repo 内 Python imports 为 `rs_core.online.recall.pool500_artifacts`，删除旧 active module；更新 architecture boundary，为旧 pool500 artifact module 增加 path-not-exists guard，并只允许新 canonical file 对 `rs_core.recsys.types` 的残留依赖；同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory。
+
+**验证结果：**
+focused pool500 artifact / online retrieval / online engine / architecture tests 结果 `80 passed`；Ruff 对迁移范围返回 `All checks passed!`；AST census 显示 `rs_core.recsys.pool500_artifacts=[]`，并保持 `rs_core.recsys.candidate_store=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/pool500_artifacts.py` 不存在、新 `rs_core/online/recall/pool500_artifacts.py` 存在；placeholder scan 为空，scoped `git diff --check` 无输出。独立 verifier 只读复核结论为 PASS，并补充 compileall 通过证据。生成/历史目录中的 `build/lib`、`.omc`、`outputs` 旧引用属于非 active source 噪声，不作为本波 blocker。
+
+**面试可讲点：**
+这段可以讲成“把 pool500 在线候选 artifact 读取从历史 recsys 收敛到 online recall 边界”：移动真实 loader 和安全 guard、改写 runtime/provider/test 调用点、删除旧 active module，并用 path guard、AST census、focused tests、ruff 和独立 verifier 证明线上候选池读取入口已经归属 canonical owner。
+
+### 2026-06-29 - Candidate store 主实现迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/candidate_store` 的 CandidateStore contract、Noop/Safe wrapper、MySQL/Scylla(Cassandra) backend、factory 与 row schema adapter 真实实现迁入 `rs_core/online/recall/candidate_store`，并删除旧 active package。
+
+**遇到的问题：**
+候选存储已经是 online retrieval providers 的运行时依赖，但仍物理停留在历史 `rs_core.recsys` namespace；迁移时不仅要移动 backend/factory，还要同步改写 online retrieval providers、import scripts、candidate-store tests 和 architecture whitelist，避免新 online recall 边界继续通过旧 recsys candidate_store 取数。
+
+**定位方式：**
+用 grep/AST census 盘点 `rs_core.recsys.candidate_store` 调用点，覆盖 `rs_core/online/recall/online_retrieval/providers/*`、`scripts/serving/import_candidate_store_to_{mysql,cassandra}.py`、`tests/test_candidate_store_{mysql,cassandra}.py` 与 import script tests；用 architecture boundary tests 检查旧 package 删除 guard、new entrypoint whitelist-only 约束和文档覆盖。
+
+**解决方式：**
+将 `rs_core/recsys/candidate_store/` 整包物理移动到 `rs_core/online/recall/candidate_store/`，批量改写 repo 内 Python imports 为 `rs_core.online.recall.candidate_store`，删除旧 active package；更新 `tests/contracts/test_architecture_migration_boundaries.py`，为旧 candidate_store 增加 path-not-exists guard，并只允许新 candidate_store 文件对 `rs_core.recsys.types` 的残留依赖；同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory。
+
+**验证结果：**
+focused candidate store / online retrieval / architecture tests 结果 `94 passed`；Ruff 对迁移范围返回 `All checks passed!`；AST census 显示 `rs_core.recsys.candidate_store=[]`，并保持 `rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/candidate_store/` 不存在、新 `rs_core/online/recall/candidate_store/` 存在；placeholder scan 为空，scoped `git diff --check` 无 whitespace error（仅 LF/CRLF conversion warning）。独立 verifier 只读复核结论为 PASS，并额外用 compileall 与 wheel build 验证迁移范围语法/构建链路。
+
+**面试可讲点：**
+这段可以讲成“把在线候选存储从历史推荐底座收敛到 online recall runtime 边界”：通过真实包移动、调用点清零、旧路径删除和 path guard，让 online retrieval provider 不再依赖旧 recsys candidate_store；同时保留 `types` 作为明确登记的下一步残留边界，保证架构收敛可验证、可分阶段推进。
+
+### 2026-06-29 - Candidate merge 主实现迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/candidate_merge.py` 中的候选加载、召回候选生成、source budget、seen filtering 与候选融合主实现迁入 `rs_core/online/recall/candidate_merge.py`，并删除旧 active module。
+
+**遇到的问题：**
+`candidate_merge.py` 是历史 recsys namespace 中仍被 workflow、online runtime、online retrieval provider、rs_lab experiments 和多组 tests 共同依赖的核心候选层；迁移时不能只改 online runtime，还要把实验与测试调用点统一切换到 canonical online recall path。同时新文件仍依赖 `rs_core.recsys.two_tower_query`、`rs_core.recsys.vector_index` 和 `rs_core.recsys.types`，这些属于后续收束对象，需要显式登记为本波残留白名单。
+
+**定位方式：**
+用 grep/AST census 扫描 `rs_core.recsys.candidate_merge` 调用点，覆盖 `rs_core/workflow/*`、`rs_core/online/runtime/pool500.py`、`rs_core/online/recall/online_retrieval/*`、`rs_lab/experiments/recall/*`、`scripts/serving/smoke_online_retrieval.py` 和相关 tests；architecture boundary tests 用于确认旧 path-not-exists guard 与新 canonical file 的 legacy dependency whitelist。
+
+**解决方式：**
+将 `rs_core/recsys/candidate_merge.py` 物理移动为 `rs_core/online/recall/candidate_merge.py`，批量改写 repo 内 Python imports 为 `rs_core.online.recall.candidate_merge`，删除旧 active module；更新 `tests/contracts/test_architecture_migration_boundaries.py`，为旧 candidate_merge 增加 retired path guard，并只允许新 canonical file 对 `two_tower_query` / `vector_index` / `types` 的残留依赖；同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory。
+
+**验证结果：**
+focused candidate merge 相关测试结果 `295 passed`；architecture boundary 独立复核结果 `43 passed`；Ruff 对迁移范围返回 `All checks passed!`；AST census 显示 `rs_core.recsys.candidate_merge=[]`，并保持 `rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/candidate_merge.py` 不存在、新 `rs_core/online/recall/candidate_merge.py` 存在；placeholder scan 为空，scoped `git diff --check` 无 whitespace error。独立 verifier 只读复核结论为 PASS。扩展测试中 `tests/test_hybrid_demo.py` 的 8 个失败仍是缺失历史 config，`tests/test_pool500_itemcf_method_dataset_source_adapter.py` 的 4 个失败来自 method-dataset schema 测试数据缺少 `train_only/source_method/edge_rank`，均不是本次 candidate_merge 物理迁移 blocker，需另行治理测试/历史配置债务。
+
+**面试可讲点：**
+这段可以讲成“把推荐候选生成与融合核心从历史 recsys namespace 收敛到 online recall 边界”：先用 import census 找出横跨 runtime、workflow、实验和测试的真实依赖面，再移动真实实现、清零旧 import、删除旧 active module，并通过 path guard、whitelist、focused tests、ruff 与独立 verifier 证明不是 facade-only 迁移；同时把未迁完的 two_tower/vector/type 依赖作为下一步边界显式留下。
+
+### 2026-06-29 - Online retrieval 主实现迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/online_retrieval` 的 orchestrator、provider contract、config、candidate-store providers、semantic token/vector providers 与 pool500 fallback provider 真实实现迁入 `rs_core/online/recall/online_retrieval`，并删除旧 active package。
+
+**遇到的问题：**
+`OnlinePool500Recommender` 仍通过旧 `rs_core.recsys.online_retrieval` 入口加载 candidate retrieval 编排；迁移后还需要把 tests、scripts 和 runtime 调用点统一切到 canonical online recall path，同时明确新包内对 `rs_core.recsys.types`、`candidate_merge`、`candidate_store`、`pool500_artifacts` 的依赖只是本波残留白名单，不把这些剩余 recsys 能力伪装成已迁完。
+
+**定位方式：**
+用 grep/AST census 查找 `rs_core.recsys.online_retrieval` 调用点，并通过 architecture boundary tests 检查旧路径删除 guard 与 whitelist-only 约束；focused pytest 首轮暴露 `rs_core.agent.__init__` eager import 引发 `display.builder` 与 `agent.explanation` 的循环导入，这说明迁移验证不仅要看目标包，还要覆盖 runtime import 链。
+
+**解决方式：**
+将旧 online retrieval package 物理移动到 `rs_core/online/recall/online_retrieval/`，改写 runtime、tests、scripts 和包内 self-import；删除旧 `rs_core/recsys/online_retrieval/` active path；在 architecture boundary 增加 retired path guard，并把新 online retrieval 文件的剩余 recsys 依赖登记到 whitelist；同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory。为解除验证中发现的循环导入，将 `rs_core/agent/__init__.py` 改为 lazy `__getattr__` 暴露 `AgentOrchestrationEngine`。
+
+**验证结果：**
+使用项目默认 `.venv` 运行 focused online retrieval / online engine / architecture tests，结果 `72 passed`；Ruff 对 `rs_core/online/recall/online_retrieval`、`rs_core/online/runtime/pool500.py`、`rs_core/agent/__init__.py` 和相关 tests 返回 `All checks passed!`；AST census 显示 `rs_core.recsys.online_retrieval=[]`，同时 `rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`，旧 online retrieval path 不存在、新 canonical path 存在；placeholder scan 为空，scoped `git diff --check` 无 whitespace error。独立 verifier 只读复核结论为 PASS，并补充 fresh focused evidence `60 passed`、broader compatibility evidence `93 passed`；其发现的 `build/lib/rs_core/recsys/recall/*` 属 ignored/generated build 输出，不是 tracked active source。
+
+**面试可讲点：**
+这段可以讲成“把在线召回编排从历史 recsys namespace 收敛到 online recall canonical owner”：不是保留旧 wrapper，而是移动真实 orchestrator/providers、改写主线调用点、删除旧 active package，并用 import census、path-not-exists guard、focused tests、ruff 和独立 verifier 证明迁移完成；同时把剩余 recsys 基础类型/候选存储依赖显式登记为下一波边界，避免架构治理中混淆已完成和待收束范围。
+
+### 2026-06-29 - Ranking 主实现迁入 Online canonical owner
+
+**任务：**
+将 `rs_core/recsys/ranking.py` 与 `rs_core/recsys/cold_deepfm.py` 的真实排序实现迁入 `rs_core/online/ranking/`，让 `rank_candidates()`、coarse/fine/rerank、DeepFM policy gate、COLD→DeepFM 训练/诊断链路和 online diagnostic shadow wrapper 都归属 Online canonical owner。
+
+**遇到的问题：**
+`rs_core/online/ranking/__init__.py` 原先只是 re-export `rs_core.recsys.ranking` / `rs_core.recsys.cold_deepfm` 的 facade；迁移后还需要避免 `__init__.py` 自我导入、保留 COLD→DeepFM online shadow wrapper、更新实验/测试调用点，并把 architecture whitelist 从旧 recsys ranking 依赖改成新 online ranking 对 `rs_core.recsys.ltr/types` 的剩余存量依赖。
+
+**定位方式：**
+用 import grep 和 AST census 查找 `rs_core.recsys.ranking` / `rs_core.recsys.cold_deepfm` 调用点，覆盖 workflow、evaluation、rs_lab experiments、online tests、feedback/inference/ranking tests 和 architecture boundary；focused pytest 首轮还暴露出整跑 `tests/test_hybrid_demo.py` 会命中缺失历史 config 的旧用例，因此本轮把物理迁移验证拆成 ranking core suite 与 targeted hybrid ranking tests。
+
+**解决方式：**
+将 ranking 与 COLD→DeepFM 文件物理移动到 `rs_core/online/ranking/ranking.py` 和 `rs_core/online/ranking/cold_deepfm.py`，删除旧 `rs_core/recsys/ranking.py` 与 `rs_core/recsys/cold_deepfm.py`；所有 Python 调用点改为 `rs_core.online.ranking` 或 `rs_core.online.ranking.cold_deepfm`；`__init__.py` 只 re-export canonical online modules；补 retired path guard，更新 compatibility boundary、online Phase 2 inventory、hardening plan 和 route registry。
+
+**验证结果：**
+focused ranking core tests 结果 `148 passed`，targeted hybrid ranking tests 结果 `19 passed`，architecture boundary tests 结果 `41 passed`；Ruff 为 `All checks passed!`；AST census 显示 `positive_recsys_ranking_imports=[]`、`old_ranking_exists=False`、`old_cold_deepfm_exists=False`、`new_ranking_exists=True`、`new_cold_deepfm_exists=True`；placeholder scan 为空；scoped `git diff --check` 无 whitespace error。独立 verifier 只读复核结论为 PASS。整跑 `tests/test_hybrid_demo.py` 中的缺失历史 config 失败不作为本次物理迁移 blocker，需另行治理历史配置归档/恢复问题。
+
+**面试可讲点：**
+这段可以讲成“把排序从历史 recsys namespace 迁入 online 推荐边界”：不是保留 facade，而是移动真实 ranker、改写所有主线 import、删除旧 active modules，并用 path-not-exists guard、AST census、focused tests 和独立 verifier 证明 online ranking canonical owner 已落地；同时把历史 config 缺失与本次架构迁移风险解耦，避免用无关失败阻塞物理收敛。
+
+### 2026-06-29 - RAG 主实现迁入 Agent canonical owner
+
+**任务：**
+将 `rs_core/recsys/rag` 的 schema、context、retriever、BM25、Elasticsearch、Milvus、local vector、hybrid 与 build utils 真实实现迁入 `rs_core/agent/rag`，并删除旧 active package，完成 Agent/RAG canonical owner 的物理收敛。
+
+**遇到的问题：**
+旧 `rs_core/agent/rag/__init__.py` 仍是 re-export facade，脚本、测试和 RagAgent adapter 仍存在 `rs_core.recsys.rag` 调用点；物理移动后还暴露出 `__pycache__` 残留导致旧目录删除失败、adapter eager export 可能引入循环 import、`TextEmbeddingBackend` 未从新 canonical package 暴露，以及部分测试仍期待旧 SQLite BM25 配置或旧 recall facade。
+
+**定位方式：**
+用 AST import census 和 architecture boundary tests 检查 `rs_core.recsys.rag` 正向 import；用 focused RAG pytest 暴露缺失 export、旧 whitelist 和 inventory 文档漂移；用 broader keyword collection 进一步发现 stale recall import、错误测试 import 路径和 RAG serving config 预期过期。
+
+**解决方式：**
+将 RAG 真实实现整体迁入 `rs_core/agent/rag`，内部 self-import、scripts、tests、workflow 和 RagAgent adapter 统一改为 `rs_core.agent.rag`；`__init__.py` 改为直接导出 canonical RAG core，并用 lazy `__getattr__` 暴露 `rs_core.agent.adapters.rag` 中的 RagAgent 符号以避免循环 import；删除旧 `rs_core/recsys/rag` active path，移除旧 RAG whitelist，新增 retired path guard，并同步更新 architecture/governance 文档。
+
+**验证结果：**
+focused RAG suite 曾验证 `174 passed`，扩展回归验证 `196 passed`，broader keyword suite 验证 `216 passed, 1797 deselected, 2 warnings`；后续独立 verifier 只读复核也 PASS，并补跑 architecture/contracts/RAG/agent/services 范围，得到 `40 passed`、`123 passed`、`420 passed`、`205 passed` 和 `448 passed` 等通过证据。Ruff 为 `All checks passed!`；AST census 显示 `positive_recsys_rag_imports=[]`、`old_path_exists=False`、`new_path_exists=True`；placeholder scan 为空；`git diff --check` 仅有 CRLF/LF replacement warnings，无 whitespace error。本轮未运行真实 DB 写入、训练、全量导入、GPU 或大模型任务。
+
+**面试可讲点：**
+这段可以讲成“把 RAG 从推荐底座的历史 namespace 收敛为 Agent canonical owner”：不是增加 wrapper，而是迁移真实实现、清零旧 import、删除旧 active path，并用 path-not-exists guard、AST census、focused/broader pytest 和独立 verifier 证明架构边界已经物理落地。
+
+### 2026-06-29 - Training 主实现迁入 Offline canonical owner
+
+**任务：**
+将 `rs_core/training` 中的训练配置、数据契约、Qwen loader、resource gate、SFT/GRPO/GPT SFT runner、SFT judge、reward adapter 与 multi-turn SFT generator 迁入 `rs_core/offline/training`，并删除旧 active package。
+
+**遇到的问题：**
+旧 `rs_core/offline/training/__init__.py` 只是 re-export `rs_core.training`，脚本和测试也仍直接 import 旧路径；物理迁移后还暴露出基于 `Path(__file__).parents[2]` 的项目根推导失效，会把配置解析到 `rs_core/configs/...`。
+
+**定位方式：**
+用 AST/Grep 检查 `rs_core.training` 调用点，重点覆盖 `scripts/training/*.py`、`tests/test_training_*.py`、`tests/test_gpt_sft_api.py`、`tests/agent/test_multi_turn_sft_generator.py`、`tests/offline/test_offline_engine_contracts.py` 和 architecture boundary tests；focused pytest 首轮失败集中在 `gpt_sft_config.py` 与 `multi_turn_sft_generator.py` 的配置路径解析。
+
+**解决方式：**
+将训练真实实现整体迁入 `rs_core/offline/training`，内部和外部 import 统一改为 `rs_core.offline.training.*`；`OFFLINE_DEFERRED_CONTRACT` 改为 implemented 且 `legacy_import=None`；修正迁移后项目根路径推导；删除旧 `rs_core/training`，并在 architecture boundary 增加 path-not-exists guard、移除旧 facade whitelist。
+
+**验证结果：**
+运行 `.venv/Scripts/python.exe -m pytest tests/test_training_config.py tests/test_training_data_contracts.py tests/test_training_reward_adapter.py tests/test_training_resource_gate.py tests/test_gpt_sft_api.py tests/agent/test_multi_turn_sft_generator.py tests/offline/test_offline_engine_contracts.py tests/contracts/test_architecture_migration_boundaries.py`，结果 `117 passed in 12.28s`；AST census 显示 `rs_core.training` 在 `rs_core`、`tests`、`scripts` 中无 Python import；`rs_core/training` 路径不存在。本轮未运行真实训练、模型加载、GPU 或外部 API。
+
+**面试可讲点：**
+这段可以讲成“把离线训练从兼容 facade 变成真实 canonical owner”：先用 import census 找出所有调用点，再做物理迁移和旧路径删除，最后用资源安全的 focused tests、path-not-exists guard 和文档同步证明迁移不是 facade-only。
+
 ### 2026-06-22 - RSAgent dialogue / multi-turn SFT 边界收紧
 
 **任务：**
@@ -7573,3 +7793,12 @@ Docker Compose çš„ `postgres_data:/var/lib/postgresql/data` named volume å�
 - **解决方式**：新增 `factory.py`、`dependencies.py`、`middleware.py`、`exceptions.py` 和 `routers/` 子包；`app.py` 缩小为 canonical composition root，导出 `app/create_app/get_service`；`runtime/recommendation/demo/simulation` 路由分文件管理并使用 `Depends(get_service)` 注入服务；debug/demo/simulation/recall 采用 request-time env/token gate，而不是 include-time 条件注册；BoundaryMap 改为由 `FastAPIApp` 拥有整个 `rs_core/serving/api/` 目录。
 - **验证结果**：已运行 `.venv/Scripts/python -m pytest tests/test_serving_reorg_compatibility.py tests/test_serving_boundary_map.py tests/test_serving_run_service.py tests/test_serving_smoke.py -q`，结果 `100 passed`；focused serving/agent regression suite 结果 `250 passed`；`ruff check` 与 `compileall -q rs_core/serving` 通过；独立 verifier 给出 `PASS`，code-reviewer 未发现 HIGH/CRITICAL 阻塞项。
 - **面试可讲点**：这段可以讲成“把 FastAPI 从业务中心降回 HTTP adapter”的结构化治理：保留稳定启动入口和推荐核心服务，同时引入 app factory、router 分层、FastAPI dependency override seam、request-time gate 和 route table contract，让后续新增 Agent/RAG/仿真/debug endpoint 不再把所有逻辑堆回单文件。
+
+### 2026-06-29 - Simulation 实现迁入 Offline canonical owner
+
+- **任务**：继续推进架构收敛，把 `rs_core/simulation` 的 schema、policy、presets、runner、model client 真实实现迁入 `rs_core/offline/simulation`，并删除旧 active path。
+- **遇到的问题**：此前 `rs_core/offline/simulation` 和 `rs_core/agent/simulation` 仍通过旧 `rs_core.simulation` 承接实现，容易把 Agent sandbox facade 误当成旧路径仍是主实现来源。
+- **定位方式**：用 AST import census 检查 `rs_core`、`tests`、`scripts` 中的 `rs_core.simulation` import，并核对 simulation runner/role、Agent sandbox contract、multi-turn SFT generator、serving router、offline contract 与 architecture boundary tests。
+- **解决方式**：将调用点统一改为 `rs_core.offline.simulation.*`，`rs_core.agent.simulation` 仅保留指向 canonical offline implementation 的 public facade；`OFFLINE_SIMULATION_CONTRACT` 标记为 implemented；删除旧 `rs_core/simulation`，并在 architecture boundary 中增加 path-not-exists guard、移除旧 compatibility whitelist。
+- **验证结果**：`.venv/Scripts/python.exe -m pytest tests/test_simulation_roles.py tests/test_simulation_runner.py tests/agent/test_agent_simulation_contract.py tests/agent/test_multi_turn_sft_generator.py tests/offline/test_offline_engine_contracts.py tests/contracts/test_architecture_migration_boundaries.py -q` 通过 `108 passed in 15.58s`；ruff 通过 `All checks passed!`；AST census 对 `rs_core.simulation` 无输出；old path check 输出 `rs_core/simulation absent`。
+- **面试可讲点**：这段可以讲成“把仿真从兼容旧 namespace 推进到可治理 offline owner”：先用 contract 和 focused tests 固定 public-safe scene/batch 行为，再物理删除旧路径并用 import/path guard 防回流，保证 Agent sandbox 与离线仿真共享实现但边界清晰。
