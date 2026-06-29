@@ -1,0 +1,40 @@
+# Local Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# VCS and Claude/OMC local state
+.git/
+.github/
+.claude/
+.omc/
+
+# Local data, generated artifacts, and large experiment outputs
+data/
+db/mysql/
+db/milvus/
+db/elasticsearch/
+db/scylla/
+outputs/
+build/
+dist/
+*.egg-info/
+frontend/dist/
+frontend/node_modules/
+参考/
+
+# Logs, temp files, and local-only scratch space
+*.log
+*.tmp
+tmp/
+tmp*/
+.cache/
+
+# Secrets and machine-local env files
+.env
+.env.*
+!.env.example

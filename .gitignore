@@ -34,8 +34,16 @@ data/processed/
 data/interim/
 data/postgres/
 data/postgres_migration/
-data/qdrant/
 data/scylla/
+data/qdrant/
+db/mysql/
+db/milvus/
+db/elasticsearch/
+db/scylla/
+tmp/
+tmp*/
+参考/
+java_agent/**/target/
 configs/_tmp_*.yaml
 configs/**/_tmp_*.yaml
 configs/*.local.json
@@ -69,3 +77,6 @@ Thumbs.db
 
 # Historical drafts not used by current project plan
 old_dic/
+
+# Local git worktrees
+.worktrees/
