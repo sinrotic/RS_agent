@@ -46,6 +46,13 @@ class FeedbackResponse(BaseModel):
     display: dict[str, Any]
 
 
+class RagQueryRequest(BaseModel):
+    query: str = Field(min_length=1)
+    max_chunks: int = Field(default=3, ge=1, le=20)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 FEED_EVENT_TYPES = {"click", "like", "dislike", "dwell", "show_different", "search"}
 FEED_REFRESH_ACTIONS = {"rerank_existing", "rerecall_pool500", "no_refresh", "fallback_cached_or_cold"}
 
@@ -190,6 +197,14 @@ class RecallResponse(BaseModel):
     retrieval_summary: RecallRetrievalSummary
 
 
+class RankRequest(BaseModel):
+    candidate_item_ids: list[str] = Field(default_factory=list)
+    return_top_k: int = Field(default=20, ge=1, le=500)
+    ranking_context: dict[str, Any] = Field(default_factory=dict)
+
+    model_config = ConfigDict(extra="forbid")
+
+
 class ReadinessResponse(BaseModel):
     status: str
     service: str
@@ -201,7 +216,7 @@ class ReadinessResponse(BaseModel):
     artifact_manifests: dict[str, Any] | None = None
     deepfm_shadow: dict[str, Any] | None = None
     agent_provider: dict[str, Any] | None = None
-    postgres_dataset: dict[str, Any] | None = None
+    structured_dataset: dict[str, Any] | None = None
 
 
 class SessionExportResponse(BaseModel):
@@ -284,6 +299,7 @@ __all__ = (
     "ChatResponse",
     "FeedbackRequest",
     "FeedbackResponse",
+    "RagQueryRequest",
     "FEED_EVENT_TYPES",
     "FEED_REFRESH_ACTIONS",
     "HomeFeedEventRequest",
@@ -299,6 +315,7 @@ __all__ = (
     "RecallRequest",
     "RecallRetrievalSummary",
     "RecallResponse",
+    "RankRequest",
     "ReadinessResponse",
     "SessionExportResponse",
     "DemoRoundtripRequest",

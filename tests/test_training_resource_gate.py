@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from rs_core.training.config import load_training_config
-from rs_core.training.resource_gate import (
+from rs_core.offline.training.config import load_training_config
+from rs_core.offline.training.resource_gate import (
     LocalResourceSnapshot,
     assess_qwen_resource_readiness,
     build_workload_requirement,

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from rs_core.recsys.semantic_description import SQLiteSemanticDescriptionStore, build_sqlite_semantic_description_index, diagnose
+from rs_core.agent.rag.semantic_description import SQLiteSemanticDescriptionStore, build_sqlite_semantic_description_index, diagnose
 
 pytestmark = pytest.mark.unit
 

@@ -9,8 +9,8 @@ from statistics import mean
 from typing import Any, Iterable
 
 from rs_core.common.io import iter_jsonl, read_json
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import MergedCandidate
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import MergedCandidate
 from rs_core.workflow.full_data_pool500_route_gate import CANONICAL_SOURCES, FORBIDDEN_SOURCE_LABELS, canonicalize_source_label
 from rs_core.workflow.pool500_ranking_adapter import POOL500_LINEAGE_KEY, adapt_pool500_rows_to_candidates
 

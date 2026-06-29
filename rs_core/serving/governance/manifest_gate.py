@@ -9,7 +9,7 @@ from rs_core.common.config import load_config
 ALLOWED_ARTIFACT_SCHEMA_VERSIONS: Final[frozenset[str]] = frozenset(
     {
         "rs_agent_artifact_manifest_v1",
-        "rs_agent_rag_qdrant_manifest_v1",
+        "rs_agent_rag_milvus_manifest_v1",
         "rs_agent_deepfm_shadow_manifest_v1",
     }
 )

@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, write_json
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.cold_deepfm import run_cold_deepfm_chain
+from rs_core.online.ranking.cold_deepfm import run_cold_deepfm_chain
 from rs_core.workflow.pool500_ranking_adapter import adapt_pool500_rows_to_candidates
 
 SCHEMA_VERSION = "pool500_cold_deepfm_chain_report_v1"

@@ -4,7 +4,7 @@ import re
 from typing import Any
 
 from rs_core.display.public_safety import sanitize_public_text
-from rs_core.rsagent.schema import AgentSession, AgentTurn, DisplayResponse, ItemDisplayCard
+from rs_core.agent.contracts.schema import AgentSession, AgentTurn, DisplayResponse, ItemDisplayCard
 
 DISPLAY_RECORD_ALLOWED_KEYS = {
     "schema_version",
@@ -128,9 +128,9 @@ PUBLIC_FORBIDDEN_TERMS = {
     "internal",
     "itemcf",
     "bm25",
-    "hybrid_qdrant",
+    "hybrid_milvus",
     "hybrid_bm25",
-    "qdrant",
+    "milvus",
     "retriever",
     "sqlite_bm25",
     "vector backend",

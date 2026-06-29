@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from rs_core.recsys.recall import (
+from rs_core.online.recall import (
     CANONICAL_SOURCES,
     canonicalize_source_label,
     canonicalize_source_set,
@@ -11,7 +11,7 @@ from rs_core.recsys.recall import (
     merge_candidates_with_fallback,
     unknown_source_labels,
 )
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 
 pytestmark = pytest.mark.unit
 

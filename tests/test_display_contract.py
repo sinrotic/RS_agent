@@ -8,8 +8,8 @@ from rs_core.display import (
 )
 
 pytestmark = pytest.mark.unit
-from rs_core.recsys.types import AgentDecision
-from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.common.recsys_types import AgentDecision
+from rs_core.agent.contracts.schema import AgentSession, AgentTurn, FeedbackConstraints
 
 BLOCKED_DISPLAY_KEYS = {
     "score",

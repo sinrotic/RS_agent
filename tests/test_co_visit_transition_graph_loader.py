@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.recsys.candidate_merge import (
+from rs_core.online.recall.candidate_merge import (
     co_visit_transition_candidates_for_user,
     load_co_visit_transition_graph_manifest,
 )

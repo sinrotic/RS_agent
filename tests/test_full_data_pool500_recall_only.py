@@ -233,7 +233,7 @@ def test_augcf_route_budget_policy_detects_diagnostic_variant() -> None:
 
 
 def test_augcf_route_budget_cap_removes_only_diagnostic_augcf_candidates() -> None:
-    from rs_core.recsys.types import MergedCandidate
+    from rs_core.common.recsys_types import MergedCandidate
     from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _apply_augcf_route_budget_cap
 
     candidates = [
@@ -294,7 +294,7 @@ def test_load_batch_semantic_index_respects_candidate_limit(tmp_path: Path) -> N
 
 
 def test_vector_two_tower_batch_uses_realtime_history_for_all_users(tmp_path: Path) -> None:
-    from rs_core.recsys.vector_index import load_vector_index_artifact
+    from rs_core.online.recall.vector_index import load_vector_index_artifact
     from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _precompute_two_tower_recall
 
     artifact = _write_two_tower_artifact(tmp_path / "two_tower_artifact")
@@ -316,7 +316,7 @@ def test_vector_two_tower_batch_uses_realtime_history_for_all_users(tmp_path: Pa
 
 
 def test_vector_index_search_many_limits_zero_score_ties() -> None:
-    from rs_core.recsys.vector_index import VectorIndex
+    from rs_core.online.recall.vector_index import VectorIndex
 
     index = VectorIndex(
         items={
@@ -334,8 +334,8 @@ def test_vector_index_search_many_limits_zero_score_ties() -> None:
 
 
 def test_vector_index_search_many_without_numpy_keeps_empty_query_key(monkeypatch: pytest.MonkeyPatch) -> None:
-    import rs_core.recsys.vector_index as vector_index_module
-    from rs_core.recsys.vector_index import VectorIndex
+    import rs_core.online.recall.vector_index as vector_index_module
+    from rs_core.online.recall.vector_index import VectorIndex
 
     index = VectorIndex(items={"match": {"embedding": [1.0, 0.0]}})
     monkeypatch.setattr(vector_index_module, "np", None)
@@ -364,7 +364,7 @@ def test_generation_overrides_from_source_manifests_are_applied(tmp_path: Path) 
 
 
 def test_usercf_sidecar_loader_accepts_flat_candidate_shards(tmp_path: Path) -> None:
-    from rs_core.recsys.candidate_merge import load_usercf_recall_sidecar
+    from rs_core.online.recall.candidate_merge import load_usercf_recall_sidecar
 
     empty_shard = tmp_path / "empty_usercf.jsonl"
     empty_shard.write_text("", encoding="utf-8")

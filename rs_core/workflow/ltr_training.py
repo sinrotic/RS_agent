@@ -6,9 +6,9 @@ from typing import Any
 
 from rs_core.common.config import load_config
 from rs_core.common.io import read_jsonl, write_json, write_jsonl
-from rs_core.recsys.candidate_merge import load_category_candidates, load_itemcf_by_source, load_popular_candidates, load_semantic_index
+from rs_core.online.recall.candidate_merge import load_category_candidates, load_itemcf_by_source, load_popular_candidates, load_semantic_index
 from rs_core.recsys.evaluation import heldout_positives
-from rs_core.recsys.ltr import extract_ltr_features, save_ltr_model, train_pairwise_perceptron, train_pointwise_logistic, validate_ltr_feature_contract_gate, validate_ltr_leakage_gate
+from rs_core.online.ranking.ltr import extract_ltr_features, save_ltr_model, train_pairwise_perceptron, train_pointwise_logistic, validate_ltr_feature_contract_gate, validate_ltr_leakage_gate
 from rs_core.workflow.hybrid_demo import (
     _ensure_inputs,
     _itemcf_seed_items,

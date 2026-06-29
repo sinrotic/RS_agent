@@ -10,7 +10,7 @@ from time import perf_counter
 from typing import Any
 
 from rs_core.common.io import read_json, write_json, write_jsonl
-from rs_core.recsys.candidate_merge import _semantic_categories, _semantic_score
+from rs_core.online.recall.candidate_merge import _semantic_categories, _semantic_score
 from rs_lab.experiments.recall.pool500.common.source_layout import FORBIDDEN_EVIDENCE_SCOPES, REQUIRED_SOURCE_OUTPUTS
 from rs_lab.experiments.recall.pool500.methods.semantic_title_category_expansion.builder import (
     _candidate_ids_from_inverted_index,

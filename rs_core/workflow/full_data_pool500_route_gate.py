@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.io import read_json
-from rs_core.recsys.recall import (
+from rs_core.online.recall import (
     CANONICAL_SOURCES,
     FINAL_SOURCE_WHITELIST,
     FORBIDDEN_SOURCE_LABELS,

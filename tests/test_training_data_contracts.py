@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.training.data_contracts import (
+from rs_core.offline.training.data_contracts import (
     GRPO_SAMPLE_SCHEMA_VERSION,
     SFT_SAMPLE_SCHEMA_VERSION,
     sft_messages_from_sample,

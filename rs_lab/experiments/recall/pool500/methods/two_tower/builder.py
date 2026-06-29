@@ -18,10 +18,10 @@ if str(ROOT) not in sys.path:
 from rs_core.common.config import load_config
 from rs_core.common.io import iter_jsonl, read_json, write_json
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.candidate_merge import load_two_tower_index
+from rs_core.online.recall.candidate_merge import load_two_tower_index
 from rs_core.recsys.two_tower_query import build_two_tower_query_for_user, is_seed_average_source
-from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
-from rs_core.recsys.vector_index import VectorIndex
+from rs_core.online.recall.two_tower_source_manifest import validate_two_tower_source_index_manifest
+from rs_core.online.recall.vector_index import VectorIndex
 from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir
 
 SCHEMA_VERSION = "pool500_two_tower_method_source_v1"

@@ -5,7 +5,8 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.config import load_config
-from rs_core.common.qdrant_config import merge_qdrant_config, qdrant_config_from_env
+from rs_core.common.elasticsearch_config import elasticsearch_config_from_env, merge_elasticsearch_config
+from rs_core.common.milvus_config import merge_milvus_config, milvus_config_from_env
 from rs_core.serving.facades import SERVING_GOVERNANCE_GUARDRAILS
 
 DEFAULT_CONFIG = "configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml"
@@ -88,29 +89,48 @@ def _merge_nested(base: dict[str, Any], overrides: dict[str, Any]) -> dict[str, 
     return merged
 
 
-def _qdrant_env_overrides(config: dict[str, Any]) -> dict[str, Any]:
-    env_config = qdrant_config_from_env()
+def _serving_env_overrides(config: dict[str, Any]) -> dict[str, Any]:
+    return _merge_nested(_milvus_env_overrides(config), _elasticsearch_env_overrides(config))
+
+
+def _milvus_env_overrides(config: dict[str, Any]) -> dict[str, Any]:
+    env_config = milvus_config_from_env()
     if not env_config:
         return {}
     overrides: dict[str, Any] = {}
-    _set_qdrant_override(overrides, ["rag", "hybrid", "qdrant"], config, env_config)
-    _set_qdrant_override(overrides, ["rag", "qdrant"], config, env_config)
-    _set_qdrant_override(overrides, ["online_route", "source_indexes", "two_tower", "qdrant"], config, env_config)
-    _set_qdrant_override(overrides, ["online_retrieval", "providers", "two_tower_qdrant", "qdrant"], config, env_config)
-    _set_qdrant_override(overrides, ["online_retrieval", "providers", "semantic_vector", "qdrant"], config, env_config)
-    _set_qdrant_override(overrides, ["semantic_qdrant"], config, env_config)
-    _set_qdrant_override(overrides, ["semantic_backend", "qdrant"], config, env_config)
+    _set_milvus_override(overrides, ["rag", "hybrid", "milvus"], config, env_config)
+    _set_milvus_override(overrides, ["rag", "milvus"], config, env_config)
     return overrides
 
 
-def _set_qdrant_override(overrides: dict[str, Any], path: list[str], config: dict[str, Any], env_config: dict[str, Any]) -> None:
+def _elasticsearch_env_overrides(config: dict[str, Any]) -> dict[str, Any]:
+    env_config = elasticsearch_config_from_env()
+    if not env_config:
+        return {}
+    overrides: dict[str, Any] = {}
+    _set_elasticsearch_override(overrides, ["rag", "hybrid", "elasticsearch"], config, env_config)
+    _set_elasticsearch_override(overrides, ["rag", "elasticsearch"], config, env_config)
+    return overrides
+
+
+def _set_elasticsearch_override(overrides: dict[str, Any], path: list[str], config: dict[str, Any], env_config: dict[str, Any]) -> None:
     base = _get_nested_mapping(config, path)
     if base is None:
         return
     cursor = overrides
     for key in path[:-1]:
         cursor = cursor.setdefault(key, {})
-    cursor[path[-1]] = merge_qdrant_config(base, env_config)
+    cursor[path[-1]] = merge_elasticsearch_config(base, env_config)
+
+
+def _set_milvus_override(overrides: dict[str, Any], path: list[str], config: dict[str, Any], env_config: dict[str, Any]) -> None:
+    base = _get_nested_mapping(config, path)
+    if base is None:
+        return
+    cursor = overrides
+    for key in path[:-1]:
+        cursor = cursor.setdefault(key, {})
+    cursor[path[-1]] = merge_milvus_config(base, env_config)
 
 
 def _get_nested_mapping(config: dict[str, Any], path: list[str]) -> dict[str, Any] | None:
@@ -120,5 +140,3 @@ def _get_nested_mapping(config: dict[str, Any], path: list[str]) -> dict[str, An
             return None
         cursor = cursor.get(key)
     return cursor if isinstance(cursor, dict) else None
-
-

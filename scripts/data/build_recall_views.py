@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from rs_core.dataproc.recall_views import (
+from rs_core.data.pipelines.recall_views import (
     DEFAULT_CATEGORY_TOP_K,
     DEFAULT_INPUT_DIR,
     DEFAULT_ITEM_GRAPH_MIN_SCORE,

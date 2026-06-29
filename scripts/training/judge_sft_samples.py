@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.training.sft_judge import SftJudgePolicy, judge_jsonl_file
+from rs_core.offline.training.sft_judge import SftJudgePolicy, judge_jsonl_file
 
 
 PROJECT_ROOT = ROOT

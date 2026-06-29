@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
+from rs_core.online.recall.candidate_merge import RecallCandidate, merge_candidates
 
 pytestmark = pytest.mark.unit
-from rs_core.rsagent.feedback_rerank import apply_feedback_rerank
-from rs_core.rsagent.policy import FeedbackConstraints
-from rs_core.recsys.ranking import rank_candidates
+from rs_core.agent.rerank import apply_feedback_rerank
+from rs_core.agent.feedback import FeedbackConstraints
+from rs_core.online.ranking import rank_candidates
 
 
 def test_feedback_rerank_filters_disliked_item_and_demotes_itemcf_neighbors():

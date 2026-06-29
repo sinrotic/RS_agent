@@ -16,6 +16,7 @@ TRIAL_TOKEN_ENV = "RS_TRIAL_TOKEN"
 DEBUG_TOKEN_ENV = "RS_DEBUG_TOKEN"
 SIMULATION_TOKEN_ENV = "RS_SIMULATION_TOKEN"
 ENABLE_SIMULATION_ENV = "RS_ENABLE_SIMULATION_ENDPOINTS"
+COMPATIBILITY_DEMO_NOTE = "compatibility single-process demo; canonical online HTTP entrypoint is rs_core.serving.api.online_app"
 _TRUE_VALUES = {"1", "true", "yes", "on"}
 _FALSE_VALUES = {"0", "false", "no", "off"}
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
@@ -35,6 +36,7 @@ def main() -> None:
     if args.config:
         os.environ["RS_SERVING_CONFIG"] = args.config
     _validate_serving_bind_security(args.host)
+    print(f"Serving compatibility note: {COMPATIBILITY_DEMO_NOTE}.")
     print("Starting RS Agent online service: FastAPI only; vLLM/Qwen external providers are not started by serving.")
     print("Runtime note: in-memory sessions, single process, restart loses state, not production concurrency-safe.")
     print(f"Agent inference provider status: {_agent_provider_status()}")

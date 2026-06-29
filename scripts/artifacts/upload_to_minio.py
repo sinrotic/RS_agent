@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.artifacts.manifest import (  # noqa: E402
+from rs_core.data.artifacts.manifest import (  # noqa: E402
     apply_artifact_store_patch,
     build_artifact_store_patch,
     find_local_artifact_path,
@@ -21,7 +21,7 @@ from rs_core.artifacts.manifest import (  # noqa: E402
     uploaded_timestamp,
     write_manifest,
 )
-from rs_core.artifacts.resolver import resolve_artifact  # noqa: E402
+from rs_core.data.artifacts.resolver import resolve_artifact  # noqa: E402
 
 
 def read_inventory(path: str | Path) -> list[Path]:

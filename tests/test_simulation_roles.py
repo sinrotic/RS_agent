@@ -2,7 +2,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.simulation import (
+from rs_core.offline.simulation import (
     COMMUTER_PRACTICAL,
     GIFT_BUYER,
     PRICE_SENSITIVE,
@@ -13,7 +13,7 @@ from rs_core.simulation import (
     RoleState,
     get_preset_role,
 )
-from rs_core.simulation.model_client import SimulationModelConfig, SimulationModelUnavailableError
+from rs_core.offline.simulation.model_client import SimulationModelConfig, SimulationModelUnavailableError
 
 
 def test_role_initial_prompt_includes_goal_and_preferences():

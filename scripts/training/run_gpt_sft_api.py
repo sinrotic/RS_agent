@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.training.gpt_sft_runner import run_gpt_sft
+from rs_core.offline.training.gpt_sft_runner import run_gpt_sft
 
 
 def parse_args() -> argparse.Namespace:

@@ -18,8 +18,8 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, read_json, write_json
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.candidate_merge import load_itemcf_by_source, unique_recent_items
-from rs_core.recsys.types import RecallCandidate
+from rs_core.online.recall.candidate_merge import load_itemcf_by_source, unique_recent_items
+from rs_core.common.recsys_types import RecallCandidate
 from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir
 from rs_lab.experiments.recall.run_phase1_itemcf_covisit_representative_merge_eval import _existing_ancestor
 

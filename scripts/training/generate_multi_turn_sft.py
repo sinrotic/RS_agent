@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.training.multi_turn_sft_generator import DEFAULT_CONFIG, run_multi_turn_sft_generation
+from rs_core.offline.training.multi_turn_sft_generator import DEFAULT_CONFIG, run_multi_turn_sft_generation
 
 
 def parse_args() -> argparse.Namespace:

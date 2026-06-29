@@ -8,7 +8,7 @@ import pytest
 pytestmark = [pytest.mark.experiment, pytest.mark.slow]
 
 from rs_core.common.io import write_jsonl
-from rs_core.recsys.candidate_merge import load_graph_walk_seed_recall
+from rs_core.online.recall.candidate_merge import load_graph_walk_seed_recall
 from rs_core.workflow import graph_walk_training as gwt
 
 

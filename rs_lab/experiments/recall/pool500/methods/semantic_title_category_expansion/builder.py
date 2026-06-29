@@ -18,7 +18,7 @@ import yaml
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.candidate_merge import semantic_title_category_expansion_candidates_for_user
+from rs_core.online.recall.candidate_merge import semantic_title_category_expansion_candidates_for_user
 from rs_lab.experiments.recall.pool500.common.source_layout import FORBIDDEN_EVIDENCE_SCOPES, method_output_dir
 
 ROOT = Path(__file__).resolve().parents[6]

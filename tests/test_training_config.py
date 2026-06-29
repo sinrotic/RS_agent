@@ -6,7 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.training.config import is_deferred_data_config, load_training_config, validate_training_config
+from rs_core.offline.training.config import is_deferred_data_config, load_training_config, validate_training_config
 
 
 def test_load_training_config_merges_safe_defaults() -> None:

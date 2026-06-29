@@ -7,10 +7,10 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates, metadata_neighbor_candidates_for_user, two_tower_candidates_for_user
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import MergedCandidate
-from rs_core.recsys.vector_index import VectorIndex
+from rs_core.online.recall.candidate_merge import RecallCandidate, merge_candidates, metadata_neighbor_candidates_for_user, two_tower_candidates_for_user
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import MergedCandidate
+from rs_core.online.recall.vector_index import VectorIndex
 
 
 def test_merge_dedups_sources_and_excludes_seen_items():
@@ -559,8 +559,12 @@ def test_online_service_enables_rag_explain_by_default():
     rag_config = config["rag"]
 
     assert rag_config["evidence_mode"] == "explain"
-    assert rag_config["retriever"] == "sqlite_bm25"
-    assert Path(rag_config["index_path"]).exists()
+    assert rag_config["retriever"] == "elasticsearch_bm25"
+    assert rag_config["fallback_policy"] == {
+        "enabled": True,
+        "fallback_retriever": "elasticsearch_bm25",
+        "report_fallback": True,
+    }
     manifest_path = Path(rag_config["manifest_path"])
     assert manifest_path.exists()
     assert rag_config["fields"] == ["title", "category", "main_category", "category_path", "description", "features"]
@@ -569,12 +573,13 @@ def test_online_service_enables_rag_explain_by_default():
     assert rag_config["promotion_allowed"] is False
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    assert manifest["retrieval_scope"] == "candidate_item_ids"
-    assert manifest["knowledge_base_role"] == "rag_evidence"
-    assert manifest["candidate_scoped"] is True
-    assert manifest["candidate_generation_allowed"] is False
-    assert manifest["ranking_input_replacement_allowed"] is False
-    assert manifest["promotion_allowed"] is False
+    assert manifest["retriever"] == "elasticsearch_bm25"
+    assert manifest["backend"] == "elasticsearch"
+    assert manifest["knowledge_artifact"]["metadata"]["role"] == "rag_evidence"
+    assert manifest["knowledge_artifact"]["metadata"]["candidate_scoped"] is True
+    assert manifest["governance"]["candidate_generation_allowed"] is False
+    assert manifest["governance"]["ranking_input_replacement_allowed"] is False
+    assert manifest["governance"]["promotion_allowed"] is False
 
 
 

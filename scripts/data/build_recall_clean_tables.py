@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from rs_core.dataproc.recall_clean import (
+from rs_core.data.pipelines.recall_clean import (
     DEFAULT_INPUT_MANIFEST,
     DEFAULT_MIN_ITEM_INTERACTIONS,
     DEFAULT_MIN_USER_INTERACTIONS,

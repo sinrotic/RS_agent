@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 import yaml
 
 from rs_core.common.io import iter_jsonl, read_json, write_json
-from rs_core.recsys.candidate_merge import metadata_neighbor_candidates_for_user, stable_itemcf_shard_id
+from rs_core.online.recall.candidate_merge import metadata_neighbor_candidates_for_user, stable_itemcf_shard_id
 from rs_lab.experiments.recall.pool500.common.source_layout import FORBIDDEN_EVIDENCE_SCOPES, REQUIRED_SOURCE_OUTPUTS, method_output_dir
 
 SOURCE = "co_visit_fallback_repair"
@@ -1083,7 +1083,7 @@ def _transition_candidates_for_user(
 
 
 def _candidate(item_id: str, score: float, category: str, metadata: dict[str, Any]) -> Any:
-    from rs_core.recsys.types import RecallCandidate
+    from rs_core.common.recsys_types import RecallCandidate
 
     return RecallCandidate(item_id=item_id, source=SOURCE, score=score, category=category, metadata=metadata)
 

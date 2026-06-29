@@ -12,8 +12,8 @@ if str(ROOT) not in sys.path:
 
 from rs_core.serving.application.recommendation_service import RecommendationService
 from rs_core.serving.runtime.config import DEFAULT_CONFIG
-from rs_core.simulation import DEFAULT_ROLE_POLICY, ModelDrivenRolePolicy, run_simulation_batch
-from rs_core.simulation.model_client import DEFAULT_MODEL_CONFIG_PATH, SimulationModelClient, SimulationModelUnavailableError
+from rs_core.offline.simulation import DEFAULT_ROLE_POLICY, ModelDrivenRolePolicy, run_simulation_batch
+from rs_core.offline.simulation.model_client import DEFAULT_MODEL_CONFIG_PATH, SimulationModelClient, SimulationModelUnavailableError
 
 
 def parse_args() -> argparse.Namespace:

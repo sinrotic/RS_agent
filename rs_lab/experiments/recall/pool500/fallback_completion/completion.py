@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
-from rs_core.recsys.recall import duplicate_count, merge_candidates_with_fallback
-from rs_core.recsys.types import MergedCandidate
+from rs_core.online.recall import duplicate_count, merge_candidates_with_fallback
+from rs_core.common.recsys_types import MergedCandidate
 from rs_lab.experiments.recall.pool500.fallback_completion.config import Pool500FallbackCompletionConfig
 from rs_lab.experiments.recall.pool500.fallback_completion.segment import segment_for_sequence
 from rs_lab.experiments.recall.pool500.fallback_completion.sources import iter_source_candidates

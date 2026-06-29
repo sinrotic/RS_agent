@@ -9,7 +9,7 @@ from typing import Any
 
 from rs_core.common.config import load_config
 from rs_core.common.io import read_jsonl, write_json, write_jsonl
-from rs_core.recsys.candidate_merge import (
+from rs_core.online.recall.candidate_merge import (
     load_category_candidates,
     load_graph_walk_seed_recall,
     load_item_graph_recall,
@@ -21,13 +21,13 @@ from rs_core.recsys.candidate_merge import (
     merge_for_user,
 )
 from rs_core.recsys.evaluation import evaluate, frozen_candidate_signature, heldout_positives, inspect_physical_ranking_pipeline_artifacts
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import MergedCandidate
-from rs_core.rsagent.decision import make_agent_decision
-from rs_core.rsagent.feedback_rerank import apply_feedback_rerank
-from rs_core.rsagent.inference_policy import RerankPolicyClient, apply_optional_inference_policy, resolve_inference_policy_config
-from rs_core.rsagent.policy import apply_feedback_to_candidates, normalize_feedback_input, parse_feedback
-from rs_core.rsagent.schema import FeedbackConstraints, RecommendationTurnResult
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import MergedCandidate
+from rs_core.agent.contracts import FeedbackConstraints, RecommendationTurnResult
+from rs_core.agent.decision import make_agent_decision
+from rs_core.agent.feedback import apply_feedback_to_candidates, normalize_feedback_input, parse_feedback
+from rs_core.agent.inference import RerankPolicyClient, apply_optional_inference_policy, resolve_inference_policy_config
+from rs_core.agent.rerank import apply_feedback_rerank
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -319,7 +319,7 @@ def _build_harness_inference_client(config: dict[str, Any], config_overrides: di
     policy = resolve_inference_policy_config(_merge_nested(config, config_overrides))
     if not policy.get("enabled") or policy.get("provider") != "local_transformers":
         return None
-    from rs_core.rsagent.qwen_client import QwenLocalClient
+    from rs_core.agent.model_clients import QwenLocalClient
 
     return QwenLocalClient(policy)
 

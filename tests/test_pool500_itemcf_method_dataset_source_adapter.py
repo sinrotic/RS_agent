@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.recsys.candidate_merge import load_itemcf_by_source, load_itemcf_source_manifest
+from rs_core.online.recall.candidate_merge import load_itemcf_by_source, load_itemcf_source_manifest
 from rs_lab.experiments.recall.pool500.method_dataset_to_itemcf_source import build_itemcf_source_from_method_dataset
 
 pytestmark = pytest.mark.unit

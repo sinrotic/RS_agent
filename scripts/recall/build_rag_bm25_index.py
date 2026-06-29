@@ -13,17 +13,20 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import iter_jsonl, write_json
-from rs_core.recsys.rag import (
+from rs_core.data.clients import DataClient, KnowledgeDataClient
+from rs_core.agent.rag import (
     DEFAULT_DENSE_MODEL_NAME,
+    DEFAULT_RAG_CORPUS_SCOPE,
     LOCAL_TFIDF_VECTOR_METHOD,
     LOCAL_VECTOR_METHOD,
     RAG_COMPACT_DENSE_FIELD,
+    RAG_RETRIEVAL_SCOPE,
     RAG_STANDARD_FIELDS,
     SENTENCE_TRANSFORMER_VECTOR_METHOD,
+    TextEmbeddingBackend,
     build_local_vector_index,
     build_sqlite_bm25_index,
 )
-from rs_core.recsys.rag.vector_index import DEFAULT_RAG_CORPUS_SCOPE, RAG_RETRIEVAL_SCOPE, TextEmbeddingBackend
 
 DEFAULT_FIELDS = RAG_STANDARD_FIELDS
 
@@ -88,6 +91,12 @@ def build_rag_bm25_index(
     if not vector_index_path:
         item_row_count = item_counter["count"]
     local_vector_method = _manifest_vector_method(vector_method) if vector_index_path else None
+    knowledge_artifact = KnowledgeDataClient(DataClient(project_root=ROOT)).local_rag_index_artifact(
+        "rag-sqlite-bm25",
+        index_path,
+        backend="sqlite_bm25",
+        metadata={"candidate_scoped": True},
+    )
     if vector_index_path:
         build_local_vector_index(
             vector_index_path,
@@ -109,6 +118,8 @@ def build_rag_bm25_index(
     manifest = {
         "schema_version": "rag_sqlite_bm25_index_v1",
         "created_at": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "data_client": "KnowledgeDataClient",
+        "knowledge_artifact": knowledge_artifact.to_dict(),
         "items_path": str(items_path),
         "index_path": str(index_path),
         "fields": selected_fields,

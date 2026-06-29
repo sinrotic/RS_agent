@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 from rs_lab.experiments.recall.run_pool500_learned_ranking_challenger import _challenger_config, _frozen_candidate_equality, run_pool500_learned_ranking_challenger
 
 pytestmark = pytest.mark.unit

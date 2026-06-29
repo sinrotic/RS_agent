@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.cold_deepfm import bypass_cold_rank, candidate_count_stats, rank_with_cold, rank_with_deepfm, should_apply_cold, train_cold_ranker, train_deepfm_ranker
+from rs_core.online.ranking.cold_deepfm import bypass_cold_rank, candidate_count_stats, rank_with_cold, rank_with_deepfm, train_cold_ranker, train_deepfm_ranker
 
 PASS = "PASS"
 STOP = "STOP"

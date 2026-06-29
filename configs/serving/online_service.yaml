@@ -39,7 +39,6 @@
       "swing_recall",
       "itemcf_strong",
       "itemcf_weak",
-      "two_tower",
       "semantic",
       "usercf_recall",
       "co_visit_fallback_repair"
@@ -59,10 +58,6 @@
         "enabled": true,
         "manifest_path": "outputs/recall/pool500_usercf_method_train/usercf_recall/usercf_v1_formal_route_ready/source_index_manifest.json"
       },
-      "two_tower": {
-        "enabled": true,
-        "manifest_path": "outputs/recall/pool500_method_sources/recent_2y/two_tower/sparse_aware_formal_epoch5_selected/source_index_manifest.json"
-      },
       "co_visit_fallback_repair": {
         "enabled": true,
         "manifest_path": "outputs/recall/pool500_method_sources/co_visit_fallback_repair/local_formal_co_visit_repair_20260525/source_index_manifest.json"
@@ -81,9 +76,19 @@
   },
   "rag": {
     "evidence_mode": "explain",
-    "retriever": "sqlite_bm25",
-    "index_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.sqlite",
-    "manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_bm25_compact_full.manifest.json",
+    "retriever": "elasticsearch_bm25",
+    "manifest_path": "configs/artifacts/rag_elasticsearch_bm25_manifest.yaml",
+    "fallback_policy": {
+      "enabled": true,
+      "fallback_retriever": "elasticsearch_bm25",
+      "report_fallback": true
+    },
+    "elasticsearch": {
+      "enabled": true,
+      "uri": "http://localhost:9200",
+      "index_name": "rs_agent_rag_bm25_v1",
+      "timeout": 10
+    },
     "fields": [
       "title",
       "category",
@@ -134,9 +139,6 @@
     "enabled": true,
     "mode": "local_trial_non_production",
     "providers": {
-      "two_tower_qdrant": {
-        "enabled": false
-      },
       "candidate_store_itemcf_strong": {
         "enabled": true,
         "source": "itemcf_strong",
@@ -199,7 +201,6 @@
           "swing_recall",
           "itemcf_strong",
           "itemcf_weak",
-          "two_tower",
           "semantic",
           "usercf_recall",
           "co_visit_fallback_repair"

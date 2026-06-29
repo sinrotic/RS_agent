@@ -4,9 +4,9 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
-from rs_core.rsagent.constraint_filter import apply_constraint_filter_tool, parse_constraint_filter_input
-from rs_core.rsagent.schema import FeedbackConstraints
+from rs_core.online.recall.candidate_merge import RecallCandidate, merge_candidates
+from rs_core.agent.constraint_filter import apply_constraint_filter_tool, parse_constraint_filter_input
+from rs_core.agent.contracts.schema import FeedbackConstraints
 
 
 def test_parse_constraint_filter_extracts_explicit_negative_item_and_category_constraints():

@@ -10,8 +10,8 @@ import pytest
 pytestmark = [pytest.mark.experiment, pytest.mark.gpu]
 
 from rs_core.common.io import read_json, read_jsonl, write_json, write_jsonl
-from rs_core.recsys.candidate_merge import load_two_tower_index, two_tower_candidates_for_user
-from rs_core.recsys.vector_index import VectorIndex
+from rs_core.online.recall.candidate_merge import load_two_tower_index, two_tower_candidates_for_user
+from rs_core.online.recall.vector_index import VectorIndex
 from rs_core.recsys import two_tower
 from rs_core.recsys.two_tower import save_two_tower_artifacts, train_two_tower_model
 from rs_core.workflow.two_tower_training import _attach_training_sample_negatives, _compact_training_sequence, build_two_tower_item_vocab, build_two_tower_seed_sidecar, build_two_tower_seed_sidecar_from_config, train_two_tower_recall

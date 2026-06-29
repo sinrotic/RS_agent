@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.vector_index import dot_score
+from rs_core.online.recall.vector_index import dot_score
 from rs_core.workflow.two_tower_training import train_two_tower_recall
 from scripts.recall.build_two_tower_source_index import build_two_tower_source_index
 

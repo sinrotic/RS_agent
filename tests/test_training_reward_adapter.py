@@ -4,8 +4,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.training.data_contracts import synthetic_grpo_samples
-from rs_core.training.reward_adapter import compute_grpo_reward, grpo_reward_function
+from rs_core.offline.training.data_contracts import synthetic_grpo_samples
+from rs_core.offline.training.reward_adapter import compute_grpo_reward, grpo_reward_function
 
 
 def test_compute_grpo_reward_uses_existing_total_when_present() -> None:

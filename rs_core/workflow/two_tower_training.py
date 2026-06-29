@@ -12,7 +12,7 @@ ProgressCallback = Callable[[str, dict[str, Any]], None]
 from rs_core.common.config import load_config
 from rs_core.common.io import iter_jsonl, read_json, read_jsonl, write_json, write_jsonl
 from rs_core.recsys.two_tower import save_two_tower_artifacts, train_two_tower_model
-from rs_core.recsys.vector_index import dot_score, normalize_vector
+from rs_core.online.recall.vector_index import dot_score, normalize_vector
 from rs_core.workflow.hybrid_demo import _ensure_inputs, _leave_one_positive_out_sequences, _merge_nested, _resolve_path
 
 

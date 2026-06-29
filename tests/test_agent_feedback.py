@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
+from rs_core.online.recall.candidate_merge import RecallCandidate, merge_candidates
 
 pytestmark = pytest.mark.unit
-from rs_core.rsagent.policy import FeedbackConstraints, apply_feedback_to_candidates, parse_feedback
+from rs_core.agent.feedback import FeedbackConstraints, apply_feedback_to_candidates, parse_feedback
 from rs_core.workflow.hybrid_demo import recommend_for_user
 
 

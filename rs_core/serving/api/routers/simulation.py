@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from rs_core.serving.api.dependencies import get_service, require_simulation_access, require_simulation_endpoint_enabled
 from rs_core.serving.application.recommendation_service import RecommendationService
 from rs_core.serving.schemas import SimulationBatchRequest, SimulationBatchResponse, SimulationSceneRequest, SimulationSceneResponse
-from rs_core.simulation import run_simulation_batch, run_simulation_scene
+from rs_core.offline.simulation import run_simulation_batch, run_simulation_scene
 
 router = APIRouter()
 

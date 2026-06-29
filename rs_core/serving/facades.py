@@ -4,16 +4,16 @@ from dataclasses import dataclass
 from typing import Any
 from uuid import uuid4
 
-from rs_core.display import build_display_record, build_public_timeline, validate_public_display_payload
-from rs_core.rsagent.context import ensure_session_context_state
-from rs_core.serving.persistence import NoopServingPersistenceStore, ServingPersistenceStore
-from rs_core.rsagent.long_memory import (
+from rs_core.agent.context import ensure_session_context_state
+from rs_core.agent.contracts import AgentSession
+from rs_core.agent.memory import (
     LongMemoryConfig,
     LongMemoryStore,
     hydrate_session_from_long_memory,
     snapshot_session_long_memory,
 )
-from rs_core.rsagent.schema import AgentSession
+from rs_core.display import build_display_record, build_public_timeline, validate_public_display_payload
+from rs_core.serving.persistence import NoopServingPersistenceStore, ServingPersistenceStore
 from rs_core.serving.schemas import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
 from rs_core.serving.session_summary import DisabledSessionSummaryService, SessionSummaryServiceProtocol
 

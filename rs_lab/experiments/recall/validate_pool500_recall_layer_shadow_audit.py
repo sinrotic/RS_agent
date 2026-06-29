@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import read_json, write_json
-from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
+from rs_core.online.recall.two_tower_source_manifest import validate_two_tower_source_index_manifest
 from rs_lab.experiments.recall.run_full_data_pool500_recall_only import (
     DEFAULT_LIGHTWEIGHT_VIEWS_MANIFEST,
     DEFAULT_SOURCE_MANIFESTS,

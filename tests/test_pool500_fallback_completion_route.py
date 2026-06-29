@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 from rs_lab.experiments.recall.pool500.fallback_completion import (
     Pool500FallbackCompletionConfig,
     build_completion_audit_bundle,

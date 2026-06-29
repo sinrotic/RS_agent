@@ -4,7 +4,7 @@ import argparse
 import hashlib
 import json
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any

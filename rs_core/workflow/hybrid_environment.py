@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 from dataclasses import asdict
 from hashlib import sha256
 from pathlib import Path
@@ -7,16 +8,21 @@ from time import perf_counter
 from typing import Any
 from uuid import uuid4
 
-from rs_core.agent_runtime.adapters.rag import (
+from rs_core.agent.rag import (
     RAG_AGENT_PRE_RETRIEVAL_STAGE,
+    RAG_STANDARD_FIELDS,
     RagAgentAdapter,
     RagAgentInvocation,
+    RagPolicy,
     RagQueryRewriteConfig,
     RagQueryRewriter,
+    SQLiteBM25QueryPlanningRetriever,
+    ElasticsearchBM25QueryPlanningRetriever,
+    build_query_rag_context_for_planning,
 )
-from rs_core.agent_runtime.core import AgentRuntimeConfig
+from rs_core.agent.runtime_core import AgentRuntimeConfig
 from rs_core.common.config import load_config
-from rs_core.recsys.candidate_merge import (
+from rs_core.online.recall.candidate_merge import (
     load_category_candidates,
     load_itemcf_by_source,
     load_popular_candidates,
@@ -32,16 +38,16 @@ from rs_core.workflow.hybrid_demo import (
     recommend_for_user,
 )
 from rs_core.common.io import read_json, read_jsonl
+from rs_core.data.clients import DataClient, KnowledgeDataClient
 from rs_core.display.builder import build_display_record, item_to_display_card, validate_public_display_payload
-from rs_core.recsys.rag import RAG_STANDARD_FIELDS
-from rs_core.recsys.semantic_description import (
+from rs_core.agent.rag.semantic_description import (
     DEFAULT_DOCUMENT_COUNT,
     SemanticDescriptionRecallEngine,
     retrieve_fixture_results,
     tokens,
 )
-from rs_core.recsys.types import MergedCandidate
-from rs_core.rsagent.tools import (
+from rs_core.common.recsys_types import MergedCandidate
+from rs_core.agent.tools import (
     AgentToolCall,
     AgentToolExecutionReport,
     AgentToolResult,
@@ -61,18 +67,13 @@ from rs_core.rsagent.tools import (
     validate_agent_tool_call,
     validate_rank_candidates_arguments,
 )
-from rs_core.recsys.rag import (
-    RagPolicy,
-    SQLiteBM25QueryPlanningRetriever,
-    build_query_rag_context_for_planning,
-)
-from rs_core.rsagent.context import ContextBudget, build_context_bundle
-from rs_core.rsagent.dialogue import apply_dialogue_plan, plan_dialogue_turn
-from rs_core.rsagent.inference_policy import RerankPolicyClient
-from rs_core.rsagent.llm_dialogue_planner import LLMDialoguePlanner, LLMDialoguePlannerConfig
-from rs_core.rsagent.policy import merge_feedback, normalize_feedback_input, parse_feedback
-from rs_core.rsagent.runtime import AgentRuntime
-from rs_core.rsagent.schema import AgentSession, AgentTurn
+from rs_core.agent.context import ContextBudget, build_context_bundle
+from rs_core.agent.contracts import AgentSession, AgentTurn
+from rs_core.agent.dialogue import apply_dialogue_plan, plan_dialogue_turn
+from rs_core.agent.feedback import merge_feedback, normalize_feedback_input, parse_feedback
+from rs_core.agent.inference import RerankPolicyClient
+from rs_core.agent.planner import LLMDialoguePlanner, LLMDialoguePlannerConfig
+from rs_core.agent.runtime import AgentRuntime
 from rs_core.workflow.facades import AgentOrchestrationFacade, EvidenceRAGFacade
 
 
@@ -438,8 +439,8 @@ class HybridRecommendationEnvironment:
         fields = _string_list(rag_config.get("fields")) or list(RAG_STANDARD_FIELDS)
         max_evidence_total = max(1, min(int(rag_config.get("query_support_max_evidence_total", rag_config.get("max_query_evidence_total", 8)) or 8), 20))
         max_text_chars = max(40, min(int(rag_config.get("query_support_max_text_chars", rag_config.get("max_query_text_chars", 220)) or 220), 500))
-        index_path = _rag_index_path(rag_config)
-        if not query or index_path is None or not index_path.exists():
+        retriever, retriever_name = _rag_query_planning_retriever(rag_config, fields)
+        if not query or retriever is None:
             return self.rag_query_adapter.build_query_support(
                 query=query,
                 applied=False,
@@ -456,7 +457,6 @@ class HybridRecommendationEnvironment:
             retrieval_query_source = "shadow_original_query"
         elif rewrite_result.error and rewrite_result.error != "disabled":
             retrieval_query_source = "fallback_original_query"
-        retriever = SQLiteBM25QueryPlanningRetriever(index_path, fields=fields)
         context = build_query_rag_context_for_planning(
             query=retrieval_query,
             retriever=retriever,
@@ -468,7 +468,7 @@ class HybridRecommendationEnvironment:
                 allowed_fields=fields,
             ),
             metadata={
-                "retriever": "sqlite_bm25_query_planning",
+                "retriever": retriever_name,
                 "retrieval_query_source": retrieval_query_source,
                 "retrieval_scope": "query_planning",
                 "candidate_scoped": False,
@@ -484,7 +484,7 @@ class HybridRecommendationEnvironment:
             semantic_query_hint=rewrite_result.semantic_query_hint if rewrite_result.valid else None,
             suggested_query_terms=rewrite_result.suggested_query_terms if rewrite_result.valid else None,
             metadata={
-                "retriever": "sqlite_bm25_query_planning",
+                "retriever": retriever_name,
                 "retrieval_query_source": retrieval_query_source,
                 "retrieval_query_changed": retrieval_query != query,
                 "retrieval_scope": "query_planning",
@@ -683,7 +683,7 @@ class HybridRecommendationEnvironment:
         return turn
 
     def _dialogue_only_turn(self, session: AgentSession, user_input: str, assistant_response: str) -> AgentTurn:
-        from rs_core.recsys.types import AgentDecision
+        from rs_core.common.recsys_types import AgentDecision
 
         turn = AgentTurn(
             turn_index=len(session.turns) + 1,
@@ -1650,11 +1650,50 @@ def _build_turn_rag_context(
     return EvidenceRAGFacade().build_turn_rag_context(config, query, ranked_items, final_items)
 
 
+def _rag_query_planning_retriever(rag_config: dict[str, Any], fields: list[str]) -> tuple[Any | None, str]:
+    query_planning = rag_config.get("query_planning") if isinstance(rag_config.get("query_planning"), dict) else {}
+    fallback = rag_config.get("fallback_policy") if isinstance(rag_config.get("fallback_policy"), dict) else {}
+    retriever_name = str(query_planning.get("retriever") or fallback.get("fallback_retriever") or "sqlite_bm25").strip().lower()
+    if retriever_name in {"elasticsearch", "es", "es_bm25", "elasticsearch_bm25"}:
+        elasticsearch_config = _rag_elasticsearch_config(rag_config)
+        if _has_elasticsearch_target(elasticsearch_config) and _has_elasticsearch_index(elasticsearch_config) and importlib.util.find_spec("elasticsearch") is not None:
+            return ElasticsearchBM25QueryPlanningRetriever(config=elasticsearch_config, fields=fields), "elasticsearch_bm25_query_planning"
+        legacy_path = _rag_index_path(rag_config)
+        if legacy_path is not None and legacy_path.exists():
+            return SQLiteBM25QueryPlanningRetriever(legacy_path, fields=fields), "sqlite_bm25_query_planning_legacy"
+        return None, "elasticsearch_bm25_query_planning_unavailable"
+    index_path = _rag_index_path(rag_config)
+    if index_path is not None and index_path.exists():
+        return SQLiteBM25QueryPlanningRetriever(index_path, fields=fields), "sqlite_bm25_query_planning"
+    return None, ""
+
+
+def _rag_elasticsearch_config(rag_config: dict[str, Any]) -> dict[str, Any]:
+    hybrid = rag_config.get("hybrid") if isinstance(rag_config.get("hybrid"), dict) else {}
+    config = hybrid.get("elasticsearch") if isinstance(hybrid.get("elasticsearch"), dict) else rag_config.get("elasticsearch")
+    return dict(config) if isinstance(config, dict) else {}
+
+
+def _has_elasticsearch_target(config: dict[str, Any]) -> bool:
+    return any(config.get(key) not in (None, "") for key in ("uri", "url", "hosts"))
+
+
+def _has_elasticsearch_index(config: dict[str, Any]) -> bool:
+    return any(config.get(key) not in (None, "") for key in ("index_name", "index", "alias"))
+
+
 def _rag_index_path(rag_config: dict[str, Any]) -> Path | None:
-    value = rag_config.get("index_path") or rag_config.get("bm25_index_path")
+    value = rag_config.get("legacy_bm25_index_path") or rag_config.get("index_path") or rag_config.get("bm25_index_path")
     if not value:
         return None
-    return _resolve_path(value)
+    artifact = KnowledgeDataClient(DataClient(project_root=ROOT)).local_rag_index_artifact(
+        "runtime-rag-bm25",
+        value,
+        backend="sqlite_bm25",
+        metadata={"candidate_scoped": True, "consumer": "HybridRecommendationEnvironment"},
+    )
+    adapter_contract = artifact.metadata["adapter_contract"]
+    return Path(str(adapter_contract["resource_ref"]))
 
 
 def _field_weights(value: Any) -> dict[str, float] | None:

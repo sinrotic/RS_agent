@@ -5,7 +5,7 @@ import pytest
 from rs_core.recsys.evaluation import evaluate, inspect_physical_ranking_pipeline_artifacts
 
 pytestmark = pytest.mark.unit
-from rs_core.recsys.types import MergedCandidate, RankingResult
+from rs_core.common.recsys_types import MergedCandidate, RankingResult
 
 
 def test_evaluate_core_recall_metrics_on_small_sample():

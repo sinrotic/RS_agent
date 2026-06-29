@@ -36,7 +36,7 @@ STORE_CONTRACTS: Final[dict[StoreKind, StoreContract]] = {
     ),
     StoreKind.CANONICAL_FACTS: StoreContract(
         kind=StoreKind.CANONICAL_FACTS,
-        responsibility="PostgreSQL facts for sessions, turns, feedback, request summaries, and outbox events",
+        responsibility="MySQL structured facts for sessions, turns, feedback, request summaries, and outbox events",
         failure_policy=(FailurePolicy.FAIL_CLOSED,),
         canonical_source=True,
         safe_wrapper_allowed=False,

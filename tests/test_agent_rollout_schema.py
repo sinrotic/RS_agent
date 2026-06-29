@@ -8,12 +8,12 @@ import json
 from pathlib import Path
 
 from rs_core.common.io import read_jsonl, write_jsonl
-from rs_core.recsys.rag import RAG_PARENT_PROFILE_FIELD
-from rs_core.recsys.types import AgentDecision
-from rs_core.rsagent import cli
-from rs_core.rsagent.cli import run_cli_session
-from rs_core.rsagent.rollout import turn_to_rollout_record
-from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.agent.rag import RAG_PARENT_PROFILE_FIELD
+from rs_core.common.recsys_types import AgentDecision
+from rs_core.agent import cli
+from rs_core.agent.cli import run_cli_session
+from rs_core.agent.rollout import turn_to_rollout_record
+from rs_core.agent.contracts.schema import AgentSession, AgentTurn, FeedbackConstraints
 
 
 def test_cli_simulated_two_turn_writes_rollout_schema(tmp_path: Path):
@@ -154,7 +154,7 @@ def test_rollout_metadata_summarizes_rag_context_without_raw_evidence() -> None:
     payload = json.dumps(metadata, ensure_ascii=False)
     assert "raw feature evidence" not in payload
     assert "raw parent profile" not in payload
-    for blocked in ("retriever", "bm25", "qdrant", "hybrid", "source", "score", "manifest"):
+    for blocked in ("retriever", "bm25", "hybrid", "source", "score", "manifest"):
         assert blocked not in payload.lower()
 
 

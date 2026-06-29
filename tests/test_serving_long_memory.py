@@ -8,7 +8,7 @@ import pytest
 
 from rs_core.common.io import write_jsonl
 from rs_core.display import validate_public_display_payload
-from rs_core.rsagent.long_memory import InMemoryLongMemoryStore, LongMemoryConfig
+from rs_core.agent.memory import InMemoryLongMemoryStore, LongMemoryConfig
 from rs_core.serving.application.recommendation_service import RecommendationService
 
 pytestmark = pytest.mark.serving

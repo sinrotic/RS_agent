@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from rs_core.recsys.semantic_description import (
+from rs_core.agent.rag.semantic_description import (
     candidate_ids_for_fixture,
     collect_ordered_unique_candidates,
     diagnose,

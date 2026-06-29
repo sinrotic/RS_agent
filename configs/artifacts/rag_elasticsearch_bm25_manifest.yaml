@@ -1,0 +1,60 @@
+{
+  "schema_version": "rs_agent_rag_elasticsearch_bm25_manifest_v1",
+  "artifact_id": "rag_elasticsearch_bm25_recent_window_compact_full_local_trial",
+  "artifact_type": "rag_lexical_index_manifest",
+  "stage": "local_trial_serving",
+  "backend": "elasticsearch",
+  "retriever": "elasticsearch_bm25",
+  "index_name": "rs_agent_rag_bm25_v1",
+  "source_manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_elasticsearch_bm25_full_import_manifest.json",
+  "full_import_manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_elasticsearch_bm25_full_import_manifest.json",
+  "milvus_manifest_path": "configs/artifacts/rag_milvus_manifest.yaml",
+  "indexed_chunk_count": 6515707,
+  "indexed_item_count": 864288,
+  "storage_bind_mount": "db/elasticsearch:/usr/share/elasticsearch/data",
+  "connection": {
+    "env_prefix": "RS_ELASTICSEARCH_*",
+    "uri_env": "RS_ELASTICSEARCH_URI",
+    "index_env": "RS_ELASTICSEARCH_INDEX",
+    "timeout_env": "RS_ELASTICSEARCH_TIMEOUT"
+  },
+  "knowledge_artifact": {
+    "artifact_id": "rs_agent_rag_bm25_v1",
+    "uri": "elasticsearch://rs_agent_rag_bm25_v1",
+    "kind": "rag_lexical_index",
+    "checksum": "",
+    "metadata": {
+      "backend": "elasticsearch_bm25",
+      "role": "rag_evidence",
+      "candidate_scoped": true,
+      "adapter_contract": {
+        "adapter_id": "rs_agent_rag_bm25_v1",
+        "backend": "elasticsearch_bm25",
+        "resource_ref": "elasticsearch://rs_agent_rag_bm25_v1",
+        "connection_ref": "env:RS_ELASTICSEARCH_*",
+        "read_only": true,
+        "metadata": {
+          "role": "rag_evidence",
+          "candidate_scoped": true
+        }
+      }
+    }
+  },
+  "governance": {
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false,
+    "diagnostic_only": false,
+    "public_payload_allowed": false,
+    "no_holdout": true,
+    "legacy_sqlite_rollback_enabled": false
+  },
+  "build_policy": {
+    "default_mode": "dry-run",
+    "smoke_allowed": true,
+    "live_build_requires_user_approval": true,
+    "full_index_allowed_by_default": false,
+    "full_index_requires_confirm_full_import": true,
+    "local_memory_cap_gb": 12
+  }
+}

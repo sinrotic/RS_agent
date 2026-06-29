@@ -38,7 +38,7 @@ def test_phase1a_sql_baseline_exists_without_alembic_or_runtime_adapter() -> Non
     sql = DDL_PATH.read_text(encoding="utf-8").lower()
 
     assert "no alembic" in sql
-    assert "no postgresql runtime adapter" in sql
+    assert "mysql-only structured store baseline" in sql
     assert "alembic_version" not in sql
     assert "create extension" not in sql
 

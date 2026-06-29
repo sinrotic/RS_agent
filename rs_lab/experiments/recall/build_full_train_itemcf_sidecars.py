@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import iter_jsonl, read_json, write_json
-from rs_core.recsys.candidate_merge import unique_recent_items
+from rs_core.online.recall.candidate_merge import unique_recent_items
 from rs_lab.experiments.recall.run_phase1_itemcf_covisit_representative_merge_eval import _existing_ancestor
 
 SCHEMA_VERSION = "full_train_itemcf_sidecar_v1"

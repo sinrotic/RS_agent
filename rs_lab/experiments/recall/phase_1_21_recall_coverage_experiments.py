@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.config import load_config
 from rs_core.common.io import write_jsonl
-from rs_core.recsys.candidate_merge import (
+from rs_core.online.recall.candidate_merge import (
     _category_candidates_for_user,
     _itemcf_candidates_for_user,
     _limit_candidate_pool,
@@ -40,8 +40,8 @@ from rs_core.recsys.candidate_merge import (
     two_tower_seed_candidates_for_user,
 )
 from rs_core.recsys.evaluation import evaluate, frozen_candidate_artifact
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import RecallCandidate
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import RecallCandidate
 from rs_lab.experiments.recall import phase_1_20_recall_diagnostics as diagnostics
 
 DEFAULT_CONFIG = "configs/recall/phase_1_21/phase_1_21_recall_coverage_baseline.yaml"

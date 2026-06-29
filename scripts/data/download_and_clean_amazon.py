@@ -12,7 +12,7 @@ from urllib.request import urlopen
 DATASET_NAME = "McAuley-Lab/Amazon-Reviews-2023"
 DATASET_BASE_URL = f"https://huggingface.co/datasets/{DATASET_NAME}/resolve/main"
 DEFAULT_CATEGORIES = ["Electronics", "Office_Products"]
-SCHEMA_VERSION = "1.0"
+SCHEMA_VERSION = "1.1"
 TEXT_BUCKETS = [(0, 0), (1, 19), (20, 99), (100, 499), (500, None)]
 
 
@@ -149,6 +149,7 @@ def normalize_metadata_record(category: str, record: dict[str, Any]) -> dict[str
         "categories": record.get("categories") or [],
         "description": record.get("description") or [],
         "features": record.get("features") or [],
+        "images": record.get("images") or [],
         "price": record.get("price"),
         "average_rating": record.get("average_rating"),
         "rating_number": record.get("rating_number"),

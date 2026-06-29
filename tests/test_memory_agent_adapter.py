@@ -6,15 +6,15 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.agent_runtime.adapters.memory import (
+from rs_core.agent.adapters.memory import (
     MEMORY_AGENT_POST_TURN_STAGE,
     MEMORY_AGENT_SESSION_END_STAGE,
     MemoryAgentAdapter,
     MemoryAgentConfig,
     MemoryAgentInvocation,
 )
-from rs_core.recsys.types import AgentDecision
-from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.common.recsys_types import AgentDecision
+from rs_core.agent.contracts.schema import AgentSession, AgentTurn, FeedbackConstraints
 
 
 class ExplodingMemoryRunner:
@@ -153,7 +153,7 @@ def test_memory_agent_runner_failure_is_internal_only() -> None:
 
 
 def _loop_input(user_input: str, session_id: str, turn_index: int):  # type: ignore[no-untyped-def]
-    from rs_core.agent_runtime.core import AgentLoopInput
+    from rs_core.agent.runtime_core import AgentLoopInput
 
     return AgentLoopInput(agent_name="memory_agent", user_input=user_input, session_id=session_id, state={"turn_index": turn_index}, metadata={"mode": "shadow"})
 

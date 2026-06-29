@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from rs_core.recsys.semantic_description import (
+from rs_core.agent.rag.semantic_description import (
     evaluate_intent,
     evaluate_prepared_intent,
     normalized_text,

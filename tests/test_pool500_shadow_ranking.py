@@ -10,7 +10,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 import rs_core.workflow.pool500_shadow_ranking as pool500_shadow_ranking
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 from rs_core.workflow.pool500_ranking_adapter import POOL500_LINEAGE_KEY
 from rs_core.workflow.pool500_shadow_ranking import (
     FULL_POOL500_READY,

@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.candidate_merge import load_usercf_recall_sidecar
+from rs_core.online.recall.candidate_merge import load_usercf_recall_sidecar
 from rs_lab.experiments.recall.build_full_train_usercf_sidecar import build_full_train_usercf_sidecar
 from rs_lab.experiments.recall.pool500.methods.usercf_recall.builder import build_usercf_recall_method_source
 

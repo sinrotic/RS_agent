@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from rs_core.dataproc.recent_window_materializer import (
+from rs_core.data.pipelines.recent_window_materializer import (
     DEFAULT_OUTPUT_DIR,
     DEFAULT_SEQUENCE_MAX_LEN,
     DEFAULT_SHARD_COUNT,

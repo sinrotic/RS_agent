@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.cold_deepfm import (
+from rs_core.online.ranking.cold_deepfm import (
     COLD_MODEL_TYPE,
     DEEPFM_MODEL_TYPE,
     build_cold_deepfm_training_rows,
@@ -19,7 +19,7 @@ from rs_core.recsys.cold_deepfm import (
     train_cold_ranker,
     train_deepfm_ranker,
 )
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 from rs_lab.experiments.ranking.build_cold_deepfm_ranking_training_dataset import (
     build_cold_deepfm_ranking_training_dataset_from_files,
 )

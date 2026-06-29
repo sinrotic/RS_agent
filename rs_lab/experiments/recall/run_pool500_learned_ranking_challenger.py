@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, write_json
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.ltr import (
+from rs_core.online.ranking.ltr import (
     build_ltr_feature_contract_gate_summary,
     build_ltr_leakage_gate_summary,
     extract_ltr_features,
@@ -26,8 +26,8 @@ from rs_core.recsys.ltr import (
     validate_ltr_feature_contract_gate,
     validate_ltr_leakage_gate,
 )
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import MergedCandidate
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import MergedCandidate
 from rs_core.workflow.pool500_ranking_adapter import adapt_pool500_rows_to_candidates
 from rs_core.workflow.pool500_shadow_ranking import build_pool500_fixed_ranking_comparison_configs
 

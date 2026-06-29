@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.artifacts.manifest import file_digest
-from rs_core.artifacts.resolver import ArtifactResolveError, parse_artifact_uri, resolve_artifact
+from rs_core.data.artifacts.manifest import file_digest
+from rs_core.data.artifacts.resolver import ArtifactResolveError, parse_artifact_uri, resolve_artifact
 
 pytestmark = pytest.mark.unit
 

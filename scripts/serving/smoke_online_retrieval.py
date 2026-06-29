@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.config import load_config
-from rs_core.recsys.candidate_merge import load_semantic_index
-from rs_core.recsys.online_retrieval import CandidateRetrievalOrchestrator
+from rs_core.online.recall.candidate_merge import load_semantic_index
+from rs_core.online.recall.online_retrieval import CandidateRetrievalOrchestrator
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = PROJECT_ROOT / "configs/serving/online_service.yaml"

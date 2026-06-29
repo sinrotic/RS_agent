@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from rs_core.dataproc.validation import read_json, run_recall_output_checks
+from rs_core.data.pipelines.validation import read_json, run_recall_output_checks
 
 DEFAULT_CLEAN_STATS = "./data/processed/amazon_2023_recall_clean/stats.json"
 DEFAULT_VIEW_STATS = "./data/processed/amazon_2023_recall_views/stats.json"

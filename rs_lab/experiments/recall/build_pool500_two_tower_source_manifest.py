@@ -10,8 +10,8 @@ from typing import Any
 
 from rs_core.common.config import load_config
 from rs_core.common.io import iter_jsonl, read_json, write_json
-from rs_core.recsys.candidate_merge import load_two_tower_index
-from rs_core.recsys.vector_index import VectorIndex
+from rs_core.online.recall.candidate_merge import load_two_tower_index
+from rs_core.online.recall.vector_index import VectorIndex
 from rs_core.workflow.two_tower_training import _load_item_records
 
 ROOT = Path(__file__).resolve().parents[3]

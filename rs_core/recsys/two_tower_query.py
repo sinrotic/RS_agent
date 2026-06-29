@@ -5,7 +5,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from typing import Any
 
-from rs_core.recsys.vector_index import VectorSearchIndex, average_vectors
+from rs_core.online.recall.vector_index import VectorSearchIndex, average_vectors
 
 ARTIFACT_USER_EMBEDDING_SOURCE = "artifact_user_embedding"
 NO_QUERY_SOURCE = "none"

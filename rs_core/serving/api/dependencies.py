@@ -4,13 +4,12 @@ import hmac
 import os
 import re
 import sys
-from functools import lru_cache
 from uuid import uuid4
 
 from fastapi import HTTPException, Request
 
 from rs_core.serving.application.recommendation_service import RecommendationService
-from rs_core.serving.runtime.config import DEFAULT_CONFIG
+from rs_core.serving.runtime.composition import clear_public_serving_service_cache, get_public_serving_service
 
 REQUEST_ID_HEADER = "X-Request-ID"
 REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$")
@@ -24,21 +23,16 @@ ENABLE_SIMULATION_ENV = "RS_ENABLE_SIMULATION_ENDPOINTS"
 LOCAL_DEV_DEFAULT_ALLOW = {"", "0", "false", "no"}
 
 
-@lru_cache(maxsize=1)
-def _cached_service() -> RecommendationService:
-    return RecommendationService(DEFAULT_CONFIG, config_overrides={"evaluation_mode": "public_serving"})
-
-
 def get_service() -> RecommendationService:
     app_module = sys.modules.get("rs_core.serving.api.app")
     exported_get_service = getattr(app_module, "get_service", None) if app_module is not None else None
     if exported_get_service is not None and exported_get_service is not get_service:
         return exported_get_service()
-    return _cached_service()
+    return get_public_serving_service()
 
 
 def clear_service_cache() -> None:
-    _cached_service.cache_clear()
+    clear_public_serving_service_cache()
 
 
 get_service.cache_clear = clear_service_cache  # type: ignore[attr-defined]

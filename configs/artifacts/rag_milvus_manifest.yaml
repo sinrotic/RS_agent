@@ -1,0 +1,45 @@
+{
+  "schema_version": "rs_agent_rag_milvus_manifest_v1",
+  "artifact_id": "rag_milvus_recent_window_compact_full_local_trial",
+  "artifact_type": "rag_vector_index_manifest",
+  "stage": "local_trial_serving",
+  "source_manifest_path": "outputs/agent/rag/recent_window_compact_full/rag_elasticsearch_bm25_full_import_manifest.json",
+  "migration_manifest_path": "outputs/recall/milvus_migration/qdrant_to_milvus_rag_full_patched_v2_manifest.json",
+  "milvus": {
+    "enabled": true,
+    "uri": "http://localhost:19530",
+    "deployment_mode": "docker_standalone",
+    "collection_name": "rs_agent_rag_chunks_milvus_v1",
+    "embedding_model_name": "BAAI/bge-m3",
+    "embedding_method": "sentence_transformer_dense_v1",
+    "vector_size": 1024,
+    "metric_type": "COSINE",
+    "schema_version": "milvus_rag_chunk_v1",
+    "row_count": 371616
+  },
+  "fallback_policy": {
+    "enabled": true,
+    "fallback_retriever": "elasticsearch_bm25",
+    "on_milvus_unavailable": true,
+    "on_dependency_missing": true,
+    "on_empty_vector_results": true,
+    "report_fallback": true,
+    "legacy_sqlite_rollback_enabled": false
+  },
+  "governance": {
+    "candidate_generation_allowed": false,
+    "ranking_input_replacement_allowed": false,
+    "promotion_allowed": false,
+    "diagnostic_only": false,
+    "public_payload_allowed": false,
+    "no_holdout": true
+  },
+  "build_policy": {
+    "default_mode": "migrated_from_qdrant",
+    "tiny_smoke_allowed": true,
+    "live_build_requires_user_approval": true,
+    "full_index_allowed_by_default": false,
+    "local_memory_cap_gb": 12
+  },
+  "elasticsearch_bm25_manifest_path": "configs/artifacts/rag_elasticsearch_bm25_manifest.yaml"
+}

@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
-from rs_core.recsys.types import RecallCandidate, MergedCandidate
+from rs_core.common.recsys_types import RecallCandidate, MergedCandidate
 
 EXPECTED_VIEW_FILES = {
     "manifest": "manifest.json",

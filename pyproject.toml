@@ -17,22 +17,48 @@ dev = [
     "pytest",
     "ruff",
 ]
-qdrant = [
-    "qdrant-client",
+serving = [
+    "fastapi",
+    "uvicorn",
+    "httpx",
 ]
-qdrant-rag = [
-    "qdrant-client",
+milvus = [
+    "pymilvus",
+    "milvus-lite",
+]
+milvus-rag = [
+    "pymilvus",
+    "milvus-lite",
     "sentence-transformers",
 ]
 artifacts = [
     "minio",
 ]
+elasticsearch = [
+    "elasticsearch>=8,<9",
+]
 cassandra = [
     "cassandra-driver",
 ]
+training = [
+    "torch",
+    "scikit-learn",
+    "sentence-transformers",
+    "xgboost",
+    "lightgbm",
+    "implicit",
+    "lightfm",
+    "transformers>=4.57.0",
+    "accelerate",
+    "safetensors",
+    "datasets",
+    "peft",
+    "trl",
+    "bitsandbytes",
+]
 
 [tool.setuptools.packages.find]
-include = ["rs_core*"]
+include = ["rs_core*", "services*"]
 
 [tool.pytest.ini_options]
 markers = [
@@ -48,7 +74,7 @@ markers = [
 [tool.ruff]
 target-version = "py310"
 line-length = 100
-src = ["rs_core", "scripts", "tests"]
+src = ["rs_core", "services", "scripts", "tests"]
 
 [tool.ruff.lint]
 select = ["F"]

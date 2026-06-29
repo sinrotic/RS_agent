@@ -15,7 +15,7 @@ routes:
     status: current_engineering_main
     authority_refs: ["dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md", "dic/ENGINEERING_NARRATIVE_LOG.md"]
     config_paths: []
-    workflow_paths: ["rs_core/recsys/cold_deepfm.py", "rs_core/workflow/online_recommendation.py"]
+    workflow_paths: ["rs_core/online/ranking/cold_deepfm.py", "rs_core/online/ranking/ranking.py"]
     script_paths: ["rs_lab/experiments/ranking/run_cold_deepfm_offline_train_eval.py"]
     required_output_paths: ["outputs/ranking/cold_full_formal_20260620_existing_deepfm/cold_model.json", "outputs/ranking/cold_full_formal_20260620_existing_deepfm/deepfm_model.json", "outputs/ranking/cold_full_formal_20260620_existing_deepfm/manifest.json", "outputs/ranking/cold_full_formal_20260620_existing_deepfm/comparison.json"]
     promotion_gate_ref: dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md
@@ -28,7 +28,7 @@ routes:
     status: provisional_current
     authority_refs: ["dic/README.md", "dic/PROJECT_STRUCTURE.md"]
     config_paths: ["configs/demo/hybrid_demo/hybrid_demo_electronics_10000_lopo_semantic_title.yaml"]
-    workflow_paths: ["rs_core/serving/application/recommendation_service.py", "rs_core/rsagent/runtime.py"]
+    workflow_paths: ["rs_core/serving/application/recommendation_service.py", "rs_core/agent/runtime/__init__.py"]
     script_paths: ["scripts/serving/run_service.py", "scripts/evaluation/run_simulation_evaluation.py"]
     required_output_paths: []
     promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion

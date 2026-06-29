@@ -12,7 +12,7 @@ import rs_core.serving.api.app as serving_app
 from rs_core.serving.application.recommendation_service import RecommendationService
 from rs_core.serving.persistence import SQLiteJsonlServingPersistenceStore
 from rs_core.serving.session_summary import FakeLLMSessionSummaryService
-from tests.test_serving_smoke import _write_serving_fixture
+from tests.services.test_serving_smoke import _write_serving_fixture
 
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]
 

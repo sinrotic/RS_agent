@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[4]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.recsys.semantic_description import (  # noqa: E402
+from rs_core.agent.rag.semantic_description import (  # noqa: E402
     DEFAULT_DOCUMENT_COUNT,
     FIELD_WEIGHTS,
     GENERIC_TOKENS,

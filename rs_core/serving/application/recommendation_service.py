@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from rs_core.agent.contracts import AgentSession
+from rs_core.agent.memory import LongMemoryConfig, LongMemoryStore, build_long_memory_store
 from rs_core.common.config import load_config
-from rs_core.rsagent.long_memory import LongMemoryConfig, LongMemoryStore, build_long_memory_store
-from rs_core.rsagent.schema import AgentSession
 from rs_core.serving.facades import (
     FeedbackSessionFacade,
     FeedRefreshFacade,
@@ -14,13 +14,13 @@ from rs_core.serving.facades import (
     RecallFacade,
     feedback_prompt as _facade_feedback_prompt,
 )
-from rs_core.serving.infrastructure.stores.postgres_dataset import (
-    PostgresDatasetStore,
-    build_postgres_dataset_store_from_env,
-    ensure_safe_postgres_dataset_store,
+from rs_core.serving.infrastructure.stores.structured_dataset import (
+    StructuredDatasetStore,
+    build_structured_dataset_store_from_env,
+    ensure_safe_structured_dataset_store,
 )
 from rs_core.serving.persistence import ServingPersistenceStore, ensure_safe_persistence_store
-from rs_core.serving.runtime.config import DEFAULT_CONFIG, _merge_nested, _qdrant_env_overrides, _validate_serving_config, resolve_serving_config
+from rs_core.serving.runtime.config import DEFAULT_CONFIG, _merge_nested, _serving_env_overrides, _validate_serving_config, resolve_serving_config
 from rs_core.serving.runtime.readiness import (
     _public_agent_provider_readiness,
     _public_artifact_manifest_readiness,
@@ -31,8 +31,8 @@ from rs_core.serving.runtime.readiness import (
 )
 from rs_core.serving.schemas import HomeFeedEventRequest, RecallRequest, RecommendFromSequenceRequest
 from rs_core.serving.session_summary import SessionSummaryServiceProtocol, build_session_summary_service
+from rs_core.online.runtime import build_online_pool500_recommender
 from rs_core.workflow.hybrid_environment import HybridRecommendationEnvironment
-from rs_core.workflow.online_recommendation import OnlinePool500Recommender
 
 
 @dataclass
@@ -65,25 +65,25 @@ class RecommendationService:
         long_memory_store: LongMemoryStore | None = None,
         persistence_store: ServingPersistenceStore | None = None,
         session_summary_service: SessionSummaryServiceProtocol | None = None,
-        postgres_dataset_store: PostgresDatasetStore | None = None,
+        structured_dataset_store: StructuredDatasetStore | None = None,
     ) -> None:
         resolved_config = resolve_serving_config(config)
         effective_config = load_config(resolved_config)
         if config_overrides:
             effective_config = _merge_nested(effective_config, config_overrides)
-        qdrant_overrides = _qdrant_env_overrides(effective_config)
-        if qdrant_overrides:
-            effective_config = _merge_nested(effective_config, qdrant_overrides)
-        effective_overrides = _merge_nested(config_overrides or {}, qdrant_overrides) if qdrant_overrides else config_overrides
+        env_overrides = _serving_env_overrides(effective_config)
+        if env_overrides:
+            effective_config = _merge_nested(effective_config, env_overrides)
+        effective_overrides = _merge_nested(config_overrides or {}, env_overrides) if env_overrides else config_overrides
         _validate_serving_config(effective_config)
         self.env = HybridRecommendationEnvironment.from_config(resolved_config, limit_users=limit_users, config_overrides=effective_overrides)
-        self.online_recommender = OnlinePool500Recommender.from_environment(self.env)
+        self.online_recommender = build_online_pool500_recommender(self.env)
         self.env.online_recommender = self.online_recommender
         self.long_memory_config = long_memory_config or LongMemoryConfig(enabled=False)
         self.long_memory_store = long_memory_store or build_long_memory_store(self.long_memory_config)
         self.persistence_store = ensure_safe_persistence_store(persistence_store)
         self.session_summary_service = session_summary_service or build_session_summary_service(effective_config)
-        self.postgres_dataset_store = ensure_safe_postgres_dataset_store(postgres_dataset_store or build_postgres_dataset_store_from_env())
+        self.structured_dataset_store = ensure_safe_structured_dataset_store(structured_dataset_store or build_structured_dataset_store_from_env())
         self.sessions: dict[str, AgentSession] = {}
         self.session_events: dict[str, list[dict[str, Any]]] = {}
         self.feedback_session_facade = FeedbackSessionFacade(
@@ -156,7 +156,7 @@ class RecommendationService:
             "artifact_manifests": _public_artifact_manifest_readiness(self.env.config),
             "deepfm_shadow": _public_deepfm_shadow_readiness(self.env.config),
             "agent_provider": _public_agent_provider_readiness(self.env.config),
-            "postgres_dataset": self.postgres_dataset_store.health(),
+            "structured_dataset": self.structured_dataset_store.health(),
         }
 
     def recommend_from_sequence(self, request: RecommendFromSequenceRequest, request_id: str | None = None) -> dict[str, Any]:

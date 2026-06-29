@@ -11,10 +11,10 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.evaluation.agent_artifact import build_agent_eval_artifact
+from rs_core.offline.evaluation.agent_artifact import build_agent_eval_artifact
 from rs_core.serving.application.recommendation_service import RecommendationService
 from rs_core.serving.runtime.config import DEFAULT_CONFIG
-from rs_core.simulation import DEFAULT_ROLE_POLICY, run_simulation_batch
+from rs_core.offline.simulation import DEFAULT_ROLE_POLICY, run_simulation_batch
 from scripts.evaluation.run_simulation_evaluation import parse_role_ids
 
 VARIANT_OVERRIDES = {

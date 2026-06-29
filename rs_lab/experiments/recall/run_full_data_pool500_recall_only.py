@@ -17,7 +17,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.recsys.candidate_merge import (
+from rs_core.online.recall.candidate_merge import (
     load_category_candidates,
     load_itemcf_by_source,
     load_itemcf_source_manifest,
@@ -30,9 +30,9 @@ from rs_core.recsys.candidate_merge import (
     semantic_title_category_expansion_candidates_for_user,
     two_tower_candidates_for_user,
 )
-from rs_core.recsys.types import RecallCandidate
-from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
-from rs_core.recsys.vector_index import VectorIndex
+from rs_core.common.recsys_types import RecallCandidate
+from rs_core.online.recall.two_tower_source_manifest import validate_two_tower_source_index_manifest
+from rs_core.online.recall.vector_index import VectorIndex
 from rs_core.workflow.full_data_pool500_route_gate import (
     CANONICAL_SOURCES,
     DIAGNOSTIC_ONLY_PARTIAL,

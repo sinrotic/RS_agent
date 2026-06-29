@@ -7,7 +7,7 @@ from typing import Any
 import pytest
 
 from rs_core.common.io import read_json, write_json, write_jsonl
-from rs_core.recsys.two_tower_source_manifest import validate_two_tower_source_index_manifest
+from rs_core.online.recall.two_tower_source_manifest import validate_two_tower_source_index_manifest
 from rs_lab.experiments.recall import run_pool500_two_tower_diagnostic_loop as diagnostic_module
 from rs_lab.experiments.recall.run_pool500_two_tower_diagnostic_loop import run_pool500_two_tower_diagnostic_loop
 

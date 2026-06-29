@@ -8,8 +8,8 @@ from typing import Any
 import pytest
 
 from rs_core.common.io import read_json, write_json, write_jsonl
-from rs_core.recsys.candidate_merge import load_two_tower_index
-from rs_core.recsys.vector_index import VectorIndex
+from rs_core.online.recall.candidate_merge import load_two_tower_index
+from rs_core.online.recall.vector_index import VectorIndex
 from rs_lab.experiments.recall.run_full_data_pool500_recall_only import _apply_source_generation_overrides
 from rs_lab.experiments.recall.pool500.methods.two_tower.builder import build_two_tower_method_source
 from scripts.recall.build_two_tower_source_index import build_two_tower_source_index

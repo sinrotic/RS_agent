@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.rsagent.long_memory import (
+from rs_core.agent.memory import (
     InMemoryLongMemoryStore,
     JsonLongMemoryStore,
     LongMemoryConfig,
@@ -15,7 +15,7 @@ from rs_core.rsagent.long_memory import (
     snapshot_session_long_memory,
     user_long_memory_from_dict,
 )
-from rs_core.rsagent.schema import AgentSession, FeedbackConstraints
+from rs_core.agent.contracts.schema import AgentSession, FeedbackConstraints
 
 pytestmark = pytest.mark.unit
 

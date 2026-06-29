@@ -11,7 +11,7 @@ from rs_core.serving.facades import (
     SERVING_GOVERNANCE_GUARDRAILS,
 )
 from rs_core.serving.schemas import RecallRequest, RecommendFromSequenceRequest
-from rs_core.agent_runtime.adapters.rag import RagAgentAdapter
+from rs_core.agent.adapters.rag import RagAgentAdapter
 from rs_core.workflow.hybrid_environment import _compact_deepfm_output
 
 pytestmark = [pytest.mark.serving, pytest.mark.smoke]

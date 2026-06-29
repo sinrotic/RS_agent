@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.config import load_config
 from rs_core.common.io import read_jsonl
-from rs_core.recsys.candidate_merge import (
+from rs_core.online.recall.candidate_merge import (
     _category_candidates_for_user,
     _itemcf_candidates_for_user,
     _limit_candidate_pool,
@@ -42,8 +42,8 @@ from rs_core.recsys.candidate_merge import (
     two_tower_seed_candidates_for_user,
 )
 from rs_core.recsys.evaluation import evaluate, heldout_positives
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import MergedCandidate, RecallCandidate
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import MergedCandidate, RecallCandidate
 from rs_core.workflow.hybrid_demo import (
     _ensure_inputs,
     _itemcf_seed_items,

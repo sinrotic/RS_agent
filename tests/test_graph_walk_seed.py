@@ -9,7 +9,7 @@ pytestmark = pytest.mark.experiment
 import torch
 
 from rs_core.common.io import write_json, write_jsonl
-from rs_core.recsys.candidate_merge import load_graph_walk_seed_recall, graph_walk_seed_candidates_for_user
+from rs_core.online.recall.candidate_merge import load_graph_walk_seed_recall, graph_walk_seed_candidates_for_user
 from rs_core.workflow.graph_walk_training import build_item_graph, generate_random_walks, graph_walk_pair_rows, skipgram_pairs
 from rs_lab.experiments.recall.run_phase_1_19_graph_walk_seed_gate import _phase_1_19_gate
 
@@ -141,7 +141,7 @@ def test_phase_1_19_gate_requires_diagnostics_and_lift():
 
 
 def _candidate(item_id: str, score: float):
-    from rs_core.recsys.types import RecallCandidate
+    from rs_core.common.recsys_types import RecallCandidate
 
     return RecallCandidate(item_id=item_id, source="graph_walk_seed", score=score, metadata={"rank": 1})
 

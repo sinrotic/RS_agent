@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.recsys.semantic_description import build_sqlite_semantic_description_index  # noqa: E402
+from rs_core.agent.rag.semantic_description import build_sqlite_semantic_description_index  # noqa: E402
 
 DEFAULT_SEMANTIC_INPUTS = Path(
     "data/processed/amazon_2023_recall_recent_2y_1m_3m/recall_views/semantic_recall_inputs.jsonl"

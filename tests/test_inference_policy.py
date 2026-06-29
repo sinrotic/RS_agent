@@ -6,9 +6,9 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.candidate_merge import RecallCandidate, merge_candidates
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.rsagent.inference_policy import (
+from rs_core.online.recall.candidate_merge import RecallCandidate, merge_candidates
+from rs_core.online.ranking import rank_candidates
+from rs_core.agent.inference import (
     InferencePolicyError,
     ModelOutputParseError,
     QWEN_POLICY_TYPE,
@@ -17,8 +17,8 @@ from rs_core.rsagent.inference_policy import (
     apply_optional_inference_policy,
     resolve_inference_policy_config,
 )
-from rs_core.rsagent.rollout import turn_to_rollout_record
-from rs_core.rsagent.schema import AgentSession, AgentTurn, FeedbackConstraints
+from rs_core.agent.rollout import turn_to_rollout_record
+from rs_core.agent.contracts.schema import AgentSession, AgentTurn, FeedbackConstraints
 from rs_core.workflow.hybrid_demo import recommend_for_user
 
 
@@ -131,7 +131,7 @@ def test_openai_compatible_provider_without_endpoint_falls_back_without_local_mo
 
 
 def test_openai_compatible_adapter_success_parses_signal():
-    from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+    from rs_core.agent.model_clients.openai_rerank_client import OpenAICompatibleRerankClient
 
     candidates = merge_candidates([RecallCandidate("a", "popular", 1.0, category="Audio")])
     client = OpenAICompatibleRerankClient(
@@ -152,7 +152,7 @@ def test_openai_compatible_adapter_success_parses_signal():
 
 
 def test_openai_compatible_adapter_invalid_json_falls_back():
-    from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+    from rs_core.agent.model_clients.openai_rerank_client import OpenAICompatibleRerankClient
 
     candidates = merge_candidates([RecallCandidate("a", "popular", 1.0)])
     client = OpenAICompatibleRerankClient(
@@ -174,7 +174,7 @@ def test_openai_compatible_adapter_invalid_json_falls_back():
 
 
 def test_openai_compatible_adapter_invalid_json_raises_when_strict():
-    from rs_core.rsagent.openai_rerank_client import OpenAICompatibleRerankClient
+    from rs_core.agent.model_clients.openai_rerank_client import OpenAICompatibleRerankClient
 
     candidates = merge_candidates([RecallCandidate("a", "popular", 1.0)])
     client = OpenAICompatibleRerankClient(
@@ -362,13 +362,13 @@ def test_client_failure_raises_when_strict():
 
 
 def test_qwen_client_import_does_not_require_model_dependencies():
-    module = importlib.import_module("rs_core.rsagent.qwen_client")
+    module = importlib.import_module("rs_core.agent.model_clients.qwen_client")
 
     assert hasattr(module, "QwenLocalClient")
 
 
 def test_qwen_payload_rejects_non_numeric_signal_fields():
-    module = importlib.import_module("rs_core.rsagent.qwen_client")
+    module = importlib.import_module("rs_core.agent.model_clients.qwen_client")
 
     try:
         module._signals_from_payload({"signals": [{"item_id": "a", "delta": "bad"}]})
@@ -379,7 +379,7 @@ def test_qwen_payload_rejects_non_numeric_signal_fields():
 
 
 def test_extract_json_skips_qwen_thinking_block():
-    module = importlib.import_module("rs_core.rsagent.qwen_client")
+    module = importlib.import_module("rs_core.agent.model_clients.qwen_client")
 
     parsed = module.extract_first_json_object('<think>{"ignored": true}</think>\n{"signals": [], "policy_notes": "ok"}')
 
@@ -387,7 +387,7 @@ def test_extract_json_skips_qwen_thinking_block():
 
 
 def test_extract_json_repairs_single_missing_signal_object_brace():
-    module = importlib.import_module("rs_core.rsagent.qwen_client")
+    module = importlib.import_module("rs_core.agent.model_clients.qwen_client")
 
     parsed = module.extract_first_json_object('{"signals":[{"item_id":"a","delta":0.3,"confidence":0.7,"reason":"match"],"policy_notes":"match"}\n')
 
@@ -395,7 +395,7 @@ def test_extract_json_repairs_single_missing_signal_object_brace():
 
 
 def test_rerank_prompt_lists_real_candidate_ids_without_placeholder_schema():
-    module = importlib.import_module("rs_core.rsagent.qwen_client")
+    module = importlib.import_module("rs_core.agent.model_clients.qwen_client")
 
     prompt = module._format_rerank_prompt({"candidates": [{"item_id": "speaker_1"}, {"item_id": "earbuds_1"}]})
 

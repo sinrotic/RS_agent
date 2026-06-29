@@ -18,7 +18,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import iter_jsonl, read_json, write_json
-from rs_core.recsys.candidate_merge import load_usercf_recall_sidecar
+from rs_core.online.recall.candidate_merge import load_usercf_recall_sidecar
 from rs_lab.experiments.recall.build_full_train_usercf_sidecar import build_full_train_usercf_sidecar
 from rs_lab.experiments.recall.build_full_train_usercf_sidecar import _first_unique_items as _method_first_unique_items
 from rs_lab.experiments.recall.pool500.common.source_layout import REQUIRED_SOURCE_OUTPUTS, method_output_dir

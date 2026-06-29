@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from rs_core.common.io import write_jsonl
-from rs_core.recsys.pool500_artifacts import load_pool500_artifact_index
+from rs_core.online.recall.pool500_artifacts import load_pool500_artifact_index
 
 pytestmark = pytest.mark.unit
 

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from rs_core.common.io import iter_jsonl
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 from rs_core.workflow.full_data_pool500_route_gate import CANONICAL_SOURCES, FORBIDDEN_SOURCE_LABELS, canonicalize_source_label
 
 SCHEMA_VERSION = "pool500_ranking_adapter_v1"

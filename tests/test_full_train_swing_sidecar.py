@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.recsys.candidate_merge import load_swing_recall_sidecar
+from rs_core.online.recall.candidate_merge import load_swing_recall_sidecar
 from rs_lab.experiments.recall import build_full_train_swing_sidecar as swing_sidecar
 
 pytestmark = pytest.mark.unit

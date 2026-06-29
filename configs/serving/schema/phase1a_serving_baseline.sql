@@ -1,5 +1,5 @@
 -- Phase 1a SQL DDL baseline for future canonical serving facts.
--- This file is a schema contract only: no Alembic, no PostgreSQL runtime adapter in Phase 1a.
+-- This file is a schema contract only: no Alembic; MySQL-only structured store baseline in Phase 1a.
 
 CREATE TABLE serving_sessions (
     session_id TEXT PRIMARY KEY,

@@ -9,10 +9,10 @@ pytestmark = pytest.mark.unit
 
 from rs_core.common.openai_compatible_client import OpenAICompatibleClient
 from rs_core.common.io import read_jsonl, write_json
-from rs_core.training.data_contracts import synthetic_sft_samples, validate_sft_sample, validate_sft_samples
-from rs_core.training.gpt_sft_config import load_gpt_sft_config
-from rs_core.training.gpt_sft_generator import build_gpt_sft_messages, extract_first_json_object, generate_gpt_sft_sample
-from rs_core.training.gpt_sft_runner import GptSftExecutionDisabledError, run_gpt_sft
+from rs_core.offline.training.data_contracts import synthetic_sft_samples, validate_sft_sample, validate_sft_samples
+from rs_core.offline.training.gpt_sft_config import load_gpt_sft_config
+from rs_core.offline.training.gpt_sft_generator import build_gpt_sft_messages, extract_first_json_object, generate_gpt_sft_sample
+from rs_core.offline.training.gpt_sft_runner import GptSftExecutionDisabledError, run_gpt_sft
 
 
 def test_load_gpt_sft_config_uses_safe_defaults() -> None:

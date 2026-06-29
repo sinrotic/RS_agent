@@ -9,11 +9,10 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from rs_core.training.config import load_training_config
-from rs_core.training.data_contracts import synthetic_grpo_samples, synthetic_sft_samples, validate_grpo_samples, validate_sft_samples
-from rs_core.training.qwen_loader import check_training_imports, load_qwen_model_and_tokenizer
-from rs_core.training.resource_gate import assess_qwen_resource_readiness
-from rs_core.training.reward_adapter import compute_grpo_reward
+from rs_core.offline.training import compute_grpo_reward, load_training_config, synthetic_grpo_samples, synthetic_sft_samples
+from rs_core.offline.training.data_contracts import validate_grpo_samples, validate_sft_samples
+from rs_core.offline.training.qwen_loader import check_training_imports, load_qwen_model_and_tokenizer
+from rs_core.offline.training.resource_gate import assess_qwen_resource_readiness
 
 
 def parse_args() -> argparse.Namespace:

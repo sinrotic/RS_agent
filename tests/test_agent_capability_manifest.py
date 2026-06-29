@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 
 from rs_core.common.io import write_jsonl
-from rs_core.rsagent.tools import AGENT_CAPABILITY_MANIFEST, AgentCapability
+from rs_core.agent.tools import AGENT_CAPABILITY_MANIFEST, AgentCapability
 from rs_core.serving.application.recommendation_service import RecommendationService
 
 pytestmark = pytest.mark.unit

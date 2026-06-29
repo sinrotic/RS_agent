@@ -5,13 +5,12 @@ from pathlib import Path
 
 from typing import Any
 
-from rs_core.recsys.online_retrieval.models import RetrievalRequest
-from rs_core.recsys.online_retrieval.providers.pool500_fallback import Pool500FallbackProvider
-from rs_core.recsys.types import RecallCandidate
-from rs_core.recsys.online_retrieval.providers.postgres_usercf import PostgresUserCFProvider
-from rs_core.recsys.online_retrieval.providers.qdrant_two_tower import QdrantTwoTowerProvider
-from rs_core.recsys.online_retrieval.providers.semantic_token import SemanticTokenProvider
-from rs_core.recsys.online_retrieval.providers.semantic_vector import SemanticVectorProvider
+from rs_core.online.recall.online_retrieval.models import RetrievalRequest
+from rs_core.online.recall.online_retrieval.providers.pool500_fallback import Pool500FallbackProvider
+from rs_core.common.recsys_types import RecallCandidate
+from rs_core.online.recall.online_retrieval.providers.candidate_store_usercf import CandidateStoreUserCFProvider
+from rs_core.online.recall.online_retrieval.providers.semantic_token import SemanticTokenProvider
+from rs_core.online.recall.online_retrieval.providers.semantic_vector import SemanticVectorProvider
 
 
 def test_pool500_fallback_reads_fallback_only_config(tmp_path: Path) -> None:
@@ -95,14 +94,14 @@ def test_pool500_fallback_uses_jsonl_when_candidate_store_empty_or_fails(tmp_pat
     assert [candidate.item_id for candidate in failed_result.candidates] == ["json_item"]
 
 
-def test_postgres_named_provider_can_report_cassandra_backend(monkeypatch) -> None:
+def test_candidate_store_named_provider_can_report_cassandra_backend(monkeypatch) -> None:
     monkeypatch.setenv("RS_CANDIDATE_STORE_BACKEND", "cassandra")
     monkeypatch.setenv("RS_CASSANDRA_STORE_VERSION", "test_v1")
-    provider = PostgresUserCFProvider.from_config({"enabled": True})
+    provider = CandidateStoreUserCFProvider.from_config({"enabled": True})
 
     readiness = provider.readiness()
 
-    assert readiness.provider_name == "postgres_usercf"
+    assert readiness.provider_name == "candidate_store_usercf"
     assert readiness.backend == "cassandra"
     assert readiness.available is False
     assert readiness.status == "degraded"
@@ -114,17 +113,6 @@ def test_semantic_vector_rejects_rag_chunk_collection() -> None:
     readiness = provider.readiness()
 
     assert readiness.status == "governance_error"
-    assert readiness.available is False
-
-
-def test_qdrant_two_tower_degrades_when_target_missing(tmp_path: Path) -> None:
-    manifest = tmp_path / "two_tower.jsonl"
-    manifest.write_text("", encoding="utf-8")
-    provider = QdrantTwoTowerProvider.from_config({"enabled": True, "manifest_path": str(manifest), "qdrant": {"enabled": True}})
-
-    readiness = provider.readiness()
-
-    assert readiness.status == "qdrant_target_missing"
     assert readiness.available is False
 
 

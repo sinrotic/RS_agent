@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.rag import (
+from rs_core.agent.rag import (
     EvidencePolicyViolation,
     DEFAULT_DENSE_MODEL_NAME,
     HybridCandidateRetriever,
@@ -20,6 +20,8 @@ from rs_core.recsys.rag import (
     RagEvidence,
     RagPolicy,
     Small2BigCandidateEvidenceRetriever,
+    ElasticsearchBM25CandidateRetriever,
+    ElasticsearchBM25QueryPlanningRetriever,
     SQLiteBM25CandidateRetriever,
     SQLiteBM25QueryPlanningRetriever,
     SQLiteBM25Unavailable,
@@ -31,9 +33,9 @@ from rs_core.recsys.rag import (
     validate_parent_profile_manifest,
     load_local_vector_index,
 )
-from rs_core.agent_runtime.adapters.rag import RagAgentAdapter
-from rs_core.recsys.types import AgentDecision
-from rs_core.rsagent.schema import AgentTurn, FeedbackConstraints
+from rs_core.agent.adapters.rag import RagAgentAdapter
+from rs_core.common.recsys_types import AgentDecision
+from rs_core.agent.contracts.schema import AgentTurn, FeedbackConstraints
 from rs_core.workflow.facades import EvidenceRAGFacade
 
 
@@ -62,12 +64,32 @@ class FakeEmbeddingBackend:
 
 class FakeVectorBackend:
     def retrieve(self, query: str, candidate_item_ids, max_evidence_per_item: int = 3):  # type: ignore[no-untyped-def]
-        return [RagEvidence(str(candidate_item_ids[0]), "title", f"vector-only {query}", "qdrant_vector", score=1.0)]
+        return [RagEvidence(str(candidate_item_ids[0]), "title", f"vector-only {query}", "milvus_vector", score=1.0)]
 
 
 class FailingVectorBackend:
     def retrieve(self, query: str, candidate_item_ids, max_evidence_per_item: int = 3):  # type: ignore[no-untyped-def]
         raise RuntimeError("dense backend unavailable")
+
+
+class FakeElasticsearchClient:
+    def __init__(self, hits: list[dict[str, object]]) -> None:
+        self.hits = hits
+        self.search_calls: list[dict[str, object]] = []
+
+    def search(self, **kwargs: object) -> dict[str, object]:
+        self.search_calls.append(kwargs)
+        allowed_ids: set[str] | None = None
+        query = kwargs.get("query")
+        if isinstance(query, dict):
+            filters = query.get("bool", {}).get("filter", [])
+            for row in filters:
+                if isinstance(row, dict) and "terms" in row and "item_id" in row["terms"]:
+                    allowed_ids = {str(item_id) for item_id in row["terms"]["item_id"]}
+        hits = self.hits
+        if allowed_ids is not None:
+            hits = [hit for hit in hits if str(hit.get("_source", {}).get("item_id")) in allowed_ids]
+        return {"hits": {"hits": hits}}
 
 
 class StaticEvidenceRetriever:
@@ -298,7 +320,15 @@ def test_evidence_rag_facade_small2big_adds_parent_profile_without_changing_cand
 
 
 
-def test_evidence_rag_facade_hybrid_falls_back_to_bm25_when_qdrant_missing(tmp_path):
+def test_milvus_collection_name_is_derived_from_adapter_resource_ref() -> None:
+    from rs_core.workflow.facades import _milvus_collection_name_from_resource_ref
+
+    assert _milvus_collection_name_from_resource_ref("milvus://rag_chunks") == "rag_chunks"
+    assert _milvus_collection_name_from_resource_ref("legacy_collection") == "legacy_collection"
+
+
+
+def test_evidence_rag_facade_hybrid_falls_back_to_bm25_when_milvus_missing(tmp_path):
     db = tmp_path / "rag.sqlite"
     build_sqlite_bm25_index(
         db,
@@ -319,7 +349,7 @@ def test_evidence_rag_facade_hybrid_falls_back_to_bm25_when_qdrant_missing(tmp_p
                 "retriever": "hybrid",
                 "index_path": str(db),
                 "hybrid": {
-                    "qdrant": {
+                    "milvus": {
                         "enabled": True,
                         "collection_name": "missing_collection",
                         "candidate_generation_allowed": False,
@@ -340,7 +370,43 @@ def test_evidence_rag_facade_hybrid_falls_back_to_bm25_when_qdrant_missing(tmp_p
     assert {row["item_id"] for row in context["evidence"]} <= {"i1", "i2"}
 
 
-def test_evidence_rag_facade_hybrid_qdrant_small2big_is_candidate_scoped(tmp_path, monkeypatch: pytest.MonkeyPatch):
+def test_evidence_rag_facade_hybrid_milvus_uses_vector_backend(tmp_path, monkeypatch: pytest.MonkeyPatch):
+    db = tmp_path / "rag.sqlite"
+    build_sqlite_bm25_index(
+        db,
+        [
+            {"parent_asin": "i1", "title": "Bluetooth audio speaker", "main_category": "Audio"},
+            {"parent_asin": "i2", "title": "Desk lamp", "main_category": "Lighting"},
+        ],
+    )
+    ranked_items = [
+        {"parent_asin": "i1", "title": "Bluetooth audio speaker", "category": "Audio"},
+        {"parent_asin": "i2", "title": "Desk lamp", "category": "Lighting"},
+    ]
+    monkeypatch.setattr("rs_core.workflow.facades._safe_milvus_rag_vector_backend", lambda rag_config, hybrid_config: FakeVectorBackend())
+
+    context = EvidenceRAGFacade().build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "retriever": "hybrid",
+                "index_path": str(db),
+                "hybrid": {"milvus": {"enabled": True, "uri": "unit.db", "collection_name": "rag_chunks"}},
+            }
+        },
+        "bluetooth audio",
+        ranked_items,
+        ranked_items[:1],
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "hybrid_milvus"
+    assert context["evidence"]
+    assert {row["item_id"] for row in context["evidence"]} <= {"i1", "i2"}
+
+
+
+def test_evidence_rag_facade_hybrid_milvus_small2big_is_candidate_scoped(tmp_path, monkeypatch: pytest.MonkeyPatch):
     db = tmp_path / "rag.sqlite"
     build_sqlite_bm25_index(
         db,
@@ -353,7 +419,7 @@ def test_evidence_rag_facade_hybrid_qdrant_small2big_is_candidate_scoped(tmp_pat
         {"parent_asin": "i1", "title": "Bluetooth audio speaker", "category": "Audio", "description": "Parent speaker profile"},
         {"parent_asin": "i2", "title": "Desk lamp", "category": "Lighting", "description": "Parent lamp profile"},
     ]
-    monkeypatch.setattr("rs_core.workflow.facades._safe_qdrant_rag_vector_backend", lambda rag_config, hybrid_config: FakeVectorBackend())
+    monkeypatch.setattr("rs_core.workflow.facades._safe_milvus_rag_vector_backend", lambda rag_config, hybrid_config: FakeVectorBackend())
 
     context = EvidenceRAGFacade().build_turn_rag_context(
         {
@@ -361,7 +427,7 @@ def test_evidence_rag_facade_hybrid_qdrant_small2big_is_candidate_scoped(tmp_pat
                 "evidence_mode": "explain",
                 "retriever": "hybrid",
                 "index_path": str(db),
-                "hybrid": {"qdrant": {"enabled": True, "collection_name": "rag_chunks"}},
+                "hybrid": {"milvus": {"enabled": True, "uri": "unit.db", "collection_name": "rag_chunks"}},
                 "small2big": {
                     "enabled": True,
                     "manifest": _valid_small2big_manifest(),
@@ -376,7 +442,7 @@ def test_evidence_rag_facade_hybrid_qdrant_small2big_is_candidate_scoped(tmp_pat
     )
 
     assert context is not None
-    assert context["metadata"]["retriever"] == "hybrid_qdrant_small2big"
+    assert context["metadata"]["retriever"] == "hybrid_milvus_small2big"
     assert context["metadata"]["small2big"]["enabled"] is True
     parent_rows = [row for row in context["evidence"] if row["field"] == RAG_PARENT_PROFILE_FIELD]
     assert parent_rows
@@ -406,7 +472,7 @@ def test_evidence_rag_facade_hybrid_bm25_fallback_small2big_is_explicit(tmp_path
                 "evidence_mode": "explain",
                 "retriever": "hybrid",
                 "index_path": str(db),
-                "hybrid": {"qdrant": {"enabled": True, "collection_name": "missing_collection"}},
+                "hybrid": {"milvus": {"enabled": True, "collection_name": "missing_collection"}},
                 "small2big": {
                     "enabled": True,
                     "manifest": _valid_small2big_manifest(),
@@ -589,6 +655,76 @@ def test_provenance_gate_tokenizes_segments_without_field_name_false_positive():
 
     assert evidence_policy_violation_tokens(safe) == []
     assert evidence_policy_violation_tokens(leaky) == ["diagnostic", "future", "label", "target"]
+
+
+def test_elasticsearch_bm25_retriever_uses_fake_client_and_candidate_scope() -> None:
+    client = FakeElasticsearchClient(
+        [
+            {
+                "_score": 3.0,
+                "_source": {
+                    "item_id": "i1",
+                    "field": "title",
+                    "text": "Wireless audio speaker",
+                    "source": "catalog_bm25",
+                    "metadata": {"source_fields": ["title"]},
+                },
+            },
+            {
+                "_score": 9.0,
+                "_source": {
+                    "item_id": "outside",
+                    "field": "title",
+                    "text": "Outside item returned by fake client",
+                    "source": "catalog_bm25",
+                },
+            },
+        ]
+    )
+
+    evidence = ElasticsearchBM25CandidateRetriever(
+        config={"uri": "http://unit.test:9200", "index_name": "rag-index"},
+        client=client,
+        fields=["title", "description"],
+    ).retrieve("wireless audio", ["i1"], max_evidence_per_item=2)
+
+    assert evidence
+    assert {row.item_id for row in evidence} == {"i1"}
+    assert evidence[0].metadata["retriever"] == "elasticsearch_bm25"
+    assert evidence[0].metadata["bm25_backend"] == "elasticsearch"
+    call = client.search_calls[0]
+    assert call["index"] == "rag-index"
+    assert {"terms": {"item_id": ["i1"]}} in call["query"]["bool"]["filter"]
+    assert {"terms": {"field": ["title", "description"]}} in call["query"]["bool"]["filter"]
+    assert {"term": {"candidate_generation_allowed": False}} in call["query"]["bool"]["filter"]
+
+
+def test_elasticsearch_query_planning_retriever_marks_internal_scope() -> None:
+    client = FakeElasticsearchClient(
+        [
+            {
+                "_score": 2.0,
+                "_source": {
+                    "item_id": "i1",
+                    "field": "description",
+                    "text": "Compact camping cookware",
+                    "source": "catalog_bm25",
+                },
+            }
+        ]
+    )
+
+    evidence = ElasticsearchBM25QueryPlanningRetriever(
+        config={"uri": "http://unit.test:9200", "index_name": "rag-index"},
+        client=client,
+        fields=["description"],
+    ).retrieve("camping cookware", max_evidence_total=2, max_evidence_per_item=1)
+
+    assert len(evidence) == 1
+    assert evidence[0].metadata["retriever"] == "elasticsearch_bm25_query_planning"
+    assert evidence[0].metadata["retrieval_scope"] == "query_planning"
+    assert evidence[0].metadata["candidate_generation_allowed"] is False
+    assert {"terms": {"field": ["description"]}} in client.search_calls[0]["query"]["bool"]["filter"]
 
 
 def test_sqlite_bm25_index_maps_canonical_fields_and_preserves_chunk_text(tmp_path):
@@ -1034,7 +1170,7 @@ def test_hybrid_candidate_retriever_uses_vector_backend_when_bm25_missing(tmp_pa
         vector_backend=FakeVectorBackend(),
     ).retrieve("sofa", candidate_item_ids=["i1"], max_evidence_per_item=1)
 
-    assert [(row.item_id, row.field, row.text, row.source) for row in evidence] == [("i1", "title", "vector-only sofa", "qdrant_vector")]
+    assert [(row.item_id, row.field, row.text, row.source) for row in evidence] == [("i1", "title", "vector-only sofa", "milvus_vector")]
     assert evidence[0].metadata["retriever"] == "hybrid"
     assert evidence[0].metadata["vector_method"] == LOCAL_VECTOR_METHOD
 
@@ -1113,6 +1249,41 @@ def test_hybrid_rag_context_selects_hybrid_retriever_from_config(tmp_path):
     assert context["evidence"][0]["metadata"]["retriever"] == "hybrid"
 
 
+def test_hybrid_rag_context_injects_elasticsearch_lexical_backend(monkeypatch: pytest.MonkeyPatch):
+    from rs_core.workflow.hybrid_environment import _build_turn_rag_context
+
+    ranked_items = [{"parent_asin": "i1", "title": "Wireless audio speaker", "category": "Audio"}]
+    monkeypatch.setattr("rs_core.workflow.facades.importlib.util.find_spec", lambda name: object() if name == "elasticsearch" else None)
+    monkeypatch.setattr(
+        "rs_core.workflow.facades.ElasticsearchBM25CandidateRetriever.retrieve",
+        lambda self, query, candidate_item_ids, max_evidence_per_item=3: [
+            RagEvidence("i1", "title", "Wireless audio speaker", "catalog_bm25", score=3.0, metadata={"retriever": "elasticsearch_bm25"})
+        ],
+    )
+
+    context = _build_turn_rag_context(
+        {
+            "rag": {
+                "evidence_mode": "explain",
+                "retriever": "hybrid",
+                "legacy_bm25_index_path": "missing.sqlite",
+                "fallback_policy": {"enabled": True, "fallback_retriever": "elasticsearch_bm25"},
+                "elasticsearch": {"enabled": True, "uri": "http://unit.test:9200", "index_name": "rag-index"},
+                "hybrid": {"bm25_weight": 0.7, "vector_weight": 0.3},
+            }
+        },
+        "wireless audio",
+        ranked_items,
+        [],
+    )
+
+    assert context is not None
+    assert context["metadata"]["retriever"] == "hybrid_elasticsearch_bm25_no_vector"
+    assert context["evidence"]
+    assert context["evidence"][0]["metadata"]["bm25_score"] == 3.0
+    assert {row["item_id"] for row in context["evidence"]} == {"i1"}
+
+
 def test_rag_bm25_build_script_outputs_usable_index(tmp_path):
     from rs_core.common.io import write_jsonl
     from scripts.recall.build_rag_bm25_index import build_rag_bm25_index
@@ -1148,6 +1319,23 @@ def test_rag_bm25_build_script_outputs_usable_index(tmp_path):
     vector_index = load_local_vector_index(vector_index_path)
 
     assert manifest["schema_version"] == "rag_sqlite_bm25_index_v1"
+    assert manifest["data_client"] == "KnowledgeDataClient"
+    knowledge_artifact = manifest["knowledge_artifact"]
+    assert knowledge_artifact["artifact_id"] == "rag-sqlite-bm25"
+    assert knowledge_artifact["uri"] == str(index_path.resolve())
+    assert knowledge_artifact["kind"] == "rag_index"
+    assert knowledge_artifact["checksum"] == ""
+    assert knowledge_artifact["metadata"]["backend"] == "sqlite_bm25"
+    assert knowledge_artifact["metadata"]["role"] == "rag_evidence"
+    assert knowledge_artifact["metadata"]["candidate_scoped"] is True
+    assert knowledge_artifact["metadata"]["adapter_contract"] == {
+        "adapter_id": "rag-sqlite-bm25",
+        "backend": "sqlite_bm25",
+        "resource_ref": str(index_path.resolve()),
+        "connection_ref": "local_file",
+        "read_only": True,
+        "metadata": {"role": "rag_evidence", "candidate_scoped": True},
+    }
     assert manifest["chunk_count"] == 4
     assert manifest["hybrid_supported"] is True
     assert manifest["hybrid_vector_method"] == LOCAL_VECTOR_METHOD

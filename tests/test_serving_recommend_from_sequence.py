@@ -7,7 +7,6 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from qdrant_fakes import install_fake_qdrant
 from rs_core.common.io import write_jsonl
 import rs_core.serving.api.app as serving_app
 from rs_core.serving.application.recommendation_service import RecommendationService
@@ -380,32 +379,7 @@ def test_missing_co_visit_candidates_path_degrades_readiness(tmp_path: Path, mon
 
 
 
-def test_ready_handles_qdrant_dependency_probe_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    config = _write_serving_fixture(tmp_path)
-    payload = json.loads(config.read_text(encoding="utf-8"))
-    payload["rag"] = {
-        "evidence_mode": "explain",
-        "retriever": "hybrid",
-        "index_path": str(tmp_path / "missing_bm25.sqlite"),
-        "hybrid": {"qdrant": {"enabled": True, "collection_name": "rs_agent_rag_chunks_v1"}},
-        "fallback_policy": {"enabled": True, "fallback_retriever": "sqlite_bm25"},
-    }
-    config.write_text(json.dumps(payload), encoding="utf-8")
-    service = RecommendationService(str(config), limit_users=1)
-    monkeypatch.setattr(serving_app, "get_service", lambda: service)
-    monkeypatch.setattr("rs_core.serving.runtime.readiness.importlib.util.find_spec", lambda _name: (_ for _ in ()).throw(ValueError("qdrant_client.__spec__ is None")))
-
-    with TestClient(serving_app.app) as test_client:
-        response = test_client.get("/ready")
-
-    assert response.status_code == 200
-    result = response.json()
-    assert result["rag"]["qdrant"]["dependency_available"] is False
-    assert "qdrant_dependency_missing" in result["rag"]["bm25_fallback"]["fallback_reasons"]
-
-
-
-def test_ready_reports_qdrant_rag_manifests_shadow_and_agent_provider(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_ready_reports_milvus_rag_manifests_shadow_and_agent_provider(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     config = _write_serving_fixture(tmp_path)
     rag_manifest = tmp_path / "rag_manifest.json"
     pool_manifest = tmp_path / "pool_manifest.json"
@@ -422,9 +396,9 @@ def test_ready_reports_qdrant_rag_manifests_shadow_and_agent_provider(tmp_path: 
         "manifest_path": str(rag_manifest),
         "fallback_policy": {"enabled": True, "fallback_retriever": "sqlite_bm25", "on_dependency_missing": True, "on_empty_vector_results": True},
         "hybrid": {
-            "qdrant": {
+            "milvus": {
                 "enabled": True,
-                "collection_name": "rs_agent_rag_chunks_v1",
+                "collection_name": "rs_agent_rag_chunks_milvus_v1",
                 "embedding_method": "sentence_transformer_dense_v1",
                 "candidate_generation_allowed": False,
                 "ranking_input_replacement_allowed": False,
@@ -457,16 +431,16 @@ def test_ready_reports_qdrant_rag_manifests_shadow_and_agent_provider(tmp_path: 
     assert response.status_code == 200
     result = response.json()
     assert result["rag"]["retriever"] == "hybrid"
-    assert result["rag"]["qdrant"]["enabled"] is True
-    assert result["rag"]["qdrant"]["collection_name"] == "rs_agent_rag_chunks_v1"
-    assert result["rag"]["qdrant"]["candidate_generation_allowed"] is False
-    assert result["rag"]["qdrant"]["ranking_input_replacement_allowed"] is False
-    assert result["rag"]["qdrant"]["promotion_allowed"] is False
+    assert result["rag"]["milvus"]["enabled"] is True
+    assert result["rag"]["milvus"]["collection_name"] == "rs_agent_rag_chunks_milvus_v1"
+    assert result["rag"]["milvus"]["candidate_generation_allowed"] is False
+    assert result["rag"]["milvus"]["ranking_input_replacement_allowed"] is False
+    assert result["rag"]["milvus"]["promotion_allowed"] is False
     assert result["rag"]["bm25_fallback"]["enabled"] is True
-    assert "qdrant_target_missing" in result["rag"]["bm25_fallback"]["fallback_reasons"]
+    assert "milvus_target_missing" in result["rag"]["bm25_fallback"]["fallback_reasons"]
     assert "empty_vector_results" in result["rag"]["bm25_fallback"]["fallback_reasons"]
     assert result["artifact_manifests"]["pool500_serving"] == {"configured": True, "exists": True, "status": "available"}
-    assert result["artifact_manifests"]["rag_qdrant"] == {"configured": True, "exists": True, "status": "available"}
+    assert result["artifact_manifests"]["rag_milvus"] == {"configured": True, "exists": True, "status": "available"}
     assert result["artifact_manifests"]["deepfm_shadow"] == {"configured": True, "exists": True, "status": "available"}
     assert result["deepfm_shadow"]["affect_ranking"] is False
     assert result["deepfm_shadow"]["score_scale"] == 0.0
@@ -515,31 +489,6 @@ def test_ready_with_source_indexes_is_coarse_and_blocks_large_itemcf(tmp_path: P
     internal = service.online_recommender.readiness()["online_source_indexes"]
     assert internal["itemcf_weak"]["status"] == "blocked_heavy_scan"
     assert internal["itemcf_weak"]["available"] is False
-
-
-def test_ready_with_qdrant_two_tower_requires_available_vector_backend(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    config = _write_serving_fixture(tmp_path)
-    source_indexes = _write_source_index_fixture(tmp_path)
-    source_indexes["two_tower"].update({
-        "backend": "qdrant",
-        "qdrant": {"enabled": True, "collection_name": "missing_two_tower_items"},
-    })
-    payload = json.loads(config.read_text(encoding="utf-8"))
-    payload["online_route"] = {"source_indexes": source_indexes, "governance": SERVING_GOVERNANCE}
-    config.write_text(json.dumps(payload), encoding="utf-8")
-    install_fake_qdrant(monkeypatch)
-    service = RecommendationService(str(config), limit_users=1)
-    monkeypatch.setattr(serving_app, "get_service", lambda: service)
-
-    with TestClient(serving_app.app) as test_client:
-        response = test_client.get("/ready")
-
-    assert response.status_code == 200
-    public = response.json()
-    assert public["online_route"]["complete_pool500_available"] is False
-    internal = service.online_recommender.readiness()["online_source_indexes"]
-    assert internal["two_tower"]["available"] is False
-    assert internal["two_tower"]["status"] == "qdrant_unavailable"
 
 
 def test_recommend_from_sequence_uses_complete_pool500_artifact_route(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

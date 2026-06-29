@@ -5,7 +5,7 @@
   "stage": "local_trial_serving",
   "path": "outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl",
   "purpose": "Pool500 candidate artifact for local FastAPI serving trial and Agent recommendation orchestration.",
-  "serving_config_path": "configs/serving/online_service.local_qdrant.yaml",
+  "serving_config_path": "configs/serving/online_service.local_milvus.yaml",
   "diagnostic_only": false,
   "serving_allowed": true,
   "production_ready_claimed": false,

@@ -4,12 +4,12 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.types import AgentDecision, MergedCandidate
-from rs_core.rsagent.constraint_filter import apply_constraint_filter_tool
-from rs_core.rsagent.policy import constraint_filter_tool
-from rs_core.rsagent.reward import build_reward_evidence, compute_turn_reward
-from rs_core.rsagent.schema import AgentTurn, FeedbackConstraints
-from rs_core.rsagent.tools import collect_diagnostic_tool_events
+from rs_core.common.recsys_types import AgentDecision, MergedCandidate
+from rs_core.agent.constraint_filter import apply_constraint_filter_tool
+from rs_core.agent.feedback import constraint_filter_tool
+from rs_core.agent.reward import build_reward_evidence, compute_turn_reward
+from rs_core.agent.contracts.schema import AgentTurn, FeedbackConstraints
+from rs_core.agent.tools import collect_diagnostic_tool_events
 
 
 def test_reward_uses_component_weights_and_evidence():

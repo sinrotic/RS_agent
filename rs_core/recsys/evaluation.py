@@ -8,8 +8,8 @@ from math import log2
 from pathlib import Path
 from typing import Any
 
-from rs_core.recsys.ranking import rank_candidates
-from rs_core.recsys.types import EvaluationSummary, MergedCandidate, RankingResult
+from rs_core.online.ranking import rank_candidates
+from rs_core.common.recsys_types import EvaluationSummary, MergedCandidate, RankingResult
 
 
 FLOAT_TOLERANCE = 1e-9

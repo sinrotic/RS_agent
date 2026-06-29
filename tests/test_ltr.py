@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from rs_core.recsys.ltr import (
+from rs_core.online.ranking.ltr import (
     build_ltr_feature_contract_gate_summary,
     build_ltr_leakage_gate_summary,
     extract_ltr_features,
@@ -18,7 +18,7 @@ from rs_core.recsys.ltr import (
     validate_ltr_feature_contract_gate,
     validate_ltr_leakage_gate,
 )
-from rs_core.recsys.types import MergedCandidate
+from rs_core.common.recsys_types import MergedCandidate
 
 
 def test_extract_ltr_features_includes_source_scores_interactions_and_metadata():
