@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { mockData } from '../mockData';
-import { DEBUG_PANEL_ENABLED, endSession, endSessionKeepalive, startSession, sendChat, sendFeedback, refreshFeed } from '../api';
-import { DisplayItem, DisplayResponse, HomeFeedEventType } from '../types';
+import { DEBUG_PANEL_ENABLED, endSession, endSessionKeepalive, startSession, sendChat, sendFeedback } from '../api';
+import { DisplayItem, DisplayResponse } from '../types';
 import { PersonaSprite } from '../components/sandbox/PersonaSprite';
 import { 
   ShoppingBag, Heart, ShoppingCart, Search, Plus, Sparkles, 
@@ -36,7 +36,7 @@ export function MallHome() {
   const [activePersona, setActivePersona] = useState<string>('guest');
   const [sessionId, setSessionId] = useState<string>('');
   const [display, setDisplay] = useState<DisplayResponse | null>(null);
-  const [displayRevision, setDisplayRevision] = useState<number>(0);
+  const [, setDisplayRevision] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<string>('正在初始化商城首页推荐...');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -123,34 +123,17 @@ export function MallHome() {
     }
   };
 
-  async function applyFeedRefresh(eventType: HomeFeedEventType, options: { itemId?: string; query?: string; dwellMs?: number } = {}) {
-    if (!sessionId) return null;
-    const response = await refreshFeed({
-      session_id: sessionId,
-      event_type: eventType,
-      display_revision: displayRevision || 1,
-      item_id: options.itemId,
-      query: options.query,
-      dwell_ms: options.dwellMs,
-      top_k: 5,
-      candidate_pool_size: 500,
-    });
-    if (response.display_revision >= displayRevision) {
-      setDisplay(response.display);
-      setDisplayRevision(response.display_revision);
-    }
-    return response;
-  }
-
-  // Trigger search/refinement through the homepage behavior refresh route.
+  // Trigger search/refinement through the public Agent chat route.
   const handleSearchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim() || !sessionId || loading) return;
     setLoading(true);
-    setStatus(`正在根据搜索意图从召回池刷新 "${searchQuery}" 相关商品...`);
+    setStatus(`正在根据搜索意图请求 Agent 推荐 "${searchQuery}" 相关商品...`);
     try {
-      const refresh = await applyFeedRefresh('search', { query: searchQuery });
-      setStatus(refresh?.public_message || `成功匹配 "${searchQuery}" 的个性化推荐！`);
+      const chatRes = await sendChat(sessionId, searchQuery);
+      setDisplay(chatRes.display);
+      setDisplayRevision(previous => previous + 1);
+      setStatus(`成功匹配 "${searchQuery}" 的个性化推荐！`);
     } catch (e: any) {
       setStatus(`搜索刷新失败: ${e.message}`);
     } finally {
@@ -170,8 +153,10 @@ export function MallHome() {
     const label = actionType === 'like' ? '喜欢' : actionType === 'dislike' ? '不喜欢' : '换一批';
     setStatus(`FeedRefreshAgent 正在根据 [${label}] 判断重排或重新召回...`);
     try {
-      const refresh = await applyFeedRefresh(actionType as HomeFeedEventType, { itemId });
-      setStatus(refresh?.public_message || '已接收行为反馈，推荐网格已刷新。');
+      const feedback = await sendFeedback(sessionId, actionType, itemId);
+      setDisplay(feedback.display);
+      setDisplayRevision(previous => previous + 1);
+      setStatus('已接收行为反馈，推荐网格已刷新。');
 
       // If the feedback is 'like', add it to wishlist automatically if it has an itemId
       if (actionType === 'like' && itemId && display) {

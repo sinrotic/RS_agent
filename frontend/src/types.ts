@@ -33,8 +33,17 @@ export interface FeedbackAction {
   label: string;
 }
 
+export interface StartSessionRequest {
+  user_id?: string | null;
+}
+
 export interface StartSessionResponse {
   session_id: string;
+}
+
+export interface ChatRequest {
+  session_id: string;
+  message: string;
 }
 
 export interface ChatResponse {
@@ -42,9 +51,72 @@ export interface ChatResponse {
   display: DisplayResponse;
 }
 
+export interface FeedbackRequest {
+  session_id: string;
+  action_type: string;
+  item_id?: string | null;
+  comment?: string | null;
+}
+
 export interface FeedbackResponse {
   session_id: string;
   display: DisplayResponse;
+}
+
+export interface RagQueryRequest {
+  query: string;
+  max_chunks?: number;
+}
+
+export interface RagQueryResponse {
+  query: string;
+  evidence: Record<string, any>[];
+  evidence_count: number;
+  max_chunks: number;
+  data_client: string;
+}
+
+export interface RecommendFromSequenceRequest {
+  user_id?: string | null;
+  user_sequence: Record<string, any>;
+  feedback_text?: string | null;
+  top_k?: number;
+  candidate_pool_size?: number | null;
+  complete_pool500?: boolean;
+}
+
+export interface RecommendationResponse {
+  request_id: string;
+  display: Record<string, any>;
+  items: Record<string, any>[];
+  candidate_count: number;
+  fallback_used: boolean;
+  ranking_trace?: Record<string, any>;
+}
+
+export interface RecallRequest {
+  user_id?: string | null;
+  user_sequence: Record<string, any>;
+  candidate_pool_size?: number | null;
+  prior_turn_items?: string[];
+}
+
+export interface RecallResponse {
+  request_id: string;
+  candidate_item_ids: string[];
+  candidate_count: number;
+  retrieval_summary: Record<string, any>;
+}
+
+export interface RankRequest {
+  candidate_item_ids: string[];
+  return_top_k?: number;
+  ranking_context?: Record<string, any>;
+}
+
+export interface RankingResponse {
+  ranked_item_ids: string[];
+  ranking_trace: Record<string, any>;
 }
 
 export type HomeFeedEventType = 'click' | 'like' | 'dislike' | 'dwell' | 'show_different' | 'search';
