@@ -1,0 +1,69 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: rs-api-gateway
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: rs-service-user-auth
+              uri: lb://rs-service-user
+              predicates:
+                - Path=/api/auth/**
+            - id: rs-service-user
+              uri: lb://rs-service-user
+              predicates:
+                - Path=/api/users/**,/api/sessions/**
+            - id: rs-service-recommend
+              uri: lb://rs-service-recommend
+              predicates:
+                - Path=/api/recommend/**
+            - id: rs-service-agent
+              uri: lb://rs-service-agent
+              predicates:
+                - Path=/api/agent/**
+            - id: rs-service-platform-trace
+              uri: lb://rs-service-platform-trace
+              predicates:
+                - Path=/api/platform/**
+            - id: rs-service-search-rag
+              uri: lb://rs-service-search-rag
+              predicates:
+                - Path=/api/rag/**,/api/search-rag/**
+            - id: rs-service-model
+              uri: lb://rs-service-model
+              predicates:
+                - Path=/api/model/**
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origin-patterns:
+                  - "http://localhost:*"
+                  - "http://127.0.0.1:*"
+                allowed-methods:
+                  - GET
+                  - POST
+                  - PUT
+                  - DELETE
+                  - OPTIONS
+                allowed-headers:
+                  - "*"
+                exposed-headers:
+                  - X-Request-Id
+                allow-credentials: true
+                max-age: 3600
+
+rs:
+  gateway:
+    auth:
+      token-validation: presence

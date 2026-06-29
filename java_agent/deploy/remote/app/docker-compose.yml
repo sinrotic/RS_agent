@@ -1,0 +1,114 @@
+x-common-env: &common-env
+  JAVA_OPTS: ${RS_JAVA_OPTS:--Xms128m -Xmx512m}
+  SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: nacos:8848
+  SPRING_CLOUD_NACOS_DISCOVERY_IP_TYPE: IPv4
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PORT: 6379
+  SPRING_DATA_REDIS_PASSWORD: ${RS_REDIS_PASSWORD:-rs_agent_redis_password}
+  SPRING_REDIS_HOST: redis
+  SPRING_REDIS_PORT: 6379
+  SPRING_REDIS_PASSWORD: ${RS_REDIS_PASSWORD:-rs_agent_redis_password}
+  SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${RS_MYSQL_DATABASE:-rs_agent}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+  SPRING_DATASOURCE_USERNAME: ${RS_MYSQL_USER:-rs_agent}
+  SPRING_DATASOURCE_PASSWORD: ${RS_MYSQL_PASSWORD:-rs_agent_dev_password}
+  RS_ELASTICSEARCH_URI: http://elasticsearch:9200
+  RS_MINIO_ENDPOINT: http://minio:9000
+
+x-java-service: &java-service
+  image: eclipse-temurin:21-jre
+  restart: unless-stopped
+  working_dir: /app
+  networks:
+    - rs-agent-java
+  volumes:
+    - ../services:/app:ro
+    - ../logs:/logs
+
+services:
+  rs-service-model:
+    <<: *java-service
+    container_name: rs-agent-java-service-model
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-model
+      SERVER_PORT: 18105
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-model.jar"]
+    ports:
+      - "127.0.0.1:${RS_MODEL_HOST_PORT:-18105}:18105"
+
+  rs-service-recommend:
+    <<: *java-service
+    container_name: rs-agent-java-service-recommend
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-recommend
+      SERVER_PORT: 18103
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-recommend.jar"]
+    ports:
+      - "127.0.0.1:${RS_RECOMMEND_HOST_PORT:-18103}:18103"
+
+  rs-service-agent:
+    <<: *java-service
+    container_name: rs-agent-java-service-agent
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-agent
+      SERVER_PORT: 18104
+      RS_AGENT_TRACE_ENABLED: ${RS_AGENT_TRACE_ENABLED:-true}
+      RS_PLATFORM_TRACE_SERVICE_URL: http://rs-service-platform-trace:18108
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-agent.jar"]
+    ports:
+      - "127.0.0.1:${RS_AGENT_HOST_PORT:-18104}:18104"
+
+  rs-service-platform-trace:
+    <<: *java-service
+    container_name: rs-agent-java-service-platform-trace
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-platform-trace
+      SERVER_PORT: 18108
+      RS_PLATFORM_TRACE_CLIENTS_ENABLED: ${RS_PLATFORM_TRACE_CLIENTS_ENABLED:-true}
+      RS_USER_SERVICE_URL: http://rs-service-user:18101
+      RS_RECOMMEND_SERVICE_URL: http://rs-service-recommend:18103
+      RS_AGENT_SERVICE_URL: http://rs-service-agent:18104
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-platform-trace.jar"]
+    ports:
+      - "127.0.0.1:${RS_PLATFORM_TRACE_HOST_PORT:-18108}:18108"
+
+  rs-service-user:
+    <<: *java-service
+    container_name: rs-agent-java-service-user
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-user
+      SERVER_PORT: 18101
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-user.jar"]
+    ports:
+      - "127.0.0.1:${RS_USER_HOST_PORT:-18101}:18101"
+
+  rs-service-catalog:
+    <<: *java-service
+    container_name: rs-agent-java-service-catalog
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-catalog
+      SERVER_PORT: 18102
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-catalog.jar"]
+    ports:
+      - "127.0.0.1:${RS_CATALOG_HOST_PORT:-18102}:18102"
+
+  rs-api-gateway:
+    <<: *java-service
+    container_name: rs-agent-java-api-gateway
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-api-gateway
+      SERVER_PORT: 18088
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-api-gateway.jar"]
+    ports:
+      - "127.0.0.1:${RS_GATEWAY_HOST_PORT:-18088}:18088"
+
+networks:
+  rs-agent-java:
+    external: true
+    name: rs-agent-java_default

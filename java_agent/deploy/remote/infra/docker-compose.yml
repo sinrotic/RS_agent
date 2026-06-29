@@ -1,0 +1,197 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: rs-agent-java-mysql
+    restart: unless-stopped
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_unicode_ci"
+      - "--default-time-zone=+08:00"
+    environment:
+      MYSQL_DATABASE: ${RS_MYSQL_DATABASE:-rs_agent}
+      MYSQL_USER: ${RS_MYSQL_USER:-rs_agent}
+      MYSQL_PASSWORD: ${RS_MYSQL_PASSWORD:-rs_agent_dev_password}
+      MYSQL_ROOT_PASSWORD: ${RS_MYSQL_ROOT_PASSWORD:-rs_agent_root_password}
+    ports:
+      - "127.0.0.1:${RS_MYSQL_HOST_PORT:-13306}:3306"
+    volumes:
+      - ../db/mysql:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: rs-agent-java-redis
+    restart: unless-stopped
+    environment:
+      RS_REDIS_PASSWORD: ${RS_REDIS_PASSWORD:-rs_agent_redis_password}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${RS_REDIS_PASSWORD:-rs_agent_redis_password}"]
+    ports:
+      - "127.0.0.1:${RS_REDIS_HOST_PORT:-16379}:6379"
+    volumes:
+      - ../data/redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${RS_REDIS_PASSWORD:-rs_agent_redis_password}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: rs-agent-java-nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+      NACOS_AUTH_ENABLE: "false"
+      NACOS_AUTH_TOKEN: ${RS_NACOS_AUTH_TOKEN:-UlNfQUdFTlRfSkFWQV9ERVZfTkFDT1NfQVVUSF9UT0tFTl8yMDI2}
+      NACOS_AUTH_IDENTITY_KEY: ${RS_NACOS_AUTH_IDENTITY_KEY:-rs-agent-java}
+      NACOS_AUTH_IDENTITY_VALUE: ${RS_NACOS_AUTH_IDENTITY_VALUE:-rs-agent-java-dev}
+    ports:
+      - "127.0.0.1:${RS_NACOS_HOST_PORT:-18848}:8848"
+      - "127.0.0.1:${RS_NACOS_CONSOLE_PORT:-18080}:8080"
+      - "127.0.0.1:${RS_NACOS_GRPC_PORT:-19848}:9848"
+      - "127.0.0.1:${RS_NACOS_RAFT_PORT:-19849}:9849"
+    volumes:
+      - ../data/nacos/logs:/home/nacos/logs
+      - ../data/nacos/data:/home/nacos/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec ': > /dev/tcp/127.0.0.1/8848'"]
+      interval: 15s
+      start_period: 60s
+      timeout: 10s
+      retries: 12
+
+  elasticsearch:
+    image: elasticsearch:7.17.21
+    container_name: rs-agent-java-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:${RS_ELASTICSEARCH_HOST_PORT:-19200}:9200"
+    volumes:
+      - ../db/elasticsearch:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 15s
+      start_period: 60s
+      timeout: 10s
+      retries: 12
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: rs-agent-java-minio
+    restart: unless-stopped
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${RS_MINIO_ROOT_USER:-rs_agent}
+      MINIO_ROOT_PASSWORD: ${RS_MINIO_ROOT_PASSWORD:-rs_agent_minio_password}
+    ports:
+      - "127.0.0.1:${RS_MINIO_API_PORT:-19000}:9000"
+      - "127.0.0.1:${RS_MINIO_CONSOLE_PORT:-19001}:9001"
+    volumes:
+      - ../data/minio:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null"]
+      interval: 15s
+      start_period: 30s
+      timeout: 10s
+      retries: 12
+
+  scylla:
+    image: cassandra:5.0
+    container_name: rs-agent-java-scylla
+    restart: unless-stopped
+    environment:
+      CASSANDRA_CLUSTER_NAME: ${RS_CASSANDRA_CLUSTER_NAME:-rs-agent-java}
+      CASSANDRA_DC: ${RS_CASSANDRA_DC:-datacenter1}
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      MAX_HEAP_SIZE: ${RS_CASSANDRA_MAX_HEAP_SIZE:-1G}
+      HEAP_NEWSIZE: ${RS_CASSANDRA_HEAP_NEWSIZE:-256M}
+    ports:
+      - "127.0.0.1:${RS_SCYLLA_HOST_PORT:-19042}:9042"
+    volumes:
+      - ../db/scylla:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh 127.0.0.1 9042 -e 'DESCRIBE KEYSPACES' >/dev/null 2>&1"]
+      interval: 30s
+      start_period: 120s
+      timeout: 15s
+      retries: 20
+
+  milvus-etcd:
+    image: quay.io/coreos/etcd:v3.5.18
+    container_name: rs-agent-java-milvus-etcd
+    restart: unless-stopped
+    command:
+      - etcd
+      - --advertise-client-urls=http://127.0.0.1:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --data-dir=/etcd
+    volumes:
+      - ../db/milvus/etcd:/etcd
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 20s
+      timeout: 10s
+      retries: 12
+
+  milvus-minio:
+    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    container_name: rs-agent-java-milvus-minio
+    restart: unless-stopped
+    command: ["server", "/minio_data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${RS_MILVUS_MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${RS_MILVUS_MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ACCESS_KEY: ${RS_MILVUS_MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${RS_MILVUS_MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - ../db/milvus/minio:/minio_data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9000/minio/health/live >/dev/null"]
+      interval: 20s
+      start_period: 30s
+      timeout: 10s
+      retries: 12
+
+  milvus-standalone:
+    image: milvusdb/milvus:v2.6.18
+    container_name: rs-agent-java-milvus-standalone
+    restart: unless-stopped
+    command: ["milvus", "run", "standalone"]
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      ETCD_ENDPOINTS: milvus-etcd:2379
+      MINIO_ADDRESS: milvus-minio:9000
+      MINIO_ROOT_USER: ${RS_MILVUS_MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${RS_MILVUS_MINIO_SECRET_KEY:-minioadmin}
+      MINIO_ACCESS_KEY: ${RS_MILVUS_MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${RS_MILVUS_MINIO_SECRET_KEY:-minioadmin}
+    ports:
+      - "127.0.0.1:${RS_MILVUS_HOST_PORT:-19530}:19530"
+      - "127.0.0.1:${RS_MILVUS_METRICS_PORT:-19091}:9091"
+    volumes:
+      - ../db/milvus/standalone:/var/lib/milvus
+    depends_on:
+      milvus-etcd:
+        condition: service_healthy
+      milvus-minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:9091/healthz >/dev/null"]
+      interval: 20s
+      start_period: 90s
+      timeout: 10s
+      retries: 12

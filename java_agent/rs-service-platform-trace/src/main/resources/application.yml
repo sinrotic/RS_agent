@@ -1,0 +1,18 @@
+server:
+  port: 18108
+
+spring:
+  application:
+    name: rs-service-platform-trace
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:127.0.0.1:8848}
+
+rs:
+  platform-trace:
+    clients:
+      enabled: ${RS_PLATFORM_TRACE_CLIENTS_ENABLED:false}
+      user-base-url: ${RS_USER_SERVICE_URL:http://rs-service-user:18101}
+      recommend-base-url: ${RS_RECOMMEND_SERVICE_URL:http://rs-service-recommend:18103}
+      agent-base-url: ${RS_AGENT_SERVICE_URL:http://rs-service-agent:18104}

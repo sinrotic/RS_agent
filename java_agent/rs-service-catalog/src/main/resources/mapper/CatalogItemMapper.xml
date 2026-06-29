@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.catalog.mapper.CatalogItemMapper">
+
+    <resultMap id="CatalogItemRowMap" type="com.sinrotic.rs.catalog.mapper.CatalogItemRow">
+        <constructor>
+            <arg column="item_id" javaType="string"/>
+            <arg column="source_item_id" javaType="string"/>
+            <arg column="title" javaType="string"/>
+            <arg column="category" javaType="string"/>
+            <arg column="category_path" javaType="string"/>
+            <arg column="brand" javaType="string"/>
+            <arg column="store_name" javaType="string"/>
+            <arg column="price" javaType="java.math.BigDecimal"/>
+            <arg column="image_url" javaType="string"/>
+            <arg column="summary" javaType="string"/>
+            <arg column="description" javaType="string"/>
+            <arg column="attributes_json" javaType="string"/>
+            <arg column="raw_metadata_json" javaType="string"/>
+            <arg column="status" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <sql id="CatalogItemColumns">
+        item_id, source_item_id, title, category, category_path, brand, store_name, price,
+        image_url, summary, description, attributes_json, raw_metadata_json, status
+    </sql>
+
+    <select id="selectByItemId" resultMap="CatalogItemRowMap">
+        SELECT <include refid="CatalogItemColumns"/>
+        FROM rs_catalog_item
+        WHERE item_id = #{itemId} AND status = 'active'
+        LIMIT 1
+    </select>
+
+    <select id="selectByItemIds" resultMap="CatalogItemRowMap">
+        SELECT <include refid="CatalogItemColumns"/>
+        FROM rs_catalog_item
+        WHERE status = 'active'
+          AND item_id IN
+        <foreach collection="itemIds" item="itemId" open="(" separator="," close=")">
+            #{itemId}
+        </foreach>
+    </select>
+
+    <select id="selectByCategory" resultMap="CatalogItemRowMap">
+        SELECT <include refid="CatalogItemColumns"/>
+        FROM rs_catalog_item
+        WHERE status = 'active' AND category = #{category}
+        ORDER BY item_id
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectByStoreName" resultMap="CatalogItemRowMap">
+        SELECT <include refid="CatalogItemColumns"/>
+        FROM rs_catalog_item
+        WHERE status = 'active' AND store_name = #{storeName}
+        ORDER BY item_id
+        LIMIT #{limit}
+    </select>
+
+    <select id="selectCategories" resultType="string">
+        SELECT category
+        FROM rs_catalog_item
+        WHERE status = 'active' AND category IS NOT NULL AND category != ''
+        GROUP BY category
+        ORDER BY category
+    </select>
+
+    <select id="selectStoreNames" resultType="string">
+        SELECT store_name
+        FROM rs_catalog_item
+        WHERE status = 'active' AND store_name IS NOT NULL AND store_name != ''
+        GROUP BY store_name
+        ORDER BY store_name
+    </select>
+</mapper>

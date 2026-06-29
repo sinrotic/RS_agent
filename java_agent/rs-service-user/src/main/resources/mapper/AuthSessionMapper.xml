@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.user.mapper.AuthSessionMapper">
+
+    <resultMap id="AuthSessionCurrentAccountRecordMap" type="com.sinrotic.rs.user.domain.entity.AuthSessionCurrentAccountRecord">
+        <constructor>
+            <arg column="session_id" javaType="String"/>
+            <arg column="account_id" javaType="String"/>
+            <arg column="profile_user_id" javaType="String"/>
+            <arg column="access_expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="revoked_at" javaType="java.time.LocalDateTime"/>
+            <arg column="username" javaType="String"/>
+            <arg column="nickname" javaType="String"/>
+            <arg column="account_status" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <resultMap id="AuthSessionRefreshRecordMap" type="com.sinrotic.rs.user.domain.entity.AuthSessionRefreshRecord">
+        <constructor>
+            <arg column="session_id" javaType="String"/>
+            <arg column="account_id" javaType="String"/>
+            <arg column="profile_user_id" javaType="String"/>
+            <arg column="refresh_expires_at" javaType="java.time.LocalDateTime"/>
+            <arg column="revoked_at" javaType="java.time.LocalDateTime"/>
+            <arg column="username" javaType="String"/>
+            <arg column="nickname" javaType="String"/>
+            <arg column="account_status" javaType="String"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findCurrentAccountByAccessTokenHash" resultMap="AuthSessionCurrentAccountRecordMap">
+        SELECT
+            s.session_id,
+            s.account_id,
+            s.profile_user_id,
+            s.access_expires_at,
+            s.revoked_at,
+            a.username,
+            a.nickname,
+            a.status AS account_status
+        FROM rs_auth_session s
+        INNER JOIN rs_auth_account a ON a.account_id = s.account_id
+        WHERE s.access_token_hash = #{accessTokenHash}
+        LIMIT 1
+    </select>
+
+    <select id="findRefreshSessionByRefreshTokenHash" resultMap="AuthSessionRefreshRecordMap">
+        SELECT
+            s.session_id,
+            s.account_id,
+            s.profile_user_id,
+            s.refresh_expires_at,
+            s.revoked_at,
+            a.username,
+            a.nickname,
+            a.status AS account_status
+        FROM rs_auth_session s
+        INNER JOIN rs_auth_account a ON a.account_id = s.account_id
+        WHERE s.refresh_token_hash = #{refreshTokenHash}
+        LIMIT 1
+    </select>
+
+    <insert id="insertSession">
+        INSERT INTO rs_auth_session (
+            session_id,
+            account_id,
+            profile_user_id,
+            access_token_hash,
+            refresh_token_hash,
+            access_expires_at,
+            refresh_expires_at,
+            user_agent,
+            ip
+        )
+        VALUES (
+            #{sessionId},
+            #{accountId},
+            #{profileUserId},
+            #{accessTokenHash},
+            #{refreshTokenHash},
+            #{accessExpiresAt},
+            #{refreshExpiresAt},
+            #{userAgent},
+            #{ip}
+        )
+    </insert>
+
+    <update id="revokeSession">
+        UPDATE rs_auth_session
+        SET revoked_at = CURRENT_TIMESTAMP
+        WHERE session_id = #{sessionId}
+          AND revoked_at IS NULL
+    </update>
+
+</mapper>

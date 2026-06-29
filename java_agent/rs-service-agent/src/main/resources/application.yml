@@ -1,0 +1,29 @@
+server:
+  port: 18104
+
+spring:
+  application:
+    name: rs-service-agent
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR:127.0.0.1:8848}
+  ai:
+    model:
+      chat: openai
+    openai:
+      base-url: ${RS_AGENT_OPENAI_BASE_URL:https://cpa2api.sinrotic233.com/v1}
+      api-key: ${RS_AGENT_API_KEY:${RS_agent:}}
+      chat:
+        options:
+          model: ${RS_AGENT_OPENAI_MODEL:gpt-5.3-codex-spark}
+          temperature: ${RS_AGENT_OPENAI_TEMPERATURE:0.55}
+          max-tokens: ${RS_AGENT_OPENAI_MAX_TOKENS:1200}
+
+rs:
+  agent:
+    model-provider:
+      type: spring_ai
+    trace:
+      enabled: ${RS_AGENT_TRACE_ENABLED:false}
+      platform-trace-base-url: ${RS_PLATFORM_TRACE_SERVICE_URL:http://rs-service-platform-trace:18108}

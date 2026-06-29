@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.user.mapper.AccountProfileBindingMapper">
+
+    <select id="findActiveProfileUserIdByAccountId" resultType="string">
+        SELECT profile_user_id
+        FROM rs_account_profile_binding
+        WHERE account_id = #{accountId}
+          AND status = 'active'
+        LIMIT 1
+    </select>
+
+    <insert id="insertBinding">
+        INSERT INTO rs_account_profile_binding (
+            binding_id,
+            account_id,
+            profile_user_id,
+            binding_strategy,
+            segment,
+            status
+        )
+        VALUES (
+            #{bindingId},
+            #{accountId},
+            #{profileUserId},
+            #{bindingStrategy},
+            #{segment},
+            'active'
+        )
+    </insert>
+
+</mapper>
