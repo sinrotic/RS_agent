@@ -49,6 +49,24 @@ configs/**/_tmp_*.yaml
 configs/*.local.json
 configs/**/*.local.json
 configs/**/*.local.yaml
+
+# Python subproject mirrors the historical Python workspace layout
+python_agent/outputs/
+python_agent/data/raw/
+python_agent/data/processed/
+python_agent/data/interim/
+python_agent/data/postgres/
+python_agent/data/postgres_migration/
+python_agent/data/scylla/
+python_agent/data/qdrant/
+python_agent/tmp/
+python_agent/tmp*/
+python_agent/configs/_tmp_*.yaml
+python_agent/configs/**/_tmp_*.yaml
+python_agent/configs/*.local.json
+python_agent/configs/**/*.local.json
+python_agent/configs/**/*.local.yaml
+
 *.parquet
 *.pkl
 *.pickle
