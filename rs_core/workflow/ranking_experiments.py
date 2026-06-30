@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
-from rs_core.recsys.evaluation import (
+from rs_core.offline.evaluation.ranking import (
     build_ranking_experiment_registry_entry,
     build_ranking_gpu_resource_summary,
     build_ranking_method_registry_entry,

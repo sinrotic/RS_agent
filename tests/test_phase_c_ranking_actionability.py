@@ -7,7 +7,7 @@ pytestmark = pytest.mark.experiment
 import json
 from pathlib import Path
 
-from rs_core.recsys.evaluation import compare_frozen_candidate_signatures
+from rs_core.offline.evaluation.ranking import compare_frozen_candidate_signatures
 from rs_core.workflow.ranking_experiments import REQUIRED_CANDIDATE_POOL_SIZE, REQUIRED_TOP_K
 from rs_lab.experiments.ranking import run_phase_c_ranking_actionability_diagnostic as runner
 

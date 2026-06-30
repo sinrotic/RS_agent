@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import read_json, write_json
-from rs_core.recsys.evaluation import (
+from rs_core.offline.evaluation.ranking import (
     build_ranking_experiment_registry_entry,
     build_ranking_feature_contract,
     build_ranking_gpu_resource_summary,

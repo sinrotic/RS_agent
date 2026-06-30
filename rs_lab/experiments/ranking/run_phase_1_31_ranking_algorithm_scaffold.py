@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import read_json, write_json
-from rs_core.recsys.evaluation import (
+from rs_core.offline.evaluation.ranking import (
     build_ranking_feature_contract,
     compare_frozen_candidate_signatures,
     inspect_physical_ranking_pipeline_artifacts,

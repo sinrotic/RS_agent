@@ -12,7 +12,7 @@ if str(ROOT) not in sys.path:
 
 from rs_core.common.config import load_config
 from rs_core.common.io import read_jsonl, write_json
-from rs_core.recsys.evaluation import build_ranking_experiment_registry_entry, build_ranking_feature_contract, compare_frozen_candidate_signatures, frozen_candidate_artifact, inspect_ranking_run_artifacts
+from rs_core.offline.evaluation.ranking import build_ranking_experiment_registry_entry, build_ranking_feature_contract, compare_frozen_candidate_signatures, frozen_candidate_artifact, inspect_ranking_run_artifacts
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 
 DEFAULT_OUTPUT_DIR = ROOT / "outputs/ranking/phase_1_23_pool200_ranking_isolation"

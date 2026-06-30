@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from rs_core.common.io import write_json, write_jsonl
-from rs_core.recsys.two_tower_DSSM.source_manifest import validate_two_tower_dssm_source_index_manifest
+from rs_core.offline.training.two_tower_DSSM.source_manifest import validate_two_tower_dssm_source_index_manifest
 
 pytestmark = pytest.mark.unit
 

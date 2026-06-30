@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any
 
 from rs_core.common.io import iter_jsonl, read_json
-from rs_core.recsys.two_tower_DSSM.source_manifest import validate_two_tower_dssm_source_index_manifest
+from rs_core.offline.training.two_tower_DSSM.source_manifest import validate_two_tower_dssm_source_index_manifest
 from rs_core.online.recall.two_tower_source_manifest import validate_two_tower_source_index_manifest
 from rs_core.online.recall.vector_index import VectorIndex, load_vector_index_artifact, normalize_vector
 

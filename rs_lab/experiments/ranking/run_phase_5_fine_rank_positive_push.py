@@ -14,7 +14,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import read_jsonl, write_json
-from rs_core.recsys.evaluation import build_ranking_feature_contract, inspect_ranking_run_artifacts
+from rs_core.offline.evaluation.ranking import build_ranking_feature_contract, inspect_ranking_run_artifacts
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 from rs_core.workflow.ranking_experiments import (
     REQUIRED_CANDIDATE_POOL_SIZE,

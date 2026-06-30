@@ -13,7 +13,7 @@ import yaml
 from rs_core.common.config import load_config
 from rs_core.common.io import write_jsonl
 from rs_core.online.recall.candidate_merge import RecallCandidate, graph_walk_seed_candidates_for_user, item_graph_candidates_for_user, load_graph_walk_seed_recall, load_item_graph_recall, load_semantic_index, load_two_tower_index, load_two_tower_seed_recall, merge_candidates, merge_for_user, semantic_candidates_for_user, two_tower_candidates_for_user, two_tower_seed_candidates_for_user
-from rs_core.recsys.evaluation import build_ranking_experiment_registry_entry, build_ranking_feature_contract, build_ranking_gpu_resource_summary, build_ranking_method_registry_entry, compare_frozen_candidate_artifacts, compare_frozen_candidate_signatures, evaluate, frozen_candidate_artifact, inspect_ranking_run_artifacts, strict_ranking_promotion_status, terminal_ranking_promotion_gate
+from rs_core.offline.evaluation.ranking import build_ranking_experiment_registry_entry, build_ranking_feature_contract, build_ranking_gpu_resource_summary, build_ranking_method_registry_entry, compare_frozen_candidate_artifacts, compare_frozen_candidate_signatures, evaluate, frozen_candidate_artifact, inspect_ranking_run_artifacts, strict_ranking_promotion_status, terminal_ranking_promotion_gate
 from rs_core.online.ranking import phase_1_25_weight_grid, rank_candidates
 from rs_core.agent.decision import make_agent_decision
 from rs_core.agent.inference import ModelUnavailableError, QWEN_POLICY_TYPE, RerankPolicyResult, RerankSignal
@@ -1758,7 +1758,7 @@ def test_agent_decision_fields_and_limitations():
     ranking = rank_candidates("u1", merge_candidates([RecallCandidate("a", "popular", 1.0)]), {"top_k": 1})
     decision = make_agent_decision("u1", ranking, {"strategy_name": "demo"}).to_dict()
     assert decision["strategy_name"] == "demo"
-    assert "LLM" in decision["limitations"][0]
+    assert "model planning" in decision["limitations"][0]
     assert decision["final_items"][0]["parent_asin"] == "a"
 
 

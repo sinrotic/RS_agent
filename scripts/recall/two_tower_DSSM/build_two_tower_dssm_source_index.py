@@ -13,7 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import iter_jsonl, read_json, write_json
-from rs_core.recsys.two_tower_DSSM.source_manifest import GOVERNANCE_FIELDS, SCHEMA_VERSION, SOURCE_STATUS, validate_two_tower_dssm_source_index_manifest
+from rs_core.offline.training.two_tower_DSSM.source_manifest import GOVERNANCE_FIELDS, SCHEMA_VERSION, SOURCE_STATUS, validate_two_tower_dssm_source_index_manifest
 
 EXPECTED_ARTIFACT = {
     "source": "two_tower_dssm",

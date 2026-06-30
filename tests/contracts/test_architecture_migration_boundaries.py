@@ -49,7 +49,6 @@ LEGACY_COMPATIBILITY_IMPORT_WHITELIST = {
     },
     "rs_core/agent/cli.py": {
         "rs_core.display",
-        "rs_core.recsys.evaluation",
         "rs_core.workflow.hybrid_environment",
     },
     "rs_core/agent/explanation/__init__.py": {"rs_core.display.builder"},
@@ -67,7 +66,6 @@ LEGACY_COMPATIBILITY_IMPORT_WHITELIST = {
     "rs_core/agent/rollout.py": {"rs_core.display"},
     "rs_core/offline/training/multi_turn_sft_generator.py": {"rs_core.serving.application.recommendation_service"},
 }
-
 
 
 def test_target_architecture_packages_are_importable() -> None:
@@ -306,6 +304,18 @@ def test_retired_recsys_vector_index_module_is_deleted() -> None:
 
 def test_retired_recsys_two_tower_source_manifest_module_is_deleted() -> None:
     assert not (PROJECT_ROOT / "rs_core" / "recsys" / "two_tower_source_manifest.py").exists()
+
+
+def test_retired_recsys_two_tower_query_module_is_deleted() -> None:
+    assert not (PROJECT_ROOT / "rs_core" / "recsys" / "two_tower_query.py").exists()
+
+
+def test_retired_recsys_two_tower_module_is_deleted() -> None:
+    assert not (PROJECT_ROOT / "rs_core" / "recsys" / "two_tower.py").exists()
+
+
+def test_retired_recsys_evaluation_module_is_deleted() -> None:
+    assert not (PROJECT_ROOT / "rs_core" / "recsys" / "evaluation.py").exists()
 
 
 def test_retired_evaluation_package_is_deleted() -> None:

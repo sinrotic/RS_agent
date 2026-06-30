@@ -11,7 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from rs_core.common.io import read_jsonl, write_json
-from rs_core.recsys.evaluation import build_ranking_experiment_registry_entry, build_ranking_feature_contract, compare_frozen_candidate_signatures, strict_ranking_promotion_status
+from rs_core.offline.evaluation.ranking import build_ranking_experiment_registry_entry, build_ranking_feature_contract, compare_frozen_candidate_signatures, strict_ranking_promotion_status
 from rs_core.workflow.hybrid_demo import run_hybrid_demo
 from rs_core.workflow.ltr_training import train_ltr_ranker
 from rs_lab.experiments.ranking.run_phase_1_23_pool200_ranking_isolation import FREEZE_FIELDS, _status_and_drift

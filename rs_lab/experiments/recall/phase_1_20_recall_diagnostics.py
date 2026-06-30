@@ -41,7 +41,7 @@ from rs_core.online.recall.candidate_merge import (
     two_tower_candidates_for_user,
     two_tower_seed_candidates_for_user,
 )
-from rs_core.recsys.evaluation import evaluate, heldout_positives
+from rs_core.offline.evaluation.ranking import evaluate, heldout_positives
 from rs_core.online.ranking import rank_candidates
 from rs_core.common.recsys_types import MergedCandidate, RecallCandidate
 from rs_core.workflow.hybrid_demo import (

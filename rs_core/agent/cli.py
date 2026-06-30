@@ -7,7 +7,7 @@ from pathlib import Path
 from rs_core.common.config import load_config
 from rs_core.common.io import write_json, write_jsonl
 from rs_core.display import session_to_display_records, validate_public_display_payload
-from rs_core.recsys.evaluation import heldout_positives
+from rs_core.offline.evaluation.ranking import heldout_positives
 from rs_core.agent.inference import resolve_inference_policy_config
 from rs_core.agent.feedback import normalize_feedback_input
 from rs_core.agent.model_clients.qwen_client import QwenLocalClient

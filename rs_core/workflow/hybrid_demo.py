@@ -20,7 +20,7 @@ from rs_core.online.recall.candidate_merge import (
     load_two_tower_seed_recall,
     merge_for_user,
 )
-from rs_core.recsys.evaluation import evaluate, frozen_candidate_signature, heldout_positives, inspect_physical_ranking_pipeline_artifacts
+from rs_core.offline.evaluation.ranking import evaluate, frozen_candidate_signature, heldout_positives, inspect_physical_ranking_pipeline_artifacts
 from rs_core.online.ranking import rank_candidates
 from rs_core.common.recsys_types import MergedCandidate
 from rs_core.agent.contracts import FeedbackConstraints, RecommendationTurnResult
