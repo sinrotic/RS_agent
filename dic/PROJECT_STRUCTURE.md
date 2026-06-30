@@ -114,7 +114,7 @@ rs_core/data/
 当前来源：
 
 - `rs_core/offline/training/`（Qwen/SFT/GRPO/GPT SFT、judge、reward、multi-turn SFT generator 的 canonical 实现；旧 `rs_core/training/` 已退役删除）
-- `rs_core/offline/evaluation/`（Agent evaluation artifact 与 scorecard 的 canonical 实现；旧 `rs_core/evaluation/` 已退役删除）
+- `rs_core/offline/evaluation/`（Agent evaluation artifact、scorecard，以及离线 ranking/recall evaluation、frozen candidate signature、promotion gate 与 artifact inspection 的 canonical 实现；旧 `rs_core/evaluation/` 已退役删除，旧 `rs_core/recsys/evaluation.py` 已迁入 `rs_core/offline/evaluation/ranking.py`）
 - `scripts/training/`
 - `scripts/evaluation/`
 - `scripts/experiments/`

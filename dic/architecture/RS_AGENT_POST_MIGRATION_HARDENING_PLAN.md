@@ -753,6 +753,7 @@ Phase 3 当前完成口径：Agent public API、dialogue/planner/tools/runtime/R
 - [x] 将 `rs_core/recsys/ltr.py` 中 LTR 特征提取、打分、轻量训练与模型读写工具迁入 `rs_core/online/ranking/ltr.py`，旧 active module 已删除并由 architecture path-not-exists guard 防恢复。
 - [x] 将 `rs_core/recsys/vector_index.py` 中 two-tower/local vector index 加载、搜索和归一化工具迁入 `rs_core/online/recall/vector_index.py`，旧 active module 已删除并由 architecture path-not-exists guard 防恢复。
 - [x] 将 `rs_core/recsys/two_tower_source_manifest.py` 中 two-tower source index manifest governance/validation 迁入 `rs_core/online/recall/two_tower_source_manifest.py`，旧 active module 已删除并由 architecture path-not-exists guard 防恢复。
+- [x] 将 `rs_core/recsys/two_tower_query.py` 中 artifact-user-first 查询向量构建、train-only seed fallback、user tower projection 与 diagnostics 迁入 `rs_core/online/recall/two_tower_query.py`，旧 active module 已删除并由 architecture path-not-exists guard 防恢复。
 - [x] 将 `rs_core/recsys/ranking` 主实现迁入 `rs_core/online/ranking`，旧 `rs_core/recsys/ranking.py` active module 已删除并由 architecture path-not-exists guard 防恢复。
 - [x] 将 COLD→DeepFM 主实现与 online serving diagnostic shadow wrapper 迁入 `rs_core/online/ranking/cold_deepfm.py`，旧 `rs_core/recsys/cold_deepfm.py` active module 已删除。
 - [ ] 将 online runtime host 从 `rs_core/workflow` 收束到 `rs_core/online/runtime`。
@@ -774,6 +775,8 @@ Phase 3 当前完成口径：Agent public API、dialogue/planner/tools/runtime/R
 ### 14.5 Offline 旧实现迁移
 
 - [x] 将 `rs_core/training` 主实现迁入 `rs_core/offline/training`，并删除 active 旧 package。
+- [x] 将 `rs_core/recsys/two_tower.py` 中 two-tower 训练、负采样、PyTorch/fallback 模型与 artifact 保存主实现迁入 `rs_core/offline/training/two_tower.py`，旧 active module 已删除并由 architecture path-not-exists guard 防恢复。
+- [x] 将 `rs_core/recsys/evaluation.py` 中离线 ranking/recall 评估、冻结候选签名、ranking registry、promotion gate 与 artifact inspection 主实现迁入 `rs_core/offline/evaluation/ranking.py`，旧 active module 已删除并由 architecture path-not-exists guard 防恢复。
 - [x] 将 `rs_core/evaluation` 主实现迁入 `rs_core/offline/evaluation`，并删除 active 旧 package。
 - [ ] 将成熟实验迁入 `rs_core/offline/experiments`。
 - [x] 将离线仿真迁入 `rs_core/offline/simulation`，并删除 active 旧 `rs_core/simulation` package。

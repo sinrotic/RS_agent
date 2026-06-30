@@ -54,6 +54,7 @@
 - `rs_core/online/ranking/ltr.py`：承接原 `rs_core/recsys/ltr.py` 的 LTR 特征提取、打分、轻量训练与模型读写工具；旧 active module 已删除，online ranking、COLD→DeepFM、workflow LTR training、ranking experiments 和 tests 均改走 online ranking canonical path。
 - `rs_core/online/recall/vector_index.py`：承接原 `rs_core/recsys/vector_index.py` 的 two-tower/local vector index artifact loader、向量搜索、批量搜索、归一化与 dot score 工具；旧 active module 已删除，candidate merge、two-tower query/build、recall experiments 和 tests 均改走 online recall canonical path。
 - `rs_core/online/recall/two_tower_source_manifest.py`：承接原 `rs_core/recsys/two_tower_source_manifest.py` 的 source index manifest schema、governance flags、路径安全和 row-count 校验；旧 active module 已删除，source index build、vector index loader、two-tower experiments 和 tests 均改走 online recall canonical path。
+- `rs_core/online/recall/two_tower_query.py`：承接原 `rs_core/recsys/two_tower_query.py` 的 artifact-user-first two-tower 查询向量构建、train-only seed fallback、user tower projection 与 diagnostics；旧 active module 已删除，candidate merge、two-tower direct eval 与 pool500 two-tower builder 均改走 online recall canonical path。
 - `rs_core/workflow/online_recommendation.py`：旧 import path compatibility facade 已删除；`rs_core.online.runtime.pool500` 是唯一 pool500 online runtime host。
 
 ### recall artifact/index 构建脚本入口
@@ -84,7 +85,7 @@
 ### 已改写到 canonical ranking 的调用点
 
 - `rs_core/workflow/hybrid_demo.py`、`rs_core/workflow/pool500_shadow_ranking.py`：仍属于 workflow legacy 编排，但 ranking 调用已改为 `rs_core.online.ranking.rank_candidates()`。
-- `rs_core/recsys/evaluation.py`：离线评估仍暂留在 recsys legacy 文件，但调用 canonical `rs_core.online.ranking.rank_candidates()`。
+- `rs_core/offline/evaluation/ranking.py`：承接原 `rs_core/recsys/evaluation.py` 的离线 ranking/recall 评估、冻结候选签名、ranking registry、promotion gate 与 artifact inspection 能力；旧 active module 已删除，workflow、agent、rs_lab ranking/recall 实验和 tests 均改走 offline evaluation canonical path。
 - `rs_lab/experiments/recall/run_pool500_learned_ranking_challenger.py`、`phase_1_20_recall_diagnostics.py`、`phase_1_21_recall_coverage_experiments.py`：实验入口已改用 canonical ranking。
 - `rs_lab/experiments/ranking/run_pool500_cold_deepfm_chain.py`、`run_cold_deepfm_offline_train_eval.py`、`build_pool500_cold_deepfm_dataset.py`：已改用 `rs_core.online.ranking.cold_deepfm`。
 - ranking/core/feedback/inference/online tests 已改用 `rs_core.online.ranking` 或 `rs_core.online.ranking.cold_deepfm`。
@@ -99,5 +100,5 @@
 
 - `OnlinePool500Recommender` runtime host 已物理迁入 `rs_core/online/runtime/pool500.py`；旧 `rs_core/workflow/online_recommendation.py` 已在旧 import path 清零后删除，后续通过 architecture boundary 的 path-not-exists guard 防止回流。
 - `CandidatePoolClient` / `ArtifactClient` 已接入 fallback recall 与 COLD→DeepFM diagnostic shadow 读取；真实 pool500 runtime 中更深的 source index / display enrichment 仍待后续分层迁移。
-- `rs_core/recsys/two_tower_query.py`、`rs_core/recsys/two_tower.py`、`rs_core/recsys/vectorstores/*` 与离线评估相关 `rs_core/recsys/evaluation.py` 仍是后续 recsys 剩余收束对象；`types.py` 已迁入 `rs_core/common/recsys_types.py`，`ltr.py` 已迁入 `rs_core/online/ranking/ltr.py`，`vector_index.py` 已迁入 `rs_core/online/recall/vector_index.py`，`two_tower_source_manifest.py` 已迁入 `rs_core/online/recall/two_tower_source_manifest.py`，`candidate_merge.py` 已迁入 `rs_core/online/recall/candidate_merge.py`，`candidate_store/*` 已迁入 `rs_core/online/recall/candidate_store/`，`pool500_artifacts.py` 已迁入 `rs_core/online/recall/pool500_artifacts.py`。
+- `rs_core/recsys/vectorstores/*` 仍是后续 recsys 剩余收束对象；`evaluation.py` 已迁入 `rs_core/offline/evaluation/ranking.py`，`types.py` 已迁入 `rs_core/common/recsys_types.py`，`ltr.py` 已迁入 `rs_core/online/ranking/ltr.py`，`vector_index.py` 已迁入 `rs_core/online/recall/vector_index.py`，`two_tower_source_manifest.py` 已迁入 `rs_core/online/recall/two_tower_source_manifest.py`，`two_tower_query.py` 已迁入 `rs_core/online/recall/two_tower_query.py`，`two_tower.py` 训练实现已迁入 `rs_core/offline/training/two_tower.py`，`candidate_merge.py` 已迁入 `rs_core/online/recall/candidate_merge.py`，`candidate_store/*` 已迁入 `rs_core/online/recall/candidate_store/`，`pool500_artifacts.py` 已迁入 `rs_core/online/recall/pool500_artifacts.py`。
 - COLD→DeepFM canonical implementation 已落在 online ranking，但仍保持 diagnostic/no-promotion 约束；更进一步的 public ranking integration 仍需单独设计和验证。

@@ -12,6 +12,46 @@
 - 不记录无意义的中间尝试，不堆 raw log。
 - 简单机械修改不需要单独记录。
 
+### 2026-06-29 - Two-tower 训练实现迁入 Offline training canonical owner
+
+**任务：**
+将 `rs_core/recsys/two_tower.py` 中 two-tower 训练配置规范化、负采样、PyTorch/fallback 训练、user/item embedding 生成、模型参数导出与 artifact 保存主实现迁入 `rs_core/offline/training/two_tower.py`，并删除旧 active module。
+
+**遇到的问题：**
+`two_tower.py` 本质是离线训练实现，却长期位于历史 `rs_core.recsys` namespace；当前 active 调用点集中在 `rs_core/workflow/two_tower_training.py` 和 `tests/test_two_tower_training.py`。如果继续保留旧路径，后续 two-tower 训练、召回 source index 和在线向量检索会在 offline/online/recsys 三个边界之间混杂。
+
+**定位方式：**
+用 import census 扫描 `rs_core.recsys.two_tower` 调用点，确认 active Python 依赖只剩 workflow training 和 two-tower training tests；同时检查 architecture guard、Online Phase 2 inventory、hardening plan、compatibility boundary 与 two-tower 方法文档，确定 canonical owner 应是 `rs_core/offline/training/two_tower.py`，而不是 online recall runtime。
+
+**解决方式：**
+将真实实现物理移动到 `rs_core/offline/training/two_tower.py`，批量改写 active imports 为 `rs_core.offline.training.two_tower`，删除旧 active module；新增 `test_retired_recsys_two_tower_module_is_deleted()`；同步更新 compatibility boundary、hardening plan、Online Phase 2 inventory、two-tower 方法文档与低效诊断文档，把训练实现从 recsys 剩余对象中移除。
+
+**验证结果：**
+focused two-tower training / architecture tests 结果 `109 passed in 7.36s`；Ruff 对迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.two_tower=[]`，并保持 `rs_core.recsys.two_tower_query=[]`、`rs_core.recsys.two_tower_source_manifest=[]`、`rs_core.recsys.vector_index=[]`、`rs_core.recsys.ltr=[]`、`rs_core.recsys.types=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/two_tower.py` 不存在、新 `rs_core/offline/training/two_tower.py` 存在；compileall 通过，scoped `git diff --check` 仅有既有 CRLF warning、无 whitespace error，新增 diff 行 placeholder scan 为空。独立 verifier 只读复核结论为 PASS。
+
+**面试可讲点：**
+这段可以讲成“把 two-tower 的离线训练能力从历史 recsys 拆到 offline training owner”：训练/负采样/模型保存属于 offline artifact 生产，在线召回只消费 vector index 和 query builder；通过路径物理删除、import census 和 guard 让职责边界从代码层面落地。
+
+### 2026-06-29 - Two-tower query 迁入 Online recall canonical owner
+
+**任务：**
+将 `rs_core/recsys/two_tower_query.py` 中 artifact-user-first 查询向量构建、train-only seed fallback、seed 顺序去重、user tower projection 与 diagnostics 迁入 `rs_core/online/recall/two_tower_query.py`，并删除旧 active module。
+
+**遇到的问题：**
+`two_tower_query.py` 是 candidate merge、two-tower direct eval 和 pool500 two-tower builder 共同依赖的召回查询构建边界。前几波已经把 vector index 与 source manifest 迁入 online recall，如果查询构建继续留在 `rs_core.recsys`，canonical candidate merge 仍会回流历史 namespace。
+
+**定位方式：**
+用 import census 锁定 `rs_core.recsys.two_tower_query` 调用点，覆盖 `rs_core/online/recall/candidate_merge.py`、`rs_lab/experiments/recall/run_pool500_two_tower_direct_eval.py`、DSSM direct eval wrapper 与 `rs_lab/experiments/recall/pool500/methods/two_tower/builder.py`；用 architecture boundary test 检查 legacy whitelist 和旧 path guard。
+
+**解决方式：**
+将真实实现物理移动到 `rs_core/online/recall/two_tower_query.py`，批量改写 active imports 为 `rs_core.online.recall.two_tower_query`，删除旧 active module；从 architecture whitelist 中移除 candidate_merge 对旧 query 的残留登记，新增 `test_retired_recsys_two_tower_query_module_is_deleted()`，并同步更新 compatibility boundary、hardening plan 与 Online Phase 2 inventory。
+
+**验证结果：**
+focused two-tower query / source manifest / full-data recall / recsys core / architecture tests 结果 `131 passed in 5.02s`；Ruff 对迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.two_tower_query=[]`，并保持 `rs_core.recsys.two_tower_source_manifest=[]`、`rs_core.recsys.vector_index=[]`、`rs_core.recsys.ltr=[]`、`rs_core.recsys.types=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/two_tower_query.py` 不存在、新 `rs_core/online/recall/two_tower_query.py` 存在；compileall 通过，scoped `git diff --check` 仅有既有 CRLF warning、无 whitespace error，新增 diff 行 placeholder scan 为空。独立 verifier 只读复核结论为 PASS。
+
+**面试可讲点：**
+这段可以讲成“把 two-tower 召回查询构建从历史 recsys 收敛到 online recall owner”：不只迁移函数，还把 artifact-user embedding 优先级、train-only seed fallback、projection 和 diagnostics 作为在线召回内部 contract 固化，并用 guard/census 防止旧 namespace 回流。
+
 ### 2026-06-29 - Two-tower source manifest 迁入 Online recall canonical owner
 
 **任务：**
@@ -7802,3 +7842,23 @@ Docker Compose çš„ `postgres_data:/var/lib/postgresql/data` named volume å�
 - **解决方式**：将调用点统一改为 `rs_core.offline.simulation.*`，`rs_core.agent.simulation` 仅保留指向 canonical offline implementation 的 public facade；`OFFLINE_SIMULATION_CONTRACT` 标记为 implemented；删除旧 `rs_core/simulation`，并在 architecture boundary 中增加 path-not-exists guard、移除旧 compatibility whitelist。
 - **验证结果**：`.venv/Scripts/python.exe -m pytest tests/test_simulation_roles.py tests/test_simulation_runner.py tests/agent/test_agent_simulation_contract.py tests/agent/test_multi_turn_sft_generator.py tests/offline/test_offline_engine_contracts.py tests/contracts/test_architecture_migration_boundaries.py -q` 通过 `108 passed in 15.58s`；ruff 通过 `All checks passed!`；AST census 对 `rs_core.simulation` 无输出；old path check 输出 `rs_core/simulation absent`。
 - **面试可讲点**：这段可以讲成“把仿真从兼容旧 namespace 推进到可治理 offline owner”：先用 contract 和 focused tests 固定 public-safe scene/batch 行为，再物理删除旧路径并用 import/path guard 防回流，保证 Agent sandbox 与离线仿真共享实现但边界清晰。
+
+### 2026-06-30 - Recsys evaluation 迁入 Offline evaluation canonical owner
+
+**任务：**
+将 `rs_core/recsys/evaluation.py` 中离线 ranking/recall 评估、冻结候选签名、ranking registry、promotion gate 与 artifact inspection 主实现迁入 `rs_core/offline/evaluation/ranking.py`，并删除旧 active module。
+
+**遇到的问题：**
+`evaluation.py` 虽然已调用 canonical `rs_core.online.ranking.rank_candidates()`，但自身仍位于历史 `rs_core.recsys` namespace，并被 workflow、Agent CLI、rs_lab ranking/recall 实验和测试共同依赖。继续保留旧路径会让离线评估治理能力与 online ranking runtime、offline evaluation owner 的边界混杂。
+
+**定位方式：**
+通过 active import grep 和只读边界盘点确认调用点集中在 `rs_core/workflow/*`、`rs_core/agent/cli.py`、`rs_lab/experiments/*` 与 evaluation/ranking tests；检查 `rs_core/offline/evaluation/__init__.py`、Online Phase 2 inventory、compatibility boundary 与 hardening plan 后，确定这些指标、签名、registry、promotion gate 和 artifact inspection 属于离线评估治理能力，canonical owner 应落在 `rs_core/offline/evaluation/ranking.py`。
+
+**解决方式：**
+将真实实现物理移动到 `rs_core/offline/evaluation/ranking.py`，`rs_core/offline/evaluation/__init__.py` re-export 稳定评估接口；批量改写 active imports 为 `rs_core.offline.evaluation.ranking`；删除旧 `rs_core/recsys/evaluation.py`；从 architecture legacy whitelist 移除 `rs_core.recsys.evaluation`，并新增 `test_retired_recsys_evaluation_module_is_deleted()` path-not-exists guard；同步更新 compatibility boundary、hardening plan、Online Phase 2 inventory 和 ranking 长期计划中的可执行命令路径。
+
+**验证结果：**
+focused evaluation / architecture tests 结果 `59 passed in 2.40s`；Ruff 对迁移范围返回 `All checks passed!`；active-source AST census 显示 `rs_core.recsys.evaluation=[]`，并保持 `rs_core.recsys.two_tower=[]`、`rs_core.recsys.two_tower_query=[]`、`rs_core.recsys.two_tower_source_manifest=[]`、`rs_core.recsys.vector_index=[]`、`rs_core.recsys.ltr=[]`、`rs_core.recsys.types=[]`、`rs_core.recsys.candidate_merge=[]`、`rs_core.recsys.candidate_store=[]`、`rs_core.recsys.pool500_artifacts=[]`、`rs_core.recsys.online_retrieval=[]`、`rs_core.recsys.ranking=[]`、`rs_core.recsys.cold_deepfm=[]`、`rs_core.recsys.recall=[]`、`rs_core.recsys.rag=[]`；path check 显示旧 `rs_core/recsys/evaluation.py` 不存在、新 `rs_core/offline/evaluation/ranking.py` 存在；compileall 通过，scoped `git diff --check` 仅有既有 CRLF warning、无 whitespace error，新增 diff 行 blocker scan 为空。独立 verifier 最终复核为 `PASS`：旧路径已删除、active imports 清零、canonical offline evaluation 路径生效，contract guard 与文档一致性 blocker 均已解除。
+
+**面试可讲点：**
+这段可以讲成“把离线评估治理能力从历史 recsys 拆到 offline evaluation owner”：online ranking 只负责打分 runtime，offline evaluation 负责指标、冻结候选签名、promotion gate 和实验 artifact inspection；通过物理删除旧路径、import census 和 architecture guard 把职责边界落到代码层。

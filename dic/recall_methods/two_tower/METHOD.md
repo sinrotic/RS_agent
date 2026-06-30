@@ -301,7 +301,7 @@ legacy direct-eval 结果（远端当前 eval 脚本缺少 queryv2 fallback，�
 
 本地验证：
 
-- `./.venv/Scripts/python.exe -m py_compile rs_core/recsys/two_tower.py rs_lab/experiments/recall/build_pool500_two_tower_method_dataset.py tests/test_two_tower_training.py tests/test_pool500_two_tower_method_dataset.py` 通过。
+- `./.venv/Scripts/python.exe -m py_compile rs_core/offline/training/two_tower.py rs_lab/experiments/recall/build_pool500_two_tower_method_dataset.py tests/test_two_tower_training.py tests/test_pool500_two_tower_method_dataset.py` 通过。
 - `./.venv/Scripts/python.exe -m pytest tests/test_pool500_two_tower_method_dataset.py tests/test_two_tower_training.py tests/test_pool500_two_tower_direct_eval.py tests/test_pool500_two_tower_method_source.py tests/test_pool500_two_tower_source_manifest.py tests/test_two_tower_source_manifest_guard.py -q`：`72 passed, 3 skipped`。
 - 独立 code-reviewer / verifier 复核为 `APPROVE/PASS`，仅保留一个低风险建议：负例 rotation 可进一步把 `user_id/target_item` 纳入 offset 多样化。
 

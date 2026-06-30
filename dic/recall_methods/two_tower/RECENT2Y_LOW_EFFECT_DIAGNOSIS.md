@@ -99,7 +99,7 @@
 
 相关代码：
 
-- `rs_core/recsys/two_tower.py`
+- `rs_core/offline/training/two_tower.py`
 - `rs_core/workflow/two_tower_training.py`
 - `rs_lab/experiments/recall/run_pool500_two_tower_direct_eval.py`
 

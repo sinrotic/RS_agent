@@ -553,13 +553,13 @@ Batch N: 持续回看 champion、补实验、清理 retired/blocked 方法
 终局/底座 runner smoke：
 
 ```bash
-./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_29_terminal_ranking_route.py --output-dir outputs/ranking/phase_1_29_terminal_ranking_route_smoke --limit-users 20 --runs 1
+./.venv/Scripts/python.exe rs_lab/experiments/ranking/run_phase_1_29_terminal_ranking_route.py --output-dir outputs/ranking/phase_1_29_terminal_ranking_route_smoke --limit-users 20 --runs 1
 ```
 
 后续方法族 runner 命名建议：
 
 ```text
-scripts/experiments/ranking/run_phase_<phase>_<method_family>_pool200_ranking.py
+rs_lab/experiments/ranking/run_phase_<phase>_<method_family>_pool200_ranking.py
 outputs/ranking/phase_<phase>_<method_family>_pool200_ranking/comparison.json
 outputs/ranking/phase_<phase>_<method_family>_pool200_ranking/comparison.md
 ```
@@ -655,16 +655,16 @@ Phase 1.31 最小可交付合同：
 验收命令仍必须使用 `.venv`，至少包含：
 
 ```bash
-./.venv/Scripts/python.exe -m py_compile rs_core/recsys/ranking.py rs_core/recsys/evaluation.py rs_core/workflow/hybrid_demo.py scripts/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py
+./.venv/Scripts/python.exe -m py_compile rs_core/online/ranking/ranking.py rs_core/offline/evaluation/ranking.py rs_core/workflow/hybrid_demo.py rs_lab/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py rs_lab/experiments/ranking/run_phase_1_26_real_ranking_experiments.py
 ./.venv/Scripts/python.exe -m pytest tests/test_evaluation.py tests/test_hybrid_demo.py tests/test_ltr.py -q
-./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py --output-dir outputs/ranking/phase_1_30_physical_ranking_pipeline_regression --limit-users 20
-./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py --output-dir outputs/ranking/phase_1_26_real_ranking_experiments_regression --limit-users 20 --seed 20260513
+./.venv/Scripts/python.exe rs_lab/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py --output-dir outputs/ranking/phase_1_30_physical_ranking_pipeline_regression --limit-users 20
+./.venv/Scripts/python.exe rs_lab/experiments/ranking/run_phase_1_26_real_ranking_experiments.py --output-dir outputs/ranking/phase_1_26_real_ranking_experiments_regression --limit-users 20 --seed 20260513
 ```
 
 Phase 1.31/1.32 runner 完成后，必须新增并执行对应 smoke，不能只跑旧 Phase 1.30/1.26 回归就宣称完成：
 
 ```bash
-./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_1_31_ranking_algorithm_scaffold.py --output-dir outputs/ranking/phase_1_31_ranking_algorithm_scaffold_smoke --limit-users 20 --seed 20260513
+./.venv/Scripts/python.exe rs_lab/experiments/ranking/run_phase_1_31_ranking_algorithm_scaffold.py --output-dir outputs/ranking/phase_1_31_ranking_algorithm_scaffold_smoke --limit-users 20 --seed 20260513
 ```
 
 新 runner smoke 必须断言：
@@ -679,20 +679,20 @@ Phase 1.31/1.32 runner 完成后，必须新增并执行对应 smoke，不能只
 - Phase 1.31 已把排序算法实验收敛成可复用 scaffold：`method_id`、`method_family`、`stage_target`、`requires_training`、`requires_gpu`、`dependency`、`promotion_lane`、`blocked_recovery_condition` 与 comparison/report schema 进入同一底座。
 - Phase 1.32 已跑完首批诊断范围：规则 champion 复验、浅层 learned fine-ranker 变体与树模型准备均按 diagnostic-only / blocked 收口；tree/LambdaMART 仍停留在依赖、group export 与 GPU 准备，不具备 promotion evidence。
 - 全部运行继续保持 `frozen pool200`、`candidate_pool_size=200`、`top_k=5`，`online_metric_claims=[]`，因此 CTR/CVR/GMV/P95 仍只属于 future-only。
-- 已核验证据：`./.venv/Scripts/python.exe -m py_compile rs_core/recsys/ranking.py rs_core/recsys/evaluation.py rs_core/workflow/hybrid_demo.py scripts/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py scripts/experiments/ranking/run_phase_1_26_real_ranking_experiments.py` PASS；`./.venv/Scripts/python.exe -m pytest tests/test_evaluation.py tests/test_hybrid_demo.py tests/test_ltr.py tests/test_phase_1_31_ranking_scaffold.py -q` 135 passed in 2.31s；`outputs/ranking/phase_1_30_physical_ranking_pipeline_regression/comparison.json`、`outputs/ranking/phase_1_26_real_ranking_experiments_regression/comparison.json`、`outputs/ranking/phase_1_31_ranking_algorithm_scaffold_smoke/comparison.json` 均保留。
+- 已核验证据：`./.venv/Scripts/python.exe -m py_compile rs_core/online/ranking/ranking.py rs_core/offline/evaluation/ranking.py rs_core/workflow/hybrid_demo.py rs_lab/experiments/ranking/run_phase_1_30_physical_ranking_pipeline.py rs_lab/experiments/ranking/run_phase_1_26_real_ranking_experiments.py` PASS；`./.venv/Scripts/python.exe -m pytest tests/test_evaluation.py tests/test_hybrid_demo.py tests/test_ltr.py tests/test_phase_1_31_ranking_scaffold.py -q` 135 passed in 2.31s；`outputs/ranking/phase_1_30_physical_ranking_pipeline_regression/comparison.json`、`outputs/ranking/phase_1_26_real_ranking_experiments_regression/comparison.json`、`outputs/ranking/phase_1_31_ranking_algorithm_scaffold_smoke/comparison.json` 均保留。
 - 后续只继续做更稳定的 rule / LTR / 树模型准备，不把 scaffold 或 smoke 结果写成模型晋升。
 
 ### 13.6 Phase 2 fine-rank batch 执行结果回填
 
-- 已新增 `scripts/experiments/ranking/run_phase_2_fine_rank_algorithm_batch.py` 与 `tests/test_phase_2_fine_rank_algorithm_batch.py`，把 fine_rank 的 linear / pointwise / pairwise / tree / LambdaMART 批量运行收敛到同一入口。
-- 验证命令 `./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_2_fine_rank_algorithm_batch.py tests/test_phase_2_fine_rank_algorithm_batch.py` 与 `./.venv/Scripts/python.exe -m pytest tests/test_phase_2_fine_rank_algorithm_batch.py -q` 通过，后者结果 `3 passed`。
+- 已新增 `rs_lab/experiments/ranking/run_phase_2_fine_rank_algorithm_batch.py` 与 `tests/test_phase_2_fine_rank_algorithm_batch.py`，把 fine_rank 的 linear / pointwise / pairwise / tree / LambdaMART 批量运行收敛到同一入口。
+- 验证命令 `./.venv/Scripts/python.exe -m py_compile rs_lab/experiments/ranking/run_phase_2_fine_rank_algorithm_batch.py tests/test_phase_2_fine_rank_algorithm_batch.py` 与 `./.venv/Scripts/python.exe -m pytest tests/test_phase_2_fine_rank_algorithm_batch.py -q` 通过，后者结果 `3 passed`。
 - learned rows 当前只保留为 diagnostic-only；linear / pointwise / pairwise 只验证 full-pool scoring 证据，不写 promotion 结论。
 - tree / LambdaMART 仍是 blocked / preparation：缺真实依赖或 adapter 时必须 blocked，不能用 deterministic stand-in 冒充工业模型收益。
 - 全部运行仍保持 `frozen pool200`、`candidate_pool_size=200`、`top_k=5`，不改召回语义。
 
 ### 13.7 Phase 3 tree / LambdaMART 执行回填
 
-- 已新增 `scripts/experiments/ranking/run_phase_3_tree_ranking_experiments.py`，并补齐 `tests/test_phase_3_tree_ranking_experiments.py`。
+- 已新增 `rs_lab/experiments/ranking/run_phase_3_tree_ranking_experiments.py`，并补齐 `tests/test_phase_3_tree_ranking_experiments.py`。
 - smoke 产物落在 `outputs/ranking/phase_3_tree_ranking_experiments_smoke/comparison.json`，验证口径继续固定 `candidate_pool_size=200`、`top_k=5`。
 - 训练行导出显示 `training rows=2217`、`positive=16`、`negative=2201`；`sklearn` GBDT 只保留为 diagnostic-only。
 - 即使依赖或 GPU 可用，LambdaMART 仍因 serving adapter、valid-test promotion gate 和 objective recovery condition 不完整而 blocked。
@@ -729,8 +729,8 @@ Phase 1.31/1.32 runner 完成后，必须新增并执行对应 smoke，不能只
 
 ### 13.9 Phase 4 stage shadow metrics 回填结果
 
-- 已新增 `scripts/experiments/ranking/run_phase_4_stage_shadow_metrics.py` 与 `tests/test_phase_4_stage_shadow_metrics.py`，专门验证弱指标和 coarse shadow 口径。
-- 验证命令 `./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_4_stage_shadow_metrics.py tests/test_phase_4_stage_shadow_metrics.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_phase_1_31_ranking_scaffold.py tests/test_phase_3_tree_ranking_experiments.py tests/test_phase_4_stage_shadow_metrics.py -q` 共 `11 passed`。
+- 已新增 `rs_lab/experiments/ranking/run_phase_4_stage_shadow_metrics.py` 与 `tests/test_phase_4_stage_shadow_metrics.py`，专门验证弱指标和 coarse shadow 口径。
+- 验证命令 `./.venv/Scripts/python.exe -m py_compile rs_lab/experiments/ranking/run_phase_4_stage_shadow_metrics.py tests/test_phase_4_stage_shadow_metrics.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_hybrid_demo.py tests/test_phase_1_31_ranking_scaffold.py tests/test_phase_3_tree_ranking_experiments.py tests/test_phase_4_stage_shadow_metrics.py -q` 共 `11 passed`。
 - smoke 产物落在 `outputs/ranking/phase_4_stage_shadow_metrics_smoke/comparison.json`，comparison 继续固定 `candidate_pool_size=200`、`top_k=5`，`artifact_inspection=PASS`。
 - 弱指标只保留为 diagnostic/supporting，不触发 promotion；`coarse shadow retention` 与 `would_drop_positive` 被记录为诊断信号。
 - stage main-lane matrix 已被回填，且 `frozen match/hash`、recall 语义与 `merge_for_user` 均保持不变；当前没有任何 online promotion evidence.
@@ -738,17 +738,17 @@ Phase 1.31/1.32 runner 完成后，必须新增并执行对应 smoke，不能只
 ### 13.10 Phase 5 行为序列 / 注意力排序回填结果
 
 - Phase 5 继续只把行为序列与注意力排序放在 frozen pool200 的诊断边界内，`session_aware_reranker_short_history_diagnostic` 与 `attention_over_user_history_diagnostic` 仍然只做 diagnostic，DIN / DIEN / BST / SIM 继续标记为 blocked。
-- 验证命令 `./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_5_sequence_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_5_fine_rank_positive_push.py -q` 通过 `7 passed`。
+- 验证命令 `./.venv/Scripts/python.exe -m py_compile rs_lab/experiments/ranking/run_phase_5_sequence_ranker.py tests/test_hybrid_demo.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_5_fine_rank_positive_push.py -q` 通过 `7 passed`。
 - smoke 产物 `outputs/ranking/phase_5_fine_rank_positive_push_smoke/comparison.json` 通过 contract 检查：`candidate_pool_size=200`、`top_k=5`、`frozen_candidate_comparison.match=true`、`case_diagnostic_success=true`、`promotion_success=false`、`online_claims=[]`、`artifact_inspection=PASS`。
 - 这一轮确认的是“数据与证据门禁先行”：在当前序列覆盖与合同边界下，可以稳定产出诊断结果，但不能把 Phase 5 写成 promotion。
 - 后续如果要推进行为序列路线，优先补长历史覆盖、时间顺序稳定性和 serving adapter，不改当前 frozen candidate 边界.
 
 ### 13.11 Phase 6 工业式默认全链路回填结果
 
-- 已新增 `scripts/experiments/ranking/run_phase_6_industrial_ranking_chain.py` 与 `tests/test_phase_6_industrial_ranking_chain.py`，把工业常见链路显式放到同一个 frozen pool200 诊断 runner：`coarse_rank` 使用 source-weighted metadata shadow score，`fine_rank` 使用 normalized additive + source-aware fusion + item-feature full-pool scoring，`rerank` 使用 Top-5 source minimum 与 stable tie-break 的局部约束。
+- 已新增 `rs_lab/experiments/ranking/run_phase_6_industrial_ranking_chain.py` 与 `tests/test_phase_6_industrial_ranking_chain.py`，把工业常见链路显式放到同一个 frozen pool200 诊断 runner：`coarse_rank` 使用 source-weighted metadata shadow score，`fine_rank` 使用 normalized additive + source-aware fusion + item-feature full-pool scoring，`rerank` 使用 Top-5 source minimum 与 stable tie-break 的局部约束。
 - 当前仍不替换 champion，不真实缩池，不改召回语义，不改 `merge_for_user`；`GBDT/LambdaMART fine_rank`、神经序列排序和 Agent/online feedback rerank 继续作为 future blocked route，等待真实 adapter、valid/test 与 future-online 合同。
-- 验证命令 `./.venv/Scripts/python.exe -m py_compile scripts/experiments/ranking/run_phase_6_industrial_ranking_chain.py tests/test_phase_6_industrial_ranking_chain.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_6_industrial_ranking_chain.py -q` 通过 `4 passed`。
-- 真实 smoke `./.venv/Scripts/python.exe scripts/experiments/ranking/run_phase_6_industrial_ranking_chain.py --output-dir outputs/ranking/phase_6_industrial_ranking_chain_smoke --limit-users 5 --seed 20260513` 通过，`comparison.json` 显示 `candidate_pool_size=200`、`top_k=5`、`artifact_inspection=PASS`、baseline 与工业链路 `frozen_candidate_match=true`、`promotion_success=false`、`promotion_eligible=false`。
+- 验证命令 `./.venv/Scripts/python.exe -m py_compile rs_lab/experiments/ranking/run_phase_6_industrial_ranking_chain.py tests/test_phase_6_industrial_ranking_chain.py` 通过；`./.venv/Scripts/python.exe -m pytest tests/test_phase_6_industrial_ranking_chain.py -q` 通过 `4 passed`。
+- 真实 smoke `./.venv/Scripts/python.exe rs_lab/experiments/ranking/run_phase_6_industrial_ranking_chain.py --output-dir outputs/ranking/phase_6_industrial_ranking_chain_smoke --limit-users 5 --seed 20260513` 通过，`comparison.json` 显示 `candidate_pool_size=200`、`top_k=5`、`artifact_inspection=PASS`、baseline 与工业链路 `frozen_candidate_match=true`、`promotion_success=false`、`promotion_eligible=false`。
 - smoke 期间发现 normalized additive 权重必须落在 Phase 1.25 有限网格内，已把 `source_signal` 与 `item_feature` 从越界值收回到允许的 `0.2`；这说明当前链路已经受实验底座约束，而不是任意调参。
 
 ### 13.12 Phase C 先行、Phase A 收口与 learned/tree/neural 路线
