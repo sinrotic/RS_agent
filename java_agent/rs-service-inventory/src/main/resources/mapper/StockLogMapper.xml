@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.inventory.mapper.StockLogMapper">
+
+    <resultMap id="StockLogMap" type="com.sinrotic.rs.inventory.domain.entity.StockLog">
+        <constructor>
+            <arg column="id" javaType="long"/>
+            <arg column="request_id" javaType="string"/>
+            <arg column="order_id" javaType="long"/>
+            <arg column="sku_id" javaType="string"/>
+            <arg column="quantity" javaType="int"/>
+            <arg column="type" javaType="string"/>
+            <arg column="created_at" javaType="java.time.LocalDateTime"/>
+        </constructor>
+    </resultMap>
+
+    <insert id="insertLog">
+        INSERT INTO stock_logs(request_id, order_id, sku_id, quantity, type)
+        VALUES (#{requestId}, #{orderId}, #{skuId}, #{quantity}, #{type})
+    </insert>
+
+    <select id="findSameLog" resultMap="StockLogMap">
+        SELECT id, request_id, order_id, sku_id, quantity, type, created_at
+        FROM stock_logs
+        WHERE request_id = #{requestId}
+           OR (order_id = #{orderId} AND sku_id = #{skuId} AND type = #{type})
+        ORDER BY CASE WHEN request_id = #{requestId} THEN 0 ELSE 1 END
+        LIMIT 1
+    </select>
+
+    <select id="findSameLogForUpdate" resultMap="StockLogMap">
+        SELECT id, request_id, order_id, sku_id, quantity, type, created_at
+        FROM stock_logs
+        WHERE request_id = #{requestId}
+           OR (order_id = #{orderId} AND sku_id = #{skuId} AND type = #{type})
+        ORDER BY CASE WHEN request_id = #{requestId} THEN 0 ELSE 1 END
+        LIMIT 1
+        FOR UPDATE
+    </select>
+
+    <select id="findByOrderSkuType" resultMap="StockLogMap">
+        SELECT id, request_id, order_id, sku_id, quantity, type, created_at
+        FROM stock_logs
+        WHERE order_id = #{orderId}
+          AND sku_id = #{skuId}
+          AND type = #{type}
+        ORDER BY id
+        LIMIT 1
+    </select>
+</mapper>

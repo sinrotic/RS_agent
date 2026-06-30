@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.inventory.mapper.SkuStockMapper">
+
+    <update id="lockStock">
+        UPDATE sku_stock
+        SET available_stock = available_stock - #{quantity},
+            locked_stock = locked_stock + #{quantity},
+            version = version + 1
+        WHERE sku_id = #{skuId}
+          AND available_stock >= #{quantity}
+    </update>
+
+    <update id="confirmDeduct">
+        UPDATE sku_stock
+        SET locked_stock = locked_stock - #{quantity},
+            sold_stock = sold_stock + #{quantity},
+            version = version + 1
+        WHERE sku_id = #{skuId}
+          AND locked_stock >= #{quantity}
+    </update>
+
+    <update id="releaseStock">
+        UPDATE sku_stock
+        SET available_stock = available_stock + #{quantity},
+            locked_stock = locked_stock - #{quantity},
+            version = version + 1
+        WHERE sku_id = #{skuId}
+          AND locked_stock >= #{quantity}
+    </update>
+</mapper>

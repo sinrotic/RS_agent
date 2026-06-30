@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.order.mapper.OrderMapper">
+
+    <insert id="insertOrder" parameterType="com.sinrotic.rs.order.domain.entity.Order">
+        INSERT INTO orders (
+            order_id,
+            request_id,
+            account_id,
+            profile_user_id,
+            session_id,
+            recommend_request_id,
+            status,
+            total_amount
+        )
+        VALUES (
+            #{orderId},
+            #{requestId},
+            #{accountId},
+            #{profileUserId},
+            #{sessionId},
+            #{recommendRequestId},
+            #{status},
+            #{totalAmount}
+        )
+    </insert>
+
+    <update id="markPaid">
+        UPDATE orders
+        SET status = 'PAID',
+            paid_at = NOW()
+        WHERE order_id = #{orderId}
+          AND status = 'WAITING_PAYMENT'
+    </update>
+
+    <update id="closeTimeout">
+        UPDATE orders
+        SET status = 'TIMEOUT_CLOSED',
+            closed_at = NOW()
+        WHERE order_id = #{orderId}
+          AND status = 'WAITING_PAYMENT'
+    </update>
+
+    <update id="cancel">
+        UPDATE orders
+        SET status = 'CANCELED',
+            closed_at = NOW()
+        WHERE order_id = #{orderId}
+          AND status = 'WAITING_PAYMENT'
+    </update>
+
+    <select id="findByRequestId" resultType="com.sinrotic.rs.order.domain.entity.Order">
+        SELECT order_id,
+               request_id,
+               account_id,
+               profile_user_id,
+               session_id,
+               recommend_request_id,
+               status,
+               total_amount,
+               paid_at,
+               closed_at,
+               created_at,
+               updated_at
+        FROM orders
+        WHERE request_id = #{requestId}
+    </select>
+
+    <select id="findByOrderId" resultType="com.sinrotic.rs.order.domain.entity.Order">
+        SELECT order_id,
+               request_id,
+               account_id,
+               profile_user_id,
+               session_id,
+               recommend_request_id,
+               status,
+               total_amount,
+               paid_at,
+               closed_at,
+               created_at,
+               updated_at
+        FROM orders
+        WHERE order_id = #{orderId}
+    </select>
+</mapper>

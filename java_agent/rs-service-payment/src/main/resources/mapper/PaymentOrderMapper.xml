@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.payment.mapper.PaymentOrderMapper">
+
+    <insert id="insertPayment">
+        INSERT INTO payment_orders (
+            payment_id,
+            order_id,
+            provider,
+            amount,
+            status
+        )
+        VALUES (
+            #{paymentId},
+            #{orderId},
+            #{provider},
+            #{amount},
+            #{status}
+        )
+    </insert>
+
+    <update id="markPaid">
+        UPDATE payment_orders
+        SET status = 'PAID',
+            provider_transaction_id = #{providerTransactionId},
+            paid_at = NOW()
+        WHERE order_id = #{orderId}
+          AND provider = #{provider}
+          AND amount = #{amount}
+          AND status = 'WAITING_PAY'
+    </update>
+
+    <select id="findByOrderId" resultType="com.sinrotic.rs.payment.domain.entity.PaymentOrder">
+        SELECT payment_id,
+               order_id,
+               provider,
+               provider_transaction_id,
+               status,
+               amount,
+               created_at,
+               paid_at,
+               updated_at
+        FROM payment_orders
+        WHERE order_id = #{orderId}
+    </select>
+</mapper>

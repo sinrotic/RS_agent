@@ -20,6 +20,10 @@
         <module>rs-service-model</module>
         <module>rs-service-search-rag</module>
         <module>rs-service-platform-trace</module>
+        <module>rs-service-order</module>
+        <module>rs-service-inventory</module>
+        <module>rs-service-payment</module>
+        <module>rs-service-seckill</module>
     </modules>
     
     <packaging>pom</packaging>
@@ -35,6 +39,7 @@
         <spring-cloud.version>2025.1.1</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
         <spring-ai.version>2.0.0</spring-ai.version>
+        <spring-kafka.version>4.0.3</spring-kafka.version>
 
         <!-- 方便在 spring cloud alibaba 不更新时，单独及时更新 -->
         <nacos.version>3.1.1</nacos.version>
@@ -164,6 +169,7 @@
             <dependency>
                 <groupId>org.springframework.kafka</groupId>
                 <artifactId>spring-kafka</artifactId>
+                <version>${spring-kafka.version}</version>
             </dependency>
             <!-- Java 运行 ONNX 排序模型推理引擎，保障极低延迟打分 -->
             <dependency>

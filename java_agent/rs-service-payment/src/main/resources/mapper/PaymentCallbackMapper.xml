@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.sinrotic.rs.payment.mapper.PaymentCallbackMapper">
+
+    <insert id="insertCallback">
+        INSERT INTO payment_callbacks (
+            provider,
+            provider_transaction_id,
+            order_id,
+            amount,
+            status,
+            payload_hash
+        )
+        VALUES (
+            #{provider},
+            #{providerTransactionId},
+            #{orderId},
+            #{amount},
+            #{status},
+            #{payloadHash}
+        )
+    </insert>
+
+    <select id="findByProviderTransaction" resultType="com.sinrotic.rs.payment.domain.entity.PaymentCallback">
+        SELECT id,
+               provider,
+               provider_transaction_id,
+               order_id,
+               amount,
+               status,
+               payload_hash,
+               processed_at
+        FROM payment_callbacks
+        WHERE provider = #{provider}
+          AND provider_transaction_id = #{providerTransactionId}
+    </select>
+</mapper>

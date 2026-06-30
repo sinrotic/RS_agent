@@ -32,6 +32,10 @@ spring:
               uri: lb://rs-service-agent
               predicates:
                 - Path=/api/agent/**
+            - id: rs-service-seckill
+              uri: lb://rs-service-seckill
+              predicates:
+                - Path=/api/seckill/**,/api/platform/seckill/**
             - id: rs-service-platform-trace
               uri: lb://rs-service-platform-trace
               predicates:
@@ -44,6 +48,15 @@ spring:
               uri: lb://rs-service-model
               predicates:
                 - Path=/api/model/**
+            - id: rs-service-order
+              uri: lb://rs-service-order
+              predicates:
+                - Path=/api/orders/**
+            # Payment provider callbacks are intentionally public; rs-service-payment validates signatures.
+            - id: rs-service-payment
+              uri: lb://rs-service-payment
+              predicates:
+                - Path=/api/payments/**,/callback/payments/**
           globalcors:
             cors-configurations:
               '[/**]':
