@@ -36,14 +36,14 @@ spring:
               uri: lb://rs-service-seckill
               predicates:
                 - Path=/api/seckill/**,/api/platform/seckill/**
+            - id: rs-service-recommend-platform-rag
+              uri: lb://rs-service-recommend
+              predicates:
+                - Path=/api/platform/recommend/rag/**
             - id: rs-service-platform-trace
               uri: lb://rs-service-platform-trace
               predicates:
                 - Path=/api/platform/**
-            - id: rs-service-search-rag
-              uri: lb://rs-service-search-rag
-              predicates:
-                - Path=/api/rag/**,/api/search-rag/**
             - id: rs-service-model
               uri: lb://rs-service-model
               predicates:

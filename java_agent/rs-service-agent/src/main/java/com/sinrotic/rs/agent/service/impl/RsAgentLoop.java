@@ -1,6 +1,8 @@
 package com.sinrotic.rs.agent.service.impl;
 
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
+import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
+import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 
@@ -14,6 +16,25 @@ public class RsAgentLoop extends AgentLoop {
             AgentToolUseExecutor toolUseExecutor,
             AgentModelStreamClient modelStreamClient
     ) {
+        this(runtimeConfigurationService, toolUseExecutor, modelStreamClient, new NoopAgentLoopHookDispatcher());
+    }
+
+    public RsAgentLoop(
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentModelStreamClient modelStreamClient,
+            AgentLoopHookDispatcher hookDispatcher
+    ) {
+        this(runtimeConfigurationService, toolUseExecutor, modelStreamClient, hookDispatcher, new InMemoryAgentInterrupter());
+    }
+
+    public RsAgentLoop(
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentModelStreamClient modelStreamClient,
+            AgentLoopHookDispatcher hookDispatcher,
+            AgentInterrupter interrupter
+    ) {
         super(
                 new AgentProfile(
                         "rs_agent",
@@ -24,7 +45,7 @@ public class RsAgentLoop extends AgentLoop {
                                 entry("recommend_profile_pipeline", "rs-service-recommend"),
                                 entry("recommend_cold_fallback", "rs-service-recommend"),
                                 entry("recommend_rerank_candidates", "rs-service-recommend"),
-                                entry("rag_support", "rs-service-search-rag"),
+                                entry("rag_support", "rs-service-recommend"),
                                 entry("catalog_card", "rs-service-catalog"),
                                 entry("render_product_cards", "rs-service-agent"),
                                 entry("model_chat", "rs-service-model"),
@@ -35,7 +56,9 @@ public class RsAgentLoop extends AgentLoop {
                 ),
                 runtimeConfigurationService,
                 toolUseExecutor,
-                modelStreamClient
+                modelStreamClient,
+                hookDispatcher,
+                interrupter
         );
     }
 }

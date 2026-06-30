@@ -62,6 +62,17 @@
         LIMIT #{limit}
     </select>
 
+    <select id="selectActiveAfterItemId" resultMap="CatalogItemRowMap">
+        SELECT <include refid="CatalogItemColumns"/>
+        FROM rs_catalog_item
+        WHERE status = 'active'
+        <if test="afterItemId != null and afterItemId != ''">
+          AND item_id &gt; #{afterItemId}
+        </if>
+        ORDER BY item_id
+        LIMIT #{limit}
+    </select>
+
     <select id="selectCategories" resultType="string">
         SELECT category
         FROM rs_catalog_item

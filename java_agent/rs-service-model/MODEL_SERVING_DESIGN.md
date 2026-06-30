@@ -21,7 +21,6 @@
 ```text
 rs-service-recommend
 rs-service-agent
-rs-service-search-rag
         |
         v
 rs-service-model
@@ -339,7 +338,7 @@ rs-service-agent
 Search RAG 服务调用：
 
 ```text
-rs-service-search-rag
+rs-service-recommend
   -> POST /api/model/infer model_key=recommend_user_encoder
   -> Milvus vector search
 ```

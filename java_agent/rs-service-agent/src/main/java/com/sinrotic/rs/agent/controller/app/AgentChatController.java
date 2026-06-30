@@ -2,11 +2,14 @@ package com.sinrotic.rs.agent.controller.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sinrotic.rs.agent.domain.dto.AgentChatRequestDTO;
+import com.sinrotic.rs.agent.domain.dto.AgentInterruptRequestDTO;
 import com.sinrotic.rs.agent.domain.vo.AgentChatVO;
+import com.sinrotic.rs.agent.domain.vo.AgentInterruptVO;
 import com.sinrotic.rs.agent.domain.vo.AgentSessionTraceVO;
 import com.sinrotic.rs.agent.domain.vo.AgentStreamEventVO;
 import com.sinrotic.rs.agent.service.AgentChatService;
 import com.sinrotic.rs.agent.service.AgentChatStreamService;
+import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentTraceService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -31,16 +34,20 @@ public class AgentChatController {
 
     private final AgentTraceService traceService;
 
+    private final AgentInterrupter interrupter;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public AgentChatController(
             AgentChatService chatService,
             AgentChatStreamService streamService,
-            AgentTraceService traceService
+            AgentTraceService traceService,
+            AgentInterrupter interrupter
     ) {
         this.chatService = chatService;
         this.streamService = streamService;
         this.traceService = traceService;
+        this.interrupter = interrupter;
     }
 
     @PostMapping("/chat")
@@ -62,6 +69,16 @@ public class AgentChatController {
     @GetMapping("/sessions/{sessionId}/turns")
     public AgentSessionTraceVO sessionTurns(@PathVariable String sessionId) {
         return traceService.sessionTurns(sessionId);
+    }
+
+    @PostMapping("/requests/{requestId}/interrupt")
+    public AgentInterruptVO interrupt(
+            @PathVariable String requestId,
+            @RequestBody(required = false) AgentInterruptRequestDTO request
+    ) {
+        String reason = request == null ? "user_interrupt" : request.resolvedReason();
+        boolean interrupted = interrupter.interrupt(requestId, reason);
+        return new AgentInterruptVO(requestId, interrupted, reason);
     }
 
     private void writeSseEvent(OutputStreamWriter writer, AgentStreamEventVO event) {

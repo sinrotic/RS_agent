@@ -109,6 +109,11 @@ class PlatformTraceControllerTest {
                   "model_provider": "spring_ai",
                   "model_name": "gpt-5.3-codex-spark",
                   "latency_ms": 42,
+                  "prompt_tokens": 100,
+                  "completion_tokens": 25,
+                  "total_tokens": 125,
+                  "cache_read_input_tokens": 11,
+                  "cache_write_input_tokens": 22,
                   "data": {"status": "SUCCESS"}
                 }
                 """;
@@ -124,6 +129,9 @@ class PlatformTraceControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.events[0].event_type").value("tool_result"))
                 .andExpect(jsonPath("$.events[0].tool_call_id").value("call_001"))
+                .andExpect(jsonPath("$.events[0].prompt_tokens").value(100))
+                .andExpect(jsonPath("$.events[0].completion_tokens").value(25))
+                .andExpect(jsonPath("$.events[0].total_tokens").value(125))
                 .andExpect(jsonPath("$.events[0].data.status").value("SUCCESS"));
     }
 

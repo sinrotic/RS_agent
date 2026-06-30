@@ -32,6 +32,10 @@ public record AgentModelStreamEvent(
         return new AgentModelStreamEvent("done", "", "", "", Map.of());
     }
 
+    public static AgentModelStreamEvent usage(Map<String, Object> usage) {
+        return new AgentModelStreamEvent("usage", "", "", "", usage == null ? Map.of() : Map.copyOf(usage));
+    }
+
     public boolean isToken() {
         return "token".equals(type);
     }
@@ -42,5 +46,9 @@ public record AgentModelStreamEvent(
 
     public boolean isDone() {
         return "done".equals(type);
+    }
+
+    public boolean isUsage() {
+        return "usage".equals(type);
     }
 }

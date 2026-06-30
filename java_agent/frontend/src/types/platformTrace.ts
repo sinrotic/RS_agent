@@ -60,6 +60,26 @@ export interface PlatformTimelineEventVO {
   data: Record<string, unknown>;
 }
 
+export interface AgentTraceEventVO {
+  event_id: string;
+  session_id: string;
+  request_id: string;
+  event_type: string;
+  tool_call_id: string;
+  tool_name: string;
+  agent_name: string;
+  model_provider: string;
+  model_name: string;
+  latency_ms?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  cache_read_input_tokens?: number;
+  cache_write_input_tokens?: number;
+  data: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface PlatformSessionOverviewVO {
   session_id: string;
   account_profile: PlatformAccountProfileVO;

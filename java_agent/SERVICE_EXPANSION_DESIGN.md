@@ -19,18 +19,19 @@
 4. **服务先轻量规划，后续再落代码**：先明确边界和 Controller，再按 `rs-service-user` 的骨架方式实现。
 5. **前台自然对话，后台复杂编排隐藏**：用户只感知注册、浏览、对话和反馈；推荐、RAG、工具调用和 trace 在后台完成。
 
-## 2. 四个建议新增服务总览
+## 2. 三个建议新增服务总览
 
-建议新增四个服务：
+最新调整：推荐链路里的搜索 / RAG evidence 不再作为长期独立微服务，已经迁入 `rs-service-recommend`。原 `rs-service-search-rag` 模块已从父工程和仓库目录中移除。更详细的边界见 `AGENT_RAG_BOUNDARY_DESIGN.md`。
+
+建议新增三个长期服务：
 
 | 服务 | 定位 | 对应 mall4cloud 参考 | 当前价值 |
 | --- | --- | --- | --- |
 | `rs-service-catalog` | 商品目录 / 虚拟店铺服务 | `mall4cloud-product` + 部分 `mall4cloud-multishop` | 给推荐、Agent 和前端提供商品详情、商品卡片、类目和虚拟店铺信息 |
-| `rs-service-search-rag` | 搜索 / RAG 证据服务 | `mall4cloud-search` | 提供关键词搜索、商品证据检索、RAG grounding，对接 Python RAG 能力 |
 | `rs-service-interaction` | 用户行为 / 反馈闭环服务 | mall4cloud 中没有完全对应服务 | 记录曝光、点击、收藏、反馈、模拟购买，支撑推荐闭环 |
 | `rs-service-platform-trace` | 平台观察 / 推荐链路追踪服务 | `mall4cloud-platform` 的轻量化改造 | 查看账号画像、推荐 trace、排序分数、RAG evidence、Agent 工具调用和反馈事件 |
 
-这四个服务和现有服务的关系是：
+这三个长期服务和现有服务的关系是：
 
 ```text
 rs-service-user
@@ -40,10 +41,7 @@ rs-service-catalog
   负责商品、类目、虚拟店铺、商品卡片
 
 rs-service-recommend
-  负责召回、排序、推荐理由、推荐 trace
-
-rs-service-search-rag
-  负责搜索、证据检索、RAG grounding
+  负责召回、排序、推荐理由、推荐 trace、推荐链路内的搜索 / RAG evidence / grounding
 
 rs-service-agent
   负责多轮对话、偏好澄清、工具编排、自然语言解释
@@ -179,7 +177,7 @@ agent-service
   -> 调 catalog-service 获取商品详情
   -> 组织自然语言推荐解释和前端商品卡片
 
-search-rag-service
+recommend-service RAG 子域
   -> 使用 catalog-service 的商品文本构建知识片段
   -> 或按 item_id 查询商品 metadata
 
@@ -187,13 +185,15 @@ platform-trace
   -> 展示推荐结果中的商品基础信息
 ```
 
-## 4. `rs-service-search-rag`：搜索 / RAG 证据服务
+## 4. `rs-service-recommend` 内部 RAG 子域：搜索 / RAG 证据
+
+本节原先规划为独立 `rs-service-search-rag`，现在迁移为 `rs-service-recommend` 内部 RAG 子域。推荐链路里的关键词搜索、候选证据检索、RAG grounding、rerank evidence 和 small2big 压缩都由推荐服务统一暴露。旧模块已移除。
 
 ### 4.1 服务定位
 
-`rs-service-search-rag` 参考 mall4cloud 的 `search` 服务，但不只做传统 Elasticsearch 商品搜索，而是升级为“商品搜索 + RAG evidence”服务。
+`rs-service-recommend` 内部 RAG 子域参考 mall4cloud 的 `search` 能力，但不再单独拆成搜索微服务。
 
-它负责把用户自然语言、商品文本、商品属性和知识片段连接起来，为推荐理由和 Agent 回答提供可追溯证据。
+它负责把用户自然语言、推荐候选商品、商品文本、商品属性和知识片段连接起来，为推荐理由和 Agent 回答提供可追溯证据。
 
 ### 4.2 核心职责
 
@@ -216,14 +216,14 @@ platform-trace
 ### 4.4 建议 Controller
 
 ```text
-com.sinrotic.rs.searchrag.controller
-├── app
-│   ├── ProductSearchController.java
-│   └── RagEvidenceController.java
+com.sinrotic.rs.recommend.controller
+├── agent
+│   └── AgentRecommendController.java
 ├── internal
-│   └── InternalRagController.java
+│   ├── InternalRecommendRagEvidenceController.java
+│   └── InternalRecommendRagPipelineController.java
 └── platform
-    └── PlatformSearchRagController.java
+    └── PlatformRecommendRagTraceController.java
 ```
 
 ### 4.5 建议接口
@@ -231,7 +231,7 @@ com.sinrotic.rs.searchrag.controller
 #### 商品搜索
 
 ```text
-POST /api/search/items
+POST /api/recommend/search/items
 ```
 
 请求示例：
@@ -263,7 +263,7 @@ POST /api/search/items
 #### RAG 问答 / 检索
 
 ```text
-POST /api/rag/query
+POST /api/recommend/rag/query
 ```
 
 用途：Agent 面对用户自然语言问题时，检索商品或领域知识证据。
@@ -271,9 +271,11 @@ POST /api/rag/query
 #### 商品证据查询
 
 ```text
-POST /api/rag/item-evidence
-GET  /internal/items/{item_id}/evidence
-POST /internal/rag/batch-evidence
+POST /agent/recommend/rag/support
+POST /internal/recommend/rag/batch-evidence
+POST /internal/recommend/rag/pipeline/run
+GET  /api/platform/recommend/rag/{requestId}/trace
+GET  /api/platform/recommend/rag/health
 ```
 
 用途：推荐结果出来后，按 item 批量补证据，避免 Agent 自己编理由。
@@ -283,11 +285,11 @@ POST /internal/rag/batch-evidence
 建议边界如下：
 
 ```text
-Java rs-service-search-rag
+Java rs-service-recommend
   - 提供统一 HTTP API
   - 处理鉴权、请求参数、响应结构
   - 调用 Python RAG 服务或已构建的检索接口
-  - 对外统一返回 item evidence / chunk evidence
+  - 对 agent/internal/platform 统一返回 item evidence / chunk evidence / pipeline trace
 
 Python RAG 模块
   - 负责 BM25/向量检索
@@ -567,7 +569,7 @@ GET /api/platform/sessions/{session_id}/events
 5. Agent 对话推荐
    -> rs-service-agent 解析用户自然语言
    -> 调 recommend-service 获取推荐
-   -> 调 search-rag-service 获取证据
+   -> 调 recommend-service 内部 RAG 子域获取证据
    -> 调 catalog-service 补商品详情
    -> 返回自然语言解释 + 商品卡片
 
@@ -587,7 +589,6 @@ frontend
   -> user-service
   -> recommend-service
   -> catalog-service
-  -> search-rag-service
   -> agent-service
   -> interaction-service
   -> platform-trace
@@ -606,7 +607,7 @@ frontend
 - 类目查询。
 - 虚拟 store 查询。
 
-### P1：`rs-service-search-rag`
+### P1：`rs-service-recommend` 内部 RAG 子域
 
 Agent 和推荐解释进入主线后需要做。原因是自然语言推荐不能只靠模型编理由，需要商品文本和证据 grounding。
 

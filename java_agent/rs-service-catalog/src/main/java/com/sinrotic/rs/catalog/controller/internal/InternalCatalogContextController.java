@@ -1,6 +1,8 @@
 package com.sinrotic.rs.catalog.controller.internal;
 
 import com.sinrotic.rs.catalog.domain.dto.BatchItemIdsRequestDTO;
+import com.sinrotic.rs.catalog.domain.dto.CatalogItemEmbeddingPageRequestDTO;
+import com.sinrotic.rs.catalog.domain.vo.CatalogItemEmbeddingTextVO;
 import com.sinrotic.rs.catalog.domain.vo.CatalogItemTextVO;
 import com.sinrotic.rs.catalog.service.CatalogService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,5 +30,17 @@ public class InternalCatalogContextController {
     @PostMapping("/rag-documents")
     public List<CatalogItemTextVO> listRagDocuments(@RequestBody BatchItemIdsRequestDTO request) {
         return catalogService.listItemTexts(request);
+    }
+
+    @PostMapping("/item-embedding-texts")
+    public List<CatalogItemEmbeddingTextVO> listItemEmbeddingTexts(@RequestBody BatchItemIdsRequestDTO request) {
+        return catalogService.listItemEmbeddingTexts(request);
+    }
+
+    @PostMapping("/active-item-embedding-texts")
+    public List<CatalogItemEmbeddingTextVO> listActiveItemEmbeddingTexts(
+            @RequestBody CatalogItemEmbeddingPageRequestDTO request
+    ) {
+        return catalogService.listActiveItemEmbeddingTexts(request);
     }
 }

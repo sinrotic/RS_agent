@@ -16,6 +16,8 @@ public interface CatalogItemMapper {
 
     List<CatalogItemRow> selectByStoreName(@Param("storeName") String storeName, @Param("limit") int limit);
 
+    List<CatalogItemRow> selectActiveAfterItemId(@Param("afterItemId") String afterItemId, @Param("limit") int limit);
+
     List<String> selectCategories();
 
     List<String> selectStoreNames();

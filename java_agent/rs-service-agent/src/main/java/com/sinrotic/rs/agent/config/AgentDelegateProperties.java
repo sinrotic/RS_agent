@@ -13,9 +13,9 @@ public class AgentDelegateProperties {
 
     public static class RagAgent {
 
-        private String baseUrl = "http://127.0.0.1:8086";
+        private String baseUrl = "http://rs-service-recommend:18103";
 
-        private String supportPath = "/agent/rag/support";
+        private String supportPath = "/agent/recommend/rag/support";
 
         public String getBaseUrl() {
             return baseUrl;

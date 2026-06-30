@@ -26,11 +26,39 @@ public record AgentTraceEventVO(
         String modelName,
         @JsonProperty("latency_ms")
         Long latencyMs,
+        @JsonProperty("prompt_tokens")
+        Integer promptTokens,
+        @JsonProperty("completion_tokens")
+        Integer completionTokens,
+        @JsonProperty("total_tokens")
+        Integer totalTokens,
+        @JsonProperty("cache_read_input_tokens")
+        Long cacheReadInputTokens,
+        @JsonProperty("cache_write_input_tokens")
+        Long cacheWriteInputTokens,
         @JsonProperty("data")
         Map<String, Object> data,
         @JsonProperty("created_at")
         Instant createdAt
 ) {
+    public AgentTraceEventVO(
+            String eventId,
+            String sessionId,
+            String requestId,
+            String eventType,
+            String toolCallId,
+            String toolName,
+            String agentName,
+            String modelProvider,
+            String modelName,
+            Long latencyMs,
+            Map<String, Object> data,
+            Instant createdAt
+    ) {
+        this(eventId, sessionId, requestId, eventType, toolCallId, toolName, agentName, modelProvider, modelName,
+                latencyMs, null, null, null, null, null, data, createdAt);
+    }
+
     public AgentTraceEventVO {
         data = data == null ? Map.of() : Map.copyOf(data);
         createdAt = createdAt == null ? Instant.now() : createdAt;

@@ -8,6 +8,15 @@ public record AgentLoopResult(
         String agentName,
         String requestId,
         String assistantMessage,
-        List<AgentToolCallVO> toolCalls
+        List<AgentToolCallVO> toolCalls,
+        AgentFinishReason finishReason
 ) {
+    public AgentLoopResult(
+            String agentName,
+            String requestId,
+            String assistantMessage,
+            List<AgentToolCallVO> toolCalls
+    ) {
+        this(agentName, requestId, assistantMessage, toolCalls, AgentFinishReason.FINAL_ANSWER);
+    }
 }

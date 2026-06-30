@@ -18,6 +18,7 @@ export function ObserveConsole() {
 
   const canQuerySession = Boolean(sessionId.trim());
   const canQueryRecommend = Boolean(requestId.trim());
+  const totalSessionTokens = overview?.timeline.reduce((sum, event) => sum + numberValue(event.data.total_tokens), 0) || 0;
 
   const loadOverview = async () => {
     if (!canQuerySession) return;
@@ -83,7 +84,7 @@ export function ObserveConsole() {
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:grid-cols-5">
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
                 Profile
                 <div className="mt-1 text-sm text-cyan-300">{overview?.account_profile ? 'Loaded' : 'Idle'}</div>
@@ -99,6 +100,10 @@ export function ObserveConsole() {
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
                 Events
                 <div className="mt-1 text-sm text-cyan-300">{overview?.timeline.length || 0}</div>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
+                Tokens
+                <div className="mt-1 text-sm text-cyan-300">{totalSessionTokens}</div>
               </div>
             </div>
           </div>
@@ -191,7 +196,7 @@ export function ObserveConsole() {
             ) : (
               <div className="divide-y divide-slate-800">
                 {overview.timeline.map((event) => (
-                  <div key={event.event_id} className="grid gap-3 px-4 py-3 text-xs md:grid-cols-[120px_110px_1fr_160px]">
+                  <div key={event.event_id} className="grid gap-3 px-4 py-3 text-xs md:grid-cols-[120px_110px_1fr_150px_160px]">
                     <div className="font-mono text-[10px] text-slate-500">{new Date(event.occurred_at).toLocaleString()}</div>
                     <div className="inline-flex w-fit items-center rounded-md border border-cyan-500/20 bg-cyan-500/10 px-2 py-1 text-[10px] font-bold uppercase text-cyan-300">
                       {event.source}
@@ -199,6 +204,15 @@ export function ObserveConsole() {
                     <div className="min-w-0">
                       <div className="font-bold text-slate-200">{event.event_type}</div>
                       <div className="mt-1 truncate text-slate-500">{event.summary || event.entity_id || event.request_id}</div>
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      {numberValue(event.data.total_tokens) > 0 ? (
+                        <span>
+                          T {numberValue(event.data.total_tokens)} / I {numberValue(event.data.prompt_tokens)} / O {numberValue(event.data.completion_tokens)}
+                        </span>
+                      ) : (
+                        <span>-</span>
+                      )}
                     </div>
                     <div className="truncate font-mono text-[10px] text-slate-500">{event.request_id || event.event_id}</div>
                   </div>
@@ -335,4 +349,15 @@ export function ObserveConsole() {
       </div>
     </div>
   );
+}
+
+function numberValue(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
 }

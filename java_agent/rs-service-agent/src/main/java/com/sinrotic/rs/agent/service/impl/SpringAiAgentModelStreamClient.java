@@ -39,10 +39,10 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
                 .system(systemPrompt(request))
                 .user(request.userMessage())
                 .stream()
-                .content()
+                .chatResponse()
                 .toStream()
-                .filter(token -> token != null && !token.isBlank())
-                .map(AgentModelStreamEvent::token)
+                .flatMap(response -> SpringAiChatResponseMapper.toEvents(response).stream())
+                .filter(event -> !event.isToken() || !event.delta().isBlank())
                 .forEach(consumer);
         consumer.accept(AgentModelStreamEvent.done());
     }

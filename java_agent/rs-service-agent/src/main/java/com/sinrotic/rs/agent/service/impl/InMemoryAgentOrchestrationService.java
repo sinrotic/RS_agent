@@ -10,6 +10,8 @@ import com.sinrotic.rs.agent.domain.vo.AgentTurnVO;
 import com.sinrotic.rs.agent.domain.vo.AgentTraceEventVO;
 import com.sinrotic.rs.agent.service.AgentChatService;
 import com.sinrotic.rs.agent.service.AgentChatStreamService;
+import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
+import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentTraceReporter;
@@ -83,9 +85,27 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
             AgentModelStreamClient modelStreamClient,
             AgentToolUseExecutor toolUseExecutor,
             AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentTraceReporter traceReporter,
+            AgentLoopHookDispatcher hookDispatcher,
+            AgentInterrupter interrupter
+    ) {
+        this(new RsAgentLoop(runtimeConfigurationService, toolUseExecutor, modelStreamClient, hookDispatcher, interrupter), traceReporter);
+    }
+
+    public InMemoryAgentOrchestrationService(
+            AgentModelStreamClient modelStreamClient,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentRuntimeConfigurationService runtimeConfigurationService,
             AgentTraceReporter traceReporter
     ) {
-        this(new RsAgentLoop(runtimeConfigurationService, toolUseExecutor, modelStreamClient), traceReporter);
+        this(
+                modelStreamClient,
+                toolUseExecutor,
+                runtimeConfigurationService,
+                traceReporter,
+                new NoopAgentLoopHookDispatcher(),
+                new InMemoryAgentInterrupter()
+        );
     }
 
     public InMemoryAgentOrchestrationService(
@@ -158,10 +178,10 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
             reportStartedOnce(request, event.requestId(), startedReported);
             reportStreamEvent(request, event);
             if ("done".equals(event.event())) {
-                consumer.accept(new AgentStreamEventVO("done", event.requestId(), Map.of(
-                        "done", true,
-                        "recommended_item_ids", recommendedItemIds
-                )));
+                Map<String, Object> doneData = new java.util.LinkedHashMap<>(event.data());
+                doneData.put("done", true);
+                doneData.put("recommended_item_ids", recommendedItemIds);
+                consumer.accept(new AgentStreamEventVO("done", event.requestId(), Map.copyOf(doneData)));
                 return;
             }
             consumer.accept(event);
@@ -198,7 +218,7 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 ),
                 new AgentToolCallVO(
                         "rag_support",
-                        "rs-service-search-rag",
+                        "rs-service-recommend",
                         "SUCCESS",
                         Map.of("providers", List.of("elasticsearch_bm25", "milvus_vector"))
                 ),
@@ -252,6 +272,11 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 stringValue(request.resolvedContext().getOrDefault("model_provider", "spring_ai")),
                 stringValue(request.resolvedContext().getOrDefault("model_name", "")),
                 null,
+                integerValue(data.get("prompt_tokens")),
+                integerValue(data.get("completion_tokens")),
+                integerValue(data.get("total_tokens")),
+                longValue(data.get("cache_read_input_tokens")),
+                longValue(data.get("cache_write_input_tokens")),
                 data,
                 java.time.Instant.now()
         ));
@@ -259,6 +284,34 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
 
     private String stringValue(Object value) {
         return value == null ? "" : String.valueOf(value);
+    }
+
+    private Integer integerValue(Object value) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Integer.parseInt(text);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private Long longValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Long.parseLong(text);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
 }

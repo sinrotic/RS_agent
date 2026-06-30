@@ -1,0 +1,17 @@
+package com.sinrotic.rs.agent.service.impl;
+
+public enum AgentLoopPhase {
+    CREATED,
+    SESSION_START_HOOK,
+    USER_PROMPT_HOOK,
+    BEFORE_MODEL_CALL_HOOK,
+    MODEL_STREAMING,
+    TOOL_USE_DETECTED,
+    TOOL_EXECUTING,
+    TOOL_RESULT_READY,
+    POST_MODEL_STREAM_HOOK,
+    STOP_HOOK,
+    INTERRUPTED,
+    COMPLETED,
+    FAILED
+}

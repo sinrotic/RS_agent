@@ -6,8 +6,12 @@ import com.sinrotic.rs.recommend.domain.dto.RankStageRequestDTO;
 import com.sinrotic.rs.recommend.domain.vo.PipelineCandidateVO;
 import com.sinrotic.rs.recommend.domain.vo.PipelineRecallVO;
 import com.sinrotic.rs.recommend.service.RecommendPipelineService;
+import com.sinrotic.rs.recommend.service.TwoTowerRecallProvider;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,23 +23,45 @@ import java.util.UUID;
 @Service
 public class DefaultRecommendPipelineService implements RecommendPipelineService {
 
+    private final TwoTowerRecallProvider twoTowerRecallProvider;
+
+    public DefaultRecommendPipelineService() {
+        this((TwoTowerRecallProvider) null);
+    }
+
+    public DefaultRecommendPipelineService(TwoTowerRecallProvider twoTowerRecallProvider) {
+        this.twoTowerRecallProvider = twoTowerRecallProvider;
+    }
+
+    @Autowired
+    public DefaultRecommendPipelineService(ObjectProvider<TwoTowerRecallProvider> twoTowerRecallProvider) {
+        this(twoTowerRecallProvider.getIfAvailable());
+    }
+
     @Override
     public PipelineRecallVO recall(RecallRequestDTO request) {
         Map<String, Integer> sourceDistribution = buildSourceDistribution(request.sources(), request.limit());
-        PipelineCandidateVO candidate = new PipelineCandidateVO(
-                "B001",
-                request.sources().getFirst(),
-                0.81,
-                null,
-                null,
-                null
-        );
+        List<PipelineCandidateVO> candidates = new ArrayList<>();
+        if (request.sources().contains("two_tower") && twoTowerRecallProvider != null) {
+            candidates.addAll(twoTowerRecallProvider.recall(request.profileUserId(), "rec_req_recall", request.limit()));
+            sourceDistribution.put("two_tower", candidates.size());
+        }
+        if (candidates.isEmpty()) {
+            candidates.add(new PipelineCandidateVO(
+                    "B001",
+                    request.sources().getFirst(),
+                    0.81,
+                    null,
+                    null,
+                    null
+            ));
+        }
         return new PipelineRecallVO(
                 "rec_req_recall_" + UUID.randomUUID(),
                 "recall",
                 request.limit(),
                 sourceDistribution,
-                List.of(candidate)
+                candidates
         );
     }
 

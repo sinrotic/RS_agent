@@ -15,6 +15,8 @@ public interface CatalogItemRepository {
 
     List<CatalogItem> findByStoreName(String storeName, int limit);
 
+    List<CatalogItem> findActiveAfterItemId(String afterItemId, int limit);
+
     List<String> listCategories();
 
     List<String> listStoreNames();

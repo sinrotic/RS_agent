@@ -1,11 +1,13 @@
 package com.sinrotic.rs.catalog.service.impl;
 
 import com.sinrotic.rs.catalog.domain.dto.BatchItemIdsRequestDTO;
+import com.sinrotic.rs.catalog.domain.dto.CatalogItemEmbeddingPageRequestDTO;
 import com.sinrotic.rs.catalog.domain.dto.CatalogItemPageRequestDTO;
 import com.sinrotic.rs.catalog.domain.entity.CatalogItem;
 import com.sinrotic.rs.catalog.domain.vo.CatalogCategoryVO;
 import com.sinrotic.rs.catalog.domain.vo.CatalogItemCardVO;
 import com.sinrotic.rs.catalog.domain.vo.CatalogItemDetailVO;
+import com.sinrotic.rs.catalog.domain.vo.CatalogItemEmbeddingTextVO;
 import com.sinrotic.rs.catalog.domain.vo.CatalogItemTextVO;
 import com.sinrotic.rs.catalog.domain.vo.VirtualStoreVO;
 import com.sinrotic.rs.catalog.repository.CatalogItemRepository;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DefaultCatalogService implements CatalogService {
+
+    private static final int EMBEDDING_DESCRIPTION_MAX_CHARS = 200;
 
     private final CatalogItemRepository catalogItemRepository;
 
@@ -53,6 +57,21 @@ public class DefaultCatalogService implements CatalogService {
     public List<CatalogItemTextVO> listItemTexts(BatchItemIdsRequestDTO request) {
         return orderedItems(request.normalizedItemIds()).stream()
                 .map(item -> new CatalogItemTextVO(item.itemId(), buildRagText(item)))
+                .toList();
+    }
+
+    @Override
+    public List<CatalogItemEmbeddingTextVO> listItemEmbeddingTexts(BatchItemIdsRequestDTO request) {
+        return orderedItems(request.normalizedItemIds()).stream()
+                .map(this::toEmbeddingText)
+                .toList();
+    }
+
+    @Override
+    public List<CatalogItemEmbeddingTextVO> listActiveItemEmbeddingTexts(CatalogItemEmbeddingPageRequestDTO request) {
+        CatalogItemEmbeddingPageRequestDTO normalized = request.withDefaults();
+        return catalogItemRepository.findActiveAfterItemId(normalized.afterItemId(), normalized.limit()).stream()
+                .map(this::toEmbeddingText)
                 .toList();
     }
 
@@ -131,6 +150,19 @@ public class DefaultCatalogService implements CatalogService {
         );
     }
 
+    private CatalogItemEmbeddingTextVO toEmbeddingText(CatalogItem item) {
+        return new CatalogItemEmbeddingTextVO(
+                item.itemId(),
+                buildEmbeddingText(item),
+                item.title(),
+                item.category(),
+                firstNonBlank(item.categoryPath(), item.category()),
+                item.brand(),
+                item.price(),
+                item.attributes()
+        );
+    }
+
     private String buildRagText(CatalogItem item) {
         StringBuilder text = new StringBuilder();
         appendLine(text, "Title", item.title());
@@ -145,6 +177,40 @@ public class DefaultCatalogService implements CatalogService {
                 .collect(Collectors.joining(", "));
         appendLine(text, "Attributes", attributes);
         return text.toString().stripTrailing();
+    }
+
+    private String buildEmbeddingText(CatalogItem item) {
+        StringBuilder text = new StringBuilder();
+        appendLine(text, "Title", item.title());
+        appendLine(text, "Category", firstNonBlank(item.categoryPath(), item.category()));
+        appendLine(text, "Brand", item.brand());
+        appendLine(text, "Attributes", embeddingAttributes(item.attributes()));
+        appendLine(text, "Summary", item.summary());
+        appendLine(text, "Description", truncate(item.description(), EMBEDDING_DESCRIPTION_MAX_CHARS));
+        return text.toString().stripTrailing();
+    }
+
+    private String embeddingAttributes(Map<String, String> attributes) {
+        if (attributes == null || attributes.isEmpty()) {
+            return "";
+        }
+        return attributes.entrySet().stream()
+                .filter(entry -> entry.getKey() != null && !entry.getKey().isBlank())
+                .filter(entry -> entry.getValue() != null && !entry.getValue().isBlank())
+                .sorted(Comparator.comparing(Map.Entry::getKey))
+                .map(entry -> entry.getKey().trim() + "=" + entry.getValue().trim())
+                .collect(Collectors.joining(", "));
+    }
+
+    private String truncate(String value, int maxChars) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        String trimmed = value.trim();
+        if (trimmed.length() <= maxChars) {
+            return trimmed;
+        }
+        return trimmed.substring(0, maxChars).stripTrailing();
     }
 
     private void appendLine(StringBuilder text, String label, String value) {

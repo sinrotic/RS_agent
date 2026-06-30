@@ -164,6 +164,11 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 event.modelProvider(),
                 event.modelName(),
                 event.latencyMs(),
+                event.promptTokens(),
+                event.completionTokens(),
+                event.totalTokens(),
+                event.cacheReadInputTokens(),
+                event.cacheWriteInputTokens(),
                 event.data(),
                 event.createdAt()
         );
@@ -225,6 +230,9 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                         "tool_name", nullToEmpty(event.toolName()),
                         "agent_name", nullToEmpty(event.agentName()),
                         "latency_ms", event.latencyMs() == null ? "" : event.latencyMs(),
+                        "prompt_tokens", event.promptTokens() == null ? "" : event.promptTokens(),
+                        "completion_tokens", event.completionTokens() == null ? "" : event.completionTokens(),
+                        "total_tokens", event.totalTokens() == null ? "" : event.totalTokens(),
                         "data", event.data()
                 )
         );

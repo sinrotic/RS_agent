@@ -43,6 +43,12 @@ services:
       <<: *common-env
       SPRING_APPLICATION_NAME: rs-service-recommend
       SERVER_PORT: 18103
+      RS_CATALOG_BASE_URL: ${RS_CATALOG_BASE_URL:-http://rs-service-catalog:18102}
+      RS_MODEL_BASE_URL: ${RS_MODEL_BASE_URL:-http://rs-service-model:18105}
+      RS_MILVUS_BASE_URL: ${RS_MILVUS_BASE_URL:-http://milvus-standalone:19530}
+      RS_MILVUS_TOKEN: ${RS_MILVUS_TOKEN:-}
+      RS_RECOMMEND_EMBEDDING_MODEL_KEY: ${RS_RECOMMEND_EMBEDDING_MODEL_KEY:-bge-m3}
+      RS_RECOMMEND_SEMANTIC_INDEX_COLLECTION: ${RS_RECOMMEND_SEMANTIC_INDEX_COLLECTION:-rs_agent_semantic_items_bge_m3_v1}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-recommend.jar"]
     ports:
       - "127.0.0.1:${RS_RECOMMEND_HOST_PORT:-18103}:18103"

@@ -16,7 +16,7 @@
 
 - 用户登录、画像绑定和 session 管理，这些属于 `rs-service-user`。
 - 商品详情、图片、价格和类目补全，这些属于后续 `rs-service-catalog`。
-- RAG evidence 检索，这些属于后续 `rs-service-search-rag` 或 Python RAG 服务。
+- 通用知识库问答不属于本服务；推荐候选相关的 RAG evidence 检索已并入 `rs-service-recommend`。
 - 曝光、点击、反馈和模拟购买事件落库，这些属于后续 `rs-service-interaction`。
 - 模型训练、离线评估和候选池生成，这些仍由 Python 离线链路负责。
 
@@ -838,7 +838,8 @@ Frontend 用户输入自然语言
   -> rs-service-agent
   -> POST /agent/recommend/candidates
   -> rs-service-recommend 根据 session 和 constraints 推荐 top10
-  -> rs-service-search-rag 补 evidence（后续）
+  -> POST /agent/recommend/rag/support
+  -> rs-service-recommend 补候选商品 evidence
   -> rs-service-agent 组织自然语言解释和商品卡片
 ```
 
@@ -902,4 +903,3 @@ session context
   -> final return top20
   -> trace 可观察
 ```
-

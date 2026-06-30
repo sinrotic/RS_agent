@@ -107,7 +107,7 @@ MallHome
 AgentChat
   -> rs-service-agent 处理对话
   -> rs-service-recommend 获取推荐
-  -> rs-service-search-rag 获取证据
+  -> rs-service-recommend 获取 RAG evidence
   -> rs-service-catalog 补商品详情
 ```
 

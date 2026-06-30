@@ -9,6 +9,7 @@ import com.sinrotic.rs.agent.domain.vo.AgentToolCallVO;
 import com.sinrotic.rs.agent.domain.vo.AgentTurnVO;
 import com.sinrotic.rs.agent.service.AgentChatService;
 import com.sinrotic.rs.agent.service.AgentChatStreamService;
+import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentTraceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,13 +46,16 @@ class AgentChatControllerTest {
 
     private AgentTraceService traceService;
 
+    private AgentInterrupter interrupter;
+
     @BeforeEach
     void setUp() {
         chatService = mock(AgentChatService.class);
         streamService = mock(AgentChatStreamService.class);
         traceService = mock(AgentTraceService.class);
+        interrupter = mock(AgentInterrupter.class);
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AgentChatController(chatService, streamService, traceService))
+                .standaloneSetup(new AgentChatController(chatService, streamService, traceService, interrupter))
                 .build();
     }
 
@@ -170,7 +174,7 @@ class AgentChatControllerTest {
                         "我会优先推荐通勤背包，并补充可解释证据。",
                         List.of(new AgentToolCallVO(
                                 "rag_support",
-                                "rs-service-search-rag",
+                                "rs-service-recommend",
                                 "SUCCESS",
                                 Map.of("providers", List.of("elasticsearch_bm25", "milvus_vector"))
                         )),
@@ -188,5 +192,22 @@ class AgentChatControllerTest {
                 .andExpect(jsonPath("$.turns[0].recommended_item_ids[0]").value("B001"));
 
         verify(traceService).sessionTurns("sess_001");
+    }
+
+    @Test
+    void interruptRequestReturnsInterruptedState() throws Exception {
+        when(interrupter.interrupt("agent_req_001", "user_stop")).thenReturn(true);
+
+        mockMvc.perform(post("/api/agent/requests/agent_req_001/interrupt")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "reason", "user_stop"
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.request_id").value("agent_req_001"))
+                .andExpect(jsonPath("$.interrupted").value(true))
+                .andExpect(jsonPath("$.reason").value("user_stop"));
+
+        verify(interrupter).interrupt("agent_req_001", "user_stop");
     }
 }

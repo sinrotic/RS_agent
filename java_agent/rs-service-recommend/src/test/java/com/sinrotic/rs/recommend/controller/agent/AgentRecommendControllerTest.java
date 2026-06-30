@@ -3,7 +3,13 @@ package com.sinrotic.rs.recommend.controller.agent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO;
 import com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidatesVO;
+import com.sinrotic.rs.recommend.domain.vo.AgentRagSupportVO;
+import com.sinrotic.rs.recommend.domain.vo.RagAgentContextVO;
+import com.sinrotic.rs.recommend.domain.vo.RagGovernanceVO;
+import com.sinrotic.rs.recommend.domain.vo.RagItemSupportVO;
+import com.sinrotic.rs.recommend.domain.vo.RagSupportSnippetVO;
 import com.sinrotic.rs.recommend.service.AgentRecommendService;
+import com.sinrotic.rs.recommend.service.RecommendRagService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -29,11 +35,14 @@ class AgentRecommendControllerTest {
 
     private AgentRecommendService agentRecommendService;
 
+    private RecommendRagService recommendRagService;
+
     @BeforeEach
     void setUp() {
         agentRecommendService = mock(AgentRecommendService.class);
+        recommendRagService = mock(RecommendRagService.class);
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AgentRecommendController(agentRecommendService))
+                .standaloneSetup(new AgentRecommendController(agentRecommendService, recommendRagService))
                 .build();
     }
 
@@ -173,6 +182,48 @@ class AgentRecommendControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.request_id").value("rec_req_rerank_001"))
                 .andExpect(jsonPath("$.candidates[0].reason_hint").value("Matches portable office use."));
+    }
+
+    @Test
+    void ragSupportReturnsCandidateScopedEvidenceFromRecommendService() throws Exception {
+        AgentRagSupportVO response = new AgentRagSupportVO(
+                "agent_req_001",
+                "bluetooth earbuds",
+                true,
+                List.of("elasticsearch_bm25", "milvus_vector"),
+                List.of(new RagItemSupportVO(
+                        "B001",
+                        List.of(new RagSupportSnippetVO(
+                                "evidence",
+                                "Noise cancelling earbuds for commuting.",
+                                "candidate-scoped evidence"
+                        ))
+                )),
+                List.of(),
+                new RagAgentContextVO("Use candidate-scoped evidence only.", false),
+                new RagGovernanceVO(false, false, false, false)
+        );
+        when(recommendRagService.support(argThat(request ->
+                "agent_req_001".equals(request.requestId())
+                        && "sess_001".equals(request.sessionId())
+                        && "我想买一个蓝牙耳机".equals(request.userQuery())
+                        && request.candidateItemIds().contains("B001")
+                        && request.rerankTopK() == 8
+        ))).thenReturn(response);
+
+        mockMvc.perform(post("/agent/recommend/rag/support")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "request_id", "agent_req_001",
+                                "session_id", "sess_001",
+                                "user_query", "我想买一个蓝牙耳机",
+                                "candidate_item_ids", List.of("B001", "B002")
+                        ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.request_id").value("agent_req_001"))
+                .andExpect(jsonPath("$.candidate_scoped").value(true))
+                .andExpect(jsonPath("$.item_support[0].item_id").value("B001"))
+                .andExpect(jsonPath("$.item_support[0].snippets[0].summary").value("Noise cancelling earbuds for commuting."));
     }
 
     private AgentRecommendCandidatesVO agentCandidates(String requestId, String sourceTag) {

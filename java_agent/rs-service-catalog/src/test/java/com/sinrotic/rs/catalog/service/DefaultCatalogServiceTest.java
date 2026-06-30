@@ -1,8 +1,10 @@
 package com.sinrotic.rs.catalog.service;
 
 import com.sinrotic.rs.catalog.domain.dto.BatchItemIdsRequestDTO;
+import com.sinrotic.rs.catalog.domain.dto.CatalogItemEmbeddingPageRequestDTO;
 import com.sinrotic.rs.catalog.domain.entity.CatalogItem;
 import com.sinrotic.rs.catalog.domain.vo.CatalogItemCardVO;
+import com.sinrotic.rs.catalog.domain.vo.CatalogItemEmbeddingTextVO;
 import com.sinrotic.rs.catalog.domain.vo.CatalogItemTextVO;
 import com.sinrotic.rs.catalog.repository.CatalogItemRepository;
 import com.sinrotic.rs.catalog.service.impl.DefaultCatalogService;
@@ -53,6 +55,41 @@ class DefaultCatalogServiceTest {
         );
     }
 
+    @Test
+    void listItemEmbeddingTextsBuildsCompactStableTextForVectorIndexing() {
+        DefaultCatalogService service = new DefaultCatalogService(new FakeCatalogItemRepository());
+
+        List<CatalogItemEmbeddingTextVO> texts = service.listItemEmbeddingTexts(new BatchItemIdsRequestDTO(List.of("B003")));
+
+        assertEquals(1, texts.size());
+        assertEquals("B003", texts.getFirst().itemId());
+        assertEquals(
+                "Title: Travel Laptop Backpack\n"
+                        + "Category: Backpacks > Business Travel\n"
+                        + "Brand: RoadMate\n"
+                        + "Attributes: capacity=20L, material=nylon, target_user=commuter\n"
+                        + "Summary: Slim backpack for commuting and short business trips\n"
+                        + "Description: Water-resistant laptop backpack with padded shoulder straps and organized compartments. This long text keeps going so the embedding builder should keep only the leading product semantics before droppi",
+                texts.getFirst().embeddingText()
+        );
+        assertEquals("Backpacks > Business Travel", texts.getFirst().categoryPath());
+        assertEquals("RoadMate", texts.getFirst().brand());
+    }
+
+    @Test
+    void listActiveItemEmbeddingTextsUsesItemIdCursorForMysqlBatchIndexing() {
+        FakeCatalogItemRepository repository = new FakeCatalogItemRepository();
+        DefaultCatalogService service = new DefaultCatalogService(repository);
+
+        List<CatalogItemEmbeddingTextVO> texts = service.listActiveItemEmbeddingTexts(
+                new CatalogItemEmbeddingPageRequestDTO("B001", 2)
+        );
+
+        assertEquals(List.of("B002", "B003"), texts.stream().map(CatalogItemEmbeddingTextVO::itemId).toList());
+        assertEquals("B001", repository.lastAfterItemId);
+        assertEquals(2, repository.lastLimit);
+    }
+
     private static final class FakeCatalogItemRepository implements CatalogItemRepository {
 
         private final Map<String, CatalogItem> items = Map.of(
@@ -87,8 +124,31 @@ class DefaultCatalogServiceTest {
                         Map.of("color", "white"),
                         "{}",
                         "active"
+                ),
+                "B003", new CatalogItem(
+                        "B003",
+                        "B003",
+                        "Travel Laptop Backpack",
+                        "Backpacks",
+                        "Backpacks > Business Travel",
+                        "RoadMate",
+                        "RoadMate Store",
+                        new BigDecimal("56.00"),
+                        "https://example.com/travel-backpack.jpg",
+                        "Slim backpack for commuting and short business trips",
+                        "Water-resistant laptop backpack with padded shoulder straps and organized compartments. "
+                                + "This long text keeps going so the embedding builder should keep only the leading "
+                                + "product semantics before dropping repeated marketing copy. Extra discount message "
+                                + "and unrelated campaign wording should not dominate vector generation.",
+                        Map.of("target_user", "commuter", "material", "nylon", "capacity", "20L"),
+                        "{}",
+                        "active"
                 )
         );
+
+        private String lastAfterItemId;
+
+        private int lastLimit;
 
         @Override
         public Optional<CatalogItem> findByItemId(String itemId) {
@@ -111,6 +171,17 @@ class DefaultCatalogServiceTest {
         @Override
         public List<CatalogItem> findByStoreName(String storeName, int limit) {
             return List.of();
+        }
+
+        @Override
+        public List<CatalogItem> findActiveAfterItemId(String afterItemId, int limit) {
+            lastAfterItemId = afterItemId;
+            lastLimit = limit;
+            return items.values().stream()
+                    .sorted(java.util.Comparator.comparing(CatalogItem::itemId))
+                    .filter(item -> afterItemId == null || item.itemId().compareTo(afterItemId) > 0)
+                    .limit(limit)
+                    .toList();
         }
 
         @Override

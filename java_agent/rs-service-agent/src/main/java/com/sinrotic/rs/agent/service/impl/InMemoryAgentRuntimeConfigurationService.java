@@ -363,8 +363,8 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
         ));
         tools.put("rag_support", new AgentRuntimeToolVO(
                 "rag_support",
-                "rs-service-search-rag",
-                "Retrieve supporting evidence for recommendations and explanations.",
+                "rs-service-recommend",
+                "Retrieve candidate-scoped RAG support from the recommendation service for evidence-grounded explanations.",
                 true,
                 Map.of("type", "object")
         ));
@@ -394,6 +394,21 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                                 )
                         ),
                         "required", List.of("item_ids")
+                )
+        ));
+        tools.put("read_tool_result_lines", new AgentRuntimeToolVO(
+                "read_tool_result_lines",
+                "rs-service-agent",
+                "Read a bounded line range from a large tool result using result_ref, offset, and limit. Use this when a prior tool result was truncated and more detail is needed.",
+                true,
+                Map.of(
+                        "type", "object",
+                        "properties", Map.of(
+                                "result_ref", Map.of("type", "string"),
+                                "offset", Map.of("type", "integer", "default", 0, "minimum", 0),
+                                "limit", Map.of("type", "integer", "default", 20, "minimum", 1, "maximum", 200)
+                        ),
+                        "required", List.of("result_ref")
                 )
         ));
     }

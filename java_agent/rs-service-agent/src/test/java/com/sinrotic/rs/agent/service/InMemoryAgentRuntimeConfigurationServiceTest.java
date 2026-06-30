@@ -40,6 +40,11 @@ class InMemoryAgentRuntimeConfigurationServiceTest {
                         "rag_support",
                         "catalog_card"
                 );
+        assertThat(service.tools().stream()
+                .filter(tool -> "rag_support".equals(tool.name()))
+                .findFirst()
+                .orElseThrow()
+                .service()).isEqualTo("rs-service-recommend");
     }
 
     @Test

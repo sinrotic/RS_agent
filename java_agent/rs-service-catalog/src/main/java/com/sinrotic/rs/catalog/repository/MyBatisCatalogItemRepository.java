@@ -56,6 +56,13 @@ public class MyBatisCatalogItemRepository implements CatalogItemRepository {
     }
 
     @Override
+    public List<CatalogItem> findActiveAfterItemId(String afterItemId, int limit) {
+        return catalogItemMapper.selectActiveAfterItemId(afterItemId, limit).stream()
+                .map(this::toEntity)
+                .toList();
+    }
+
+    @Override
     public List<String> listCategories() {
         return catalogItemMapper.selectCategories();
     }
