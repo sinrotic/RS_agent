@@ -1,0 +1,31 @@
+{
+  "task": "pool500 read-only shadow evidence contract-first closure: 先固化 PRD 与工程治理合同，再允许 producer、display、Agent/front-end 消费公开 schema。",
+  "stories": [
+    {
+      "id": "US-POOL500-001",
+      "title": "固化 pool500 read-only shadow evidence 治理边界",
+      "priority": 1,
+      "passes": true,
+      "acceptanceCriteria": [
+        "pool500 route is read-only shadow evidence and is not a new candidate generation path",
+        "pool500 contract requires no candidate generation and no current_ranking_route replacement",
+        "FULL_POOL500_READY is recall artifact readiness only and does not authorize ranking promotion or ranking input replacement",
+        "current_ranking_route remains the existing pool200/top_k=5 ranking gate and must not be weakened by pool500 evidence",
+        "internal evidence may keep trace_ref, agent_runtime_trace, diagnostics_path, raw_export_trace_path, ranking_evidence_path for debugging",
+        "public display is allowlist-first and must reject trace_ref, agent_runtime_trace, diagnostics_path, raw_export_trace_path, ranking_evidence_path",
+        "PRD JSON checks are covered by tests/test_engineering_contracts.py and scripts/ci/validate_engineering_contracts.py"
+      ]
+    },
+    {
+      "id": "US-POOL500-002",
+      "title": "分离内部证据与公开展示 schema",
+      "priority": 2,
+      "passes": false,
+      "acceptanceCriteria": [
+        "producer may emit internal evidence for pool500 shadow diagnostics without exposing it to public display",
+        "display adapter exports only allowlisted timeline fields for Agent/frontend consumption",
+        "tests reject public display payloads containing trace_ref, agent_runtime_trace, diagnostics_path, raw_export_trace_path, ranking_evidence_path"
+      ]
+    }
+  ]
+}
