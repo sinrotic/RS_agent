@@ -39,33 +39,32 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
                 request.agentId(),
                 request.taskId(),
                 request.profileUserId(),
-                toAgentCandidates(homeResponse.items(), List.of("profile"))
+                toAgentCandidates(homeResponse.items())
         );
     }
 
     @Override
     public AgentRecommendCandidatesVO semanticRecall(AgentRecommendToolRequestDTO request) {
-        return runHomeBackedTool(request, "semantic", request.returnCount());
+        return runHomeBackedTool(request, request.returnCount());
     }
 
     @Override
     public AgentRecommendCandidatesVO profilePipeline(AgentRecommendToolRequestDTO request) {
-        return runHomeBackedTool(request, "profile", request.returnCount());
+        return runHomeBackedTool(request, request.returnCount());
     }
 
     @Override
     public AgentRecommendCandidatesVO coldFallback(AgentRecommendToolRequestDTO request) {
-        return runHomeBackedTool(request, "cold_fallback", request.returnCount());
+        return runHomeBackedTool(request, request.returnCount());
     }
 
     @Override
     public AgentRecommendCandidatesVO rerankCandidates(AgentRecommendToolRequestDTO request) {
-        return runHomeBackedTool(request, "rerank", request.returnCount());
+        return runHomeBackedTool(request, request.returnCount());
     }
 
     private AgentRecommendCandidatesVO runHomeBackedTool(
             AgentRecommendToolRequestDTO request,
-            String fallbackSourceTag,
             int returnCount
     ) {
         HomeRecommendVO homeResponse = homeRecommendService.recommendHome(new HomeRecommendRequestDTO(
@@ -80,41 +79,43 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
                 request.agentId(),
                 request.taskId(),
                 request.profileUserId(),
-                toAgentCandidates(homeResponse.items(), List.of(fallbackSourceTag))
+                toAgentCandidates(homeResponse.items())
         );
     }
 
-    private List<AgentRecommendCandidateItemVO> toAgentCandidates(
-            List<RecommendItemVO> items,
-            List<String> fallbackSourceTags
-    ) {
+    private List<AgentRecommendCandidateItemVO> toAgentCandidates(List<RecommendItemVO> items) {
         return items.stream()
                 .map(item -> new AgentRecommendCandidateItemVO(
                         item.itemId(),
-                        item.rank(),
-                        item.score(),
-                        item.display() == null ? item.itemId() : item.display().title(),
-                        item.display() == null ? "" : item.display().category(),
+                        titleOf(item),
+                        categoryOf(item),
                         null,
-                        null,
-                        null,
-                        item.sourceTags() == null || item.sourceTags().isEmpty()
-                                ? fallbackSourceTags
-                                : item.sourceTags(),
-                        item.reason(),
-                        confidenceLevel(null, null)
+                        "",
+                        valueOrEmpty(item.reason()),
+                        valueOrEmpty(item.reason())
                 ))
                 .toList();
     }
 
-    private String confidenceLevel(Double averageRating, Integer ratingNumber) {
-        if (averageRating != null && ratingNumber != null && ratingNumber >= 100 && averageRating >= 4.3) {
-            return "high";
+    private String titleOf(RecommendItemVO item) {
+        if (item.display() == null || item.display().title() == null || item.display().title().isBlank()) {
+            return item.itemId();
         }
-        if (ratingNumber != null && ratingNumber >= 20) {
-            return "medium";
+        return item.display().title();
+    }
+
+    private String categoryOf(RecommendItemVO item) {
+        if (item.display() == null) {
+            return "";
         }
-        return "unknown";
+        return valueOrEmpty(item.display().category());
+    }
+
+    private String valueOrEmpty(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value;
     }
 
     private String firstNonBlank(String primary, String fallback) {

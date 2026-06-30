@@ -109,21 +109,20 @@ services:
       retries: 12
 
   scylla:
-    image: cassandra:5.0
+    image: scylladb/scylla:6.2
     container_name: rs-agent-java-scylla
     restart: unless-stopped
-    environment:
-      CASSANDRA_CLUSTER_NAME: ${RS_CASSANDRA_CLUSTER_NAME:-rs-agent-java}
-      CASSANDRA_DC: ${RS_CASSANDRA_DC:-datacenter1}
-      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
-      MAX_HEAP_SIZE: ${RS_CASSANDRA_MAX_HEAP_SIZE:-1G}
-      HEAP_NEWSIZE: ${RS_CASSANDRA_HEAP_NEWSIZE:-256M}
+    command:
+      - "--smp=1"
+      - "--memory=1G"
+      - "--overprovisioned=1"
+      - "--api-address=0.0.0.0"
     ports:
       - "127.0.0.1:${RS_SCYLLA_HOST_PORT:-19042}:9042"
     volumes:
-      - ../db/scylla:/var/lib/cassandra
+      - ../db/scylla:/var/lib/scylla
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh 127.0.0.1 9042 -e 'DESCRIBE KEYSPACES' >/dev/null 2>&1"]
+      test: ["CMD-SHELL", "cqlsh -e 'SELECT keyspace_name FROM system_schema.keyspaces' $$(hostname -i) 9042 >/dev/null 2>&1"]
       interval: 30s
       start_period: 120s
       timeout: 15s

@@ -14,7 +14,7 @@ Produce a direct recommendation flow when the user's need is clear enough to ret
 1. Extract the current turn's explicit constraints: category, use case, budget, attributes, negative preferences, and comparison targets.
 2. Treat current-session constraints as stronger than stale profile preferences.
 3. Call `recommend_semantic_recall` before asking for evidence or catalog details. Use the current user wording as `query`, default `recall_limit` 100, and default `return_count` 20.
-4. Treat returned candidates as lightweight reasoning candidates: item id, title, category path, price, rating signals, source tags, and short text.
+4. Treat returned candidates as lightweight answer-ready candidates: item id, title, category path, price, rating summary, short text, and reason hint.
 5. Use `catalog_card` or `render_product_cards` only after final item ids are selected and cards need display fields.
 6. Use `rag_support` only for the top 3-5 final candidates that need grounded explanation.
 7. Call `emit_final_answer` with ordered blocks for the user-visible response. Use `text` blocks for concise explanation and `product_cards` blocks to place cards inline.
@@ -23,6 +23,7 @@ Produce a direct recommendation flow when the user's need is clear enough to ret
 
 - Use `recommend_semantic_recall` as the primary acquisition tool for clear current-turn needs.
 - Do not request long descriptions, full features, raw metadata, images, or reviews in the recommendation candidate payload.
+- Do not expect ranking scores, recall scores, source tags, or confidence labels in the candidate payload; those are internal trace/debug signals.
 - Use `catalog_card` only after final item ids are available and display fields are needed.
 - Use `rag_support` only to support explanations for selected candidate items, not to introduce new products.
 - Use `render_product_cards` after final item ids are selected and before emitting a product card block.

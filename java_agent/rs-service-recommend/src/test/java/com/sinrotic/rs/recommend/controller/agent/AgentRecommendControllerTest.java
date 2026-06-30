@@ -46,16 +46,12 @@ class AgentRecommendControllerTest {
                 "A1XYZ",
                 List.of(new AgentRecommendCandidateItemVO(
                         "B001",
-                        1,
-                        0.932,
                         "Commuter Backpack",
                         "Backpacks",
                         null,
-                        null,
-                        null,
-                        List.of("semantic"),
+                        "",
                         "agent candidate",
-                        "unknown"
+                        "matches broad backpack needs"
                 ))
         );
         when(agentRecommendService.candidates(argThat(request ->
@@ -117,11 +113,9 @@ class AgentRecommendControllerTest {
                 .andExpect(jsonPath("$.candidates[0].title").value("Portable Desktop Stapler"))
                 .andExpect(jsonPath("$.candidates[0].category_path").value("Office Products > Staplers"))
                 .andExpect(jsonPath("$.candidates[0].price").value(13.99))
-                .andExpect(jsonPath("$.candidates[0].average_rating").value(4.3))
-                .andExpect(jsonPath("$.candidates[0].rating_number").value(186))
-                .andExpect(jsonPath("$.candidates[0].source_tags[0]").value("semantic"))
+                .andExpect(jsonPath("$.candidates[0].rating_summary").value("评分 4.3，约 186 条评价"))
                 .andExpect(jsonPath("$.candidates[0].short_text").value("Portable stapler for office and student use."))
-                .andExpect(jsonPath("$.candidates[0].confidence_level").value("medium"));
+                .andExpect(jsonPath("$.candidates[0].reason_hint").value("Matches portable office use."));
 
         verify(agentRecommendService).semanticRecall(argThat(request ->
                 request.recallLimit() == 100
@@ -144,7 +138,7 @@ class AgentRecommendControllerTest {
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.request_id").value("rec_req_profile_001"))
-                .andExpect(jsonPath("$.candidates[0].source_tags[0]").value("profile"));
+                .andExpect(jsonPath("$.candidates[0].reason_hint").value("Matches portable office use."));
     }
 
     @Test
@@ -160,7 +154,7 @@ class AgentRecommendControllerTest {
                         .content(objectMapper.writeValueAsString(Map.of())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.request_id").value("rec_req_cold_001"))
-                .andExpect(jsonPath("$.candidates[0].source_tags[0]").value("cold_fallback"));
+                .andExpect(jsonPath("$.candidates[0].short_text").value("Portable stapler for office and student use."));
     }
 
     @Test
@@ -178,7 +172,7 @@ class AgentRecommendControllerTest {
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.request_id").value("rec_req_rerank_001"))
-                .andExpect(jsonPath("$.candidates[0].source_tags[0]").value("rerank"));
+                .andExpect(jsonPath("$.candidates[0].reason_hint").value("Matches portable office use."));
     }
 
     private AgentRecommendCandidatesVO agentCandidates(String requestId, String sourceTag) {
@@ -189,16 +183,12 @@ class AgentRecommendControllerTest {
                 "A1XYZ",
                 List.of(new AgentRecommendCandidateItemVO(
                         "B001",
-                        1,
-                        0.932,
                         "Portable Desktop Stapler",
                         "Office Products > Staplers",
                         new java.math.BigDecimal("13.99"),
-                        4.3,
-                        186,
-                        List.of(sourceTag),
+                        "评分 4.3，约 186 条评价",
                         "Portable stapler for office and student use.",
-                        "medium"
+                        "Matches portable office use."
                 ))
         );
     }

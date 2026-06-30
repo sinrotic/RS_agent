@@ -336,21 +336,21 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
         tools.put("recommend_semantic_recall", new AgentRuntimeToolVO(
                 "recommend_semantic_recall",
                 "rs-service-recommend",
-                "Use when the current user message contains a concrete product need or constraints. Returns up to 20 lightweight ranked candidates after semantic recall and ranking.",
+                "Use when the current user message contains a concrete product need or constraints. Returns up to 20 lightweight answer-ready candidates after semantic recall and ranking; internal scores are not exposed.",
                 true,
                 recommendationToolSchema(true, false)
         ));
         tools.put("recommend_profile_pipeline", new AgentRuntimeToolVO(
                 "recommend_profile_pipeline",
                 "rs-service-recommend",
-                "Use when current intent is broad or empty but profile/session signals are sufficient. Returns the final top products from the normal recommendation pipeline.",
+                "Use when current intent is broad or empty but profile/session signals are sufficient. Returns the final answer-ready top products from the normal recommendation pipeline.",
                 true,
                 recommendationToolSchema(false, false)
         ));
         tools.put("recommend_cold_fallback", new AgentRuntimeToolVO(
                 "recommend_cold_fallback",
                 "rs-service-recommend",
-                "Use when both current intent and profile/session signals are weak. Returns fallback products with broad popularity and diversity.",
+                "Use when both current intent and profile/session signals are weak. Returns answer-ready fallback products with broad popularity and diversity.",
                 true,
                 recommendationToolSchema(false, false)
         ));

@@ -95,11 +95,10 @@ class DefaultAgentRecommendServiceTest {
         ).withSemanticDefaults());
 
         assertEquals("rec_req_semantic_001", response.requestId());
-        assertEquals(1, response.candidates().getFirst().rank());
         assertEquals("B001", response.candidates().getFirst().itemId());
         assertEquals("Portable Desktop Stapler", response.candidates().getFirst().title());
         assertEquals("Office Products > Staplers", response.candidates().getFirst().categoryPath());
-        assertEquals("semantic", response.candidates().getFirst().sourceTags().getFirst());
         assertEquals("matches portable stapler", response.candidates().getFirst().shortText());
+        assertEquals("matches portable stapler", response.candidates().getFirst().reasonHint());
     }
 }
