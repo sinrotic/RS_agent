@@ -12,15 +12,22 @@ import { TracePanel } from '../components/TracePanel';
 import { AgentRunMonitorVO, PlatformSessionOverviewVO, RecommendTraceVO } from '../types/platformTrace';
 import { formatTokens, shouldAutoRefresh } from '../utils/agentRunMonitor';
 
+interface MonitorQueryScope {
+  sessionId: string;
+  agentRequestId: string;
+}
+
 export function ObserveConsole() {
   const storedProfileUserId = getStoredProfileUserId() || 'guest_user';
   const [sessionId, setSessionId] = useState<string>('');
   const [accountId, setAccountId] = useState<string>(storedProfileUserId);
   const [requestId, setRequestId] = useState<string>('');
+  const [agentRequestId, setAgentRequestId] = useState<string>('');
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [overview, setOverview] = useState<PlatformSessionOverviewVO | null>(null);
   const [recommendTrace, setRecommendTrace] = useState<RecommendTraceVO | null>(null);
   const [monitor, setMonitor] = useState<AgentRunMonitorVO | null>(null);
+  const [monitorScope, setMonitorScope] = useState<MonitorQueryScope | null>(null);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -28,6 +35,8 @@ export function ObserveConsole() {
 
   const canQuerySession = Boolean(sessionId.trim());
   const canQueryRecommend = Boolean(requestId.trim());
+  const canQueryAgentRequest = Boolean(agentRequestId.trim());
+  const canQuery = canQuerySession || canQueryRecommend || canQueryAgentRequest;
   const totalSessionTokens = overview?.timeline.reduce((sum, event) => sum + numberValue(event.data.total_tokens), 0) || 0;
 
   const nextObserveRequestSequence = () => {
@@ -41,25 +50,30 @@ export function ObserveConsole() {
 
   const loadMonitorFor = async (
     sessionIdArg?: string,
-    requestIdArg?: string,
+    agentRequestIdArg?: string,
     requestSequence = nextObserveRequestSequence()
   ) => {
     const resolvedSessionId = sessionIdArg?.trim() || '';
-    const resolvedRequestId = requestIdArg?.trim() || '';
+    const resolvedAgentRequestId = agentRequestIdArg?.trim() || '';
 
-    if (!resolvedSessionId && !resolvedRequestId) {
+    if (!resolvedSessionId && !resolvedAgentRequestId) {
       if (isCurrentRequest(requestSequence)) {
         setMonitor(null);
+        setMonitorScope(null);
       }
       return { data: null, isCurrent: isCurrentRequest(requestSequence) };
     }
 
     try {
       const data = resolvedSessionId
-        ? await getAgentSessionMonitor(resolvedSessionId, resolvedRequestId || undefined)
-        : await getAgentRequestMonitor(resolvedRequestId);
+        ? await getAgentSessionMonitor(resolvedSessionId, resolvedAgentRequestId || undefined)
+        : await getAgentRequestMonitor(resolvedAgentRequestId);
       if (isCurrentRequest(requestSequence)) {
         setMonitor(data);
+        setMonitorScope({
+          sessionId: resolvedSessionId,
+          agentRequestId: resolvedAgentRequestId
+        });
       }
       return { data, isCurrent: isCurrentRequest(requestSequence) };
     } catch (e) {
@@ -70,15 +84,19 @@ export function ObserveConsole() {
     }
   };
 
-  const refreshMonitor = async (sessionIdArg?: string, requestIdArg?: string) => {
-    const resolvedSessionId = sessionIdArg !== undefined ? sessionIdArg : monitor?.session_id || sessionId;
-    const resolvedRequestId = requestIdArg !== undefined ? requestIdArg : monitor?.request_id || requestId;
+  const refreshMonitor = async (sessionIdArg?: string, agentRequestIdArg?: string) => {
+    const resolvedSessionId = sessionIdArg !== undefined
+      ? sessionIdArg
+      : monitorScope?.sessionId ?? sessionId;
+    const resolvedAgentRequestId = agentRequestIdArg !== undefined
+      ? agentRequestIdArg
+      : monitorScope?.agentRequestId ?? agentRequestId;
     const requestSequence = nextObserveRequestSequence();
 
     setLoading(true);
     setError('');
     try {
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId, requestSequence);
+      await loadMonitorFor(resolvedSessionId, resolvedAgentRequestId, requestSequence);
     } catch (e: any) {
       if (isCurrentRequest(requestSequence)) {
         setError(e.message || 'Failed to load agent run monitor');
@@ -93,7 +111,8 @@ export function ObserveConsole() {
   const loadOverview = async () => {
     if (!canQuerySession) return;
     const resolvedSessionId = sessionId.trim();
-    const resolvedRequestId = requestId.trim();
+    const resolvedRecommendRequestId = requestId.trim();
+    const resolvedAgentRequestId = agentRequestId.trim();
     const resolvedAccountId = accountId.trim() || undefined;
     const requestSequence = nextObserveRequestSequence();
 
@@ -103,7 +122,7 @@ export function ObserveConsole() {
       const data = await getSessionOverview(
         resolvedSessionId,
         resolvedAccountId,
-        resolvedRequestId || undefined,
+        resolvedRecommendRequestId || undefined,
         resolvedAccountId
       );
       if (!isCurrentRequest(requestSequence)) {
@@ -113,7 +132,7 @@ export function ObserveConsole() {
       if (data.recommend_traces.length > 0) {
         setRecommendTrace(data.recommend_traces[0]);
       }
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId, requestSequence);
+      await loadMonitorFor(resolvedSessionId, resolvedAgentRequestId, requestSequence);
     } catch (e: any) {
       if (isCurrentRequest(requestSequence)) {
         setError(e.message || 'Failed to load session overview');
@@ -127,13 +146,14 @@ export function ObserveConsole() {
 
   const loadRecommendTrace = async () => {
     if (!canQueryRecommend) return;
-    const resolvedRequestId = requestId.trim();
+    const resolvedRecommendRequestId = requestId.trim();
+    const resolvedAgentRequestId = agentRequestId.trim();
     const requestSequence = nextObserveRequestSequence();
 
     setLoading(true);
     setError('');
     try {
-      const data = await getRecommendTrace(resolvedRequestId);
+      const data = await getRecommendTrace(resolvedRecommendRequestId);
       if (!isCurrentRequest(requestSequence)) {
         return;
       }
@@ -142,7 +162,7 @@ export function ObserveConsole() {
       if (!sessionId.trim() && data.session_id) {
         setSessionId(data.session_id);
       }
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId, requestSequence);
+      await loadMonitorFor(resolvedSessionId, resolvedAgentRequestId, requestSequence);
     } catch (e: any) {
       if (isCurrentRequest(requestSequence)) {
         setError(e.message || 'Failed to load recommend trace');
@@ -160,21 +180,25 @@ export function ObserveConsole() {
       await loadOverview();
       return;
     }
+    if (canQueryAgentRequest) {
+      await refreshMonitor('', agentRequestId.trim());
+      return;
+    }
     await loadRecommendTrace();
   };
 
   useEffect(() => {
-    if (!autoRefresh || loading || !shouldAutoRefresh(monitor || undefined) || !monitor) {
+    if (!autoRefresh || loading || !shouldAutoRefresh(monitor || undefined) || !monitor || !monitorScope) {
       return undefined;
     }
 
-    const currentMonitor = monitor;
+    const currentScope = monitorScope;
     const intervalId = window.setInterval(() => {
-      void refreshMonitor(currentMonitor.session_id, currentMonitor.request_id);
+      void refreshMonitor(currentScope.sessionId, currentScope.agentRequestId);
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [autoRefresh, loading, monitor]);
+  }, [autoRefresh, loading, monitor, monitorScope]);
 
   const headerStatus = monitor?.status || (overview ? 'loaded' : 'idle');
   const headerTokens = monitor ? formatTokens(monitor.summary.total_tokens) : String(totalSessionTokens || 0);
@@ -227,7 +251,7 @@ export function ObserveConsole() {
           </div>
         </section>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:grid-cols-[1fr_1fr_1fr_1fr_auto_auto]">
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 p-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1fr_auto_auto]">
           <label className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Session ID</span>
             <input
@@ -247,11 +271,20 @@ export function ObserveConsole() {
             />
           </label>
           <label className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Request ID</span>
+            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Recommend Request ID</span>
             <input
               value={requestId}
               onChange={(event) => setRequestId(event.target.value)}
-              placeholder="recommend request id"
+              placeholder="rec request id"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+            />
+          </label>
+          <label className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Agent Request ID</span>
+            <input
+              value={agentRequestId}
+              onChange={(event) => setAgentRequestId(event.target.value)}
+              placeholder="agent request id"
               className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
             />
           </label>
@@ -266,7 +299,7 @@ export function ObserveConsole() {
           </label>
           <button
             type="submit"
-            disabled={loading || (!canQuerySession && !canQueryRecommend)}
+            disabled={loading || !canQuery}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:opacity-50 lg:self-end"
           >
             {loading ? <RefreshCw size={14} className="animate-spin" /> : <Search size={14} />}
@@ -294,7 +327,7 @@ export function ObserveConsole() {
           loading={loading}
           autoRefresh={autoRefresh}
           onRefresh={() => {
-            void refreshMonitor(monitor?.session_id, monitor?.request_id);
+            void refreshMonitor(monitorScope?.sessionId, monitorScope?.agentRequestId);
           }}
           onAutoRefreshChange={setAutoRefresh}
         />

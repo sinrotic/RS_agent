@@ -267,7 +267,7 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         int promptTokens = events.stream().mapToInt(event -> event.promptTokens() == null ? 0 : event.promptTokens()).sum();
         int completionTokens = events.stream().mapToInt(event -> event.completionTokens() == null ? 0 : event.completionTokens()).sum();
         int totalTokens = events.stream().mapToInt(event -> event.totalTokens() == null ? 0 : event.totalTokens()).sum();
-        int toolCallCount = (int) events.stream().filter(event -> hasText(event.toolName())).count();
+        int toolCallCount = toolCallCount(events);
         int errorCount = (int) events.stream().filter(this::isErrorEvent).count();
         AgentRunSummaryVO summary = new AgentRunSummaryVO(
                 totalLatencyMs,
@@ -301,6 +301,22 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         return phases.entrySet().stream()
                 .map(entry -> entry.getValue().toPhase(entry.getKey()))
                 .toList();
+    }
+
+    private int toolCallCount(List<AgentRunEventVO> events) {
+        Set<String> toolCallIds = new LinkedHashSet<>();
+        int legacyToolEvents = 0;
+        for (AgentRunEventVO event : events) {
+            if (!isToolContext(event)) {
+                continue;
+            }
+            if (hasText(event.toolCallId())) {
+                toolCallIds.add(event.toolCallId());
+            } else {
+                legacyToolEvents++;
+            }
+        }
+        return toolCallIds.size() + legacyToolEvents;
     }
 
     private List<String> qualitySignals(List<AgentRunEventVO> events, AgentRunSummaryVO summary) {
@@ -440,12 +456,14 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
     }
 
     private boolean hasErrorEvidence(String status, String errorCode, String errorMessage, String eventType, Map<String, Object> data) {
+        String dataStatus = String.valueOf(data.get("status"));
         return "error".equalsIgnoreCase(status)
                 || "failed".equalsIgnoreCase(status)
                 || hasText(errorCode)
                 || hasText(errorMessage)
                 || containsText(eventType, "error")
-                || "ERROR".equalsIgnoreCase(String.valueOf(data.get("status")));
+                || "ERROR".equalsIgnoreCase(dataStatus)
+                || "FAILED".equalsIgnoreCase(dataStatus);
     }
 
     private boolean isToolContext(AgentRunEventVO event) {

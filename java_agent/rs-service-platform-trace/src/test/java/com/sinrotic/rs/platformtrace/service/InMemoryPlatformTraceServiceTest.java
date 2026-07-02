@@ -408,6 +408,106 @@ class InMemoryPlatformTraceServiceTest {
     }
 
     @Test
+    void requestMonitorCountsSharedToolUseAndResultAsOneToolCall() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_tool_use",
+                "sess_shared_tool_call",
+                "agent_req_shared_tool_call",
+                "tool_use",
+                "call_shared",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                40L,
+                Map.of("status", "SUCCESS"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_tool_result",
+                "sess_shared_tool_call",
+                "agent_req_shared_tool_call",
+                "tool_result",
+                "call_shared",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                60L,
+                Map.of("items", List.of("B001"), "status", "SUCCESS"),
+                Instant.parse("2026-06-29T10:00:02Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_shared_tool_call");
+
+        assertThat(monitor.summary().toolCallCount()).isEqualTo(1);
+    }
+
+    @Test
+    void requestMonitorCountsLegacyToolEventsWithoutToolCallIdIndividually() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_legacy_tool_use",
+                "sess_legacy_tool_count",
+                "agent_req_legacy_tool_count",
+                "tool_use",
+                null,
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                40L,
+                Map.of("status", "SUCCESS"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_legacy_tool_result",
+                "sess_legacy_tool_count",
+                "agent_req_legacy_tool_count",
+                "tool_result",
+                null,
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                60L,
+                Map.of("items", List.of("B001"), "status", "SUCCESS"),
+                Instant.parse("2026-06-29T10:00:02Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_legacy_tool_count");
+
+        assertThat(monitor.summary().toolCallCount()).isEqualTo(2);
+    }
+
+    @Test
+    void requestMonitorTreatsLegacyDataStatusFailedAsToolError() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_legacy_failed",
+                "sess_legacy_failed",
+                "agent_req_legacy_failed",
+                "tool_result",
+                "call_failed",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                42L,
+                Map.of("status", "FAILED"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_legacy_failed");
+
+        assertThat(monitor.status()).isEqualTo("failed");
+        assertThat(monitor.summary().errorCount()).isEqualTo(1);
+        assertThat(monitor.events().getFirst().status()).isEqualTo("error");
+        assertThat(monitor.qualitySignals()).contains("tool_error");
+    }
+
+    @Test
     void agentTraceEventSupportsProducerConstructorWithNormalizedFieldsAfterCacheTokens() {
         AgentTraceEventVO event = new AgentTraceEventVO(
                 "agent_evt_producer",

@@ -22,10 +22,25 @@ function metricValue(label: string, value: string, tone?: string) {
 
 function signalTone(signal: string): string {
   const normalized = signal.toLowerCase();
+  const amberSignals = new Set([
+    'missing_final_answer',
+    'high_latency',
+    'empty_tool_result',
+    'no_recommendation_items',
+    'partial_trace'
+  ]);
   if (normalized.includes('error') || normalized.includes('fail')) {
     return 'border-rose-500/30 bg-rose-500/10 text-rose-200';
   }
-  if (normalized.includes('warn') || normalized.includes('partial')) {
+  if (
+    amberSignals.has(normalized)
+    || normalized.includes('warn')
+    || normalized.includes('partial')
+    || normalized.includes('missing')
+    || normalized.includes('empty')
+    || normalized.includes('high_latency')
+    || normalized.startsWith('no_')
+  ) {
     return 'border-amber-500/30 bg-amber-500/10 text-amber-200';
   }
   return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-200';
