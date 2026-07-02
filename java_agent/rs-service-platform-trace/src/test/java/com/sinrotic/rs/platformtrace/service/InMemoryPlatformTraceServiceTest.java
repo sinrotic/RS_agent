@@ -597,4 +597,28 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.events().getFirst().phase()).isEqualTo("tool_call");
         assertThat(monitor.phases()).extracting("phase").containsExactly("tool_call");
     }
+
+    @Test
+    void requestMonitorInfersRagPhaseForRagToolsWithoutExplicitPhase() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_rag",
+                "sess_rag",
+                "agent_req_rag",
+                "tool_result",
+                "call_rag",
+                "rag_evidence_search",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                55L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_rag");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("rag");
+        assertThat(monitor.phases()).extracting("phase").containsExactly("rag");
+    }
 }
