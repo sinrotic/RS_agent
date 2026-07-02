@@ -1,5 +1,6 @@
 package com.sinrotic.rs.platformtrace.controller.platform;
 
+import com.sinrotic.rs.platformtrace.domain.vo.AgentRunMonitorVO;
 import com.sinrotic.rs.platformtrace.domain.vo.PlatformSessionOverviewVO;
 import com.sinrotic.rs.platformtrace.domain.vo.PlatformTimelineEventVO;
 import com.sinrotic.rs.platformtrace.service.PlatformTraceService;
@@ -33,5 +34,13 @@ public class PlatformSessionTraceController {
     @GetMapping("/{sessionId}/timeline")
     public List<PlatformTimelineEventVO> sessionTimeline(@PathVariable String sessionId) {
         return traceService.sessionTimeline(sessionId);
+    }
+
+    @GetMapping("/{sessionId}/agent-monitor")
+    public AgentRunMonitorVO sessionAgentMonitor(
+            @PathVariable String sessionId,
+            @RequestParam(name = "request_id", required = false) String requestId
+    ) {
+        return traceService.agentSessionMonitor(sessionId, requestId);
     }
 }

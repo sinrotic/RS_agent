@@ -1,6 +1,7 @@
 package com.sinrotic.rs.platformtrace.controller.platform;
 
 import com.sinrotic.rs.platformtrace.domain.vo.AgentSessionTraceVO;
+import com.sinrotic.rs.platformtrace.domain.vo.AgentRunMonitorVO;
 import com.sinrotic.rs.platformtrace.domain.vo.AgentTraceEventsVO;
 import com.sinrotic.rs.platformtrace.service.PlatformTraceService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,5 +27,10 @@ public class PlatformAgentTraceController {
     @GetMapping("/requests/{requestId}/events")
     public AgentTraceEventsVO agentRequestEvents(@PathVariable String requestId) {
         return traceService.agentRequestEvents(requestId);
+    }
+
+    @GetMapping("/runs/{requestId}/monitor")
+    public AgentRunMonitorVO agentRequestMonitor(@PathVariable String requestId) {
+        return traceService.agentRequestMonitor(requestId);
     }
 }

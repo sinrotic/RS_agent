@@ -6,6 +6,7 @@ import com.sinrotic.rs.platformtrace.controller.platform.PlatformRecommendTraceC
 import com.sinrotic.rs.platformtrace.controller.platform.PlatformSessionTraceController;
 import com.sinrotic.rs.platformtrace.controller.platform.PlatformUserTraceController;
 import com.sinrotic.rs.platformtrace.domain.vo.AgentSessionTraceVO;
+import com.sinrotic.rs.platformtrace.domain.vo.AgentTraceEventVO;
 import com.sinrotic.rs.platformtrace.domain.vo.AgentTurnVO;
 import com.sinrotic.rs.platformtrace.domain.vo.PlatformAccountProfileVO;
 import com.sinrotic.rs.platformtrace.domain.vo.RecommendTraceItemVO;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -58,6 +60,29 @@ class PlatformTraceControllerTest {
                         List.of("B001")
                 ))
         ));
+        traceService.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_001",
+                "sess_001",
+                "agent_req_001",
+                "agent_done",
+                "final_answer",
+                "success",
+                null,
+                null,
+                "rs_agent",
+                "spring_ai",
+                "gpt-5.3-codex-spark",
+                42L,
+                100,
+                25,
+                125,
+                null,
+                null,
+                "推荐一个通勤包",
+                "可以看看 B001",
+                Map.of("status", "SUCCESS"),
+                Instant.parse("2026-07-03T10:00:04Z")
+        ));
         mockMvc = MockMvcBuilders.standaloneSetup(
                 new PlatformUserTraceController(traceService),
                 new PlatformRecommendTraceController(traceService),
@@ -96,6 +121,27 @@ class PlatformTraceControllerTest {
     }
 
     @Test
+    void requestMonitorEndpointReturnsAgentRunMonitor() throws Exception {
+        mockMvc.perform(get("/api/platform/agent/runs/agent_req_001/monitor"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.request_id").value("agent_req_001"))
+                .andExpect(jsonPath("$.session_id").value("sess_001"))
+                .andExpect(jsonPath("$.status").value("success"))
+                .andExpect(jsonPath("$.summary.total_tokens").value(125))
+                .andExpect(jsonPath("$.events[0].phase").value("final_answer"));
+    }
+
+    @Test
+    void sessionMonitorEndpointReturnsAgentRunMonitor() throws Exception {
+        mockMvc.perform(get("/api/platform/sessions/sess_001/agent-monitor")
+                        .param("request_id", "agent_req_001"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.session_id").value("sess_001"))
+                .andExpect(jsonPath("$.request_id").value("agent_req_001"))
+                .andExpect(jsonPath("$.summary.has_final_answer").value(true));
+    }
+
+    @Test
     void agentEventEndpointStoresAndReturnsRequestEvents() throws Exception {
         String eventJson = """
                 {
@@ -127,12 +173,12 @@ class PlatformTraceControllerTest {
 
         mockMvc.perform(get("/api/platform/agent/requests/agent_req_001/events"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.events[0].event_type").value("tool_result"))
-                .andExpect(jsonPath("$.events[0].tool_call_id").value("call_001"))
-                .andExpect(jsonPath("$.events[0].prompt_tokens").value(100))
-                .andExpect(jsonPath("$.events[0].completion_tokens").value(25))
-                .andExpect(jsonPath("$.events[0].total_tokens").value(125))
-                .andExpect(jsonPath("$.events[0].data.status").value("SUCCESS"));
+                .andExpect(jsonPath("$.events[1].event_type").value("tool_result"))
+                .andExpect(jsonPath("$.events[1].tool_call_id").value("call_001"))
+                .andExpect(jsonPath("$.events[1].prompt_tokens").value(100))
+                .andExpect(jsonPath("$.events[1].completion_tokens").value(25))
+                .andExpect(jsonPath("$.events[1].total_tokens").value(125))
+                .andExpect(jsonPath("$.events[1].data.status").value("SUCCESS"));
     }
 
     @Test
