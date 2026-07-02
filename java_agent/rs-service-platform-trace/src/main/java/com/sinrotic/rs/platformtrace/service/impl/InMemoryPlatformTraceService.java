@@ -378,11 +378,11 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         if (eventType.contains("done") || eventType.contains("final")) {
             return "final_answer";
         }
-        if (eventType.contains("recommend") || toolName.contains("recommend")) {
-            return "recommend";
-        }
         if (eventType.contains("rag") || toolName.contains("rag")) {
             return "rag";
+        }
+        if (eventType.contains("recommend") || toolName.contains("recommend")) {
+            return "recommend";
         }
         if (eventType.contains("model") || eventType.contains("generation")) {
             return "model_call";

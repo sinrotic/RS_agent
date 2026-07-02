@@ -599,7 +599,7 @@ class InMemoryPlatformTraceServiceTest {
     }
 
     @Test
-    void requestMonitorInfersRagPhaseForRagToolsWithoutExplicitPhase() {
+    void requestMonitorPrioritizesRagPhaseForRagRecommendToolsWithoutExplicitPhase() {
         InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
         service.saveAgentTraceEvent(new AgentTraceEventVO(
                 "agent_evt_rag",
@@ -607,7 +607,7 @@ class InMemoryPlatformTraceServiceTest {
                 "agent_req_rag",
                 "tool_result",
                 "call_rag",
-                "rag_evidence_search",
+                "recommend_rag_support",
                 "rs_agent",
                 "openai",
                 "gpt-5",
