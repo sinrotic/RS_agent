@@ -621,4 +621,52 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.events().getFirst().phase()).isEqualTo("rag");
         assertThat(monitor.phases()).extracting("phase").containsExactly("rag");
     }
+
+    @Test
+    void requestMonitorPrioritizesToolNameOverModelEventType() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_tool_model",
+                "sess_tool_model",
+                "agent_req_tool_model",
+                "model_tool_result",
+                "call_catalog_model",
+                "catalog_card",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                35L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_tool_model");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("tool_call");
+        assertThat(monitor.phases()).extracting("phase").containsExactly("tool_call");
+    }
+
+    @Test
+    void requestMonitorPrioritizesModelEventTypeOverDoneWithoutToolName() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_model_done",
+                "sess_model_done",
+                "agent_req_model_done",
+                "model_done",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                35L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_model_done");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("model_call");
+        assertThat(monitor.phases()).extracting("phase").containsExactly("model_call");
+    }
 }

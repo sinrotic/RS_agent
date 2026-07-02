@@ -375,25 +375,22 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         }
         String eventType = nullToEmpty(event.eventType()).toLowerCase();
         String toolName = nullToEmpty(event.toolName()).toLowerCase();
+        if (hasText(event.toolName())) {
+            if (toolName.contains("rag")) {
+                return "rag";
+            }
+            if (toolName.contains("recommend")) {
+                return "recommend";
+            }
+            return "tool_call";
+        }
+        if (eventType.contains("model")) {
+            return "model_call";
+        }
         if (eventType.contains("done") || eventType.contains("final")) {
             return "final_answer";
         }
-        if (eventType.contains("rag") || toolName.contains("rag")) {
-            return "rag";
-        }
-        if (eventType.contains("recommend") || toolName.contains("recommend")) {
-            return "recommend";
-        }
-        if (eventType.contains("model") || eventType.contains("generation")) {
-            return "model_call";
-        }
-        if (eventType.contains("tool") || hasText(event.toolName()) || hasText(event.toolCallId())) {
-            return "tool_call";
-        }
-        if (eventType.contains("start") || eventType.contains("plan")) {
-            return "planning";
-        }
-        return hasText(event.eventType()) ? event.eventType() : "unknown";
+        return "agent";
     }
 
     private String inferStatus(AgentTraceEventVO event) {
