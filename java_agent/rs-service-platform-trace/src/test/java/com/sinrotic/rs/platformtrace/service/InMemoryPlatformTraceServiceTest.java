@@ -780,4 +780,90 @@ class InMemoryPlatformTraceServiceTest {
 
         assertThat(monitor.qualitySignals()).doesNotContain("empty_tool_result");
     }
+
+    @Test
+    void requestMonitorFlagsMissingFinalAnswerForNonTerminalEvents() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_nonterminal",
+                "sess_missing_final",
+                "agent_req_missing_final",
+                "model_response",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                20L,
+                Map.of("content", "draft"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_missing_final");
+
+        assertThat(monitor.qualitySignals()).contains("missing_final_answer");
+    }
+
+    @Test
+    void requestMonitorFlagsHighLatencyWhenTotalLatencyExceedsThreshold() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_high_latency_1",
+                "sess_high_latency",
+                "agent_req_high_latency",
+                "model_response",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                6_000L,
+                Map.of("content", "draft"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_high_latency_2",
+                "sess_high_latency",
+                "agent_req_high_latency",
+                "model_response",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                4_001L,
+                Map.of("content", "draft"),
+                Instant.parse("2026-06-29T10:00:02Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_high_latency");
+
+        assertThat(monitor.summary().totalLatencyMs()).isEqualTo(10_001L);
+        assertThat(monitor.qualitySignals()).contains("high_latency");
+    }
+
+    @Test
+    void requestMonitorFlagsRecommendPhaseWithNoRecommendationItems() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_no_recommend_items",
+                "sess_no_recommend_items",
+                "agent_req_no_recommend_items",
+                "tool_result",
+                "call_recommend_empty",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                Map.of("items", List.of()),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_no_recommend_items");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("recommend");
+        assertThat(monitor.summary().recommendItemCount()).isZero();
+        assertThat(monitor.qualitySignals()).contains("no_recommendation_items");
+    }
 }
