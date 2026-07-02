@@ -203,27 +203,21 @@ class InMemoryPlatformTraceServiceTest {
                 )
         ));
         service.saveRecommendTrace(new RecommendTraceVO(
-                "rec_req_b",
+                "agent_req_monitor",
                 "sess_monitor",
                 "A1XYZ",
                 "home",
-                Map.of("final", 1),
+                Map.of("final", 2),
                 Map.of("semantic", 1),
-                List.of(new RecommendTraceItemVO("B001", 1, 0.9, List.of("semantic"), "match"))
-        ));
-        service.saveRecommendTrace(new RecommendTraceVO(
-                "rec_req_a",
-                "sess_monitor",
-                "A1XYZ",
-                "home",
-                Map.of("final", 1),
-                Map.of("itemcf", 1),
-                List.of(new RecommendTraceItemVO("B002", 1, 0.8, List.of("itemcf"), "match"))
+                List.of(
+                        new RecommendTraceItemVO("B001", 1, 0.9, List.of("semantic"), "match"),
+                        new RecommendTraceItemVO("B002", 2, 0.8, List.of("itemcf"), "match")
+                )
         ));
         service.saveInteractionEvent(new PlatformInteractionEventVO(
                 "interaction_evt_001",
                 "sess_monitor",
-                "rec_req_a",
+                "agent_req_monitor",
                 "B001",
                 "click",
                 1.0,
@@ -349,7 +343,7 @@ class InMemoryPlatformTraceServiceTest {
                 .containsExactly(1, 1, 1, 1);
         assertThat(monitor.qualitySignals()).containsExactly("model_error");
         assertThat(monitor.relatedTraces().agentTurnCount()).isEqualTo(2);
-        assertThat(monitor.relatedTraces().recommendRequestIds()).containsExactly("rec_req_a", "rec_req_b");
+        assertThat(monitor.relatedTraces().recommendRequestIds()).containsExactly("agent_req_monitor");
         assertThat(monitor.relatedTraces().interactionEventCount()).isEqualTo(1);
     }
 
@@ -865,5 +859,69 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.events().getFirst().phase()).isEqualTo("recommend");
         assertThat(monitor.summary().recommendItemCount()).isZero();
         assertThat(monitor.qualitySignals()).contains("no_recommendation_items");
+    }
+
+    @Test
+    void requestMonitorScopesRecommendationCountsAndRelatedIdsToCurrentRequest() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveRecommendTrace(new RecommendTraceVO(
+                "agent_req_recommend_a",
+                "sess_recommend_scope",
+                "A1XYZ",
+                "home",
+                Map.of("final", 1),
+                Map.of("semantic", 1),
+                List.of(new RecommendTraceItemVO("B001", 1, 0.9, List.of("semantic"), "match"))
+        ));
+        service.saveRecommendTrace(new RecommendTraceVO(
+                "agent_req_recommend_b",
+                "sess_recommend_scope",
+                "A1XYZ",
+                "home",
+                Map.of("final", 0),
+                Map.of(),
+                List.of()
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_recommend_a",
+                "sess_recommend_scope",
+                "agent_req_recommend_a",
+                "tool_result",
+                "call_recommend_a",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                Map.of("items", List.of("B001")),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_recommend_b",
+                "sess_recommend_scope",
+                "agent_req_recommend_b",
+                "tool_result",
+                "call_recommend_b",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                Map.of("items", List.of()),
+                Instant.parse("2026-06-29T10:00:02Z")
+        ));
+
+        AgentRunMonitorVO monitorA = service.agentRequestMonitor("agent_req_recommend_a");
+        AgentRunMonitorVO monitorB = service.agentRequestMonitor("agent_req_recommend_b");
+        AgentRunMonitorVO sessionMonitor = service.agentSessionMonitor("sess_recommend_scope", null);
+
+        assertThat(monitorA.summary().recommendItemCount()).isEqualTo(1);
+        assertThat(monitorA.relatedTraces().recommendRequestIds()).containsExactly("agent_req_recommend_a");
+        assertThat(monitorB.summary().recommendItemCount()).isZero();
+        assertThat(monitorB.qualitySignals()).contains("no_recommendation_items");
+        assertThat(monitorB.relatedTraces().recommendRequestIds()).containsExactly("agent_req_recommend_b");
+        assertThat(sessionMonitor.summary().recommendItemCount()).isEqualTo(1);
+        assertThat(sessionMonitor.relatedTraces().recommendRequestIds())
+                .containsExactly("agent_req_recommend_a", "agent_req_recommend_b");
     }
 }

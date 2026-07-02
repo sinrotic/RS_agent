@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 public class InMemoryPlatformTraceService implements PlatformTraceService {
@@ -84,7 +85,7 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
 
     @Override
     public AgentTraceEventsVO agentRequestEvents(String requestId) {
-        return new AgentTraceEventsVO(requestId, List.copyOf(agentEventsByRequestId.getOrDefault(requestId, List.of())));
+        return new AgentTraceEventsVO(requestId, snapshot(agentEventsByRequestId.getOrDefault(requestId, List.of())));
     }
 
     @Override
@@ -101,7 +102,7 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 .filter(this::hasText)
                 .findFirst()
                 .orElse("");
-        return buildAgentRunMonitor(sessionId, requestId, events);
+        return buildAgentRunMonitor(sessionId, requestId, requestId, events);
     }
 
     @Override
@@ -122,12 +123,12 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 .filter(this::hasText)
                 .reduce((ignored, latest) -> latest)
                 .orElse("");
-        return buildAgentRunMonitor(sessionId, monitorRequestId, events);
+        return buildAgentRunMonitor(sessionId, monitorRequestId, requestId, events);
     }
 
     @Override
     public List<PlatformInteractionEventVO> interactionEvents(String sessionId) {
-        return interactionEventsBySessionId.getOrDefault(sessionId, List.of()).stream()
+        return snapshot(interactionEventsBySessionId.getOrDefault(sessionId, List.of())).stream()
                 .sorted(Comparator.comparing(PlatformInteractionEventVO::occurredAt))
                 .toList();
     }
@@ -138,7 +139,7 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         interactionEvents(sessionId).stream()
                 .map(this::toTimelineEvent)
                 .forEach(timeline::add);
-        agentEventsBySessionId.getOrDefault(sessionId, List.of()).stream()
+        snapshot(agentEventsBySessionId.getOrDefault(sessionId, List.of())).stream()
                 .map(this::toTimelineEvent)
                 .forEach(timeline::add);
         return timeline.stream()
@@ -224,9 +225,9 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 event.data(),
                 event.createdAt()
         );
-        agentEventsByRequestId.computeIfAbsent(stored.requestId(), ignored -> new ArrayList<>()).add(stored);
+        agentEventsByRequestId.computeIfAbsent(stored.requestId(), ignored -> new CopyOnWriteArrayList<>()).add(stored);
         if (hasText(stored.sessionId())) {
-            agentEventsBySessionId.computeIfAbsent(stored.sessionId(), ignored -> new ArrayList<>()).add(stored);
+            agentEventsBySessionId.computeIfAbsent(stored.sessionId(), ignored -> new CopyOnWriteArrayList<>()).add(stored);
         }
         return stored;
     }
@@ -246,15 +247,20 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 event.occurredAt(),
                 event.metadata()
         );
-        interactionEventsBySessionId.computeIfAbsent(stored.sessionId(), ignored -> new ArrayList<>()).add(stored);
+        interactionEventsBySessionId.computeIfAbsent(stored.sessionId(), ignored -> new CopyOnWriteArrayList<>()).add(stored);
         return stored;
     }
 
-    private AgentRunMonitorVO buildAgentRunMonitor(String sessionId, String requestId, List<AgentTraceEventVO> sourceEvents) {
+    private AgentRunMonitorVO buildAgentRunMonitor(
+            String sessionId,
+            String requestId,
+            String recommendScopeRequestId,
+            List<AgentTraceEventVO> sourceEvents
+    ) {
         List<AgentRunEventVO> events = sourceEvents.stream()
                 .map(this::toRunEvent)
                 .toList();
-        int recommendItemCount = recommendItemCount(sessionId);
+        int recommendItemCount = recommendItemCount(sessionId, recommendScopeRequestId);
         boolean hasFinalAnswer = events.stream().anyMatch(this::hasFinalAnswer);
         boolean hasError = events.stream().anyMatch(this::isErrorEvent);
         long totalLatencyMs = events.stream().mapToLong(event -> event.latencyMs() == null ? 0L : event.latencyMs()).sum();
@@ -283,7 +289,7 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 phases(events),
                 events,
                 qualitySignals(events, summary),
-                relatedTraces(sessionId)
+                relatedTraces(sessionId, recommendScopeRequestId)
         );
     }
 
@@ -321,27 +327,29 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         return List.copyOf(signals);
     }
 
-    private AgentRunRelatedTraceVO relatedTraces(String sessionId) {
+    private AgentRunRelatedTraceVO relatedTraces(String sessionId, String requestId) {
         if (!hasText(sessionId)) {
             return AgentRunRelatedTraceVO.empty();
         }
         int agentTurnCount = agentSessionTraces.getOrDefault(sessionId, AgentSessionTraceVO.empty(sessionId)).turns().size();
         List<String> recommendRequestIds = recommendTraces.values().stream()
                 .filter(trace -> sessionId.equals(trace.sessionId()))
+                .filter(trace -> !hasText(requestId) || requestId.equals(trace.requestId()))
                 .map(RecommendTraceVO::requestId)
                 .filter(this::hasText)
                 .sorted()
                 .toList();
-        int interactionEventCount = interactionEventsBySessionId.getOrDefault(sessionId, List.of()).size();
+        int interactionEventCount = snapshot(interactionEventsBySessionId.getOrDefault(sessionId, List.of())).size();
         return new AgentRunRelatedTraceVO(agentTurnCount, recommendRequestIds, interactionEventCount);
     }
 
-    private int recommendItemCount(String sessionId) {
+    private int recommendItemCount(String sessionId, String requestId) {
         if (!hasText(sessionId)) {
             return 0;
         }
         return recommendTraces.values().stream()
                 .filter(trace -> sessionId.equals(trace.sessionId()))
+                .filter(trace -> !hasText(requestId) || requestId.equals(trace.requestId()))
                 .mapToInt(trace -> trace.items().size())
                 .sum();
     }
@@ -482,9 +490,13 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
     }
 
     private List<AgentTraceEventVO> sortedAgentEvents(List<AgentTraceEventVO> events) {
-        return events.stream()
+        return snapshot(events).stream()
                 .sorted(Comparator.comparing(AgentTraceEventVO::createdAt))
                 .toList();
+    }
+
+    private <T> List<T> snapshot(List<T> values) {
+        return List.copyOf(values);
     }
 
     private PlatformTimelineEventVO toTimelineEvent(PlatformInteractionEventVO event) {
