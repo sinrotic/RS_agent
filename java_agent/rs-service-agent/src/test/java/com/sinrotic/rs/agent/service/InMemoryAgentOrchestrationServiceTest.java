@@ -6,9 +6,11 @@ import com.sinrotic.rs.agent.domain.vo.AgentChatVO;
 import com.sinrotic.rs.agent.domain.vo.AgentSessionTraceVO;
 import com.sinrotic.rs.agent.domain.vo.AgentStreamEventVO;
 import com.sinrotic.rs.agent.domain.vo.AgentTraceEventVO;
+import com.sinrotic.rs.agent.service.impl.AgentLoopResult;
 import com.sinrotic.rs.agent.service.impl.AgentModelStreamEvent;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentOrchestrationService;
+import com.sinrotic.rs.agent.service.impl.RsAgentLoop;
 import com.sinrotic.rs.agent.service.impl.VirtualThreadAgentToolUseExecutor;
 import org.junit.jupiter.api.Test;
 
@@ -234,6 +236,85 @@ class InMemoryAgentOrchestrationServiceTest {
             assertThat(event.eventType()).isEqualTo("tool_result");
             assertThat(event.toolName()).isEqualTo("recommend_rag_support");
             assertThat(event.phase()).isEqualTo("rag");
+        });
+    }
+
+    @Test
+    void streamChatNormalizesTraceFieldsFromReportedEventData() {
+        List<AgentTraceEventVO> reportedEvents = new ArrayList<>();
+        String longArguments = "argument-".repeat(40);
+        String longOutput = "output-".repeat(50);
+        InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService(
+                new RsAgentLoop(
+                        new InMemoryAgentRuntimeConfigurationService(),
+                        new VirtualThreadAgentToolUseExecutor(event -> Map.of("status", "SUCCESS")),
+                        (requestId, request, consumer) -> {
+                        }
+                ) {
+                    @Override
+                    public AgentLoopResult run(AgentChatRequestDTO request, java.util.function.Consumer<AgentStreamEventVO> consumer) {
+                        String requestId = "agent_req_normalized";
+                        consumer.accept(new AgentStreamEventVO("tool_result", requestId, Map.of(
+                                "tool_call_id", "call_query",
+                                "tool_name", "recommend_candidates",
+                                "latency_ms", 42L,
+                                "query", "wireless headphones",
+                                "status", "SUCCESS",
+                                "output_summary", "ranked 2 candidates"
+                        )));
+                        consumer.accept(new AgentStreamEventVO("tool_result", requestId, Map.of(
+                                "tool_call_id", "call_arguments",
+                                "tool_name", "catalog_lookup",
+                                "tool_arguments", longArguments,
+                                "output_summary", longOutput,
+                                "status", "SUCCESS"
+                        )));
+                        consumer.accept(new AgentStreamEventVO("tool_result", requestId, Map.of(
+                                "tool_call_id", "call_error",
+                                "tool_name", "catalog_lookup",
+                                "status", "ERROR",
+                                "error_code", "CATALOG_TIMEOUT",
+                                "error_message", "Catalog lookup timed out"
+                        )));
+                        consumer.accept(new AgentStreamEventVO("done", requestId, Map.of()));
+                        return new AgentLoopResult("rs_agent", requestId, "normalized answer", List.of());
+                    }
+                },
+                reportedEvents::add
+        );
+
+        service.streamChat(new AgentChatRequestDTO(
+                "sess_normalized",
+                "A1XYZ",
+                "Find wireless headphones",
+                2,
+                Map.of("scene", "chat")
+        ), ignored -> {
+        });
+
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("tool_result");
+            assertThat(event.toolCallId()).isEqualTo("call_query");
+            assertThat(event.latencyMs()).isEqualTo(42L);
+            assertThat(event.inputSummary()).isEqualTo("query=wireless headphones");
+            assertThat(event.outputSummary()).isEqualTo("ranked 2 candidates");
+            assertThat(event.errorCode()).isEmpty();
+            assertThat(event.errorMessage()).isEmpty();
+            assertThat(event.status()).isEqualTo("success");
+        });
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("tool_result");
+            assertThat(event.toolCallId()).isEqualTo("call_arguments");
+            assertThat(event.inputSummary()).isEqualTo(longArguments.substring(0, 240));
+            assertThat(event.outputSummary()).isEqualTo(longOutput.substring(0, 240));
+        });
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("tool_result");
+            assertThat(event.toolCallId()).isEqualTo("call_error");
+            assertThat(event.status()).isEqualTo("error");
+            assertThat(event.errorCode()).isEqualTo("CATALOG_TIMEOUT");
+            assertThat(event.errorMessage()).isEqualTo("Catalog lookup timed out");
+            assertThat(event.outputSummary()).isEqualTo("status=ERROR");
         });
     }
 
