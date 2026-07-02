@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from 'react';
-import { Activity, CheckCircle2, Clock3, Database, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import { Activity, Database, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import {
   getAgentRequestMonitor,
   getAgentSessionMonitor,
@@ -10,7 +10,7 @@ import { getStoredProfileUserId } from '../api/shared';
 import { AgentRunMonitorPanel } from '../components/AgentRunMonitorPanel';
 import { TracePanel } from '../components/TracePanel';
 import { AgentRunMonitorVO, PlatformSessionOverviewVO, RecommendTraceVO } from '../types/platformTrace';
-import { formatMs, formatTokens, shouldAutoRefresh } from '../utils/agentRunMonitor';
+import { formatTokens, shouldAutoRefresh } from '../utils/agentRunMonitor';
 
 export function ObserveConsole() {
   const storedProfileUserId = getStoredProfileUserId() || 'guest_user';
@@ -21,7 +21,7 @@ export function ObserveConsole() {
   const [overview, setOverview] = useState<PlatformSessionOverviewVO | null>(null);
   const [recommendTrace, setRecommendTrace] = useState<RecommendTraceVO | null>(null);
   const [monitor, setMonitor] = useState<AgentRunMonitorVO | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -128,16 +128,14 @@ export function ObserveConsole() {
   }, [autoRefresh, monitor, requestId, sessionId]);
 
   const headerStatus = monitor?.status || (overview ? 'loaded' : 'idle');
-  const headerLatency = monitor ? formatMs(monitor.summary.total_latency_ms) : '-';
   const headerTokens = monitor ? formatTokens(monitor.summary.total_tokens) : String(totalSessionTokens || 0);
-  const headerEvents = monitor ? String(monitor.events.length) : String(overview?.timeline.length || 0);
-  const headerFinal = monitor
-    ? monitor.summary.has_final_answer
-      ? 'Present'
-      : 'Missing'
-    : recommendTrace
-      ? `${recommendTrace.items.length} items`
-      : 'Idle';
+  const headerTools = monitor
+    ? String(monitor.summary.tool_call_count || 0)
+    : String((overview?.agent_trace.turns || []).reduce((sum, turn) => sum + turn.tool_calls.length, 0));
+  const headerErrors = monitor ? String(monitor.summary.error_count || 0) : error ? '1' : '0';
+  const headerRecommend = monitor
+    ? String(monitor.summary.recommend_item_count || 0)
+    : String(recommendTrace?.items.length || 0);
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-slate-950 text-slate-100 text-left">
@@ -158,29 +156,23 @@ export function ObserveConsole() {
             <div className="grid grid-cols-2 gap-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:grid-cols-5">
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
                 Status
-                <div className="mt-1 inline-flex items-center gap-1 text-sm text-cyan-300">
-                  <CheckCircle2 size={13} />
-                  {headerStatus}
-                </div>
-              </div>
-              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Latency
-                <div className="mt-1 inline-flex items-center gap-1 text-sm text-cyan-300">
-                  <Clock3 size={13} />
-                  {headerLatency}
-                </div>
+                <div className="mt-1 text-sm text-cyan-300">{headerStatus}</div>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
                 Tokens
                 <div className="mt-1 text-sm text-cyan-300">{headerTokens}</div>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Events
-                <div className="mt-1 text-sm text-cyan-300">{headerEvents}</div>
+                Tools
+                <div className="mt-1 text-sm text-cyan-300">{headerTools}</div>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Final
-                <div className="mt-1 text-sm text-cyan-300">{headerFinal}</div>
+                Errors
+                <div className="mt-1 text-sm text-cyan-300">{headerErrors}</div>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
+                Recommend
+                <div className="mt-1 text-sm text-cyan-300">{headerRecommend}</div>
               </div>
             </div>
           </div>
