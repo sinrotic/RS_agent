@@ -120,7 +120,7 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
                 : events.stream()
                 .map(AgentTraceEventVO::requestId)
                 .filter(this::hasText)
-                .findFirst()
+                .reduce((ignored, latest) -> latest)
                 .orElse("");
         return buildAgentRunMonitor(sessionId, monitorRequestId, events);
     }
@@ -382,7 +382,10 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
             return "recommend";
         }
         if (eventType.contains("model") || eventType.contains("generation")) {
-            return "generation";
+            return "model_call";
+        }
+        if (eventType.contains("tool") || hasText(event.toolName()) || hasText(event.toolCallId())) {
+            return "tool_call";
         }
         if (eventType.contains("start") || eventType.contains("plan")) {
             return "planning";

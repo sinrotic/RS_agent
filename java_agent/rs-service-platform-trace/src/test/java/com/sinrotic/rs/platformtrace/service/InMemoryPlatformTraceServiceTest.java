@@ -510,4 +510,91 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.summary().errorCount()).isEqualTo(1);
         assertThat(monitor.events().getFirst().status()).isEqualTo("error");
     }
+
+    @Test
+    void sessionMonitorWithoutRequestFilterUsesLatestNonEmptyRequestId() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_old_request",
+                "sess_latest_request",
+                "agent_req_old",
+                "agent_started",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                20L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_latest_request",
+                "sess_latest_request",
+                "agent_req_latest",
+                "agent_done",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                20L,
+                Map.of("final_answer_present", true),
+                Instant.parse("2026-06-29T10:00:03Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentSessionMonitor("sess_latest_request", null);
+
+        assertThat(monitor.requestId()).isEqualTo("agent_req_latest");
+        assertThat(monitor.events()).extracting("requestId")
+                .containsExactly("agent_req_old", "agent_req_latest");
+    }
+
+    @Test
+    void requestMonitorInfersModelCallPhaseForModelEventsWithoutExplicitPhase() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_model_call",
+                "sess_model_call",
+                "agent_req_model_call",
+                "model_response",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                75L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_model_call");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("model_call");
+        assertThat(monitor.phases()).extracting("phase").containsExactly("model_call");
+    }
+
+    @Test
+    void requestMonitorInfersToolCallPhaseForGenericToolEventsWithoutExplicitPhase() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_tool_call",
+                "sess_tool_call",
+                "agent_req_tool_call",
+                "tool_result",
+                "call_catalog",
+                "catalog_card",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                45L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_tool_call");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("tool_call");
+        assertThat(monitor.phases()).extracting("phase").containsExactly("tool_call");
+    }
 }
