@@ -623,6 +623,30 @@ class InMemoryPlatformTraceServiceTest {
     }
 
     @Test
+    void requestMonitorInfersRecommendPhaseForRecommendToolsWithoutExplicitPhase() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_recommend",
+                "sess_recommend",
+                "agent_req_recommend",
+                "tool_result",
+                "call_recommend",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                50L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_recommend");
+
+        assertThat(monitor.events().getFirst().phase()).isEqualTo("recommend");
+        assertThat(monitor.phases()).extracting("phase").containsExactly("recommend");
+    }
+
+    @Test
     void requestMonitorPrioritizesToolNameOverModelEventType() {
         InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
         service.saveAgentTraceEvent(new AgentTraceEventVO(
