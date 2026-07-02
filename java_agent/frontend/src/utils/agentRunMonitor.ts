@@ -2,8 +2,8 @@ import type { AgentRunEventVO, AgentRunMonitorVO, AgentRunStatus } from '../type
 
 export function formatMs(value?: number): string {
   if (!value || value <= 0) return '-';
-  if (value < 1000) return `${value}ms`;
-  return `${(value / 1000).toFixed(1)}s`;
+  if (value < 1000) return `${value} ms`;
+  return `${(value / 1000).toFixed(1)} s`;
 }
 
 export function formatTokens(value?: number): string {
@@ -14,16 +14,15 @@ export function formatTokens(value?: number): string {
 export function statusTone(status?: AgentRunStatus | 'error' | string): string {
   switch (status) {
     case 'success':
-      return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+      return 'text-emerald-300 border-emerald-500/30 bg-emerald-500/10';
     case 'failed':
     case 'error':
-      return 'border-red-200 bg-red-50 text-red-700';
+      return 'text-rose-300 border-rose-500/30 bg-rose-500/10';
     case 'running':
-      return 'border-sky-200 bg-sky-50 text-sky-700';
+      return 'text-cyan-300 border-cyan-500/30 bg-cyan-500/10';
     case 'partial':
-      return 'border-amber-200 bg-amber-50 text-amber-700';
     default:
-      return 'border-slate-200 bg-slate-50 text-slate-700';
+      return 'text-amber-300 border-amber-500/30 bg-amber-500/10';
   }
 }
 
