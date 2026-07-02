@@ -1,4 +1,9 @@
-import { PlatformSessionOverviewVO, PlatformTimelineEventVO, RecommendTraceVO } from '../types/platformTrace';
+import {
+  AgentRunMonitorVO,
+  PlatformSessionOverviewVO,
+  PlatformTimelineEventVO,
+  RecommendTraceVO
+} from '../types/platformTrace';
 import { getJson, isMockMode, mockDelay } from './shared';
 import { MOCK_RECOMMEND_ITEMS } from './recommendClient';
 
@@ -27,6 +32,155 @@ function mockRecommendTrace(requestId: string, sessionId: string, profileUserId:
       recall_sources: item.source_tags,
       reason: item.reason
     }))
+  };
+}
+
+export function mockAgentRunMonitor(sessionId: string, requestId?: string): AgentRunMonitorVO {
+  const resolvedSessionId = sessionId || 'mock-session';
+  const resolvedRequestId = requestId || 'agent_req_mock_001';
+  const now = Date.now();
+
+  return {
+    session_id: resolvedSessionId,
+    request_id: resolvedRequestId,
+    status: 'success',
+    summary: {
+      total_latency_ms: 2480,
+      prompt_tokens: 1260,
+      completion_tokens: 420,
+      total_tokens: 1680,
+      model_provider: 'openai',
+      model_name: 'gpt-4.1-mini',
+      tool_call_count: 2,
+      error_count: 0,
+      recommend_item_count: 4,
+      has_final_answer: true
+    },
+    phases: [
+      {
+        phase: 'intent',
+        status: 'success',
+        event_count: 1,
+        latency_ms: 420,
+        total_tokens: 360
+      },
+      {
+        phase: 'tool',
+        status: 'success',
+        event_count: 2,
+        latency_ms: 1160,
+        total_tokens: 540
+      },
+      {
+        phase: 'answer',
+        status: 'success',
+        event_count: 1,
+        latency_ms: 900,
+        total_tokens: 780
+      }
+    ],
+    events: [
+      {
+        event_id: 'agent_evt_mock_001',
+        session_id: resolvedSessionId,
+        request_id: resolvedRequestId,
+        event_type: 'llm_response',
+        phase: 'intent',
+        status: 'success',
+        tool_call_id: '',
+        tool_name: '',
+        agent_name: 'shopping_agent',
+        model_provider: 'openai',
+        model_name: 'gpt-4.1-mini',
+        latency_ms: 420,
+        prompt_tokens: 260,
+        completion_tokens: 100,
+        total_tokens: 360,
+        error_code: '',
+        error_message: '',
+        input_summary: 'User asked for commuting product recommendations.',
+        output_summary: 'Detected portable audio and electronics intent.',
+        data: { intent: 'commuting_audio' },
+        created_at: new Date(now - 3000).toISOString()
+      },
+      {
+        event_id: 'agent_evt_mock_002',
+        session_id: resolvedSessionId,
+        request_id: resolvedRequestId,
+        event_type: 'tool_call',
+        phase: 'tool',
+        status: 'success',
+        tool_call_id: 'call_mock_001',
+        tool_name: 'recommend_candidates',
+        agent_name: 'shopping_agent',
+        model_provider: 'openai',
+        model_name: 'gpt-4.1-mini',
+        latency_ms: 720,
+        prompt_tokens: 420,
+        completion_tokens: 120,
+        total_tokens: 540,
+        error_code: '',
+        error_message: '',
+        input_summary: 'Fetch candidate items for commuting audio intent.',
+        output_summary: 'Retrieved ranked candidate set.',
+        data: { candidate_count: 24 },
+        created_at: new Date(now - 2200).toISOString()
+      },
+      {
+        event_id: 'agent_evt_mock_003',
+        session_id: resolvedSessionId,
+        request_id: resolvedRequestId,
+        event_type: 'tool_result',
+        phase: 'tool',
+        status: 'success',
+        tool_call_id: 'call_mock_001',
+        tool_name: 'recommend_candidates',
+        agent_name: 'shopping_agent',
+        model_provider: 'openai',
+        model_name: 'gpt-4.1-mini',
+        latency_ms: 440,
+        prompt_tokens: 0,
+        completion_tokens: 0,
+        total_tokens: 0,
+        error_code: '',
+        error_message: '',
+        input_summary: 'Rank candidate products.',
+        output_summary: 'Selected top recommendations with reason tags.',
+        data: {
+          item_ids: MOCK_RECOMMEND_ITEMS.slice(0, 4).map((item) => item.item_id)
+        },
+        created_at: new Date(now - 1500).toISOString()
+      },
+      {
+        event_id: 'agent_evt_mock_004',
+        session_id: resolvedSessionId,
+        request_id: resolvedRequestId,
+        event_type: 'llm_response',
+        phase: 'answer',
+        status: 'success',
+        tool_call_id: '',
+        tool_name: '',
+        agent_name: 'shopping_agent',
+        model_provider: 'openai',
+        model_name: 'gpt-4.1-mini',
+        latency_ms: 900,
+        prompt_tokens: 580,
+        completion_tokens: 200,
+        total_tokens: 780,
+        error_code: '',
+        error_message: '',
+        input_summary: 'Summarize recommendations and tradeoffs.',
+        output_summary: 'Generated final answer with four product recommendations.',
+        data: { final_answer: true },
+        created_at: new Date(now - 600).toISOString()
+      }
+    ],
+    quality_signals: ['final_answer_present', 'tool_trace_complete', 'recommendations_linked'],
+    related_traces: {
+      agent_turn_count: 1,
+      recommend_request_ids: ['mock-rec-req'],
+      interaction_event_count: 2
+    }
   };
 }
 
@@ -130,4 +284,24 @@ export async function getSessionTimeline(sessionId: string): Promise<PlatformTim
     return overview.timeline;
   }
   return getJson<PlatformTimelineEventVO[]>(`/platform/sessions/${encodeURIComponent(sessionId)}/timeline`);
+}
+
+export async function getAgentRequestMonitor(requestId: string): Promise<AgentRunMonitorVO> {
+  if (isMockMode()) {
+    await mockDelay(250);
+    return mockAgentRunMonitor('mock-session', requestId);
+  }
+  return getJson<AgentRunMonitorVO>(`/platform/agent/runs/${encodeURIComponent(requestId)}/monitor`);
+}
+
+export async function getAgentSessionMonitor(sessionId: string, requestId?: string): Promise<AgentRunMonitorVO> {
+  if (isMockMode()) {
+    await mockDelay(250);
+    return mockAgentRunMonitor(sessionId, requestId);
+  }
+
+  const params = new URLSearchParams();
+  if (requestId) params.set('request_id', requestId);
+  const suffix = params.toString() ? `?${params.toString()}` : '';
+  return getJson<AgentRunMonitorVO>(`/platform/sessions/${encodeURIComponent(sessionId)}/agent-monitor${suffix}`);
 }
