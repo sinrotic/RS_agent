@@ -1,9 +1,16 @@
-import { FormEvent, useState } from 'react';
-import { Activity, Database, RefreshCw, Search, ShieldCheck } from 'lucide-react';
-import { getRecommendTrace, getSessionOverview } from '../api/platformTraceClient';
+import { FormEvent, useEffect, useState } from 'react';
+import { Activity, CheckCircle2, Clock3, Database, RefreshCw, Search, ShieldCheck } from 'lucide-react';
+import {
+  getAgentRequestMonitor,
+  getAgentSessionMonitor,
+  getRecommendTrace,
+  getSessionOverview
+} from '../api/platformTraceClient';
 import { getStoredProfileUserId } from '../api/shared';
+import { AgentRunMonitorPanel } from '../components/AgentRunMonitorPanel';
 import { TracePanel } from '../components/TracePanel';
-import { PlatformSessionOverviewVO, RecommendTraceVO } from '../types/platformTrace';
+import { AgentRunMonitorVO, PlatformSessionOverviewVO, RecommendTraceVO } from '../types/platformTrace';
+import { formatMs, formatTokens, shouldAutoRefresh } from '../utils/agentRunMonitor';
 
 export function ObserveConsole() {
   const storedProfileUserId = getStoredProfileUserId() || 'guest_user';
@@ -13,6 +20,8 @@ export function ObserveConsole() {
   const [selectedItemId, setSelectedItemId] = useState<string>('');
   const [overview, setOverview] = useState<PlatformSessionOverviewVO | null>(null);
   const [recommendTrace, setRecommendTrace] = useState<RecommendTraceVO | null>(null);
+  const [monitor, setMonitor] = useState<AgentRunMonitorVO | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
 
@@ -20,21 +29,54 @@ export function ObserveConsole() {
   const canQueryRecommend = Boolean(requestId.trim());
   const totalSessionTokens = overview?.timeline.reduce((sum, event) => sum + numberValue(event.data.total_tokens), 0) || 0;
 
+  const loadMonitorFor = async (sessionIdArg?: string, requestIdArg?: string) => {
+    const resolvedSessionId = sessionIdArg?.trim() || '';
+    const resolvedRequestId = requestIdArg?.trim() || '';
+
+    if (!resolvedSessionId && !resolvedRequestId) {
+      setMonitor(null);
+      return null;
+    }
+
+    const data = resolvedSessionId
+      ? await getAgentSessionMonitor(resolvedSessionId, resolvedRequestId || undefined)
+      : await getAgentRequestMonitor(resolvedRequestId);
+    setMonitor(data);
+    return data;
+  };
+
+  const refreshMonitor = async (sessionIdArg?: string, requestIdArg?: string) => {
+    setLoading(true);
+    setError('');
+    try {
+      await loadMonitorFor(sessionIdArg ?? sessionId, requestIdArg ?? requestId);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load agent run monitor');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const loadOverview = async () => {
     if (!canQuerySession) return;
+    const resolvedSessionId = sessionId.trim();
+    const resolvedRequestId = requestId.trim();
+    const resolvedAccountId = accountId.trim() || undefined;
+
     setLoading(true);
     setError('');
     try {
       const data = await getSessionOverview(
-        sessionId.trim(),
-        accountId.trim() || undefined,
-        requestId.trim() || undefined,
-        accountId.trim() || undefined
+        resolvedSessionId,
+        resolvedAccountId,
+        resolvedRequestId || undefined,
+        resolvedAccountId
       );
       setOverview(data);
       if (data.recommend_traces.length > 0) {
         setRecommendTrace(data.recommend_traces[0]);
       }
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId);
     } catch (e: any) {
       setError(e.message || 'Failed to load session overview');
     } finally {
@@ -44,14 +86,18 @@ export function ObserveConsole() {
 
   const loadRecommendTrace = async () => {
     if (!canQueryRecommend) return;
+    const resolvedRequestId = requestId.trim();
+
     setLoading(true);
     setError('');
     try {
-      const data = await getRecommendTrace(requestId.trim());
+      const data = await getRecommendTrace(resolvedRequestId);
       setRecommendTrace(data);
-      if (!sessionId && data.session_id) {
+      const resolvedSessionId = sessionId.trim() || data.session_id || '';
+      if (!sessionId.trim() && data.session_id) {
         setSessionId(data.session_id);
       }
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId);
     } catch (e: any) {
       setError(e.message || 'Failed to load recommend trace');
     } finally {
@@ -67,6 +113,31 @@ export function ObserveConsole() {
     }
     await loadRecommendTrace();
   };
+
+  useEffect(() => {
+    if (!autoRefresh || !shouldAutoRefresh(monitor || undefined) || !monitor) {
+      return undefined;
+    }
+
+    const currentMonitor = monitor;
+    const intervalId = window.setInterval(() => {
+      void refreshMonitor(currentMonitor.session_id || sessionId, currentMonitor.request_id || requestId);
+    }, 5000);
+
+    return () => window.clearInterval(intervalId);
+  }, [autoRefresh, monitor, requestId, sessionId]);
+
+  const headerStatus = monitor?.status || (overview ? 'loaded' : 'idle');
+  const headerLatency = monitor ? formatMs(monitor.summary.total_latency_ms) : '-';
+  const headerTokens = monitor ? formatTokens(monitor.summary.total_tokens) : String(totalSessionTokens || 0);
+  const headerEvents = monitor ? String(monitor.events.length) : String(overview?.timeline.length || 0);
+  const headerFinal = monitor
+    ? monitor.summary.has_final_answer
+      ? 'Present'
+      : 'Missing'
+    : recommendTrace
+      ? `${recommendTrace.items.length} items`
+      : 'Idle';
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto bg-slate-950 text-slate-100 text-left">
@@ -86,24 +157,30 @@ export function ObserveConsole() {
 
             <div className="grid grid-cols-2 gap-3 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:grid-cols-5">
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Profile
-                <div className="mt-1 text-sm text-cyan-300">{overview?.account_profile ? 'Loaded' : 'Idle'}</div>
+                Status
+                <div className="mt-1 inline-flex items-center gap-1 text-sm text-cyan-300">
+                  <CheckCircle2 size={13} />
+                  {headerStatus}
+                </div>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Recommend
-                <div className="mt-1 text-sm text-cyan-300">{recommendTrace?.items.length || 0}</div>
-              </div>
-              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Turns
-                <div className="mt-1 text-sm text-cyan-300">{overview?.agent_trace.turns.length || 0}</div>
-              </div>
-              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
-                Events
-                <div className="mt-1 text-sm text-cyan-300">{overview?.timeline.length || 0}</div>
+                Latency
+                <div className="mt-1 inline-flex items-center gap-1 text-sm text-cyan-300">
+                  <Clock3 size={13} />
+                  {headerLatency}
+                </div>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
                 Tokens
-                <div className="mt-1 text-sm text-cyan-300">{totalSessionTokens}</div>
+                <div className="mt-1 text-sm text-cyan-300">{headerTokens}</div>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
+                Events
+                <div className="mt-1 text-sm text-cyan-300">{headerEvents}</div>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/70 px-3 py-2">
+                Final
+                <div className="mt-1 text-sm text-cyan-300">{headerFinal}</div>
               </div>
             </div>
           </div>
@@ -170,6 +247,16 @@ export function ObserveConsole() {
             {error}
           </div>
         )}
+
+        <AgentRunMonitorPanel
+          monitor={monitor}
+          loading={loading}
+          autoRefresh={autoRefresh}
+          onRefresh={() => {
+            void refreshMonitor();
+          }}
+          onAutoRefreshChange={setAutoRefresh}
+        />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
           <TracePanel
