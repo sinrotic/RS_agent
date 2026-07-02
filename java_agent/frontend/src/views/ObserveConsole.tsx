@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Activity, Database, RefreshCw, Search, ShieldCheck } from 'lucide-react';
 import {
   getAgentRequestMonitor,
@@ -24,36 +24,64 @@ export function ObserveConsole() {
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+  const monitorRequestSequence = useRef<number>(0);
 
   const canQuerySession = Boolean(sessionId.trim());
   const canQueryRecommend = Boolean(requestId.trim());
   const totalSessionTokens = overview?.timeline.reduce((sum, event) => sum + numberValue(event.data.total_tokens), 0) || 0;
 
-  const loadMonitorFor = async (sessionIdArg?: string, requestIdArg?: string) => {
+  const nextMonitorRequestSequence = () => {
+    monitorRequestSequence.current += 1;
+    return monitorRequestSequence.current;
+  };
+
+  const loadMonitorFor = async (
+    sessionIdArg?: string,
+    requestIdArg?: string,
+    requestSequence = nextMonitorRequestSequence()
+  ) => {
     const resolvedSessionId = sessionIdArg?.trim() || '';
     const resolvedRequestId = requestIdArg?.trim() || '';
+    const isCurrentRequest = () => requestSequence === monitorRequestSequence.current;
 
     if (!resolvedSessionId && !resolvedRequestId) {
-      setMonitor(null);
-      return null;
+      if (isCurrentRequest()) {
+        setMonitor(null);
+      }
+      return { data: null, isCurrent: isCurrentRequest() };
     }
 
-    const data = resolvedSessionId
-      ? await getAgentSessionMonitor(resolvedSessionId, resolvedRequestId || undefined)
-      : await getAgentRequestMonitor(resolvedRequestId);
-    setMonitor(data);
-    return data;
+    try {
+      const data = resolvedSessionId
+        ? await getAgentSessionMonitor(resolvedSessionId, resolvedRequestId || undefined)
+        : await getAgentRequestMonitor(resolvedRequestId);
+      if (isCurrentRequest()) {
+        setMonitor(data);
+      }
+      return { data, isCurrent: isCurrentRequest() };
+    } catch (e) {
+      if (!isCurrentRequest()) {
+        return { data: null, isCurrent: false };
+      }
+      throw e;
+    }
   };
 
   const refreshMonitor = async (sessionIdArg?: string, requestIdArg?: string) => {
+    const resolvedSessionId = sessionIdArg !== undefined ? sessionIdArg : monitor?.session_id || sessionId;
+    const resolvedRequestId = requestIdArg !== undefined ? requestIdArg : monitor?.request_id || requestId;
+    let result: Awaited<ReturnType<typeof loadMonitorFor>> | null = null;
+
     setLoading(true);
     setError('');
     try {
-      await loadMonitorFor(sessionIdArg ?? sessionId, requestIdArg ?? requestId);
+      result = await loadMonitorFor(resolvedSessionId, resolvedRequestId);
     } catch (e: any) {
       setError(e.message || 'Failed to load agent run monitor');
     } finally {
-      setLoading(false);
+      if (!result || result.isCurrent) {
+        setLoading(false);
+      }
     }
   };
 
@@ -62,6 +90,7 @@ export function ObserveConsole() {
     const resolvedSessionId = sessionId.trim();
     const resolvedRequestId = requestId.trim();
     const resolvedAccountId = accountId.trim() || undefined;
+    const monitorSequence = nextMonitorRequestSequence();
 
     setLoading(true);
     setError('');
@@ -76,7 +105,7 @@ export function ObserveConsole() {
       if (data.recommend_traces.length > 0) {
         setRecommendTrace(data.recommend_traces[0]);
       }
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId);
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId, monitorSequence);
     } catch (e: any) {
       setError(e.message || 'Failed to load session overview');
     } finally {
@@ -87,6 +116,7 @@ export function ObserveConsole() {
   const loadRecommendTrace = async () => {
     if (!canQueryRecommend) return;
     const resolvedRequestId = requestId.trim();
+    const monitorSequence = nextMonitorRequestSequence();
 
     setLoading(true);
     setError('');
@@ -97,7 +127,7 @@ export function ObserveConsole() {
       if (!sessionId.trim() && data.session_id) {
         setSessionId(data.session_id);
       }
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId);
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId, monitorSequence);
     } catch (e: any) {
       setError(e.message || 'Failed to load recommend trace');
     } finally {
@@ -121,11 +151,11 @@ export function ObserveConsole() {
 
     const currentMonitor = monitor;
     const intervalId = window.setInterval(() => {
-      void refreshMonitor(currentMonitor.session_id || sessionId, currentMonitor.request_id || requestId);
+      void refreshMonitor(currentMonitor.session_id, currentMonitor.request_id);
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [autoRefresh, monitor, requestId, sessionId]);
+  }, [autoRefresh, monitor]);
 
   const headerStatus = monitor?.status || (overview ? 'loaded' : 'idle');
   const headerTokens = monitor ? formatTokens(monitor.summary.total_tokens) : String(totalSessionTokens || 0);
@@ -245,7 +275,7 @@ export function ObserveConsole() {
           loading={loading}
           autoRefresh={autoRefresh}
           onRefresh={() => {
-            void refreshMonitor();
+            void refreshMonitor(monitor?.session_id, monitor?.request_id);
           }}
           onAutoRefreshChange={setAutoRefresh}
         />

@@ -60,12 +60,12 @@ export function AgentRunMonitorPanel({
   if (!monitor) {
     return (
       <section className="rounded-2xl border border-slate-800 bg-slate-900/70">
-        <div className="flex items-center justify-between gap-3 border-b border-slate-800 px-4 py-3">
-          <div>
+        <div className="flex flex-col gap-3 border-b border-slate-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <div className="text-xs font-bold text-slate-100">Agent Run Monitor</div>
             <div className="text-[10px] text-slate-500">Query by session or request to inspect the live run.</div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <label className="inline-flex items-center gap-2 text-[11px] text-slate-400">
               <input
                 type="checkbox"
@@ -251,6 +251,7 @@ export function AgentRunMonitorPanel({
               <div className="divide-y divide-slate-800">
                 {sortedEvents.map((event) => {
                   const selected = selectedEvent?.event_id === event.event_id;
+                  const computedStatus = eventStatus(event);
                   return (
                     <button
                       key={event.event_id}
@@ -266,10 +267,10 @@ export function AgentRunMonitorPanel({
                       <div>
                         <span
                           className={`inline-flex rounded-md border px-2 py-1 text-[10px] font-bold uppercase ${statusTone(
-                            eventStatus(event)
+                            computedStatus
                           )}`}
                         >
-                          {event.status || 'partial'}
+                          {computedStatus}
                         </span>
                       </div>
                       <div className="min-w-0">
