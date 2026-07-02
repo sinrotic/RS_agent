@@ -24,43 +24,46 @@ export function ObserveConsole() {
   const [autoRefresh, setAutoRefresh] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-  const monitorRequestSequence = useRef<number>(0);
+  const observeRequestSequence = useRef<number>(0);
 
   const canQuerySession = Boolean(sessionId.trim());
   const canQueryRecommend = Boolean(requestId.trim());
   const totalSessionTokens = overview?.timeline.reduce((sum, event) => sum + numberValue(event.data.total_tokens), 0) || 0;
 
-  const nextMonitorRequestSequence = () => {
-    monitorRequestSequence.current += 1;
-    return monitorRequestSequence.current;
+  const nextObserveRequestSequence = () => {
+    observeRequestSequence.current += 1;
+    return observeRequestSequence.current;
+  };
+
+  const isCurrentRequest = (requestSequence: number) => {
+    return requestSequence === observeRequestSequence.current;
   };
 
   const loadMonitorFor = async (
     sessionIdArg?: string,
     requestIdArg?: string,
-    requestSequence = nextMonitorRequestSequence()
+    requestSequence = nextObserveRequestSequence()
   ) => {
     const resolvedSessionId = sessionIdArg?.trim() || '';
     const resolvedRequestId = requestIdArg?.trim() || '';
-    const isCurrentRequest = () => requestSequence === monitorRequestSequence.current;
 
     if (!resolvedSessionId && !resolvedRequestId) {
-      if (isCurrentRequest()) {
+      if (isCurrentRequest(requestSequence)) {
         setMonitor(null);
       }
-      return { data: null, isCurrent: isCurrentRequest() };
+      return { data: null, isCurrent: isCurrentRequest(requestSequence) };
     }
 
     try {
       const data = resolvedSessionId
         ? await getAgentSessionMonitor(resolvedSessionId, resolvedRequestId || undefined)
         : await getAgentRequestMonitor(resolvedRequestId);
-      if (isCurrentRequest()) {
+      if (isCurrentRequest(requestSequence)) {
         setMonitor(data);
       }
-      return { data, isCurrent: isCurrentRequest() };
+      return { data, isCurrent: isCurrentRequest(requestSequence) };
     } catch (e) {
-      if (!isCurrentRequest()) {
+      if (!isCurrentRequest(requestSequence)) {
         return { data: null, isCurrent: false };
       }
       throw e;
@@ -70,16 +73,18 @@ export function ObserveConsole() {
   const refreshMonitor = async (sessionIdArg?: string, requestIdArg?: string) => {
     const resolvedSessionId = sessionIdArg !== undefined ? sessionIdArg : monitor?.session_id || sessionId;
     const resolvedRequestId = requestIdArg !== undefined ? requestIdArg : monitor?.request_id || requestId;
-    let result: Awaited<ReturnType<typeof loadMonitorFor>> | null = null;
+    const requestSequence = nextObserveRequestSequence();
 
     setLoading(true);
     setError('');
     try {
-      result = await loadMonitorFor(resolvedSessionId, resolvedRequestId);
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId, requestSequence);
     } catch (e: any) {
-      setError(e.message || 'Failed to load agent run monitor');
+      if (isCurrentRequest(requestSequence)) {
+        setError(e.message || 'Failed to load agent run monitor');
+      }
     } finally {
-      if (!result || result.isCurrent) {
+      if (isCurrentRequest(requestSequence)) {
         setLoading(false);
       }
     }
@@ -90,7 +95,7 @@ export function ObserveConsole() {
     const resolvedSessionId = sessionId.trim();
     const resolvedRequestId = requestId.trim();
     const resolvedAccountId = accountId.trim() || undefined;
-    const monitorSequence = nextMonitorRequestSequence();
+    const requestSequence = nextObserveRequestSequence();
 
     setLoading(true);
     setError('');
@@ -101,37 +106,51 @@ export function ObserveConsole() {
         resolvedRequestId || undefined,
         resolvedAccountId
       );
+      if (!isCurrentRequest(requestSequence)) {
+        return;
+      }
       setOverview(data);
       if (data.recommend_traces.length > 0) {
         setRecommendTrace(data.recommend_traces[0]);
       }
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId, monitorSequence);
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId, requestSequence);
     } catch (e: any) {
-      setError(e.message || 'Failed to load session overview');
+      if (isCurrentRequest(requestSequence)) {
+        setError(e.message || 'Failed to load session overview');
+      }
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestSequence)) {
+        setLoading(false);
+      }
     }
   };
 
   const loadRecommendTrace = async () => {
     if (!canQueryRecommend) return;
     const resolvedRequestId = requestId.trim();
-    const monitorSequence = nextMonitorRequestSequence();
+    const requestSequence = nextObserveRequestSequence();
 
     setLoading(true);
     setError('');
     try {
       const data = await getRecommendTrace(resolvedRequestId);
+      if (!isCurrentRequest(requestSequence)) {
+        return;
+      }
       setRecommendTrace(data);
       const resolvedSessionId = sessionId.trim() || data.session_id || '';
       if (!sessionId.trim() && data.session_id) {
         setSessionId(data.session_id);
       }
-      await loadMonitorFor(resolvedSessionId, resolvedRequestId, monitorSequence);
+      await loadMonitorFor(resolvedSessionId, resolvedRequestId, requestSequence);
     } catch (e: any) {
-      setError(e.message || 'Failed to load recommend trace');
+      if (isCurrentRequest(requestSequence)) {
+        setError(e.message || 'Failed to load recommend trace');
+      }
     } finally {
-      setLoading(false);
+      if (isCurrentRequest(requestSequence)) {
+        setLoading(false);
+      }
     }
   };
 
@@ -145,7 +164,7 @@ export function ObserveConsole() {
   };
 
   useEffect(() => {
-    if (!autoRefresh || !shouldAutoRefresh(monitor || undefined) || !monitor) {
+    if (!autoRefresh || loading || !shouldAutoRefresh(monitor || undefined) || !monitor) {
       return undefined;
     }
 
@@ -155,7 +174,7 @@ export function ObserveConsole() {
     }, 5000);
 
     return () => window.clearInterval(intervalId);
-  }, [autoRefresh, monitor]);
+  }, [autoRefresh, loading, monitor]);
 
   const headerStatus = monitor?.status || (overview ? 'loaded' : 'idle');
   const headerTokens = monitor ? formatTokens(monitor.summary.total_tokens) : String(totalSessionTokens || 0);
