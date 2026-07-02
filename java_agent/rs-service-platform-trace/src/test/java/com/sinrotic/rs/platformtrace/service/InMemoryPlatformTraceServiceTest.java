@@ -450,4 +450,64 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(event.inputSummary()).isEqualTo("input");
         assertThat(event.outputSummary()).isEqualTo("output");
     }
+
+    @Test
+    void requestMonitorPrioritizesErrorMessageOverExplicitSuccessStatus() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_success_with_error",
+                "sess_error_evidence",
+                "agent_req_error_evidence",
+                "model_result",
+                "generation",
+                "success",
+                null,
+                null,
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                80L,
+                12,
+                0,
+                12,
+                null,
+                "timeout",
+                "prompt",
+                null,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_error_evidence");
+
+        assertThat(monitor.status()).isEqualTo("failed");
+        assertThat(monitor.summary().errorCount()).isEqualTo(1);
+        assertThat(monitor.qualitySignals()).contains("model_error");
+        assertThat(monitor.events().getFirst().status()).isEqualTo("error");
+    }
+
+    @Test
+    void requestMonitorTreatsErrorEventTypeWithoutExplicitStatusAsError() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_type_error",
+                "sess_type_error",
+                "agent_req_type_error",
+                "tool_error",
+                "call_type_error",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                Map.of(),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_type_error");
+
+        assertThat(monitor.status()).isEqualTo("failed");
+        assertThat(monitor.summary().errorCount()).isEqualTo(1);
+        assertThat(monitor.events().getFirst().status()).isEqualTo("error");
+    }
 }

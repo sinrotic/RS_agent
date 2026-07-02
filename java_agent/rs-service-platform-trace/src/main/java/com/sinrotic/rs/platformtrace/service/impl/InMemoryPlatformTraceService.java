@@ -391,14 +391,11 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
     }
 
     private String inferStatus(AgentTraceEventVO event) {
+        if (hasErrorEvidence(event.status(), event.errorCode(), event.errorMessage(), event.eventType(), event.data())) {
+            return "error";
+        }
         if (hasText(event.status())) {
             return event.status();
-        }
-        if (hasText(event.errorCode())
-                || hasText(event.errorMessage())
-                || containsText(event.eventType(), "error")
-                || "ERROR".equalsIgnoreCase(String.valueOf(event.data().get("status")))) {
-            return "error";
         }
         return "success";
     }
@@ -425,7 +422,16 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
     private boolean isErrorEvent(AgentRunEventVO event) {
         return "error".equalsIgnoreCase(event.status())
                 || "failed".equalsIgnoreCase(event.status())
-                || hasText(event.errorCode());
+                || hasErrorEvidence(event.status(), event.errorCode(), event.errorMessage(), event.eventType(), event.data());
+    }
+
+    private boolean hasErrorEvidence(String status, String errorCode, String errorMessage, String eventType, Map<String, Object> data) {
+        return "error".equalsIgnoreCase(status)
+                || "failed".equalsIgnoreCase(status)
+                || hasText(errorCode)
+                || hasText(errorMessage)
+                || containsText(eventType, "error")
+                || "ERROR".equalsIgnoreCase(String.valueOf(data.get("status")));
     }
 
     private boolean isToolContext(AgentRunEventVO event) {
