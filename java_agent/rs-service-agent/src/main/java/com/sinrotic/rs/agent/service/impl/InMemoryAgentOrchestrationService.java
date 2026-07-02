@@ -313,13 +313,17 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
 
     private String inferStatus(String eventType, Map<String, Object> data) {
         String dataStatus = stringValue(data.get("status"));
-        if ("ERROR".equalsIgnoreCase(dataStatus)
-                || data.containsKey("error_code")
-                || data.containsKey("error_message")
+        if (isErrorStatus(dataStatus)
+                || hasText(stringValue(data.get("error_code")))
+                || hasText(stringValue(data.get("error_message")))
                 || stringValue(eventType).toLowerCase(Locale.ROOT).contains("error")) {
             return "error";
         }
         return "success";
+    }
+
+    private boolean isErrorStatus(String status) {
+        return "ERROR".equalsIgnoreCase(status) || "FAILED".equalsIgnoreCase(status);
     }
 
     private String inputSummary(Map<String, Object> data) {

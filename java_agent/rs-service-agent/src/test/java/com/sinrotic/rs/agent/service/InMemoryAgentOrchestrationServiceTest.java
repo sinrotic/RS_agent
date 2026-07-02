@@ -276,6 +276,18 @@ class InMemoryAgentOrchestrationServiceTest {
                                 "error_code", "CATALOG_TIMEOUT",
                                 "error_message", "Catalog lookup timed out"
                         )));
+                        consumer.accept(new AgentStreamEventVO("tool_result", requestId, Map.of(
+                                "tool_call_id", "call_failed",
+                                "tool_name", "catalog_lookup",
+                                "status", "FAILED"
+                        )));
+                        consumer.accept(new AgentStreamEventVO("tool_result", requestId, Map.of(
+                                "tool_call_id", "call_blank_error",
+                                "tool_name", "catalog_lookup",
+                                "status", "SUCCESS",
+                                "error_code", " ",
+                                "error_message", ""
+                        )));
                         consumer.accept(new AgentStreamEventVO("done", requestId, Map.of()));
                         return new AgentLoopResult("rs_agent", requestId, "normalized answer", List.of());
                     }
@@ -315,6 +327,20 @@ class InMemoryAgentOrchestrationServiceTest {
             assertThat(event.errorCode()).isEqualTo("CATALOG_TIMEOUT");
             assertThat(event.errorMessage()).isEqualTo("Catalog lookup timed out");
             assertThat(event.outputSummary()).isEqualTo("status=ERROR");
+        });
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("tool_result");
+            assertThat(event.toolCallId()).isEqualTo("call_failed");
+            assertThat(event.status()).isEqualTo("error");
+            assertThat(event.outputSummary()).isEqualTo("status=FAILED");
+        });
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("tool_result");
+            assertThat(event.toolCallId()).isEqualTo("call_blank_error");
+            assertThat(event.status()).isEqualTo("success");
+            assertThat(event.errorCode()).isEqualTo(" ");
+            assertThat(event.errorMessage()).isEmpty();
+            assertThat(event.outputSummary()).isEqualTo("status=SUCCESS");
         });
     }
 
