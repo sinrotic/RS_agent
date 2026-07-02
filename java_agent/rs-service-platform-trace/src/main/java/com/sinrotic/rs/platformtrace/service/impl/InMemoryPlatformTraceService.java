@@ -311,6 +311,9 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         if (summary.totalLatencyMs() > 10_000L) {
             signals.add("high_latency");
         }
+        if (events.stream().anyMatch(this::isEmptySuccessfulToolResult)) {
+            signals.add("empty_tool_result");
+        }
         boolean hasRecommendPhase = events.stream().anyMatch(event -> "recommend".equals(event.phase()));
         if (hasRecommendPhase && summary.recommendItemCount() == 0) {
             signals.add("no_recommendation_items");
@@ -446,6 +449,36 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
     private boolean isModelContext(AgentRunEventVO event) {
         return containsText(event.eventType(), "model")
                 || "generation".equals(event.phase());
+    }
+
+    private boolean isEmptySuccessfulToolResult(AgentRunEventVO event) {
+        return hasText(event.toolName())
+                && !isErrorEvent(event)
+                && !hasMeaningfulOutput(event);
+    }
+
+    private boolean hasMeaningfulOutput(AgentRunEventVO event) {
+        return hasText(event.outputSummary())
+                || isMeaningfulDataValue(event.data().get("items"))
+                || isMeaningfulDataValue(event.data().get("result"))
+                || isMeaningfulDataValue(event.data().get("output"))
+                || isMeaningfulDataValue(event.data().get("content"));
+    }
+
+    private boolean isMeaningfulDataValue(Object value) {
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof String stringValue) {
+            return hasText(stringValue);
+        }
+        if (value instanceof java.util.Collection<?> collectionValue) {
+            return !collectionValue.isEmpty();
+        }
+        if (value instanceof Map<?, ?> mapValue) {
+            return !mapValue.isEmpty();
+        }
+        return true;
     }
 
     private List<AgentTraceEventVO> sortedAgentEvents(List<AgentTraceEventVO> events) {

@@ -693,4 +693,91 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.events().getFirst().phase()).isEqualTo("model_call");
         assertThat(monitor.phases()).extracting("phase").containsExactly("model_call");
     }
+
+    @Test
+    void requestMonitorFlagsSuccessfulToolCallWithEmptyOutput() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_empty_tool",
+                "sess_empty_tool",
+                "agent_req_empty_tool",
+                "tool_result",
+                "tool_call",
+                "success",
+                "call_empty",
+                "catalog_card",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                5,
+                0,
+                5,
+                null,
+                null,
+                "input",
+                " ",
+                Map.of("status", "SUCCESS"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_empty_tool");
+
+        assertThat(monitor.qualitySignals()).contains("empty_tool_result");
+    }
+
+    @Test
+    void requestMonitorDoesNotFlagToolCallWithMeaningfulOutput() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_output_summary",
+                "sess_tool_output",
+                "agent_req_tool_output",
+                "tool_result",
+                "tool_call",
+                "success",
+                "call_summary",
+                "catalog_card",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                5,
+                0,
+                5,
+                null,
+                null,
+                "input",
+                "found item cards",
+                Map.of("status", "SUCCESS"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_items",
+                "sess_tool_output",
+                "agent_req_tool_output",
+                "tool_result",
+                "tool_call",
+                "success",
+                "call_items",
+                "catalog_card",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                30L,
+                5,
+                0,
+                5,
+                null,
+                null,
+                "input",
+                "",
+                Map.of("status", "SUCCESS", "items", List.of("B001")),
+                Instant.parse("2026-06-29T10:00:02Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_tool_output");
+
+        assertThat(monitor.qualitySignals()).doesNotContain("empty_tool_result");
+    }
 }
