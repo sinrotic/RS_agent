@@ -36,6 +36,18 @@ public record AgentTraceEventVO(
         Long cacheReadInputTokens,
         @JsonProperty("cache_write_input_tokens")
         Long cacheWriteInputTokens,
+        @JsonProperty("phase")
+        String phase,
+        @JsonProperty("status")
+        String status,
+        @JsonProperty("error_code")
+        String errorCode,
+        @JsonProperty("error_message")
+        String errorMessage,
+        @JsonProperty("input_summary")
+        String inputSummary,
+        @JsonProperty("output_summary")
+        String outputSummary,
         @JsonProperty("data")
         Map<String, Object> data,
         @JsonProperty("created_at")
@@ -56,10 +68,40 @@ public record AgentTraceEventVO(
             Instant createdAt
     ) {
         this(eventId, sessionId, requestId, eventType, toolCallId, toolName, agentName, modelProvider, modelName,
-                latencyMs, null, null, null, null, null, data, createdAt);
+                latencyMs, null, null, null, null, null, "", "", "", "", "", "", data, createdAt);
+    }
+
+    public AgentTraceEventVO(
+            String eventId,
+            String sessionId,
+            String requestId,
+            String eventType,
+            String toolCallId,
+            String toolName,
+            String agentName,
+            String modelProvider,
+            String modelName,
+            Long latencyMs,
+            Integer promptTokens,
+            Integer completionTokens,
+            Integer totalTokens,
+            Long cacheReadInputTokens,
+            Long cacheWriteInputTokens,
+            Map<String, Object> data,
+            Instant createdAt
+    ) {
+        this(eventId, sessionId, requestId, eventType, toolCallId, toolName, agentName, modelProvider, modelName,
+                latencyMs, promptTokens, completionTokens, totalTokens, cacheReadInputTokens, cacheWriteInputTokens,
+                "", "", "", "", "", "", data, createdAt);
     }
 
     public AgentTraceEventVO {
+        phase = phase == null ? "" : phase;
+        status = status == null ? "" : status;
+        errorCode = errorCode == null ? "" : errorCode;
+        errorMessage = errorMessage == null ? "" : errorMessage;
+        inputSummary = inputSummary == null ? "" : inputSummary;
+        outputSummary = outputSummary == null ? "" : outputSummary;
         data = data == null ? Map.of() : Map.copyOf(data);
         createdAt = createdAt == null ? Instant.now() : createdAt;
     }

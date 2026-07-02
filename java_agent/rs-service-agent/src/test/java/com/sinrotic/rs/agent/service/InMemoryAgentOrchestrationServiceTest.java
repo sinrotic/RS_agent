@@ -177,12 +177,63 @@ class InMemoryAgentOrchestrationServiceTest {
 
         assertThat(reportedEvents).extracting(AgentTraceEventVO::eventType)
                 .contains("agent_started", "tool_use", "tool_result", "agent_done");
+        assertThat(reportedEvents).allSatisfy(event -> {
+            assertThat(event.phase()).isNotBlank();
+            assertThat(event.status()).isNotBlank();
+            assertThat(event.inputSummary()).isNotNull();
+            assertThat(event.outputSummary()).isNotNull();
+        });
         assertThat(reportedEvents).anySatisfy(event -> {
             assertThat(event.eventType()).isEqualTo("tool_result");
             assertThat(event.sessionId()).isEqualTo("sess_report");
             assertThat(event.toolCallId()).isEqualTo("call_001");
             assertThat(event.toolName()).isEqualTo("recommend_candidates");
+            assertThat(event.phase()).isEqualTo("recommend");
+            assertThat(event.status()).isEqualTo("success");
+            assertThat(event.outputSummary()).isEqualTo("status=SUCCESS");
             assertThat(event.data()).containsEntry("status", "SUCCESS");
+        });
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("agent_done");
+            assertThat(event.phase()).isEqualTo("final_answer");
+            assertThat(event.status()).isEqualTo("success");
+        });
+    }
+
+    @Test
+    void streamChatInfersRagPhaseBeforeRecommendForHybridToolName() {
+        List<AgentTraceEventVO> reportedEvents = new ArrayList<>();
+        AtomicInteger modelCalls = new AtomicInteger();
+        InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService(
+                (requestId, request, consumer) -> {
+                    if (modelCalls.incrementAndGet() > 1) {
+                        consumer.accept(AgentModelStreamEvent.done());
+                        return;
+                    }
+                    consumer.accept(AgentModelStreamEvent.toolUse(
+                            "call_rag_001",
+                            "recommend_rag_support",
+                            Map.of("query", "waterproof commuter bag")
+                    ));
+                },
+                new VirtualThreadAgentToolUseExecutor(event -> Map.of("status", "SUCCESS")),
+                new InMemoryAgentRuntimeConfigurationService(),
+                reportedEvents::add
+        );
+
+        service.streamChat(new AgentChatRequestDTO(
+                "sess_report_rag",
+                "A1XYZ",
+                "Find waterproof bags",
+                2,
+                Map.of("scene", "chat")
+        ), ignored -> {
+        });
+
+        assertThat(reportedEvents).anySatisfy(event -> {
+            assertThat(event.eventType()).isEqualTo("tool_result");
+            assertThat(event.toolName()).isEqualTo("recommend_rag_support");
+            assertThat(event.phase()).isEqualTo("rag");
         });
     }
 

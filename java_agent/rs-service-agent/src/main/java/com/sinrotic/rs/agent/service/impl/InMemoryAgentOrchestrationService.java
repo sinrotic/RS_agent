@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -271,15 +272,82 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 "rs_agent",
                 stringValue(request.resolvedContext().getOrDefault("model_provider", "spring_ai")),
                 stringValue(request.resolvedContext().getOrDefault("model_name", "")),
-                null,
+                longValue(data.get("latency_ms")),
                 integerValue(data.get("prompt_tokens")),
                 integerValue(data.get("completion_tokens")),
                 integerValue(data.get("total_tokens")),
                 longValue(data.get("cache_read_input_tokens")),
                 longValue(data.get("cache_write_input_tokens")),
+                inferPhase(eventType, toolName),
+                inferStatus(eventType, data),
+                stringValue(data.get("error_code")),
+                stringValue(data.get("error_message")),
+                inputSummary(data),
+                outputSummary(data),
                 data,
                 java.time.Instant.now()
         ));
+    }
+
+    private String inferPhase(String eventType, String toolName) {
+        if (hasText(toolName)) {
+            String normalizedToolName = toolName.toLowerCase(Locale.ROOT);
+            if (normalizedToolName.contains("rag")) {
+                return "rag";
+            }
+            if (normalizedToolName.contains("recommend")) {
+                return "recommend";
+            }
+            return "tool_call";
+        }
+
+        String normalizedEventType = stringValue(eventType).toLowerCase(Locale.ROOT);
+        if (normalizedEventType.contains("model")) {
+            return "model_call";
+        }
+        if (normalizedEventType.contains("done") || normalizedEventType.contains("final")) {
+            return "final_answer";
+        }
+        return "agent";
+    }
+
+    private String inferStatus(String eventType, Map<String, Object> data) {
+        String dataStatus = stringValue(data.get("status"));
+        if ("ERROR".equalsIgnoreCase(dataStatus)
+                || data.containsKey("error_code")
+                || data.containsKey("error_message")
+                || stringValue(eventType).toLowerCase(Locale.ROOT).contains("error")) {
+            return "error";
+        }
+        return "success";
+    }
+
+    private String inputSummary(Map<String, Object> data) {
+        if (data.containsKey("query")) {
+            return "query=" + stringValue(data.get("query"));
+        }
+        if (data.containsKey("tool_arguments")) {
+            return truncate(stringValue(data.get("tool_arguments")));
+        }
+        return "";
+    }
+
+    private String outputSummary(Map<String, Object> data) {
+        if (data.containsKey("output_summary")) {
+            return truncate(stringValue(data.get("output_summary")));
+        }
+        if (data.containsKey("status")) {
+            return "status=" + stringValue(data.get("status"));
+        }
+        return "";
+    }
+
+    private String truncate(String value) {
+        return value.length() <= 240 ? value : value.substring(0, 240);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private String stringValue(Object value) {
