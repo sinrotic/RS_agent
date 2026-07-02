@@ -89,6 +89,9 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
 
     @Override
     public AgentRunMonitorVO agentRequestMonitor(String requestId) {
+        if (!hasText(requestId)) {
+            return AgentRunMonitorVO.empty("", requestId);
+        }
         List<AgentTraceEventVO> events = sortedAgentEvents(agentEventsByRequestId.getOrDefault(requestId, List.of()));
         if (events.isEmpty()) {
             return AgentRunMonitorVO.empty("", requestId);
@@ -103,6 +106,9 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
 
     @Override
     public AgentRunMonitorVO agentSessionMonitor(String sessionId, String requestId) {
+        if (!hasText(sessionId)) {
+            return AgentRunMonitorVO.empty(sessionId, requestId);
+        }
         List<AgentTraceEventVO> events = sortedAgentEvents(agentEventsBySessionId.getOrDefault(sessionId, List.of()).stream()
                 .filter(event -> !hasText(requestId) || requestId.equals(event.requestId()))
                 .toList());
@@ -388,7 +394,10 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         if (hasText(event.status())) {
             return event.status();
         }
-        if (hasText(event.errorCode()) || containsText(event.eventType(), "error")) {
+        if (hasText(event.errorCode())
+                || hasText(event.errorMessage())
+                || containsText(event.eventType(), "error")
+                || "ERROR".equalsIgnoreCase(String.valueOf(event.data().get("status")))) {
             return "error";
         }
         return "success";

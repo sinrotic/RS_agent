@@ -121,6 +121,36 @@ public record AgentTraceEventVO(
                 inputSummary, outputSummary, copyData(data), createdAt);
     }
 
+    public AgentTraceEventVO(
+            String eventId,
+            String sessionId,
+            String requestId,
+            String eventType,
+            String toolCallId,
+            String toolName,
+            String agentName,
+            String modelProvider,
+            String modelName,
+            Long latencyMs,
+            Integer promptTokens,
+            Integer completionTokens,
+            Integer totalTokens,
+            Long cacheReadInputTokens,
+            Long cacheWriteInputTokens,
+            String phase,
+            String status,
+            String errorCode,
+            String errorMessage,
+            String inputSummary,
+            String outputSummary,
+            Map<?, ?> data,
+            Instant createdAt
+    ) {
+        this(eventId, sessionId, requestId, eventType, phase, status, toolCallId, toolName, agentName, modelProvider, modelName,
+                latencyMs, promptTokens, completionTokens, totalTokens, cacheReadInputTokens, cacheWriteInputTokens,
+                errorCode, errorMessage, inputSummary, outputSummary, copyData(data), createdAt);
+    }
+
     public AgentTraceEventVO {
         data = data == null ? Map.of() : Map.copyOf(data);
         createdAt = createdAt == null ? Instant.now() : createdAt;

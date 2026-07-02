@@ -375,4 +375,79 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.qualitySignals()).containsExactly("partial_trace");
         assertThat(monitor.relatedTraces()).isEqualTo(com.sinrotic.rs.platformtrace.domain.vo.AgentRunRelatedTraceVO.empty());
     }
+
+    @Test
+    void monitorsReturnPartialEmptyViewForNullAndBlankIds() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+
+        assertThat(service.agentRequestMonitor(null).status()).isEqualTo("partial");
+        assertThat(service.agentRequestMonitor(" ").status()).isEqualTo("partial");
+        assertThat(service.agentSessionMonitor(null, "agent_req_missing").status()).isEqualTo("partial");
+        assertThat(service.agentSessionMonitor(" ", null).status()).isEqualTo("partial");
+        assertThat(service.agentSessionMonitor(null, "agent_req_missing").sessionId()).isEmpty();
+        assertThat(service.agentRequestMonitor(null).requestId()).isEmpty();
+    }
+
+    @Test
+    void requestMonitorTreatsLegacyDataStatusErrorAsToolError() {
+        InMemoryPlatformTraceService service = new InMemoryPlatformTraceService();
+        service.saveAgentTraceEvent(new AgentTraceEventVO(
+                "agent_evt_legacy_error",
+                "sess_legacy_error",
+                "agent_req_legacy_error",
+                "tool_result",
+                "call_legacy",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                42L,
+                Map.of("status", "ERROR"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        ));
+
+        AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_legacy_error");
+
+        assertThat(monitor.status()).isEqualTo("failed");
+        assertThat(monitor.summary().errorCount()).isEqualTo(1);
+        assertThat(monitor.qualitySignals()).contains("tool_error");
+    }
+
+    @Test
+    void agentTraceEventSupportsProducerConstructorWithNormalizedFieldsAfterCacheTokens() {
+        AgentTraceEventVO event = new AgentTraceEventVO(
+                "agent_evt_producer",
+                "sess_producer",
+                "agent_req_producer",
+                "tool_result",
+                "call_producer",
+                "recommend_candidates",
+                "rs_agent",
+                "openai",
+                "gpt-5",
+                120L,
+                10,
+                5,
+                15,
+                2L,
+                3L,
+                "recommend",
+                "error",
+                "TOOL_ERROR",
+                "tool failed",
+                "input",
+                "output",
+                Map.of("status", "ERROR"),
+                Instant.parse("2026-06-29T10:00:01Z")
+        );
+
+        assertThat(event.cacheReadInputTokens()).isEqualTo(2L);
+        assertThat(event.cacheWriteInputTokens()).isEqualTo(3L);
+        assertThat(event.phase()).isEqualTo("recommend");
+        assertThat(event.status()).isEqualTo("error");
+        assertThat(event.errorCode()).isEqualTo("TOOL_ERROR");
+        assertThat(event.errorMessage()).isEqualTo("tool failed");
+        assertThat(event.inputSummary()).isEqualTo("input");
+        assertThat(event.outputSummary()).isEqualTo("output");
+    }
 }
