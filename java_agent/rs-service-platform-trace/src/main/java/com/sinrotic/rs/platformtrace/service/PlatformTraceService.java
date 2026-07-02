@@ -1,6 +1,7 @@
 package com.sinrotic.rs.platformtrace.service;
 
 import com.sinrotic.rs.platformtrace.domain.vo.AgentSessionTraceVO;
+import com.sinrotic.rs.platformtrace.domain.vo.AgentRunMonitorVO;
 import com.sinrotic.rs.platformtrace.domain.vo.AgentTraceEventVO;
 import com.sinrotic.rs.platformtrace.domain.vo.AgentTraceEventsVO;
 import com.sinrotic.rs.platformtrace.domain.vo.PlatformAccountProfileVO;
@@ -20,6 +21,10 @@ public interface PlatformTraceService {
     AgentSessionTraceVO agentSessionTurns(String sessionId);
 
     AgentTraceEventsVO agentRequestEvents(String requestId);
+
+    AgentRunMonitorVO agentRequestMonitor(String requestId);
+
+    AgentRunMonitorVO agentSessionMonitor(String sessionId, String requestId);
 
     List<PlatformInteractionEventVO> interactionEvents(String sessionId);
 
