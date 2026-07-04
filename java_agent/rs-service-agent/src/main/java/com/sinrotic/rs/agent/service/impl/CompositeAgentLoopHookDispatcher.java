@@ -2,6 +2,7 @@ package com.sinrotic.rs.agent.service.impl;
 
 import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
 import com.sinrotic.rs.agent.service.AgentProfileHookDispatcher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +18,7 @@ public class CompositeAgentLoopHookDispatcher implements AgentLoopHookDispatcher
 
     private final List<AgentProfileHookDispatcher> profileDispatchers;
 
+    @Autowired
     public CompositeAgentLoopHookDispatcher(
             GlobalAgentLoopHookDispatcher globalDispatcher,
             List<AgentProfileHookDispatcher> profileDispatchers

@@ -11,7 +11,9 @@ import com.sinrotic.rs.recommend.service.AgentRecommendService;
 import com.sinrotic.rs.recommend.service.HomeRecommendService;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Bridges agent candidate requests to the homepage recommendation pipeline.
@@ -39,7 +41,7 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
                 request.agentId(),
                 request.taskId(),
                 request.profileUserId(),
-                toAgentCandidates(homeResponse.items())
+                filterCandidatesForAgent(toAgentCandidates(homeResponse.items()), request.constraints())
         );
     }
 
@@ -79,8 +81,60 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
                 request.agentId(),
                 request.taskId(),
                 request.profileUserId(),
-                toAgentCandidates(homeResponse.items())
+                filterCandidatesForAgent(toAgentCandidates(homeResponse.items()), request.constraints())
         );
+    }
+
+    public List<AgentRecommendCandidateItemVO> filterCandidatesForAgent(
+            List<AgentRecommendCandidateItemVO> candidates,
+            Map<String, Object> constraints
+    ) {
+        BigDecimal priceMin = decimalConstraint(constraints, "price_min", "min_price", "budget_min");
+        BigDecimal priceMax = decimalConstraint(constraints, "price_max", "max_price", "budget_max", "budget");
+        if (priceMin == null && priceMax == null) {
+            return candidates;
+        }
+        return candidates.stream()
+                .filter(candidate -> matchesPrice(candidate.price(), priceMin, priceMax))
+                .toList();
+    }
+
+    private boolean matchesPrice(BigDecimal price, BigDecimal priceMin, BigDecimal priceMax) {
+        if (price == null) {
+            return true;
+        }
+        if (priceMin != null && price.compareTo(priceMin) < 0) {
+            return false;
+        }
+        return priceMax == null || price.compareTo(priceMax) <= 0;
+    }
+
+    private BigDecimal decimalConstraint(Map<String, Object> constraints, String... keys) {
+        if (constraints == null || constraints.isEmpty()) {
+            return null;
+        }
+        for (String key : keys) {
+            Object value = constraints.get(key);
+            BigDecimal decimal = toDecimal(value);
+            if (decimal != null) {
+                return decimal;
+            }
+        }
+        return null;
+    }
+
+    private BigDecimal toDecimal(Object value) {
+        if (value instanceof Number number) {
+            return new BigDecimal(number.toString());
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return new BigDecimal(text.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private List<AgentRecommendCandidateItemVO> toAgentCandidates(List<RecommendItemVO> items) {

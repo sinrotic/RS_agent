@@ -377,12 +377,12 @@ class InMemoryAgentOrchestrationServiceTest {
         assertThat((List<?>) modelContext.get().get("available_tools")).isNotEmpty();
         assertThat((List<?>) modelContext.get().get("runtime_context_messages"))
                 .anySatisfy(message -> assertThat((String) message)
-                        .contains("The following skills are available for use with the load_skill tool:"))
+                        .contains("以下 skill 可以通过 load_skill 工具按需加载："))
                 .anySatisfy(message -> assertThat((String) message)
-                        .contains("The following agents are available through the call_agent tool:"));
+                        .contains("以下 agent 可以通过 call_agent 工具调用："));
         assertThat((List<?>) modelContext.get().get("runtime_context_messages"))
                 .noneSatisfy(message -> assertThat((String) message)
-                        .contains("The following extension tools are available:"));
+                        .contains("以下扩展工具可用："));
         assertThat(modelContext.get()).containsEntry("scene", "chat");
     }
 }

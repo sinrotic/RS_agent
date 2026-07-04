@@ -23,6 +23,8 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @RestController
 @RequestMapping("/api/agent")
@@ -59,7 +61,15 @@ public class AgentChatController {
     public ResponseEntity<StreamingResponseBody> streamChat(@RequestBody AgentChatRequestDTO request) {
         StreamingResponseBody body = outputStream -> {
             OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
-            streamService.streamChat(request, event -> writeSseEvent(writer, event));
+            AtomicReference<String> requestIdRef = new AtomicReference<>("");
+            try {
+                streamService.streamChat(request, event -> {
+                    requestIdRef.set(event.requestId());
+                    writeSseEvent(writer, event);
+                });
+            } catch (Exception ex) {
+                writeStreamError(writer, requestIdRef.get(), ex);
+            }
         };
         return ResponseEntity.ok()
                 .contentType(MediaType.TEXT_EVENT_STREAM)
@@ -89,5 +99,17 @@ public class AgentChatController {
         } catch (java.io.IOException ex) {
             throw new IllegalStateException("failed to write agent stream event", ex);
         }
+    }
+
+    private void writeStreamError(OutputStreamWriter writer, String requestId, Exception ex) {
+        String message = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
+        writeSseEvent(writer, new AgentStreamEventVO("error", requestId, Map.of(
+                "message", message,
+                "error_type", ex.getClass().getSimpleName()
+        )));
+        writeSseEvent(writer, new AgentStreamEventVO("done", requestId, Map.of(
+                "done", true,
+                "finish_reason", "error"
+        )));
     }
 }

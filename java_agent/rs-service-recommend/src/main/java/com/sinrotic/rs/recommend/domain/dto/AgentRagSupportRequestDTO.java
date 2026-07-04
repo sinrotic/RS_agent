@@ -30,7 +30,7 @@ public record AgentRagSupportRequestDTO(
     private static final int DEFAULT_TOP_K = 20;
     private static final int DEFAULT_RERANK_TOP_K = 8;
     private static final int DEFAULT_MAX_SUPPORT_PER_ITEM = 3;
-    private static final int DEFAULT_MAX_TEXT_CHARS = 220;
+    private static final int DEFAULT_MAX_TEXT_CHARS = 1200;
     private static final List<String> DEFAULT_PROVIDERS = List.of("elasticsearch_bm25", "milvus_vector");
 
     public AgentRagSupportRequestDTO withDefaults() {

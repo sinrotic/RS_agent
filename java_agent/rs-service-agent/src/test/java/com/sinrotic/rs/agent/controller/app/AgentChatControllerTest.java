@@ -111,6 +111,37 @@ class AgentChatControllerTest {
     }
 
     @Test
+    void streamChatReturnsErrorAndDoneWhenStreamServiceFailsAfterCommit() throws Exception {
+        doAnswer(invocation -> {
+            java.util.function.Consumer<AgentStreamEventVO> consumer = invocation.getArgument(1);
+            consumer.accept(new AgentStreamEventVO("trace", "agent_req_401", Map.of(
+                    "tool_name", "model_chat",
+                    "status", "STARTED"
+            )));
+            throw new IllegalStateException("Missing API key");
+        }).when(streamService).streamChat(any(), any());
+
+        var result = mockMvc.perform(post("/api/agent/chat/stream")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "session_id", "sess_401",
+                                "profile_user_id", "A1XYZ",
+                                "user_message", "Find bluetooth earbuds"
+                        ))))
+                .andExpect(request().asyncStarted())
+                .andReturn();
+
+        mockMvc.perform(asyncDispatch(result))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("event: trace")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("event: error")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"message\":\"Missing API key\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("event: done")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"finish_reason\":\"error\"")));
+    }
+
+    @Test
     void chatReturnsAssistantMessageRecommendationsAndToolTrace() throws Exception {
         AgentChatVO response = new AgentChatVO(
                 "agent_req_001",

@@ -62,6 +62,70 @@ class VirtualThreadAgentToolUseExecutorTest {
     }
 
     @Test
+    void ragSupportToolUseDelegatesToRagAgentOnVirtualThread() {
+        VirtualThreadAgentToolUseExecutor executor = new VirtualThreadAgentToolUseExecutor(
+                new InMemoryAgentRuntimeConfigurationService(),
+                (requestId, agentName, arguments) -> Map.of(
+                        "status", "SUCCESS",
+                        "agent_name", agentName,
+                        "query", arguments.get("query"),
+                        "candidate_item_ids", arguments.get("candidate_item_ids"),
+                        "thread_virtual", Thread.currentThread().isVirtual()
+                )
+        );
+
+        Map<String, Object> result = executor.execute(AgentModelStreamEvent.toolUse(
+                "rag_support",
+                Map.of(
+                        "query", "wireless earbuds with long battery",
+                        "candidate_item_ids", java.util.List.of("B001", "B002"),
+                        "top_k", 20,
+                        "rerank_top_k", 10
+                )
+        )).join();
+
+        assertThat(result).containsEntry("status", "SUCCESS");
+        assertThat(result).containsEntry("tool_type", "recommend_rag");
+        assertThat(result).containsEntry("tool_name", "rag_support");
+        assertThat(result).containsEntry("agent_name", "rag_agent");
+        assertThat(result).containsEntry("thread_virtual", true);
+        assertThat((Map<String, Object>) result.get("result"))
+                .containsEntry("agent_name", "rag_agent")
+                .containsEntry("query", "wireless earbuds with long battery");
+    }
+
+    @Test
+    void ragEvidenceSearchToolUseDelegatesToRagAgentOnVirtualThread() {
+        VirtualThreadAgentToolUseExecutor executor = new VirtualThreadAgentToolUseExecutor(
+                new InMemoryAgentRuntimeConfigurationService(),
+                (requestId, agentName, arguments) -> Map.of(
+                        "status", "SUCCESS",
+                        "agent_name", agentName,
+                        "task", arguments.get("task"),
+                        "candidate_item_ids", arguments.get("candidate_item_ids"),
+                        "thread_virtual", Thread.currentThread().isVirtual()
+                )
+        );
+
+        Map<String, Object> result = executor.execute(AgentModelStreamEvent.toolUse(
+                "rag_evidence_search",
+                Map.of(
+                        "task", "compress evidence for backpacks",
+                        "candidate_item_ids", java.util.List.of("B010")
+                )
+        )).join();
+
+        assertThat(result).containsEntry("status", "SUCCESS");
+        assertThat(result).containsEntry("tool_type", "recommend_rag");
+        assertThat(result).containsEntry("tool_name", "rag_evidence_search");
+        assertThat(result).containsEntry("agent_name", "rag_agent");
+        assertThat(result).containsEntry("thread_virtual", true);
+        assertThat((Map<String, Object>) result.get("result"))
+                .containsEntry("agent_name", "rag_agent")
+                .containsEntry("task", "compress evidence for backpacks");
+    }
+
+    @Test
     void renderProductCardsReturnsCardSetForSelectedItemsOnVirtualThread() {
         VirtualThreadAgentToolUseExecutor executor = new VirtualThreadAgentToolUseExecutor(
                 new InMemoryAgentRuntimeConfigurationService()

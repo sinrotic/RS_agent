@@ -10,6 +10,7 @@ import com.sinrotic.rs.recommend.domain.vo.RecommendItemVO;
 import com.sinrotic.rs.recommend.service.impl.DefaultAgentRecommendService;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -100,5 +101,58 @@ class DefaultAgentRecommendServiceTest {
         assertEquals("Office Products > Staplers", response.candidates().getFirst().categoryPath());
         assertEquals("matches portable stapler", response.candidates().getFirst().shortText());
         assertEquals("matches portable stapler", response.candidates().getFirst().reasonHint());
+    }
+
+    @Test
+    void filtersCandidatesByPriceRangeWhenCandidatePriceIsAvailable() {
+        DefaultAgentRecommendService service = new DefaultAgentRecommendService(request -> new HomeRecommendVO(
+                "rec_req_price_001",
+                request.sessionId(),
+                request.scene(),
+                "A1XYZ",
+                List.of(),
+                false,
+                "",
+                new HomeRecommendConfigVO(500, 100, 50, 20, 8)
+        ));
+
+        var candidates = List.of(
+                new com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO(
+                        "B_LOW",
+                        "Budget Earbuds",
+                        "Electronics > Headphones",
+                        new BigDecimal("299.00"),
+                        "",
+                        "within budget",
+                        "within budget"
+                ),
+                new com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO(
+                        "B_HIGH",
+                        "Premium Headphones",
+                        "Electronics > Headphones",
+                        new BigDecimal("1299.00"),
+                        "",
+                        "over budget",
+                        "over budget"
+                ),
+                new com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO(
+                        "B_UNKNOWN",
+                        "Unknown Price Earbuds",
+                        "Electronics > Headphones",
+                        null,
+                        "",
+                        "price missing",
+                        "price missing"
+                )
+        );
+
+        var filtered = service.filterCandidatesForAgent(
+                candidates,
+                Map.of("price_min", 200, "price_max", 500)
+        );
+
+        assertEquals(List.of("B_LOW", "B_UNKNOWN"), filtered.stream()
+                .map(com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO::itemId)
+                .toList());
     }
 }

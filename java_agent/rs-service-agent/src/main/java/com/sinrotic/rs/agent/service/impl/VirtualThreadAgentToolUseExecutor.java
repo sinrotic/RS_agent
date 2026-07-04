@@ -110,6 +110,17 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
                         "thread_virtual", Thread.currentThread().isVirtual()
                 );
             }
+            if ("rag_support".equals(event.toolName()) || "rag_evidence_search".equals(event.toolName())) {
+                Map<String, Object> result = agentCaller.apply("", "rag_agent", event.arguments());
+                return Map.of(
+                        "status", "SUCCESS",
+                        "tool_type", "recommend_rag",
+                        "tool_name", event.toolName(),
+                        "agent_name", "rag_agent",
+                        "result", result,
+                        "thread_virtual", Thread.currentThread().isVirtual()
+                );
+            }
             if ("read_tool_result_lines".equals(event.toolName())) {
                 String resultRef = String.valueOf(event.arguments().getOrDefault("result_ref", ""));
                 int offset = intArgument(event.arguments().get("offset"), 0);

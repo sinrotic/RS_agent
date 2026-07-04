@@ -2,6 +2,7 @@ package com.sinrotic.rs.agent.service;
 
 import com.sinrotic.rs.agent.config.AgentModelProviderConfiguration;
 import com.sinrotic.rs.agent.domain.dto.AgentChatRequestDTO;
+import com.sinrotic.rs.agent.service.impl.InMemoryAgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.impl.SpringAiAgentModelStreamClient;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,7 +26,9 @@ class SpringAiAgentModelStreamClientSmokeTest {
     @Test
     void springAiProviderStreamsFromOpenAiCompatibleApi() throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        AtomicReference<String> requestBody = new AtomicReference<>("");
         server.createContext("/v1/chat/completions", exchange -> {
+            requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             byte[] response = ("""
                     data: {"id":"chatcmpl_mock","object":"chat.completion.chunk","created":1,"model":"mock","choices":[{"index":0,"delta":{"content":"hello "},"finish_reason":null}]}
 
@@ -41,6 +45,7 @@ class SpringAiAgentModelStreamClientSmokeTest {
             exchange.close();
         });
         server.createContext("/chat/completions", exchange -> {
+            requestBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             byte[] response = ("""
                     data: {"id":"chatcmpl_mock","object":"chat.completion.chunk","created":1,"model":"mock","choices":[{"index":0,"delta":{"content":"hello "},"finish_reason":null}]}
 
@@ -65,7 +70,10 @@ class SpringAiAgentModelStreamClientSmokeTest {
                             OpenAiChatAutoConfiguration.class,
                             ChatClientAutoConfiguration.class
                     ))
-                    .withUserConfiguration(AgentModelProviderConfiguration.class)
+                    .withUserConfiguration(
+                            AgentModelProviderConfiguration.class,
+                            InMemoryAgentRuntimeConfigurationService.class
+                    )
                     .withPropertyValues(
                             "rs.agent.model-provider.type=spring_ai",
                             "spring.ai.model.chat=openai",
@@ -91,6 +99,11 @@ class SpringAiAgentModelStreamClientSmokeTest {
                                 );
 
                         assertThat(deltas).containsExactly("hello ", "spring ai");
+                        assertThat(requestBody.get())
+                                .contains("\"tools\"")
+                                .contains("\"load_skill\"")
+                                .contains("\"call_agent\"")
+                                .contains("\"emit_final_answer\"");
                     });
         } finally {
             server.stop(0);

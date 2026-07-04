@@ -45,10 +45,16 @@ services:
       SERVER_PORT: 18103
       RS_CATALOG_BASE_URL: ${RS_CATALOG_BASE_URL:-http://rs-service-catalog:18102}
       RS_MODEL_BASE_URL: ${RS_MODEL_BASE_URL:-http://rs-service-model:18105}
+      RS_ELASTICSEARCH_BASE_URL: ${RS_ELASTICSEARCH_BASE_URL:-http://elasticsearch:9200}
       RS_MILVUS_BASE_URL: ${RS_MILVUS_BASE_URL:-http://milvus-standalone:19530}
       RS_MILVUS_TOKEN: ${RS_MILVUS_TOKEN:-}
       RS_RECOMMEND_EMBEDDING_MODEL_KEY: ${RS_RECOMMEND_EMBEDDING_MODEL_KEY:-bge-m3}
       RS_RECOMMEND_SEMANTIC_INDEX_COLLECTION: ${RS_RECOMMEND_SEMANTIC_INDEX_COLLECTION:-rs_agent_semantic_items_bge_m3_v1}
+      RS_RECOMMEND_RAG_ELASTICSEARCH_INDEX: ${RS_RECOMMEND_RAG_ELASTICSEARCH_INDEX:-rs_agent_rag_bm25_v1}
+      RS_RECOMMEND_RAG_MILVUS_COLLECTION: ${RS_RECOMMEND_RAG_MILVUS_COLLECTION:-rs_agent_rag_chunks_milvus_v1}
+      RS_RECOMMEND_RAG_EMBEDDING_MODEL_KEY: ${RS_RECOMMEND_RAG_EMBEDDING_MODEL_KEY:-bge-m3}
+      RS_RECOMMEND_RAG_RERANK_MODEL_KEY: ${RS_RECOMMEND_RAG_RERANK_MODEL_KEY:-bge-reranker-v2-m3}
+      RS_RECOMMEND_RAG_RRF_K: ${RS_RECOMMEND_RAG_RRF_K:-60}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-recommend.jar"]
     ports:
       - "127.0.0.1:${RS_RECOMMEND_HOST_PORT:-18103}:18103"
@@ -62,6 +68,12 @@ services:
       SERVER_PORT: 18104
       RS_AGENT_TRACE_ENABLED: ${RS_AGENT_TRACE_ENABLED:-true}
       RS_PLATFORM_TRACE_SERVICE_URL: http://rs-service-platform-trace:18108
+      RS_AGENT_OPENAI_BASE_URL: ${RS_AGENT_OPENAI_BASE_URL:-https://cpa2api.sinrotic233.com/v1}
+      RS_AGENT_OPENAI_MODEL: ${RS_AGENT_OPENAI_MODEL:-gpt-5.3-codex-spark}
+      RS_AGENT_OPENAI_TEMPERATURE: ${RS_AGENT_OPENAI_TEMPERATURE:-0.55}
+      RS_AGENT_OPENAI_MAX_TOKENS: ${RS_AGENT_OPENAI_MAX_TOKENS:-1200}
+      RS_AGENT_API_KEY: ${RS_AGENT_API_KEY:-}
+      RS_agent: ${RS_agent:-}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-agent.jar"]
     ports:
       - "127.0.0.1:${RS_AGENT_HOST_PORT:-18104}:18104"

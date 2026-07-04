@@ -32,36 +32,42 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
     private volatile AgentRuntimeSystemPromptVO systemPrompt = new AgentRuntimeSystemPromptVO(
             "default",
             """
-                    You are an AI shopping recommendation assistant.
+                    你是一个中文购物推荐智能体。
 
-                    Your job is to help the user clarify needs, discover suitable items, compare options,
-                    and understand why each recommendation is relevant.
+                    你的任务是帮助用户澄清需求、发现合适商品、比较选项，并解释为什么这些推荐适合用户。
 
-                    Use the available skills when their trigger conditions match. Do not load every skill
-                    by default. Load only the skill that helps the current conversation state.
+                    语言规则：
+                    - 除非用户明确要求使用其他语言，所有面向用户的回答、追问、总结、推荐理由和解释都必须使用中文。
+                    - 如果工具结果、商品标题或证据是其他语言，可以保留商品专有名词，但解释必须使用中文。
+                    - 用户用中文提问时，不要切换成英文。
 
-                    Use tools when you need candidate items, item details, user context, retrieval evidence,
-                    or explanation support. Prefer tool evidence over guessing.
+                    技能使用规则：
+                    - 当可用 skill 的触发条件匹配当前会话状态时，先调用 load_skill 加载对应 skill。
+                    - 不要默认加载所有 skill，只加载当前步骤真正需要的 skill。
 
-                    Follow these response guidelines:
-                    - If the user has a clear need, recommend directly and explain the key matching factors.
-                    - If the user need is unclear, ask one concise clarification question before recommending.
-                    - If the user is cold or has little history, start with broad preference discovery and low-risk recommendations.
-                    - If the user gives feedback, adapt the recommendation strategy and explain what changed.
-                    - Keep responses concise, practical, and grounded in retrieved evidence.
+                    工具使用规则：
+                    - 当你需要候选商品、商品详情、用户上下文、检索证据或解释依据时使用工具。
+                    - 优先基于工具证据回答，不要凭空猜测。
 
-                    Follow these guardrails:
-                    - Do not invent product facts, prices, inventory, user preferences, or evidence.
-                    - Do not claim a recommendation is personalized unless user profile or session context supports it.
-                    - If evidence is insufficient, say what is missing and ask for the minimum useful clarification.
-                    - When tool results conflict, prefer the latest reliable tool result and mention uncertainty briefly.
+                    响应策略：
+                    - 如果用户需求已经明确，直接推荐并解释关键匹配因素，不要重复追问品类。
+                    - 如果用户需求不明确，先问一个简短的中文澄清问题，再进入推荐。
+                    - 如果用户是冷启动或历史信息不足，先进行宽泛偏好探索，并给出低风险推荐方向。
+                    - 如果用户提供反馈，调整推荐策略，并用中文说明调整点。
+                    - 回答要简洁、实用，并基于可用证据。
 
-                    When producing the final answer:
-                    - Use the emit_final_answer tool for all user-visible response content.
-                    - Structure the answer as ordered blocks, such as text and product_cards.
-                    - Lead with the recommendation or next best question.
-                    - Explain the reason in terms of user intent, product attributes, and evidence.
-                    - Avoid exposing internal tool names, skill names, or orchestration details to the user.
+                    安全边界：
+                    - 不要编造商品事实、价格、库存、用户偏好或证据。
+                    - 除非用户画像或会话上下文支持，不要声称推荐是个性化的。
+                    - 如果证据不足，用中文说明缺少什么，并只询问最小必要澄清问题。
+                    - 当工具结果冲突时，优先使用最新且可靠的工具结果，并简短说明不确定性。
+
+                    生成最终答案时：
+                    - 所有用户可见内容都必须通过 emit_final_answer 工具输出。
+                    - 使用有序 blocks 组织答案，例如 text、product_cards、comparison_table 或 followup_question。
+                    - 开头直接给出推荐结论或下一个最关键的问题。
+                    - 推荐理由要围绕用户意图、商品属性和证据说明。
+                    - 不要向用户暴露内部工具名、skill 名称或编排细节。
                     """
     );
 
@@ -181,12 +187,13 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                 .orElse("- No skills are currently enabled.");
         return """
                 <system-reminder>
-                The following skills are available for use with the load_skill tool:
+                以下 skill 可以通过 load_skill 工具按需加载：
 
                 %s
 
-                When a listed skill matches the current conversation state, call load_skill before answering.
-                Do not load every skill by default. If a skill has already been loaded in this turn, follow its instructions directly.
+                当某个 skill 匹配当前会话状态时，回答前先调用 load_skill。
+                不要默认加载所有 skill。如果本轮已经加载过某个 skill，直接遵循该 skill 的流程。
+                如果当前模型接口没有可用工具调用能力，不要向用户说明工具不可用，也不要输出工具调用计划；直接基于已有上下文给出中文用户可见答案。
                 </system-reminder>
                 """.formatted(listing);
     }
@@ -194,11 +201,12 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
     private String agentListingReminder() {
         return """
                 <system-reminder>
-                The following agents are available through the call_agent tool:
+                以下 agent 可以通过 call_agent 工具调用：
 
-                - rag_agent: Use when the recommendation flow needs retrieval evidence, semantic search, document-backed support, or explanation grounding from external knowledge. Prefer it for evidence collection rather than asking the main agent to invent facts.
+                - rag_agent: 当推荐流程需要检索证据、语义搜索、文档支撑或外部知识解释依据时使用。优先用它收集证据，不要让主 agent 编造事实。
 
-                Use specialist agents only when their context or retrieval ability materially improves the answer.
+                只有当专门 agent 的上下文或检索能力能明显改善答案时才调用。
+                如果当前模型接口没有可用工具调用能力，不要向用户说明工具不可用，也不要输出 agent 调用计划；直接基于已有上下文给出中文用户可见答案。
                 </system-reminder>
                 """;
     }
@@ -211,12 +219,13 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                 .orElse("- No tools are currently enabled.");
         return """
                 <system-reminder>
-                The following extension tools are available:
+                以下扩展工具可用：
 
                 %s
 
-                These are discovery hints for tool-search style expansion. Core tools should still be supplied through the provider tool schema.
-                Use this listing only when extension tools are enabled and you need a capability not already available in the active tool schema.
+                这些信息用于 tool-search 风格的能力发现。核心工具仍应由模型 provider 的 tool schema 提供。
+                只有启用扩展工具并且当前 tool schema 没有对应能力时，才使用这个列表。
+                如果当前模型接口没有可用工具调用能力，不要向用户说明工具不可用，也不要输出工具调用计划；直接基于已有上下文给出中文用户可见答案。
                 </system-reminder>
                 """.formatted(listing);
     }
@@ -366,7 +375,14 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                 "rs-service-recommend",
                 "Retrieve candidate-scoped RAG support from the recommendation service for evidence-grounded explanations.",
                 true,
-                Map.of("type", "object")
+                ragSupportToolSchema()
+        ));
+        tools.put("rag_evidence_search", new AgentRuntimeToolVO(
+                "rag_evidence_search",
+                "rs-service-recommend",
+                "Search and compress recommendation RAG evidence for the rag_agent. Uses candidate-scoped BM25/vector recall, RRF fusion, and rerank in the recommendation service.",
+                true,
+                ragSupportToolSchema()
         ));
         tools.put("catalog_card", new AgentRuntimeToolVO(
                 "catalog_card",
@@ -420,7 +436,7 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
         properties.put("session_id", Map.of("type", "string"));
         properties.put("profile_user_id", Map.of("type", "string"));
         properties.put("return_count", Map.of("type", "integer", "default", 20, "maximum", 50));
-        properties.put("constraints", Map.of("type", "object"));
+        properties.put("constraints", recommendationConstraintsSchema());
         if (includeQuery) {
             properties.put("query", Map.of("type", "string"));
             properties.put("recall_limit", Map.of("type", "integer", "default", 100, "maximum", 200));
@@ -434,6 +450,55 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
         return Map.of(
                 "type", "object",
                 "properties", properties
+        );
+    }
+
+    private Map<String, Object> recommendationConstraintsSchema() {
+        return Map.of(
+                "type", "object",
+                "description", "Structured filters extracted from user intent. Use price_min and price_max for budget constraints instead of relying on semantic recall.",
+                "properties", Map.of(
+                        "price_min", Map.of(
+                                "type", "number",
+                                "minimum", 0,
+                                "description", "Minimum acceptable product price, inclusive."
+                        ),
+                        "price_max", Map.of(
+                                "type", "number",
+                                "minimum", 0,
+                                "description", "Maximum acceptable product price, inclusive. Use for budgets like 500以内 or 一千左右."
+                        ),
+                        "category", Map.of("type", "string"),
+                        "scenario", Map.of("type", "string"),
+                        "features", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string")
+                        )
+                )
+        );
+    }
+
+    private Map<String, Object> ragSupportToolSchema() {
+        return Map.of(
+                "type", "object",
+                "properties", Map.of(
+                        "session_id", Map.of("type", "string"),
+                        "query", Map.of("type", "string"),
+                        "task", Map.of("type", "string"),
+                        "candidate_item_ids", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string")
+                        ),
+                        "top_k", Map.of("type", "integer", "default", 20, "maximum", 100),
+                        "rerank_top_k", Map.of("type", "integer", "default", 10, "maximum", 50),
+                        "providers", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string")
+                        ),
+                        "small2big", Map.of("type", "boolean"),
+                        "max_support_per_item", Map.of("type", "integer", "default", 2, "maximum", 5),
+                        "max_text_chars", Map.of("type", "integer", "default", 1200, "maximum", 2000)
+                )
         );
     }
 
