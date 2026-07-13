@@ -1,6 +1,6 @@
 # Agent Chat Wire Contract Design
 
-**状态：** 待书面复核
+**状态：** 已批准（2026-07-13）
 
 ## 目标
 
