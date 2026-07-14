@@ -24,6 +24,10 @@ spring:
               uri: lb://rs-service-user
               predicates:
                 - Path=/api/users/**,/api/sessions/**
+            - id: rs-service-catalog
+              uri: lb://rs-service-catalog
+              predicates:
+                - Path=/api/catalog/**
             - id: rs-service-recommend
               uri: lb://rs-service-recommend
               predicates:
