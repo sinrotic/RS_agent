@@ -1,21 +1,19 @@
 package com.sinrotic.rs.catalog.repository;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sinrotic.rs.catalog.domain.entity.CatalogItem;
 import com.sinrotic.rs.catalog.mapper.CatalogItemMapper;
 import com.sinrotic.rs.catalog.mapper.CatalogItemRow;
 import org.springframework.stereotype.Repository;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 @Repository
 public class MyBatisCatalogItemRepository implements CatalogItemRepository {
-
-    private static final TypeReference<Map<String, String>> STRING_MAP_TYPE = new TypeReference<>() {
-    };
 
     private final CatalogItemMapper catalogItemMapper;
     private final ObjectMapper objectMapper;
@@ -96,7 +94,16 @@ public class MyBatisCatalogItemRepository implements CatalogItemRepository {
             return Map.of();
         }
         try {
-            return objectMapper.readValue(attributesJson, STRING_MAP_TYPE);
+            JsonNode root = objectMapper.readTree(attributesJson);
+            if (!root.isObject()) {
+                return Map.of();
+            }
+            Map<String, String> attributes = new LinkedHashMap<>();
+            root.properties().forEach(entry -> attributes.put(
+                    entry.getKey(),
+                    entry.getValue().isValueNode() ? entry.getValue().asText() : entry.getValue().toString()
+            ));
+            return Map.copyOf(attributes);
         } catch (Exception ignored) {
             return Map.of();
         }
