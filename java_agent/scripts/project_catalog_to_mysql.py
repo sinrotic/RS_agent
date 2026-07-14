@@ -153,7 +153,16 @@ SELECT
         NULLIF(TRIM(source.title), ''),
         source.parent_asin
     ),
-    NULLIF(JSON_UNQUOTE(JSON_EXTRACT(source.description, '$[0]')), 'null'),
+    (
+        SELECT GROUP_CONCAT(
+            description_row.description_value
+            ORDER BY description_row.description_index SEPARATOR '\\n'
+        )
+        FROM JSON_TABLE(source.description, '$[*]' COLUMNS (
+            description_index FOR ORDINALITY,
+            description_value TEXT PATH '$'
+        )) AS description_row
+    ),
     COALESCE(source.details, JSON_OBJECT()),
     JSON_OBJECT(
         'dataset', source.dataset,

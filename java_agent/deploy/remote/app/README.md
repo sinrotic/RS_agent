@@ -4,6 +4,48 @@ This compose stack runs the executable Spring Boot jars built under `~/RS_agent_
 
 It joins the middleware network created by `~/RS_agent_java/infra/docker-compose.yml`.
 
+## Catalog bootstrap
+
+Apply the catalog schema before starting `rs-service-catalog`:
+
+```bash
+docker cp \
+  ~/RS_agent_java/scripts/rs_service_catalog_schema.sql \
+  rs-agent-java-mysql:/tmp/rs_service_catalog_schema.sql
+docker exec rs-agent-java-mysql sh -lc \
+  'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" < /tmp/rs_service_catalog_schema.sql'
+```
+
+Project the canonical product rows from `amazon_items_base`. Each batch commits
+the catalog upsert and its cursor in the same transaction:
+
+```bash
+python3 ~/RS_agent_java/scripts/project_catalog_to_mysql.py \
+  --container rs-agent-java-mysql \
+  --batch-size 5000 \
+  --progress-every 10
+```
+
+If the command stops, use the `run_id` printed by the script and resume it:
+
+```bash
+python3 ~/RS_agent_java/scripts/project_catalog_to_mysql.py \
+  --container rs-agent-java-mysql \
+  --resume-run-id RUN_ID \
+  --batch-size 5000 \
+  --progress-every 10
+```
+
+Do not start Catalog acceptance checks until the latest run is `COMPLETED` and
+the projected and source counts match:
+
+```bash
+docker exec rs-agent-java-mysql sh -lc \
+  'MYSQL_PWD="$MYSQL_PASSWORD" mysql -u"$MYSQL_USER" "$MYSQL_DATABASE" -e \
+  "SELECT run_id,status,processed_rows,source_rows FROM rs_catalog_projection_run ORDER BY run_id DESC LIMIT 1; \
+   SELECT COUNT(*) AS catalog_rows,COUNT(DISTINCT item_id) AS distinct_items FROM rs_catalog_item;"'
+```
+
 ## Start order
 
 ```bash
