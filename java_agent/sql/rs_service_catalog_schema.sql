@@ -25,6 +25,19 @@ CREATE TABLE IF NOT EXISTS rs_catalog_item (
     INDEX idx_rs_catalog_status_updated (status, updated_at DESC)
 );
 
+CREATE TABLE IF NOT EXISTS rs_catalog_projection_run (
+    run_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    status VARCHAR(16) NOT NULL,
+    last_source_item_id VARCHAR(128) NOT NULL DEFAULT '',
+    processed_rows BIGINT NOT NULL DEFAULT 0,
+    source_rows BIGINT NOT NULL DEFAULT 0,
+    error_message TEXT,
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    completed_at TIMESTAMP NULL,
+    INDEX idx_rs_catalog_projection_status_updated (status, updated_at DESC)
+);
+
 -- Suggested first import strategy:
 -- INSERT INTO rs_catalog_item (
 --     item_id, source_item_id, title, category, category_path, brand, store_name,
