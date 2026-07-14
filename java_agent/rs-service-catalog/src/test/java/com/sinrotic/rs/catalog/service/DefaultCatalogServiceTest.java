@@ -1,5 +1,6 @@
 package com.sinrotic.rs.catalog.service;
 
+import com.sinrotic.rs.catalog.cache.CatalogItemCache;
 import com.sinrotic.rs.catalog.domain.dto.BatchItemIdsRequestDTO;
 import com.sinrotic.rs.catalog.domain.dto.CatalogItemEmbeddingPageRequestDTO;
 import com.sinrotic.rs.catalog.domain.entity.CatalogItem;
@@ -11,6 +12,9 @@ import com.sinrotic.rs.catalog.service.impl.DefaultCatalogService;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +25,10 @@ class DefaultCatalogServiceTest {
 
     @Test
     void listItemCardsKeepsRequestedOrderAndSkipsMissingIds() {
-        DefaultCatalogService service = new DefaultCatalogService(new FakeCatalogItemRepository());
+        DefaultCatalogService service = new DefaultCatalogService(
+                new FakeCatalogItemRepository(),
+                new FakeCatalogItemCache()
+        );
 
         List<CatalogItemCardVO> cards = service.listItemCards(new BatchItemIdsRequestDTO(
                 List.of("B002", "", "B001", "UNKNOWN", "B002")
@@ -37,7 +44,10 @@ class DefaultCatalogServiceTest {
 
     @Test
     void listItemTextsBuildsStableRagTextFromCatalogFields() {
-        DefaultCatalogService service = new DefaultCatalogService(new FakeCatalogItemRepository());
+        DefaultCatalogService service = new DefaultCatalogService(
+                new FakeCatalogItemRepository(),
+                new FakeCatalogItemCache()
+        );
 
         List<CatalogItemTextVO> texts = service.listItemTexts(new BatchItemIdsRequestDTO(List.of("B001")));
 
@@ -57,7 +67,10 @@ class DefaultCatalogServiceTest {
 
     @Test
     void listItemEmbeddingTextsBuildsCompactStableTextForVectorIndexing() {
-        DefaultCatalogService service = new DefaultCatalogService(new FakeCatalogItemRepository());
+        DefaultCatalogService service = new DefaultCatalogService(
+                new FakeCatalogItemRepository(),
+                new FakeCatalogItemCache()
+        );
 
         List<CatalogItemEmbeddingTextVO> texts = service.listItemEmbeddingTexts(new BatchItemIdsRequestDTO(List.of("B003")));
 
@@ -79,7 +92,7 @@ class DefaultCatalogServiceTest {
     @Test
     void listActiveItemEmbeddingTextsUsesItemIdCursorForMysqlBatchIndexing() {
         FakeCatalogItemRepository repository = new FakeCatalogItemRepository();
-        DefaultCatalogService service = new DefaultCatalogService(repository);
+        DefaultCatalogService service = new DefaultCatalogService(repository, new FakeCatalogItemCache());
 
         List<CatalogItemEmbeddingTextVO> texts = service.listActiveItemEmbeddingTexts(
                 new CatalogItemEmbeddingPageRequestDTO("B001", 2)
@@ -88,6 +101,46 @@ class DefaultCatalogServiceTest {
         assertEquals(List.of("B002", "B003"), texts.stream().map(CatalogItemEmbeddingTextVO::itemId).toList());
         assertEquals("B001", repository.lastAfterItemId);
         assertEquals(2, repository.lastLimit);
+    }
+
+    @Test
+    void fullCacheHitAvoidsMysqlLookup() {
+        FakeCatalogItemRepository repository = new FakeCatalogItemRepository();
+        FakeCatalogItemCache cache = new FakeCatalogItemCache(Map.of("B001", repository.items.get("B001")));
+        DefaultCatalogService service = new DefaultCatalogService(repository, cache);
+
+        List<CatalogItemCardVO> cards = service.listItemCards(new BatchItemIdsRequestDTO(List.of("B001")));
+
+        assertEquals(List.of("B001"), cards.stream().map(CatalogItemCardVO::itemId).toList());
+        assertEquals(0, repository.findByItemIdsCalls);
+    }
+
+    @Test
+    void partialCacheMissQueriesOnlyDistinctMissingIdsAndRestoresInputOrder() {
+        FakeCatalogItemRepository repository = new FakeCatalogItemRepository();
+        FakeCatalogItemCache cache = new FakeCatalogItemCache(Map.of("B001", repository.items.get("B001")));
+        DefaultCatalogService service = new DefaultCatalogService(repository, cache);
+
+        List<CatalogItemCardVO> cards = service.listItemCards(new BatchItemIdsRequestDTO(
+                List.of("B001", "B002", "B001", "UNKNOWN")
+        ));
+
+        assertEquals(List.of("B001", "B002", "B001"), cards.stream().map(CatalogItemCardVO::itemId).toList());
+        assertEquals(List.of("B002", "UNKNOWN"), repository.lastRequestedItemIds);
+        assertEquals(List.of("B002"), cache.writtenItems.stream().map(CatalogItem::itemId).toList());
+    }
+
+    @Test
+    void cacheFailureFallsBackToMysql() {
+        FakeCatalogItemRepository repository = new FakeCatalogItemRepository();
+        FakeCatalogItemCache cache = new FakeCatalogItemCache();
+        cache.failReads = true;
+        DefaultCatalogService service = new DefaultCatalogService(repository, cache);
+
+        List<CatalogItemCardVO> cards = service.listItemCards(new BatchItemIdsRequestDTO(List.of("B002")));
+
+        assertEquals(List.of("B002"), cards.stream().map(CatalogItemCardVO::itemId).toList());
+        assertEquals(1, repository.findByItemIdsCalls);
     }
 
     private static final class FakeCatalogItemRepository implements CatalogItemRepository {
@@ -150,6 +203,10 @@ class DefaultCatalogServiceTest {
 
         private int lastLimit;
 
+        private int findByItemIdsCalls;
+
+        private List<String> lastRequestedItemIds = List.of();
+
         @Override
         public Optional<CatalogItem> findByItemId(String itemId) {
             return Optional.ofNullable(items.get(itemId));
@@ -157,6 +214,8 @@ class DefaultCatalogServiceTest {
 
         @Override
         public List<CatalogItem> findByItemIds(List<String> itemIds) {
+            findByItemIdsCalls++;
+            lastRequestedItemIds = List.copyOf(itemIds);
             return itemIds.stream()
                     .map(items::get)
                     .filter(item -> item != null)
@@ -192,6 +251,41 @@ class DefaultCatalogServiceTest {
         @Override
         public List<String> listStoreNames() {
             return List.of();
+        }
+    }
+
+    private static final class FakeCatalogItemCache implements CatalogItemCache {
+
+        private final Map<String, CatalogItem> items = new LinkedHashMap<>();
+        private final List<CatalogItem> writtenItems = new ArrayList<>();
+        private boolean failReads;
+
+        private FakeCatalogItemCache() {
+        }
+
+        private FakeCatalogItemCache(Map<String, CatalogItem> initialItems) {
+            items.putAll(initialItems);
+        }
+
+        @Override
+        public Map<String, CatalogItem> getAll(List<String> itemIds) {
+            if (failReads) {
+                throw new IllegalStateException("cache unavailable");
+            }
+            Map<String, CatalogItem> hits = new LinkedHashMap<>();
+            for (String itemId : itemIds) {
+                CatalogItem item = items.get(itemId);
+                if (item != null) {
+                    hits.put(itemId, item);
+                }
+            }
+            return hits;
+        }
+
+        @Override
+        public void putAll(Collection<CatalogItem> values) {
+            writtenItems.addAll(values);
+            values.forEach(item -> items.put(item.itemId(), item));
         }
     }
 }

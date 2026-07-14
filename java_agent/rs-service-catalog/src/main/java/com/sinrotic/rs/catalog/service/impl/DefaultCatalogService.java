@@ -1,5 +1,6 @@
 package com.sinrotic.rs.catalog.service.impl;
 
+import com.sinrotic.rs.catalog.cache.CatalogItemCache;
 import com.sinrotic.rs.catalog.domain.dto.BatchItemIdsRequestDTO;
 import com.sinrotic.rs.catalog.domain.dto.CatalogItemEmbeddingPageRequestDTO;
 import com.sinrotic.rs.catalog.domain.dto.CatalogItemPageRequestDTO;
@@ -16,9 +17,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,14 +28,23 @@ public class DefaultCatalogService implements CatalogService {
     private static final int EMBEDDING_DESCRIPTION_MAX_CHARS = 200;
 
     private final CatalogItemRepository catalogItemRepository;
+    private final CatalogItemCache catalogItemCache;
 
-    public DefaultCatalogService(CatalogItemRepository catalogItemRepository) {
+    public DefaultCatalogService(
+            CatalogItemRepository catalogItemRepository,
+            CatalogItemCache catalogItemCache
+    ) {
         this.catalogItemRepository = catalogItemRepository;
+        this.catalogItemCache = catalogItemCache;
     }
 
     @Override
     public CatalogItemDetailVO getItemDetail(String itemId) {
-        return catalogItemRepository.findByItemId(itemId)
+        if (itemId == null || itemId.isBlank()) {
+            return null;
+        }
+        return orderedItems(List.of(itemId.trim())).stream()
+                .findFirst()
                 .map(this::toDetail)
                 .orElse(null);
     }
@@ -107,17 +117,41 @@ public class DefaultCatalogService implements CatalogService {
         if (itemIds.isEmpty()) {
             return List.of();
         }
-        Map<String, CatalogItem> itemById = catalogItemRepository.findByItemIds(itemIds).stream()
-                .collect(Collectors.toMap(
-                        CatalogItem::itemId,
-                        Function.identity(),
-                        (left, ignored) -> left,
-                        LinkedHashMap::new
-                ));
+        List<String> distinctItemIds = new LinkedHashSet<>(itemIds).stream().toList();
+        Map<String, CatalogItem> itemById = new LinkedHashMap<>();
+        safeCacheGet(distinctItemIds).forEach((itemId, item) -> {
+            if (distinctItemIds.contains(itemId) && item != null && "active".equals(item.status())) {
+                itemById.put(itemId, item);
+            }
+        });
+        List<String> missingItemIds = distinctItemIds.stream()
+                .filter(itemId -> !itemById.containsKey(itemId))
+                .toList();
+        if (!missingItemIds.isEmpty()) {
+            List<CatalogItem> loadedItems = catalogItemRepository.findByItemIds(missingItemIds);
+            loadedItems.forEach(item -> itemById.putIfAbsent(item.itemId(), item));
+            safeCachePut(loadedItems);
+        }
         return itemIds.stream()
                 .map(itemById::get)
                 .filter(item -> item != null)
                 .toList();
+    }
+
+    private Map<String, CatalogItem> safeCacheGet(List<String> itemIds) {
+        try {
+            Map<String, CatalogItem> cachedItems = catalogItemCache.getAll(itemIds);
+            return cachedItems == null ? Map.of() : cachedItems;
+        } catch (RuntimeException ignored) {
+            return Map.of();
+        }
+    }
+
+    private void safeCachePut(List<CatalogItem> items) {
+        try {
+            catalogItemCache.putAll(items);
+        } catch (RuntimeException ignored) {
+        }
     }
 
     private CatalogItemCardVO toCard(CatalogItem item) {
