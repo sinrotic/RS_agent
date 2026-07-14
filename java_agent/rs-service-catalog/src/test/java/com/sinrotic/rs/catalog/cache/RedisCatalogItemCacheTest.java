@@ -42,8 +42,8 @@ class RedisCatalogItemCacheTest {
     void getAllReturnsPartialHitsFromOneRedisBatch() throws Exception {
         CatalogItem item = item("A1");
         when(valueOperations.multiGet(List.of(
-                "rs:catalog:item:v1:A1",
-                "rs:catalog:item:v1:A2"
+                "rs:catalog:item:v2:A1",
+                "rs:catalog:item:v2:A2"
         ))).thenReturn(Arrays.asList(objectMapper.writeValueAsString(item), null));
 
         Map<String, CatalogItem> result = cache.getAll(List.of("A1", "A2"));
@@ -57,7 +57,7 @@ class RedisCatalogItemCacheTest {
         cache.putAll(List.of(item("A1")));
 
         verify(valueOperations).set(
-                eq("rs:catalog:item:v1:A1"),
+                eq("rs:catalog:item:v2:A1"),
                 anyString(),
                 eq(Duration.ofSeconds(3600))
         );
@@ -65,7 +65,7 @@ class RedisCatalogItemCacheTest {
 
     @Test
     void malformedJsonIsEvictedAndTreatedAsMiss() {
-        String key = "rs:catalog:item:v1:A1";
+        String key = "rs:catalog:item:v2:A1";
         when(valueOperations.multiGet(List.of(key))).thenReturn(List.of("not-json"));
 
         Map<String, CatalogItem> result = cache.getAll(List.of("A1"));
@@ -76,7 +76,7 @@ class RedisCatalogItemCacheTest {
 
     @Test
     void redisFailureIsContainedAsCacheMiss() {
-        when(valueOperations.multiGet(List.of("rs:catalog:item:v1:A1")))
+        when(valueOperations.multiGet(List.of("rs:catalog:item:v2:A1")))
                 .thenThrow(new IllegalStateException("redis down"));
 
         assertTrue(cache.getAll(List.of("A1")).isEmpty());

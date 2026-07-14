@@ -70,7 +70,9 @@ RS_CATALOG_CACHE_ITEM_TTL_SECONDS=86400
 ```
 
 The first detail or batch request fills keys under
-`rs:catalog:item:v1:*`; subsequent requests read those records from Redis.
+`rs:catalog:item:v2:*`; subsequent requests read those records from Redis.
+The versioned prefix prevents a changed catalog projection from serving stale
+records written with the previous serialization or field mapping.
 
 Platform trace can also be reached through the gateway at `/api/platform/**`. In the remote compose stack it pulls
 Agent, Recommend, and User traces over the internal Docker network when `RS_PLATFORM_TRACE_CLIENTS_ENABLED=true`.

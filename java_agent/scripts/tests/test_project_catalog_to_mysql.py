@@ -89,8 +89,10 @@ class ProjectionSqlTest(unittest.TestCase):
         normalized_sql = " ".join(sql.split())
 
         self.assertIn("JSON_TABLE(source.description", sql)
+        self.assertIn("SET SESSION group_concat_max_len = 16777215", sql)
         self.assertIn("description_index FOR ORDINALITY", sql)
         self.assertIn("description_row.description_value", sql)
+        self.assertIn("description_value MEDIUMTEXT PATH '$'", normalized_sql)
         self.assertIn(
             "ORDER BY description_row.description_index SEPARATOR '\\n'",
             normalized_sql,

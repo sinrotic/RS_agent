@@ -24,7 +24,7 @@ import java.util.Map;
 public class RedisCatalogItemCache implements CatalogItemCache {
 
     private static final Logger log = LoggerFactory.getLogger(RedisCatalogItemCache.class);
-    private static final String KEY_PREFIX = "rs:catalog:item:v1:";
+    private static final String KEY_PREFIX = "rs:catalog:item:v2:";
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;

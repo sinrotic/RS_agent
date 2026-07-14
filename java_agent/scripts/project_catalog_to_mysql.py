@@ -107,7 +107,7 @@ def build_projection_batch_sql(
     after = sql_text(after_item_id)
     end = sql_text(end_item_id)
     return f"""
-SET SESSION group_concat_max_len = 1048576;
+SET SESSION group_concat_max_len = 16777215;
 START TRANSACTION;
 INSERT INTO rs_catalog_item (
     item_id,
@@ -160,7 +160,7 @@ SELECT
         )
         FROM JSON_TABLE(source.description, '$[*]' COLUMNS (
             description_index FOR ORDINALITY,
-            description_value TEXT PATH '$'
+            description_value MEDIUMTEXT PATH '$'
         )) AS description_row
     ),
     COALESCE(source.details, JSON_OBJECT()),
