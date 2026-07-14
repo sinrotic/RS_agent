@@ -6,6 +6,7 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parents[1]
+SCHEMA_PATH = SCRIPT_DIR.parent / "sql" / "rs_service_catalog_schema.sql"
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from project_catalog_to_mysql import (  # noqa: E402
@@ -44,6 +45,11 @@ class ScriptedMysql:
 
 
 class ProjectionSqlTest(unittest.TestCase):
+    def test_catalog_schema_can_store_complete_descriptions(self) -> None:
+        schema = SCHEMA_PATH.read_text(encoding="utf-8")
+
+        self.assertIn("description MEDIUMTEXT", schema)
+
     def test_next_batch_uses_stable_item_id_cursor(self) -> None:
         mysql = FakeMysql([("A999", "250")])
 

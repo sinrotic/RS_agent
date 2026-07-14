@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS rs_catalog_item (
     price DECIMAL(12, 2),
     image_url TEXT,
     summary TEXT,
-    description TEXT,
+    description MEDIUMTEXT,
     attributes_json JSON,
     raw_metadata_json JSON,
     status VARCHAR(32) NOT NULL DEFAULT 'active',
@@ -24,6 +24,9 @@ CREATE TABLE IF NOT EXISTS rs_catalog_item (
     INDEX idx_rs_catalog_store_name (store_name),
     INDEX idx_rs_catalog_status_updated (status, updated_at DESC)
 );
+
+-- Existing deployments may still have the original TEXT column.
+ALTER TABLE rs_catalog_item MODIFY COLUMN description MEDIUMTEXT;
 
 CREATE TABLE IF NOT EXISTS rs_catalog_projection_run (
     run_id BIGINT PRIMARY KEY AUTO_INCREMENT,
