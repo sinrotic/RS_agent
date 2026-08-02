@@ -1,0 +1,28 @@
+{
+  "request": {
+    "session_id": "sess_001",
+    "profile_user_id": "A1XYZ",
+    "user_message": "想要一个通勤背包",
+    "limit": 5,
+    "context": {
+      "scene": "agent_chat"
+    }
+  },
+  "response": {
+    "request_id": "agent_req_001",
+    "session_id": "sess_001",
+    "profile_user_id": "A1XYZ",
+    "turn_index": 1,
+    "assistant_message": "我会优先推荐通勤背包，并补充可解释证据。",
+    "recommended_items": [
+      {
+        "item_id": "B001",
+        "title": "Commuter Backpack",
+        "category": "Backpacks",
+        "score": 0.91,
+        "reason": "匹配通勤、轻量和中价位偏好"
+      }
+    ],
+    "tool_calls": []
+  }
+}

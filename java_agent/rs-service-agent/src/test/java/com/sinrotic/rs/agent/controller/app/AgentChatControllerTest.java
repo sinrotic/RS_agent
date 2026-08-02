@@ -19,6 +19,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.List;
 import java.util.Map;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -148,6 +150,7 @@ class AgentChatControllerTest {
                 "agent_req_001",
                 "sess_001",
                 "A1XYZ",
+                1,
                 "我会优先推荐通勤背包，并补充可解释证据。",
                 List.of(new AgentRecommendedItemVO(
                         "B001",
@@ -168,22 +171,17 @@ class AgentChatControllerTest {
                         && "A1XYZ".equals(request.profileUserId())
                         && "想要一个通勤背包".equals(request.userMessage())
                         && request.limit() == 5
-                        && request.context().get("scene").equals("chat")
+                        && request.context().get("scene").equals("agent_chat")
         ))).thenReturn(response);
 
         mockMvc.perform(post("/api/agent/chat")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
-                                "session_id", "sess_001",
-                                "profile_user_id", "A1XYZ",
-                                "user_message", "想要一个通勤背包",
-                                "limit", 5,
-                                "context", Map.of("scene", "chat")
-                        ))))
+                        .content(objectMapper.readTree(Files.readString(sharedAgentChatFixture())).get("request").toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.request_id").value("agent_req_001"))
                 .andExpect(jsonPath("$.session_id").value("sess_001"))
                 .andExpect(jsonPath("$.profile_user_id").value("A1XYZ"))
+                .andExpect(jsonPath("$.turn_index").value(1))
                 .andExpect(jsonPath("$.assistant_message").value("我会优先推荐通勤背包，并补充可解释证据。"))
                 .andExpect(jsonPath("$.recommended_items[0].item_id").value("B001"))
                 .andExpect(jsonPath("$.recommended_items[0].reason").value("匹配通勤、轻量和中价位偏好"))
@@ -194,6 +192,30 @@ class AgentChatControllerTest {
                 "sess_001".equals(request.sessionId())
                         && request.limit() == 5
         ));
+    }
+
+    @Test
+    void chatRejectsRequestsWithoutTheRequiredWireFields() throws Exception {
+        mockMvc.perform(post("/api/agent/chat")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "session_id", "sess_001",
+                                "profile_user_id", "A1XYZ"
+                        ))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_AGENT_REQUEST"))
+                .andExpect(jsonPath("$.message").value("user_message is required"));
+    }
+
+    private Path sharedAgentChatFixture() {
+        List<Path> candidates = List.of(
+                Path.of("frontend", "src", "fixtures", "agent-chat-wire.fixture.json"),
+                Path.of("..", "frontend", "src", "fixtures", "agent-chat-wire.fixture.json")
+        );
+        return candidates.stream()
+                .filter(Files::exists)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("shared agent chat fixture is missing"));
     }
 
     @Test

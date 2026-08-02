@@ -156,12 +156,18 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 toolCalls,
                 recommendedItemIds
         );
-        sessionTurns.computeIfAbsent(request.sessionId(), ignored -> new ArrayList<>()).add(turn);
+        List<AgentTurnVO> turns = sessionTurns.computeIfAbsent(request.sessionId(), ignored -> new ArrayList<>());
+        int turnIndex;
+        synchronized (turns) {
+            turnIndex = turns.size() + 1;
+            turns.add(turn);
+        }
 
         return new AgentChatVO(
                 requestId,
                 request.sessionId(),
                 request.profileUserId(),
+                turnIndex,
                 assistantMessage,
                 recommendations,
                 toolCalls

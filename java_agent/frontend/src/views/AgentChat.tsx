@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Cpu, User, MessageSquare, Compass, Sparkles, AlertCircle } from 'lucide-react';
-import { sendChat } from '../api/agentClient';
-import { fetchCatalogItems } from '../api/catalogClient';
+import { sendChat, toRecommendItems } from '../api/agentClient';
 import { startSession } from '../api/sessionClient';
 import { recordEvent, recordExposure } from '../api/interactionClient';
 import { ChatMessage } from '../types/agent';
-import { DisplayProduct, mergeRecommendAndCatalog } from '../utils/displayViewModel';
+import { DisplayProduct } from '../utils/displayViewModel';
 import { ProductCard } from '../components/ProductCard';
 import { getStoredProfileUserId } from '../api/shared';
+import { enrichRecommendedProducts } from '../utils/catalogEnrichment';
 
 export function AgentChat() {
   const [profileUserId, setProfileUserId] = useState<string>('');
@@ -19,6 +19,7 @@ export function AgentChat() {
   const [activeItems, setActiveItems] = useState<DisplayProduct[]>([]);
   const [selectedTurnIndex, setSelectedTurnIndex] = useState<number | null>(null);
   const [lastRequestId, setLastRequestId] = useState<string>('');
+  const [catalogUnavailable, setCatalogUnavailable] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -73,30 +74,33 @@ export function AgentChat() {
 
     try {
       // 2. Request chat response
-      const chatRes = await sendChat(sessionId, userMsg);
-      const resolvedRequestId = chatRes.requestId || `chat-req-${chatRes.turnIndex}`;
+      const chatRes = await sendChat({
+        session_id: sessionId,
+        profile_user_id: profileUserId,
+        user_message: userMsg,
+        limit: 6,
+        context: { scene: 'agent_chat' },
+      });
+      const resolvedRequestId = chatRes.request_id;
       setLastRequestId(resolvedRequestId);
       
-      // 3. Load catalog details for items
-      const itemIds = chatRes.items.map(item => item.item_id);
-      let mergedProducts: DisplayProduct[] = [];
-      
-      if (itemIds.length > 0) {
-        const catalogDetails = await fetchCatalogItems(itemIds);
-        mergedProducts = mergeRecommendAndCatalog(chatRes.items, catalogDetails);
-        setActiveItems(mergedProducts);
-      }
+      // 3. Reuse the homepage Catalog enrichment and its degraded fallback.
+      const recommendationItems = toRecommendItems(chatRes.recommended_items);
+      const itemIds = recommendationItems.map(item => item.item_id);
+      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recommendationItems);
+      setCatalogUnavailable(!catalogAvailable);
+      setActiveItems(mergedProducts);
 
       // 4. Append assistant response
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: chatRes.assistantMessage,
-        items: chatRes.items,
-        turnIndex: chatRes.turnIndex
+        content: chatRes.assistant_message,
+        items: recommendationItems,
+        turnIndex: chatRes.turn_index
       }]);
 
-      setSelectedTurnIndex(chatRes.turnIndex);
-      setStatus('推荐已更新！');
+      setSelectedTurnIndex(chatRes.turn_index);
+      setStatus(catalogAvailable ? '推荐已更新！' : '推荐已更新，商品详情服务暂时不可用。');
 
       // 5. Record Exposure
       if (itemIds.length > 0) {
@@ -143,27 +147,32 @@ export function AgentChat() {
       // Append user instruction
       setMessages(prev => [...prev, { role: 'user', content: actionMessage }]);
 
-      const chatRes = await sendChat(sessionId, actionMessage);
-      const resolvedRequestId = chatRes.requestId || `chat-req-${chatRes.turnIndex}`;
+      const chatRes = await sendChat({
+        session_id: sessionId,
+        profile_user_id: profileUserId,
+        user_message: actionMessage,
+        limit: 6,
+        context: { scene: 'agent_chat', feedback_action: actionType, item_id: itemId },
+      });
+      const resolvedRequestId = chatRes.request_id;
       setLastRequestId(resolvedRequestId);
-      const itemIds = chatRes.items.map(item => item.item_id);
+      const recommendationItems = toRecommendItems(chatRes.recommended_items);
       
-      let mergedProducts: DisplayProduct[] = [];
-      if (itemIds.length > 0) {
-        const catalogDetails = await fetchCatalogItems(itemIds);
-        mergedProducts = mergeRecommendAndCatalog(chatRes.items, catalogDetails);
-        setActiveItems(mergedProducts);
-      }
+      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recommendationItems);
+      setCatalogUnavailable(!catalogAvailable);
+      setActiveItems(mergedProducts);
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: chatRes.assistantMessage,
-        items: chatRes.items,
-        turnIndex: chatRes.turnIndex
+        content: chatRes.assistant_message,
+        items: recommendationItems,
+        turnIndex: chatRes.turn_index
       }]);
 
-      setSelectedTurnIndex(chatRes.turnIndex);
-      setStatus('兴趣偏好微调成功，推荐列表已更新。');
+      setSelectedTurnIndex(chatRes.turn_index);
+      setStatus(catalogAvailable
+        ? '兴趣偏好微调成功，推荐列表已更新。'
+        : '兴趣偏好已更新，商品详情服务暂时不可用。');
     } catch (e: any) {
       setStatus(`反馈更新失败: ${e.message}`);
     } finally {
@@ -283,6 +292,11 @@ export function AgentChat() {
 
           {/* Product Items List */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin min-h-0">
+            {catalogUnavailable && (
+              <div role="status" className="border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                商品详情暂时无法加载，正在展示 Agent 推荐结果。
+              </div>
+            )}
             {activeItems.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-slate-500 gap-2">
                 <AlertCircle size={28} className="opacity-40" />

@@ -1,13 +1,13 @@
-import { AgentChatResponse } from '../types/agent';
+import { AgentChatRequest, AgentChatResponse, AgentRecommendedItemVO } from '../types/agent';
 import { RecommendItemVO } from '../types/recommend';
 import { isMockMode, postJson, mockDelay } from './shared';
 import { MOCK_RECOMMEND_ITEMS } from './recommendClient';
 
-export async function sendChat(sessionId: string, message: string): Promise<AgentChatResponse> {
+export async function sendChat(request: AgentChatRequest): Promise<AgentChatResponse> {
   if (isMockMode()) {
     await mockDelay(1200); // AI needs a bit of thinking time
 
-    const msgLower = message.toLowerCase();
+    const msgLower = request.user_message.toLowerCase();
     let reply = '';
     let items: RecommendItemVO[] = [];
 
@@ -41,17 +41,58 @@ export async function sendChat(sessionId: string, message: string): Promise<Agen
     }
 
     return {
-      requestId: `agent_req_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-      sessionId,
-      assistantMessage: reply,
-      items,
-      turnIndex: Math.floor(Math.random() * 5) + 1,
-      evidence: [
-        { source: 'RAG Context', query: message, matches: items.length }
-      ]
+      request_id: `agent_req_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      session_id: request.session_id,
+      profile_user_id: request.profile_user_id,
+      turn_index: 1,
+      assistant_message: reply,
+      recommended_items: toAgentRecommendedItems(items),
+      tool_calls: []
     };
   }
 
-  // Real request to Java Endpoint: rs-service-agent -> POST /api/agent/chat
-  return postJson<AgentChatResponse>('/agent/chat', { sessionId, message });
+  const response = await postJson<AgentChatResponse>('/agent/chat', request);
+  return validateAgentChatResponse(response);
+}
+
+export function toRecommendItems(items: AgentRecommendedItemVO[]): RecommendItemVO[] {
+  return items.map((item, index) => ({
+    item_id: item.item_id,
+    rank: index + 1,
+    score: item.score,
+    reason: item.reason,
+    source_tags: [],
+    display: {
+      title: item.title,
+      category: item.category,
+      store: '',
+      image_url: '',
+    },
+  }));
+}
+
+function toAgentRecommendedItems(items: RecommendItemVO[]): AgentRecommendedItemVO[] {
+  return items.map((item) => ({
+    item_id: item.item_id,
+    title: item.display.title,
+    category: item.display.category,
+    score: item.score,
+    reason: item.reason,
+  }));
+}
+
+function validateAgentChatResponse(response: AgentChatResponse): AgentChatResponse {
+  if (!response?.request_id) {
+    throw new Error('Agent response missing request_id');
+  }
+  if (!Number.isInteger(response.turn_index)) {
+    throw new Error('Agent response missing turn_index');
+  }
+  if (!response.assistant_message) {
+    throw new Error('Agent response missing assistant_message');
+  }
+  if (!Array.isArray(response.recommended_items)) {
+    throw new Error('Agent response missing recommended_items');
+  }
+  return response;
 }

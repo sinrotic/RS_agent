@@ -11,6 +11,8 @@ public record AgentChatVO(
         String sessionId,
         @JsonProperty("profile_user_id")
         String profileUserId,
+        @JsonProperty("turn_index")
+        int turnIndex,
         @JsonProperty("assistant_message")
         String assistantMessage,
         @JsonProperty("recommended_items")

@@ -14,6 +14,8 @@ import com.sinrotic.rs.agent.service.AgentTraceService;
 import com.sinrotic.rs.agent.service.PublicAgentStreamProjector;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -57,7 +59,16 @@ public class AgentChatController {
 
     @PostMapping("/chat")
     public AgentChatVO chat(@RequestBody AgentChatRequestDTO request) {
+        validateChatRequest(request);
         return chatService.chat(request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> invalidRequest(IllegalArgumentException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "code", "INVALID_AGENT_REQUEST",
+                "message", exception.getMessage()
+        ));
     }
 
     @PostMapping("/chat/stream")
@@ -102,6 +113,22 @@ public class AgentChatController {
         } catch (java.io.IOException ex) {
             throw new IllegalStateException("failed to write agent stream event", ex);
         }
+    }
+
+    private void validateChatRequest(AgentChatRequestDTO request) {
+        if (request == null || isBlank(request.sessionId())) {
+            throw new IllegalArgumentException("session_id is required");
+        }
+        if (isBlank(request.profileUserId())) {
+            throw new IllegalArgumentException("profile_user_id is required");
+        }
+        if (isBlank(request.userMessage())) {
+            throw new IllegalArgumentException("user_message is required");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private void writeStreamError(OutputStreamWriter writer, String requestId, Exception ex) {
