@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, Heart, Compass, Cpu, EyeOff } from 'lucide-react';
 import { recommendHome, refreshHome } from '../api/recommendClient';
-import { fetchCatalogItems } from '../api/catalogClient';
 import { recordEvent, recordExposure } from '../api/interactionClient';
 import { startSession } from '../api/sessionClient';
-import { buildDisplayViewModel, mergeRecommendAndCatalog, DisplayProduct, DisplayViewModel } from '../utils/displayViewModel';
+import { buildDisplayViewModel, DisplayProduct, DisplayViewModel } from '../utils/displayViewModel';
 import { GroupedRecommendationGrid } from '../components/GroupedRecommendationGrid';
 import { RecommendationIntentSummary } from '../components/RecommendationIntentSummary';
 import { getStoredProfileUserId } from '../api/shared';
+import { enrichRecommendedProducts } from '../utils/catalogEnrichment';
 
 export function MallHome() {
   const [profileUserId, setProfileUserId] = useState<string>('');
@@ -17,6 +17,8 @@ export function MallHome() {
   const [products, setProducts] = useState<DisplayProduct[]>([]);
   const [viewModel, setViewModel] = useState<DisplayViewModel | null>(null);
   const [lastRequestId, setLastRequestId] = useState<string>('');
+  const [catalogUnavailable, setCatalogUnavailable] = useState<boolean>(false);
+  const [feedError, setFeedError] = useState<string | null>(null);
 
   // Wishlist state
   const [wishlist, setWishlist] = useState<DisplayProduct[]>([]);
@@ -35,6 +37,7 @@ export function MallHome() {
 
   const handleInitialize = async (userId: string) => {
     setLoading(true);
+    setFeedError(null);
     setStatus('正在创建推荐会话并生成初始个性化商品流...');
     try {
       // 1. Start session
@@ -50,12 +53,10 @@ export function MallHome() {
       });
       setLastRequestId(recRes.request_id);
 
-      // 3. Enrich details from catalog service
+      // 3. Enrich recommendation metadata with Catalog card details when available.
       const itemIds = recRes.items.map(item => item.item_id);
-      const catalogDetails = await fetchCatalogItems(itemIds);
-
-      // 4. Merge items
-      const mergedProducts = mergeRecommendAndCatalog(recRes.items, catalogDetails);
+      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
+      setCatalogUnavailable(!catalogAvailable);
       setProducts(mergedProducts);
 
       // 5. Build viewModel
@@ -70,10 +71,14 @@ export function MallHome() {
         exposed_at: Date.now()
       });
 
-      setStatus('个性化推荐加载成功！');
+      setStatus(catalogAvailable
+        ? '个性化推荐加载成功！'
+        : '推荐已加载，商品详情服务暂时不可用，当前展示推荐摘要。');
     } catch (e: any) {
       console.error(e);
-      setStatus(`初始化推荐失败: ${e.message}`);
+      const message = `初始化推荐失败: ${e.message}`;
+      setFeedError(message);
+      setStatus(message);
     } finally {
       setLoading(false);
     }
@@ -82,6 +87,7 @@ export function MallHome() {
   const handleRefresh = async () => {
     if (!sessionId || loading) return;
     setLoading(true);
+    setFeedError(null);
     setStatus('正在根据交互历史刷新重排首页推荐...');
     try {
       const recRes = await refreshHome({
@@ -94,8 +100,8 @@ export function MallHome() {
       setLastRequestId(recRes.request_id);
 
       const itemIds = recRes.items.map(item => item.item_id);
-      const catalogDetails = await fetchCatalogItems(itemIds);
-      const mergedProducts = mergeRecommendAndCatalog(recRes.items, catalogDetails);
+      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
+      setCatalogUnavailable(!catalogAvailable);
       setProducts(mergedProducts);
 
       const vm = buildDisplayViewModel(recRes, mergedProducts, '点击刷新', { actionType: 'show_different', label: '换一批' }, '已完成推荐流重排与多样化探索：');
@@ -108,9 +114,13 @@ export function MallHome() {
         exposed_at: Date.now()
       });
 
-      setStatus('首页推荐流刷新成功！');
+      setStatus(catalogAvailable
+        ? '首页推荐流刷新成功！'
+        : '推荐已刷新，商品详情服务暂时不可用，当前展示推荐摘要。');
     } catch (e: any) {
-      setStatus(`刷新失败: ${e.message}`);
+      const message = `刷新失败: ${e.message}`;
+      setFeedError(message);
+      setStatus(message);
     } finally {
       setLoading(false);
     }
@@ -142,6 +152,7 @@ export function MallHome() {
     }
 
     setLoading(true);
+    setFeedError(null);
     const label = actionType === 'like' ? '喜欢，找相似' : '不感兴趣';
     setStatus(`已捕获交互信号 [${label}]，正在更新推荐兴趣模型...`);
 
@@ -174,9 +185,8 @@ export function MallHome() {
       });
       setLastRequestId(recRes.request_id);
 
-      const itemIds = recRes.items.map(item => item.item_id);
-      const catalogDetails = await fetchCatalogItems(itemIds);
-      const mergedProducts = mergeRecommendAndCatalog(recRes.items, catalogDetails);
+      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
+      setCatalogUnavailable(!catalogAvailable);
       setProducts(mergedProducts);
 
       const vm = buildDisplayViewModel(
@@ -188,9 +198,13 @@ export function MallHome() {
       );
       setViewModel(vm);
 
-      setStatus('模型状态已同步更新，推荐网格已重排！');
+      setStatus(catalogAvailable
+        ? '模型状态已同步更新，推荐网格已重排！'
+        : '推荐已重排，商品详情服务暂时不可用，当前展示推荐摘要。');
     } catch (e: any) {
-      setStatus(`反馈提交失败: ${e.message}`);
+      const message = `反馈提交失败: ${e.message}`;
+      setFeedError(message);
+      setStatus(message);
     } finally {
       setLoading(false);
     }
@@ -236,7 +250,17 @@ export function MallHome() {
         <div className="lg:col-span-3 space-y-6">
           {viewModel && <RecommendationIntentSummary viewModel={viewModel} />}
 
-          {loading ? (
+          {catalogUnavailable && (
+            <div role="status" className="border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+              商品详情暂时无法加载，正在展示推荐结果。
+            </div>
+          )}
+
+          {feedError ? (
+            <div role="alert" className="border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {feedError}
+            </div>
+          ) : loading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3">
               <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
               <div className="text-xs text-indigo-400 font-bold tracking-widest uppercase">{status}</div>
