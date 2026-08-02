@@ -5,7 +5,7 @@ import { startSession } from '../api/sessionClient';
 import { recordEvent, recordExposure } from '../api/interactionClient';
 import { ChatMessage } from '../types/agent';
 import { DisplayProduct } from '../utils/displayViewModel';
-import { ProductCard } from '../components/ProductCard';
+import { ProductCard, ProductFeedbackAction } from '../components/ProductCard';
 import { getStoredProfileUserId } from '../api/shared';
 import { enrichRecommendedProducts } from '../utils/catalogEnrichment';
 
@@ -123,8 +123,12 @@ export function AgentChat() {
     }
   };
 
-  const handleFeedback = async (actionType: string, itemId: string) => {
+  const handleFeedback = async (actionType: ProductFeedbackAction, itemId: string) => {
     if (!sessionId || loading) return;
+    if (actionType === 'why') {
+      setStatus(`该商品因匹配度 ${productsScore(itemId)} 被推荐；此操作不会修改偏好或触发重排。`);
+      return;
+    }
     setLoading(true);
     const label = actionType === 'like' ? '喜欢，找相似' : '不感兴趣';
     setStatus(`交互服务正在记录 [${label}] 事件...`);
@@ -178,6 +182,11 @@ export function AgentChat() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const productsScore = (itemId: string) => {
+    const product = activeItems.find((item) => item.itemId === itemId);
+    return product ? product.score.toFixed(3) : '未知';
   };
 
   return (

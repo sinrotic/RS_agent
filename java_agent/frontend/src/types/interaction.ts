@@ -1,3 +1,5 @@
+export type RecommendEventType = 'like' | 'dislike' | 'click';
+
 export interface RecommendExposureFeedbackRequest {
   request_id: string;
   session_id: string;
@@ -9,7 +11,7 @@ export interface RecommendEventFeedbackRequest {
   request_id: string;
   session_id: string;
   item_id: string;
-  event_type: string;
+  event_type: RecommendEventType;
   event_value?: number;
   occurred_at: number;
 }

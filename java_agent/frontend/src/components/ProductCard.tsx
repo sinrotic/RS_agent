@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { HelpCircle, Heart, Image as ImageIcon, XCircle } from 'lucide-react';
 import { DisplayProduct, userFacingBadgeLabel } from '../utils/displayViewModel';
 
+export type ProductFeedbackAction = 'like' | 'dislike' | 'why';
+
 interface ProductCardProps {
   item: DisplayProduct;
-  onFeedback: (actionType: string, itemId: string) => void;
+  onFeedback: (actionType: ProductFeedbackAction, itemId: string) => void;
   disabled: boolean;
   variant?: 'compact' | 'mall';
 }

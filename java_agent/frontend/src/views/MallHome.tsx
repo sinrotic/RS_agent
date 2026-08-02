@@ -6,6 +6,7 @@ import { startSession } from '../api/sessionClient';
 import { buildDisplayViewModel, DisplayProduct, DisplayViewModel } from '../utils/displayViewModel';
 import { GroupedRecommendationGrid } from '../components/GroupedRecommendationGrid';
 import { RecommendationIntentSummary } from '../components/RecommendationIntentSummary';
+import { ProductFeedbackAction } from '../components/ProductCard';
 import { getStoredProfileUserId } from '../api/shared';
 import { enrichRecommendedProducts } from '../utils/catalogEnrichment';
 
@@ -126,7 +127,7 @@ export function MallHome() {
     }
   };
 
-  const handleFeedback = async (actionType: string, itemId: string) => {
+  const handleFeedback = async (actionType: ProductFeedbackAction, itemId: string) => {
     if (!sessionId || loading) return;
 
     if (actionType === 'why') {

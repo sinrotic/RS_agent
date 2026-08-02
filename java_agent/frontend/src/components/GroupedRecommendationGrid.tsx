@@ -1,9 +1,9 @@
 import { RecommendationGroup } from '../utils/displayViewModel';
-import { ProductCard } from './ProductCard';
+import { ProductCard, ProductFeedbackAction } from './ProductCard';
 
 interface GroupedRecommendationGridProps {
   groups: RecommendationGroup[];
-  onFeedback: (actionType: string, itemId: string) => void;
+  onFeedback: (actionType: ProductFeedbackAction, itemId: string) => void;
   disabled: boolean;
   variant?: 'compact' | 'mall';
 }
