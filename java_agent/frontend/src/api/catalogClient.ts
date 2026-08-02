@@ -1,4 +1,4 @@
-import { CatalogItem } from '../types/catalog';
+import { CatalogItem, CatalogItemCardVO } from '../types/catalog';
 import { isMockMode, postJson, mockDelay } from './shared';
 import { MOCK_RECOMMEND_ITEMS } from './recommendClient';
 
@@ -11,6 +11,7 @@ export async function fetchCatalogItems(itemIds: string[]): Promise<CatalogItem[
         itemId: id,
         title: found?.display.title || `Mock Item ${id}`,
         category: found?.display.category || 'Electronics / Gadgets',
+        brand: null,
         price: found ? (id === 'B08HEKJZ5S' ? 248.0 : id === 'B09DFTCL5K' ? 129.95 : 79.99) : 99.99,
         rating: 4.8,
         store: found?.display.store || 'Generic Store',
@@ -27,6 +28,25 @@ export async function fetchCatalogItems(itemIds: string[]): Promise<CatalogItem[
     });
   }
 
-  // Real request to Java Endpoint: rs-service-catalog -> POST /api/items/batch
-  return postJson<CatalogItem[]>('/items/batch', { itemIds });
+  const cards = await postJson<CatalogItemCardVO[]>('/catalog/items/batch', {
+    item_ids: itemIds,
+  });
+  return cards.map(mapCatalogItemCard);
+}
+
+export function mapCatalogItemCard(card: CatalogItemCardVO): CatalogItem {
+  return {
+    itemId: card.item_id,
+    title: card.title,
+    category: card.category,
+    brand: card.brand,
+    price: card.price,
+    rating: null,
+    store: card.store_name,
+    features: [],
+    description: card.summary,
+    imageUrl: card.image_url,
+    badges: [],
+    summary: card.summary,
+  };
 }
