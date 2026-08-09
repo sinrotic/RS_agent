@@ -81,10 +81,7 @@ public class InMemoryRecommendFeedbackService implements RecommendFeedbackServic
     }
 
     private String feedbackKey(String kind, String requestId, String sessionId, List<String> values) {
-        if (!isBlank(requestId)) {
-            return kind + "|" + sessionId + "|" + requestId;
-        }
-        return kind + "|-|-|" + String.join(",", values);
+        return kind + "|" + sessionId + "|" + requestId + "|" + String.join(",", values);
     }
 
     private RecommendFeedbackAckVO rejected(String feedbackType) {

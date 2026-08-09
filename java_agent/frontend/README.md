@@ -113,6 +113,13 @@ AgentChat
 
 ## 6. 当前阶段处理方式
 
-当前目录只保存前端适配说明，暂不放入可运行 Vite 工程。
+当前目录已经是可运行的 Vite 工程，面向 Java Gateway 提供登录、首页推荐、Agent 对话、Catalog 商品补全和推荐反馈页面。
 
-后续开始实现时，可以从根目录 `frontend/` 复制可复用组件，再替换 `src/api` 和 `src/types`，逐步接入 Java gateway。
+```powershell
+npm ci
+npm run lint
+npm test
+npm run build
+```
+
+本地联调默认通过 `/api` 访问 Java Gateway；Mock 模式只用于无后端环境下的页面开发，不作为真实链路验收依据。

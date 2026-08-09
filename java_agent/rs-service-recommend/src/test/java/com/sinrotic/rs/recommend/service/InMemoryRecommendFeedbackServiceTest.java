@@ -91,6 +91,26 @@ class InMemoryRecommendFeedbackServiceTest {
         assertEquals(0, response.acceptedCount());
     }
 
+    @Test
+    void differentItemsWithinOneRecommendationRequestAreCountedSeparately() {
+        InMemoryRecommendFeedbackService service = new InMemoryRecommendFeedbackService();
+        var first = new RecommendEventFeedbackRequestDTO(
+                "rec_req_shared", "sess_004", "B001", "like", 1.0, 1782636410000L
+        ).withDefaults();
+        var second = new RecommendEventFeedbackRequestDTO(
+                "rec_req_shared", "sess_004", "B002", "like", 1.0, 1782636410001L
+        ).withDefaults();
+
+        var firstAck = service.recordEvent(first);
+        var secondAck = service.recordEvent(second);
+        var duplicateAck = service.recordEvent(first);
+
+        assertEquals(1, firstAck.acceptedCount());
+        assertEquals(1, secondAck.acceptedCount());
+        assertTrue(duplicateAck.duplicate());
+        assertEquals(0, duplicateAck.acceptedCount());
+    }
+
     private RecommendEventFeedbackRequestDTO event(String eventType) {
         return new RecommendEventFeedbackRequestDTO(
                 "rec_req_" + eventType,

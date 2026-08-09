@@ -86,7 +86,6 @@ export function AgentChat() {
       
       // 3. Reuse the homepage Catalog enrichment and its degraded fallback.
       const recommendationItems = toRecommendItems(chatRes.recommended_items);
-      const itemIds = recommendationItems.map(item => item.item_id);
       const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recommendationItems);
       setCatalogUnavailable(!catalogAvailable);
       setActiveItems(mergedProducts);
@@ -103,11 +102,11 @@ export function AgentChat() {
       setStatus(catalogAvailable ? '推荐已更新！' : '推荐已更新，商品详情服务暂时不可用。');
 
       // 5. Record Exposure
-      if (itemIds.length > 0) {
+      if (mergedProducts.length > 0) {
         await recordExposure({
           request_id: resolvedRequestId,
           session_id: sessionId,
-          item_ids: itemIds,
+          item_ids: mergedProducts.map(item => item.itemId),
           exposed_at: Date.now()
         });
       }
@@ -125,10 +124,14 @@ export function AgentChat() {
 
   const handleFeedback = async (actionType: ProductFeedbackAction, itemId: string) => {
     if (!sessionId || loading) return;
+    if (!lastRequestId) {
+      setStatus('服务端尚未返回 request_id，无法提交反馈。');
+      return;
+    }
     if (actionType === 'why') {
       try {
         await recordEvent({
-          request_id: lastRequestId || `chat-why-${sessionId}`,
+          request_id: lastRequestId,
           session_id: sessionId,
           item_id: itemId,
           event_type: 'why',
@@ -138,7 +141,8 @@ export function AgentChat() {
         setStatus(`Explanation request failed: ${(error as Error).message}`);
         return;
       }
-      setStatus(`该商品因匹配度 ${productsScore(itemId)} 被推荐；此操作不会修改偏好或触发重排。`);
+      const product = activeItems.find(item => item.itemId === itemId);
+      setStatus(product?.reason || '推荐服务暂未返回该商品的解释。');
       return;
     }
     setLoading(true);
@@ -148,7 +152,7 @@ export function AgentChat() {
     try {
       // 1. Record event
       await recordEvent({
-        request_id: lastRequestId || `chat-turn-${selectedTurnIndex}`,
+        request_id: lastRequestId,
         session_id: sessionId,
         item_id: itemId,
         event_type: actionType,
@@ -196,9 +200,30 @@ export function AgentChat() {
     }
   };
 
-  const productsScore = (itemId: string) => {
-    const product = activeItems.find((item) => item.itemId === itemId);
-    return product ? product.score.toFixed(3) : '未知';
+  const handleCatalogRetry = async () => {
+    if (loading || activeItems.length === 0) return;
+    setLoading(true);
+    try {
+      const recommendationItems = activeItems.map((item) => ({
+        item_id: item.itemId,
+        rank: item.rank,
+        score: item.score,
+        reason: item.reason,
+        source_tags: item.badges,
+        display: {
+          title: item.title,
+          category: item.category,
+          store: item.store,
+          image_url: item.imageUrl || '',
+        },
+      }));
+      const { products, catalogAvailable } = await enrichRecommendedProducts(recommendationItems);
+      setActiveItems(products);
+      setCatalogUnavailable(!catalogAvailable);
+      setStatus(catalogAvailable ? '商品详情重新加载成功。' : '商品详情服务仍不可用。');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -230,7 +255,7 @@ export function AgentChat() {
               </div>
               <div className="text-left">
                 <div className="text-xs font-bold text-slate-100">对话上下文流 ({status})</div>
-                <div className="text-[10px] text-slate-400">会话ID: {sessionId || '未激活'}</div>
+                <div className="text-[10px] text-slate-400">会话ID: {sessionId || '未激活'} · Turn: {selectedTurnIndex ?? '-'}</div>
               </div>
             </div>
             <div className="text-[10px] bg-slate-900 px-2 py-0.5 rounded text-indigo-400 font-bold border border-slate-700">
@@ -314,8 +339,11 @@ export function AgentChat() {
           {/* Product Items List */}
           <div className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin min-h-0">
             {catalogUnavailable && (
-              <div role="status" className="border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-                商品详情暂时无法加载，正在展示 Agent 推荐结果。
+              <div role="status" className="flex items-center justify-between gap-2 border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                <span>商品详情暂时无法加载，正在展示 Agent 推荐结果。</span>
+                <button type="button" onClick={handleCatalogRetry} disabled={loading} className="rounded border border-amber-400/40 px-2 py-1 hover:bg-amber-400/10 disabled:opacity-50">
+                  重试
+                </button>
               </div>
             )}
             {activeItems.length === 0 ? (

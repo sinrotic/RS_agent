@@ -55,7 +55,6 @@ export function MallHome() {
       setLastRequestId(recRes.request_id);
 
       // 3. Enrich recommendation metadata with Catalog card details when available.
-      const itemIds = recRes.items.map(item => item.item_id);
       const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
       setCatalogUnavailable(!catalogAvailable);
       setProducts(mergedProducts);
@@ -68,7 +67,7 @@ export function MallHome() {
       await recordExposure({
         request_id: recRes.request_id,
         session_id: sessionRes.sessionId,
-        item_ids: itemIds,
+        item_ids: mergedProducts.map(item => item.itemId),
         exposed_at: Date.now()
       });
 
@@ -100,7 +99,6 @@ export function MallHome() {
       });
       setLastRequestId(recRes.request_id);
 
-      const itemIds = recRes.items.map(item => item.item_id);
       const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
       setCatalogUnavailable(!catalogAvailable);
       setProducts(mergedProducts);
@@ -111,7 +109,7 @@ export function MallHome() {
       await recordExposure({
         request_id: recRes.request_id,
         session_id: sessionId,
-        item_ids: itemIds,
+        item_ids: mergedProducts.map(item => item.itemId),
         exposed_at: Date.now()
       });
 
@@ -129,11 +127,15 @@ export function MallHome() {
 
   const handleFeedback = async (actionType: ProductFeedbackAction, itemId: string) => {
     if (!sessionId || loading) return;
+    if (!lastRequestId) {
+      setFeedError('服务端尚未返回 request_id，无法提交反馈。');
+      return;
+    }
 
     if (actionType === 'why') {
       try {
         await recordEvent({
-          request_id: lastRequestId || `home-why-${sessionId}`,
+          request_id: lastRequestId,
           session_id: sessionId,
           item_id: itemId,
           event_type: 'why',
@@ -146,20 +148,8 @@ export function MallHome() {
       const item = products.find(p => p.itemId === itemId);
       if (item) {
         setSelectedProduct(item);
-        setExplanation('');
-        setExplaining(true);
-        // Simulate RAG / model score trace explanation
-        setTimeout(() => {
-          setExplanation(`[特征归因解释]
-对商品 「${item.title}」 的推荐得分 = ${(item.score * 100).toFixed(1)} 分。
-主要影响因子分析：
-- 偏好召回得分 (Collaborative Recall): ${(item.score * 0.4).toFixed(3)}
-- 用户兴趣画像匹配度 (Profile Alignment): ${(item.score * 0.35).toFixed(3)}
-- 热度趋势惩罚与加权 (Trend weight): +${(item.score * 0.15).toFixed(3)}
-- 自然语言交互反馈匹配度 (Interactive refinement): +${(item.score * 0.1).toFixed(3)}
-解释摘要：此商品源于您的画像分组。您的反馈 “点赞” 将进一步放大相关品类的权重。`);
-          setExplaining(false);
-        }, 600);
+        setExplanation(item.reason || '推荐服务暂未返回该商品的解释。');
+        setExplaining(false);
       }
       return;
     }
@@ -172,7 +162,7 @@ export function MallHome() {
     try {
       // 1. Record event
       await recordEvent({
-        request_id: lastRequestId || 'request',
+        request_id: lastRequestId,
         session_id: sessionId,
         item_id: itemId,
         event_type: actionType,
@@ -264,8 +254,11 @@ export function MallHome() {
           {viewModel && <RecommendationIntentSummary viewModel={viewModel} />}
 
           {catalogUnavailable && (
-            <div role="status" className="border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-              商品详情暂时无法加载，正在展示推荐结果。
+            <div role="status" className="flex items-center justify-between gap-3 border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
+              <span>商品详情暂时无法加载，正在展示推荐结果。</span>
+              <button type="button" onClick={handleRefresh} disabled={loading} className="rounded border border-amber-400/40 px-2 py-1 hover:bg-amber-400/10 disabled:opacity-50">
+                重试商品详情
+              </button>
             </div>
           )}
 

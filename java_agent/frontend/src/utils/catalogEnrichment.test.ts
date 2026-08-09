@@ -64,4 +64,27 @@ describe('Catalog enrichment', () => {
       }],
     });
   });
+
+  it('drops unknown ids when Catalog returns only part of the requested items', async () => {
+    fetchCatalogItems.mockResolvedValue([{
+      itemId: 'B002',
+      title: 'Known item',
+      category: 'Audio',
+      brand: 'Acme',
+      price: null,
+      rating: null,
+      store: null,
+      features: [],
+      description: null,
+      imageUrl: null,
+      badges: [],
+      summary: null,
+    }]);
+
+    const unknown = { ...recommendation, item_id: 'B404' };
+    await expect(enrichRecommendedProducts([unknown, recommendation])).resolves.toMatchObject({
+      catalogAvailable: true,
+      products: [{ itemId: 'B002', title: 'Known item' }],
+    });
+  });
 });

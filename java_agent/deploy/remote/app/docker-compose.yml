@@ -67,6 +67,9 @@ services:
       SPRING_APPLICATION_NAME: rs-service-agent
       SERVER_PORT: 18104
       RS_AGENT_TRACE_ENABLED: ${RS_AGENT_TRACE_ENABLED:-true}
+      RS_AGENT_RECOMMENDATION_TYPE: http
+      RS_AGENT_RECOMMENDATION_BASE_URL: http://rs-service-recommend:18103
+      RS_AGENT_SESSION_STORE_TYPE: redis
       RS_PLATFORM_TRACE_SERVICE_URL: http://rs-service-platform-trace:18108
       RS_AGENT_OPENAI_BASE_URL: ${RS_AGENT_OPENAI_BASE_URL:-https://cpa2api.sinrotic233.com/v1}
       RS_AGENT_OPENAI_MODEL: ${RS_AGENT_OPENAI_MODEL:-gpt-5.3-codex-spark}

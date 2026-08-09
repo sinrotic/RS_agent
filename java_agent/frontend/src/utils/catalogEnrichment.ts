@@ -12,8 +12,10 @@ export async function enrichRecommendedProducts(
 ): Promise<CatalogEnrichmentResult> {
   try {
     const catalogItems = await fetchCatalogItems(items.map((item) => item.item_id));
+    const catalogItemIds = new Set(catalogItems.map((item) => item.itemId));
+    const knownItems = items.filter((item) => catalogItemIds.has(item.item_id));
     return {
-      products: mergeRecommendAndCatalog(items, catalogItems),
+      products: mergeRecommendAndCatalog(knownItems, catalogItems),
       catalogAvailable: true,
     };
   } catch {

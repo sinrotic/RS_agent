@@ -1,22 +1,22 @@
-# ADR-0016: Recommendation Feedback Contract and Idempotency
+# ADR-0016：推荐反馈契约与幂等语义
 
-- Status: Accepted
-- Date: 2026-08-09
+- 状态：已接受
+- 日期：2026-08-09
 
-## Context
+## 背景
 
-The Java recommendation service receives feedback from the product surface. Exposure, positive/negative preference, and explanation requests must not be conflated. Retries from browsers or gateways must also avoid counting the same event more than once.
+Java 推荐服务需要接收商品展示页产生的反馈。曝光、正负偏好和解释请求不能混为一类；浏览器或 Gateway 重试时，也不能把同一反馈重复计数。
 
-## Decision
+## 决策
 
-- `POST /api/recommend/feedback/exposure` accepts a request/session pair and a distinct non-empty `item_ids` list.
-- `POST /api/recommend/feedback/event` accepts a request/session/item tuple and only the event types `click`, `like`, `dislike`, and `why`.
-- `why` is an explanation request. The recommendation feedback service acknowledges it but does not mutate preference state or invoke reranking.
-- A non-blank `request_id` is the idempotency key within the feedback kind and session. A retry returns `duplicate=true` and `accepted_count=0`.
-- The acknowledgement keeps the original four fields and adds `duplicate` as an additive wire field.
+- `POST /api/recommend/feedback/exposure` 接收请求、会话和去重后的非空 `item_ids` 集合。
+- `POST /api/recommend/feedback/event` 接收请求、会话、商品组成的反馈，并只允许 `click`、`like`、`dislike`、`why` 四种事件。
+- `why` 是解释请求。推荐反馈服务只记录并确认该请求，不修改偏好状态，也不调用重排。
+- 幂等键由反馈类型、`request_id`、`session_id`、`item_id` 和事件类型共同组成；只有完整语义相同的重试才算重复。
+- 重复请求返回 `duplicate=true`、`accepted_count=0`；确认响应以新增字段方式保持兼容。
 
-The current implementation is an in-memory sink. A durable event consumer may replace it later while preserving this HTTP contract and idempotency behavior.
+当前实现是内存接收器。后续可以替换为持久化事件消费者，但必须保留 HTTP 契约和幂等语义。
 
-## Consequences
+## 影响
 
-Clients can retry safely and distinguish an accepted event from a duplicate. Invalid event types and incomplete tuples are rejected without changing recommendation state. Persistence and cross-instance idempotency remain follow-up deployment work.
+客户端可以安全重试，也能区分首次接收与重复反馈。同一推荐请求中的不同商品仍会分别计数。无效事件或字段不完整的请求不会修改推荐状态。跨实例幂等和持久化属于后续部署工作。
