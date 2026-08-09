@@ -1,6 +1,7 @@
 package com.sinrotic.rs.agent.service.impl;
 
 import com.sinrotic.rs.agent.domain.dto.AgentChatRequestDTO;
+import com.sinrotic.rs.agent.domain.AgentRuntimeProfile;
 import com.sinrotic.rs.agent.domain.vo.AgentStreamEventVO;
 import com.sinrotic.rs.agent.domain.vo.AgentToolCallVO;
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
@@ -8,6 +9,7 @@ import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
 import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
+import com.sinrotic.rs.agent.service.PublicAgentResponseProjector;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,8 +23,6 @@ import java.util.function.Consumer;
 
 public abstract class AgentLoop {
 
-    private static final int DEFAULT_MAX_AGENT_LOOPS = 8;
-
     private final AgentProfile profile;
 
     private final AgentRuntimeConfigurationService runtimeConfigurationService;
@@ -34,6 +34,8 @@ public abstract class AgentLoop {
     private final AgentLoopHookDispatcher hookDispatcher;
 
     private final AgentInterrupter interrupter;
+
+    private final PublicAgentResponseProjector responseProjector = new PublicAgentResponseProjector();
 
     protected AgentLoop(
             AgentProfile profile,
@@ -379,7 +381,7 @@ public abstract class AgentLoop {
     }
 
     protected int maxLoops() {
-        return DEFAULT_MAX_AGENT_LOOPS;
+        return runtimeProfile().maxLoops();
     }
 
     private AgentLoopHookContext hook(String eventName, String requestId, int loopIndex, AgentChatRequestDTO request) {
@@ -407,10 +409,29 @@ public abstract class AgentLoop {
 
     private AgentChatRequestDTO withRuntimeContext(AgentChatRequestDTO request) {
         Map<String, Object> context = new java.util.LinkedHashMap<>(request.resolvedContext());
+        AgentRuntimeProfile runtimeProfile = runtimeProfile();
         context.put("agent_name", profile.name());
         context.put("agent_description", profile.description());
         context.putAll(runtimeConfigurationService.modelContext());
+        context.put("agent_profile_id", runtimeProfile.id());
+        context.put("agent_model_ref", runtimeProfile.modelRef());
+        context.put("agent_system_prompt_ref", runtimeProfile.systemPromptRef());
+        context.put("agent_allowed_capabilities", runtimeProfile.allowedCapabilities());
+        context.put("agent_allowed_output_blocks", runtimeProfile.allowedOutputBlocks());
+        context.put("agent_max_loops", runtimeProfile.maxLoops());
+        context.put("available_tools", runtimeConfigurationService.toolsForProfile(runtimeProfile).stream()
+                .map(tool -> Map.of(
+                        "name", tool.name(),
+                        "service", tool.service(),
+                        "description", tool.description(),
+                        "parameters_schema", tool.parametersSchema()
+                ))
+                .toList());
         return withContext(request, context);
+    }
+
+    private AgentRuntimeProfile runtimeProfile() {
+        return runtimeConfigurationService.defaultProfile();
     }
 
     private AgentChatRequestDTO withToolResults(AgentChatRequestDTO request, List<Map<String, Object>> toolResults) {
@@ -533,34 +554,17 @@ public abstract class AgentLoop {
             Map<String, Object> arguments,
             Consumer<AgentStreamEventVO> consumer
     ) {
-        Object rawBlocks = arguments.get("blocks");
-        if (!(rawBlocks instanceof List<?> blocks)) {
-            throw new IllegalArgumentException("emit_final_answer requires blocks");
-        }
+        List<Map<String, Object>> blocks = responseProjector.projectBlocks(arguments.get("blocks"), runtimeProfile());
         List<String> textBlocks = new ArrayList<>();
-        for (Object rawBlock : blocks) {
-            if (!(rawBlock instanceof Map<?, ?> block)) {
-                throw new IllegalArgumentException("emit_final_answer block must be an object");
-            }
-            Object rawType = block.get("type");
-            if (!(rawType instanceof String type) || type.isBlank()) {
-                throw new IllegalArgumentException("emit_final_answer block requires type");
-            }
-            Map<String, Object> eventData = new java.util.LinkedHashMap<>();
-            eventData.put("type", type);
-            for (Map.Entry<?, ?> entry : block.entrySet()) {
-                if (entry.getKey() instanceof String key && entry.getValue() != null) {
-                    eventData.put(key, entry.getValue());
-                }
-            }
+        for (Map<String, Object> block : blocks) {
+            String type = String.valueOf(block.get("type"));
             if ("text".equals(type)) {
                 Object content = block.get("content");
-                if (!(content instanceof String text) || text.isBlank()) {
-                    throw new IllegalArgumentException("text answer block requires content");
-                }
-                textBlocks.add(text);
+                textBlocks.add((String) content);
             }
-            consumer.accept(new AgentStreamEventVO("answer_block", requestId, Map.copyOf(eventData)));
+            Map<String, Object> traceableBlock = new java.util.LinkedHashMap<>(block);
+            traceableBlock.put("profile_id", runtimeProfile().id());
+            consumer.accept(new AgentStreamEventVO("answer_block", requestId, Map.copyOf(traceableBlock)));
         }
         return String.join("\n", textBlocks);
     }

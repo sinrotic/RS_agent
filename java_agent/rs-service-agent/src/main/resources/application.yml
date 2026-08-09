@@ -22,6 +22,19 @@ spring:
 
 rs:
   agent:
+    templates:
+      default-profile: shopping-assistant
+    recommendation:
+      # memory 适合本地开发；部署时切换为 http 接入 rs-service-recommend。
+      type: ${RS_AGENT_RECOMMENDATION_TYPE:memory}
+      base-url: ${RS_RECOMMEND_SERVICE_URL:http://rs-service-recommend:18103}
+      candidates-path: ${RS_RECOMMEND_CANDIDATES_PATH:/agent/recommend/candidates}
+      semantic-recall-path: ${RS_RECOMMEND_SEMANTIC_RECALL_PATH:/agent/recommend/semantic-recall}
+    session-store:
+      # memory 适合本地开发；部署时切换为 redis 保存热会话和快照。
+      type: ${RS_AGENT_SESSION_STORE_TYPE:memory}
+      key-prefix: ${RS_AGENT_SESSION_STORE_KEY_PREFIX:agent:session:}
+      ttl: ${RS_AGENT_SESSION_STORE_TTL:15m}
     model-provider:
       type: spring_ai
     trace:

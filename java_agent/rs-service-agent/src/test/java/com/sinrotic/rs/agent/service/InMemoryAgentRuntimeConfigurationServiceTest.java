@@ -3,10 +3,14 @@ package com.sinrotic.rs.agent.service;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeSkillUpsertDTO;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeSystemPromptUpdateDTO;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeToolUpsertDTO;
+import com.sinrotic.rs.agent.config.AgentTemplateProperties;
+import com.sinrotic.rs.agent.domain.AgentProfileFailurePolicy;
+import com.sinrotic.rs.agent.domain.AgentPublicOutputBlock;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentRuntimeConfigurationService;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -42,6 +46,7 @@ class InMemoryAgentRuntimeConfigurationServiceTest {
                         "recommend_rerank_candidates",
                         "rag_support",
                         "rag_evidence_search",
+                        "session_memory",
                         "catalog_card"
                 );
         assertThat(service.tools().stream()
@@ -150,5 +155,26 @@ class InMemoryAgentRuntimeConfigurationServiceTest {
         assertThat(priceMin.get("minimum")).isEqualTo(0);
         assertThat(priceMax.get("type")).isEqualTo("number");
         assertThat(priceMax.get("minimum")).isEqualTo(0);
+    }
+
+    @Test
+    void filtersCapabilityToolsForTheServerSelectedProfile() {
+        AgentTemplateProperties.Profile profile = new AgentTemplateProperties.Profile();
+        profile.setId("recommend-only");
+        profile.setModelRef("default");
+        profile.setSystemPromptRef("default");
+        profile.setAllowedCapabilities(List.of("recommend"));
+        profile.setAllowedOutputBlocks(List.of(AgentPublicOutputBlock.TEXT));
+        profile.setMaxLoops(3);
+        profile.setFailurePolicy(AgentProfileFailurePolicy.FAIL_TURN);
+        AgentTemplateProperties properties = new AgentTemplateProperties();
+        properties.setDefaultProfile("recommend-only");
+        properties.setProfiles(List.of(profile));
+        InMemoryAgentRuntimeConfigurationService service = new InMemoryAgentRuntimeConfigurationService(properties);
+
+        assertThat(service.toolsForProfile(service.defaultProfile()))
+                .extracting("name")
+                .contains("recommend_candidates", "load_skill", "emit_final_answer")
+                .doesNotContain("rag_support", "rag_evidence_search", "session_memory");
     }
 }

@@ -11,6 +11,7 @@ import com.sinrotic.rs.agent.service.AgentChatService;
 import com.sinrotic.rs.agent.service.AgentChatStreamService;
 import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentTraceService;
+import com.sinrotic.rs.agent.service.PublicAgentStreamProjector;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,6 +41,8 @@ public class AgentChatController {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    private final PublicAgentStreamProjector streamProjector = new PublicAgentStreamProjector();
+
     public AgentChatController(
             AgentChatService chatService,
             AgentChatStreamService streamService,
@@ -65,7 +68,7 @@ public class AgentChatController {
             try {
                 streamService.streamChat(request, event -> {
                     requestIdRef.set(event.requestId());
-                    writeSseEvent(writer, event);
+                    streamProjector.project(event).ifPresent(projected -> writeSseEvent(writer, projected));
                 });
             } catch (Exception ex) {
                 writeStreamError(writer, requestIdRef.get(), ex);
@@ -102,10 +105,9 @@ public class AgentChatController {
     }
 
     private void writeStreamError(OutputStreamWriter writer, String requestId, Exception ex) {
-        String message = ex.getMessage() == null ? ex.getClass().getSimpleName() : ex.getMessage();
         writeSseEvent(writer, new AgentStreamEventVO("error", requestId, Map.of(
-                "message", message,
-                "error_type", ex.getClass().getSimpleName()
+                "message", "agent stream failed",
+                "error_code", "AGENT_STREAM_FAILED"
         )));
         writeSseEvent(writer, new AgentStreamEventVO("done", requestId, Map.of(
                 "done", true,

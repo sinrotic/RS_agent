@@ -60,7 +60,7 @@ class AgentChatControllerTest {
     }
 
     @Test
-    void streamChatReturnsTraceTokenAndDoneEvents() throws Exception {
+    void streamChatExposesOnlyPublicTokenAndDoneEvents() throws Exception {
         doAnswer(invocation -> {
             java.util.function.Consumer<AgentStreamEventVO> consumer = invocation.getArgument(1);
             consumer.accept(new AgentStreamEventVO("trace", "agent_req_001", Map.of(
@@ -98,8 +98,8 @@ class AgentChatControllerTest {
         mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("event: trace")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"tool_name\":\"recommend_candidates\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("event: trace"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("recommend_candidates"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("event: token")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"delta\":\"I \"")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("event: done")));
@@ -134,9 +134,10 @@ class AgentChatControllerTest {
         mockMvc.perform(asyncDispatch(result))
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_EVENT_STREAM))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("event: trace")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("event: trace"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("event: error")))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"message\":\"Missing API key\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("\"message\":\"agent stream failed\"")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("Missing API key"))))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("event: done")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("\"finish_reason\":\"error\"")));
     }

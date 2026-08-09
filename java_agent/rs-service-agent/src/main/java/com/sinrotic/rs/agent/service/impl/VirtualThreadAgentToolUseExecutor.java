@@ -4,8 +4,6 @@ import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 import com.sinrotic.rs.agent.service.AgentDelegateService;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolResultStore;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.List;
@@ -18,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-@Service
 public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, AutoCloseable {
 
     private final ExecutorService executorService;
@@ -42,7 +39,6 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
         ), new InMemoryAgentToolResultStore());
     }
 
-    @Autowired
     public VirtualThreadAgentToolUseExecutor(
             AgentRuntimeConfigurationService runtimeConfigurationService,
             AgentDelegateService agentDelegateService,

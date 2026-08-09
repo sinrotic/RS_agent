@@ -308,8 +308,9 @@ class InMemoryAgentOrchestrationServiceTest {
             assertThat(event.eventType()).isEqualTo("tool_result");
             assertThat(event.toolCallId()).isEqualTo("call_query");
             assertThat(event.latencyMs()).isEqualTo(42L);
-            assertThat(event.inputSummary()).isEqualTo("query=wireless headphones");
-            assertThat(event.outputSummary()).isEqualTo("ranked 2 candidates");
+            assertThat(event.inputSummary()).isEmpty();
+            assertThat(event.outputSummary()).isEqualTo("status=SUCCESS");
+            assertThat(event.data()).doesNotContainKeys("query", "output_summary");
             assertThat(event.errorCode()).isEmpty();
             assertThat(event.errorMessage()).isEmpty();
             assertThat(event.status()).isEqualTo("success");
@@ -317,8 +318,9 @@ class InMemoryAgentOrchestrationServiceTest {
         assertThat(reportedEvents).anySatisfy(event -> {
             assertThat(event.eventType()).isEqualTo("tool_result");
             assertThat(event.toolCallId()).isEqualTo("call_arguments");
-            assertThat(event.inputSummary()).isEqualTo(longArguments.substring(0, 240));
-            assertThat(event.outputSummary()).isEqualTo(longOutput.substring(0, 240));
+            assertThat(event.inputSummary()).isEmpty();
+            assertThat(event.outputSummary()).isEqualTo("status=SUCCESS");
+            assertThat(event.data()).doesNotContainKeys("tool_arguments", "output_summary");
         });
         assertThat(reportedEvents).anySatisfy(event -> {
             assertThat(event.eventType()).isEqualTo("tool_result");
@@ -384,5 +386,35 @@ class InMemoryAgentOrchestrationServiceTest {
                 .noneSatisfy(message -> assertThat((String) message)
                         .contains("以下扩展工具可用："));
         assertThat(modelContext.get()).containsEntry("scene", "chat");
+    }
+
+    @Test
+    void traceKeepsProfileAndProjectionMetadataWithoutAnswerPayload() {
+        List<AgentTraceEventVO> reportedEvents = new ArrayList<>();
+        InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService(
+                (requestId, request, consumer) -> consumer.accept(AgentModelStreamEvent.toolUse(
+                        "emit_final_answer",
+                        Map.of("blocks", List.of(Map.of(
+                                "type", "text",
+                                "content", "不可进入 trace 的回答正文",
+                                "diagnostics", Map.of("raw_path", "/secret")
+                        )))
+                )),
+                new VirtualThreadAgentToolUseExecutor(event -> Map.of("status", "SUCCESS")),
+                new InMemoryAgentRuntimeConfigurationService(),
+                reportedEvents::add
+        );
+
+        service.streamChat(new AgentChatRequestDTO("sess_trace_projection", "A1XYZ", "Find a bag", 2, Map.of()), ignored -> {
+        });
+
+        AgentTraceEventVO answerBlock = reportedEvents.stream()
+                .filter(event -> "answer_block".equals(event.eventType()))
+                .findFirst()
+                .orElseThrow();
+        assertThat(answerBlock.data())
+                .containsEntry("profile_id", "shopping-assistant")
+                .containsEntry("projection_result", "allowed")
+                .doesNotContainKeys("content", "diagnostics", "raw_path");
     }
 }

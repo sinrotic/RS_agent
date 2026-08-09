@@ -14,6 +14,7 @@ import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
 import com.sinrotic.rs.agent.service.AgentInterrupter;
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
+import com.sinrotic.rs.agent.service.AgentRecommendationService;
 import com.sinrotic.rs.agent.service.AgentTraceReporter;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 import com.sinrotic.rs.agent.service.AgentTraceService;
@@ -33,35 +34,13 @@ import java.util.function.Consumer;
 @Service
 public class InMemoryAgentOrchestrationService implements AgentChatService, AgentChatStreamService, AgentTraceService {
 
-    private static final List<AgentRecommendedItemVO> MOCK_ITEMS = List.of(
-            new AgentRecommendedItemVO(
-                    "B001",
-                    "Commuter Backpack",
-                    "Backpacks",
-                    0.91,
-                    "匹配通勤、轻量和中价位偏好"
-            ),
-            new AgentRecommendedItemVO(
-                    "B002",
-                    "Travel Organizer",
-                    "Storage",
-                    0.84,
-                    "补充收纳场景，适合搭配通勤包"
-            ),
-            new AgentRecommendedItemVO(
-                    "B003",
-                    "Waterproof Daypack",
-                    "Backpacks",
-                    0.79,
-                    "强调防水和日常使用"
-            )
-    );
-
     private final ConcurrentMap<String, List<AgentTurnVO>> sessionTurns = new ConcurrentHashMap<>();
 
     private final AgentLoop agentLoop;
 
     private final AgentTraceReporter traceReporter;
+
+    private final AgentRecommendationService recommendationService;
 
     public InMemoryAgentOrchestrationService() {
         this(
@@ -69,7 +48,8 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 new VirtualThreadAgentToolUseExecutor(),
                 new InMemoryAgentRuntimeConfigurationService(),
                 event -> {
-                }
+                },
+                new InMemoryAgentRecommendationService()
         );
     }
 
@@ -78,7 +58,7 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
             AgentToolUseExecutor toolUseExecutor
     ) {
         this(modelStreamClient, toolUseExecutor, new InMemoryAgentRuntimeConfigurationService(), event -> {
-        });
+        }, new InMemoryAgentRecommendationService());
     }
 
     @Autowired
@@ -88,9 +68,10 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
             AgentRuntimeConfigurationService runtimeConfigurationService,
             AgentTraceReporter traceReporter,
             AgentLoopHookDispatcher hookDispatcher,
-            AgentInterrupter interrupter
+            AgentInterrupter interrupter,
+            AgentRecommendationService recommendationService
     ) {
-        this(new RsAgentLoop(runtimeConfigurationService, toolUseExecutor, modelStreamClient, hookDispatcher, interrupter), traceReporter);
+        this(new RsAgentLoop(runtimeConfigurationService, toolUseExecutor, modelStreamClient, hookDispatcher, interrupter), traceReporter, recommendationService);
     }
 
     public InMemoryAgentOrchestrationService(
@@ -105,7 +86,26 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 runtimeConfigurationService,
                 traceReporter,
                 new NoopAgentLoopHookDispatcher(),
-                new InMemoryAgentInterrupter()
+                new InMemoryAgentInterrupter(),
+                new InMemoryAgentRecommendationService()
+        );
+    }
+
+    public InMemoryAgentOrchestrationService(
+            AgentModelStreamClient modelStreamClient,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentTraceReporter traceReporter,
+            AgentRecommendationService recommendationService
+    ) {
+        this(
+                modelStreamClient,
+                toolUseExecutor,
+                runtimeConfigurationService,
+                traceReporter,
+                new NoopAgentLoopHookDispatcher(),
+                new InMemoryAgentInterrupter(),
+                recommendationService
         );
     }
 
@@ -115,24 +115,33 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
             AgentRuntimeConfigurationService runtimeConfigurationService
     ) {
         this(modelStreamClient, toolUseExecutor, runtimeConfigurationService, event -> {
-        });
+        }, new InMemoryAgentRecommendationService());
     }
 
     public InMemoryAgentOrchestrationService(AgentLoop agentLoop) {
         this(agentLoop, event -> {
-        });
+        }, new InMemoryAgentRecommendationService());
     }
 
     public InMemoryAgentOrchestrationService(AgentLoop agentLoop, AgentTraceReporter traceReporter) {
+        this(agentLoop, traceReporter, new InMemoryAgentRecommendationService());
+    }
+
+    public InMemoryAgentOrchestrationService(
+            AgentLoop agentLoop,
+            AgentTraceReporter traceReporter,
+            AgentRecommendationService recommendationService
+    ) {
         this.agentLoop = agentLoop;
         this.traceReporter = traceReporter == null ? event -> {
         } : traceReporter;
+        this.recommendationService = recommendationService;
     }
 
     @Override
     public AgentChatVO chat(AgentChatRequestDTO request) {
-        int limit = Math.min(request.resolvedLimit(), MOCK_ITEMS.size());
-        List<AgentRecommendedItemVO> recommendations = MOCK_ITEMS.subList(0, limit);
+        List<AgentRecommendedItemVO> recommendations = recommendationService.recommend(request);
+        int limit = recommendations.size();
         List<String> recommendedItemIds = recommendations.stream()
                 .map(AgentRecommendedItemVO::itemId)
                 .toList();
@@ -161,8 +170,8 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
 
     @Override
     public void streamChat(AgentChatRequestDTO request, Consumer<AgentStreamEventVO> consumer) {
-        int limit = Math.min(request.resolvedLimit(), MOCK_ITEMS.size());
-        List<AgentRecommendedItemVO> recommendations = MOCK_ITEMS.subList(0, limit);
+        List<AgentRecommendedItemVO> recommendations = recommendationService.recommend(request);
+        int limit = recommendations.size();
         List<String> recommendedItemIds = recommendations.stream()
                 .map(AgentRecommendedItemVO::itemId)
                 .toList();
@@ -262,6 +271,7 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
             String toolCallId,
             String toolName
     ) {
+        Map<String, Object> traceData = publicTraceMetadata(request, eventType, data);
         traceReporter.report(new AgentTraceEventVO(
                 "evt_" + UUID.randomUUID().toString().substring(0, 8),
                 request.sessionId(),
@@ -272,21 +282,53 @@ public class InMemoryAgentOrchestrationService implements AgentChatService, Agen
                 "rs_agent",
                 stringValue(request.resolvedContext().getOrDefault("model_provider", "spring_ai")),
                 stringValue(request.resolvedContext().getOrDefault("model_name", "")),
-                longValue(data.get("latency_ms")),
-                integerValue(data.get("prompt_tokens")),
-                integerValue(data.get("completion_tokens")),
-                integerValue(data.get("total_tokens")),
-                longValue(data.get("cache_read_input_tokens")),
-                longValue(data.get("cache_write_input_tokens")),
+                longValue(traceData.get("latency_ms")),
+                integerValue(traceData.get("prompt_tokens")),
+                integerValue(traceData.get("completion_tokens")),
+                integerValue(traceData.get("total_tokens")),
+                longValue(traceData.get("cache_read_input_tokens")),
+                longValue(traceData.get("cache_write_input_tokens")),
                 inferPhase(eventType, toolName),
-                inferStatus(eventType, data),
-                stringValue(data.get("error_code")),
-                stringValue(data.get("error_message")),
-                inputSummary(data),
-                outputSummary(data),
-                data,
+                inferStatus(eventType, traceData),
+                stringValue(traceData.get("error_code")),
+                stringValue(traceData.get("error_message")),
+                inputSummary(traceData),
+                outputSummary(traceData),
+                traceData,
                 java.time.Instant.now()
         ));
+    }
+
+    private Map<String, Object> publicTraceMetadata(
+            AgentChatRequestDTO request,
+            String eventType,
+            Map<String, Object> data
+    ) {
+        Map<String, Object> safe = new java.util.LinkedHashMap<>();
+        for (String key : List.of(
+                "status", "error_code", "error_message", "latency_ms", "prompt_tokens",
+                "completion_tokens", "total_tokens", "cache_read_input_tokens", "cache_write_input_tokens",
+                "capability_id"
+        )) {
+            Object value = data.get(key);
+            if (value != null) {
+                safe.put(key, value);
+            }
+        }
+        Object profileId = data.containsKey("profile_id")
+                ? data.get("profile_id")
+                : request.resolvedContext().get("agent_profile_id");
+        if (profileId instanceof String value && !value.isBlank()) {
+            safe.put("profile_id", value);
+        }
+        if ("answer_block".equals(eventType)) {
+            safe.put("projection_result", "allowed");
+            Object type = data.get("type");
+            if (type instanceof String value && !value.isBlank()) {
+                safe.put("output_block_type", value);
+            }
+        }
+        return Map.copyOf(safe);
     }
 
     private String inferPhase(String eventType, String toolName) {

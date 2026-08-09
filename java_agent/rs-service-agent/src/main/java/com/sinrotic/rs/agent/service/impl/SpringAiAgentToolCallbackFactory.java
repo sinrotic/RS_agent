@@ -26,8 +26,7 @@ public class SpringAiAgentToolCallbackFactory {
         if (runtimeConfigurationService == null) {
             return List.of();
         }
-        return runtimeConfigurationService.tools().stream()
-                .filter(AgentRuntimeToolVO::enabled)
+        return runtimeConfigurationService.toolsForProfile(runtimeConfigurationService.defaultProfile()).stream()
                 .map(this::toToolCallback)
                 .toList();
     }

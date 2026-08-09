@@ -3,15 +3,12 @@ package com.sinrotic.rs.agent.service.impl;
 import com.sinrotic.rs.agent.domain.session.AgentSessionEvent;
 import com.sinrotic.rs.agent.domain.session.AgentSessionSnapshot;
 import com.sinrotic.rs.agent.service.AgentHotSessionStore;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@Service
 public class InMemoryAgentHotSessionStore implements AgentHotSessionStore {
 
     private final ConcurrentMap<String, List<AgentSessionEvent>> events = new ConcurrentHashMap<>();

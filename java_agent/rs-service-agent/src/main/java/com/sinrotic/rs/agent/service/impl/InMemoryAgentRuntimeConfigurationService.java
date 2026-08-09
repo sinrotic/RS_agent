@@ -1,5 +1,7 @@
 package com.sinrotic.rs.agent.service.impl;
 
+import com.sinrotic.rs.agent.config.AgentTemplateProperties;
+import com.sinrotic.rs.agent.domain.AgentRuntimeProfile;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeSkillUpsertDTO;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeSystemPromptUpdateDTO;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeToolUpsertDTO;
@@ -9,7 +11,6 @@ import com.sinrotic.rs.agent.domain.vo.AgentRuntimeToolVO;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -20,8 +21,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@Service
 public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeConfigurationService {
+
+    private final AgentProfileRegistry profileRegistry;
 
     private final ConcurrentMap<String, AgentRuntimeSkillVO> skills = new ConcurrentHashMap<>();
 
@@ -72,8 +74,28 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
     );
 
     public InMemoryAgentRuntimeConfigurationService() {
+        this(new AgentTemplateProperties());
+    }
+
+    public InMemoryAgentRuntimeConfigurationService(AgentTemplateProperties properties) {
+        profileRegistry = new AgentProfileRegistry(properties);
         loadBuiltInSkills();
         loadDefaultTools();
+    }
+
+    @Override
+    public AgentRuntimeProfile defaultProfile() {
+        return profileRegistry.defaultProfile();
+    }
+
+    @Override
+    public AgentRuntimeProfile profile(String id) {
+        return profileRegistry.profile(id);
+    }
+
+    @Override
+    public List<AgentRuntimeProfile> profiles() {
+        return profileRegistry.profiles();
     }
 
     @Override
@@ -383,6 +405,17 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                 "Search and compress recommendation RAG evidence for the rag_agent. Uses candidate-scoped BM25/vector recall, RRF fusion, and rerank in the recommendation service.",
                 true,
                 ragSupportToolSchema()
+        ));
+        tools.put("session_memory", new AgentRuntimeToolVO(
+                "session_memory",
+                "rs-service-agent",
+                "Read the current server-owned session memory snapshot.",
+                true,
+                Map.of(
+                        "type", "object",
+                        "properties", Map.of("session_id", Map.of("type", "string")),
+                        "required", List.of("session_id")
+                )
         ));
         tools.put("catalog_card", new AgentRuntimeToolVO(
                 "catalog_card",
