@@ -12,6 +12,11 @@ public record RecommendFeedbackAckVO(
         @JsonProperty("feedback_type")
         String feedbackType,
         @JsonProperty("accepted_count")
-        int acceptedCount
+        int acceptedCount,
+        boolean duplicate
 ) {
+
+    public RecommendFeedbackAckVO(String feedbackId, boolean accepted, String feedbackType, int acceptedCount) {
+        this(feedbackId, accepted, feedbackType, acceptedCount, false);
+    }
 }
