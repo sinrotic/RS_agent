@@ -131,6 +131,18 @@ export function MallHome() {
     if (!sessionId || loading) return;
 
     if (actionType === 'why') {
+      try {
+        await recordEvent({
+          request_id: lastRequestId || `home-why-${sessionId}`,
+          session_id: sessionId,
+          item_id: itemId,
+          event_type: 'why',
+          occurred_at: Date.now()
+        });
+      } catch (error) {
+        setFeedError(`Explanation request failed: ${(error as Error).message}`);
+        return;
+      }
       const item = products.find(p => p.itemId === itemId);
       if (item) {
         setSelectedProduct(item);

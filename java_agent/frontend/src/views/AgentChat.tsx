@@ -126,6 +126,18 @@ export function AgentChat() {
   const handleFeedback = async (actionType: ProductFeedbackAction, itemId: string) => {
     if (!sessionId || loading) return;
     if (actionType === 'why') {
+      try {
+        await recordEvent({
+          request_id: lastRequestId || `chat-why-${sessionId}`,
+          session_id: sessionId,
+          item_id: itemId,
+          event_type: 'why',
+          occurred_at: Date.now()
+        });
+      } catch (error) {
+        setStatus(`Explanation request failed: ${(error as Error).message}`);
+        return;
+      }
       setStatus(`该商品因匹配度 ${productsScore(itemId)} 被推荐；此操作不会修改偏好或触发重排。`);
       return;
     }

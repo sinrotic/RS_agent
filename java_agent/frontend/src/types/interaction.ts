@@ -1,4 +1,4 @@
-export type RecommendEventType = 'like' | 'dislike' | 'click';
+export type RecommendEventType = 'like' | 'dislike' | 'why' | 'click';
 
 export interface RecommendExposureFeedbackRequest {
   request_id: string;
@@ -21,4 +21,5 @@ export interface RecommendFeedbackAckVO {
   accepted: boolean;
   feedback_type: string;
   accepted_count: number;
+  duplicate?: boolean;
 }

@@ -7,7 +7,8 @@ export async function recordExposure(req: RecommendExposureFeedbackRequest): Pro
       feedback_id: `expose-${Math.random().toString(36).substring(2, 9)}`,
       accepted: true,
       feedback_type: 'EXPOSURE',
-      accepted_count: req.item_ids.length
+      accepted_count: req.item_ids.length,
+      duplicate: false
     };
   }
 
@@ -21,7 +22,8 @@ export async function recordEvent(req: RecommendEventFeedbackRequest): Promise<R
       feedback_id: `event-${Math.random().toString(36).substring(2, 9)}`,
       accepted: true,
       feedback_type: req.event_type.toUpperCase(),
-      accepted_count: 1
+      accepted_count: 1,
+      duplicate: false
     };
   }
 
