@@ -1,0 +1,18 @@
+{
+  "schema_version": "rs-agent-observation-checks/1",
+  "date": "2026-10-18",
+  "base_commit": "ba37959a",
+  "checks": [
+    {"name":"java_agent_and_upstream_package","command":"mvn -B -f java_agent/pom.xml -pl rs-service-agent -am package","status":"passed","agent_collected":249,"agent_passed":248,"agent_skipped":1,"failures":0,"errors":0},
+    {"name":"python_ci_selected","selected_files":125,"markers":["unit","smoke","serving"],"java_selfchecks_enabled":true,"status":"passed","passed":1264,"skipped":3},
+    {"name":"ruff","scope":"rs_core + CI selectors/contracts + tests + manifest script","status":"passed"},
+    {"name":"root_deployment_model_contracts","command":"python -m pytest tests -q","status":"passed","passed":56},
+    {"name":"controlled_java_http_selfcheck","status":"passed","baseline_trials":2,"candidate_trials":2,"observed_calls_per_trial":4,"synthetic_total_tokens_per_trial":60,"is_real_model_usage":false,"artifact":"java-selfcheck.json"},
+    {"name":"http_export_failure_injection","status":"passed","covers":["queue_full","close_flush","request_timeout","oversized_payload","after_close","spring_context_close"]},
+    {"name":"remote_configuration_probe","status":"connection_timeout","ssh_alias":"server","connect_timeout_seconds":8,"remote_data_read":false},
+    {"name":"engineering_contracts","status":"failed_existing","remaining_violations":36,"baseline_details":"../agent-capability-baseline-20261018/engineering-contract-violations.txt"}
+  ],
+  "coverage_basis": "AgentModelStreamClient invocations; generation only; SDK-internal retries and other call kinds are not fully observed",
+  "remaining": ["cross-service parent correlation and immutable versions","summary/Judge/rollout usage","Langfuse/OTLP and full redaction","export metrics registration","platform summary migration","remote live verification"],
+  "deployed": false
+}

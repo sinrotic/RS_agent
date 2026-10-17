@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pytest
 
-from rs_core.offline.evaluation.skill_benchmark.dataset import load_benchmark
+from rs_core.offline.evaluation.skill_benchmark.dataset import load_benchmark, fingerprint
 from rs_core.offline.evaluation.skill_benchmark.execution_metrics import (
-    summarize_execution, summarize_model_usage,
+    summarize_execution, summarize_model_usage, summarize_trace_usage,
 )
 
 pytestmark = pytest.mark.unit
@@ -65,3 +65,46 @@ def test_no_model_calls_does_not_claim_zero_cost_or_measured_tokens():
     report = summarize_model_usage([])
     assert report["fields"]["total_tokens"]["total"] is None
     assert report["cost"] is None
+
+
+def test_trace_ledger_tracks_started_only_calls_and_never_adds_stream_snapshots():
+    trace = [
+        {"event": "model_call_started", "data": {"model_call_id": "a"}},
+        {"event": "model_usage", "data": {"total_tokens": 20}},
+        {"event": "model_call_completed", "data": {"model_call_id": "a", "status": "completed",
+         "usage_final": True, "usage": {"total_tokens": 20}}},
+        {"event": "model_call_started", "data": {"model_call_id": "b"}},
+    ]
+    report = summarize_trace_usage(trace + [trace[2]])
+    assert report["model_calls"] == 2
+    assert report["completed_observations"] == 1
+    assert report["fields"]["total_tokens"]["total"] is None
+    assert report["fields"]["total_tokens"]["known_subtotal"] == 20
+
+
+def test_nonfinal_usage_stays_a_known_subtotal_instead_of_a_full_total():
+    report = summarize_model_usage([{"model_call_id": "early-stop", "usage_final": False,
+                                     "usage": {"prompt_tokens": 20, "total_tokens": 25}}])
+    assert report["fields"]["total_tokens"]["total"] is None
+    assert report["fields"]["total_tokens"]["known_subtotal"] == 25
+    assert report["fields"]["total_tokens"]["finalized_calls"] == 0
+
+
+def test_benchmark_persists_call_ledger_even_when_model_attempt_failed():
+    from rs_core.offline.evaluation.skill_benchmark.runner import run_benchmark
+
+    catalog = [{"item_id": "a", "price": 10}]
+    benchmark = {"schema_version": "rs-skill-benchmark/1", "catalog": catalog, "environment": {},
+                 "manifest": {"catalog_sha256": fingerprint(catalog)},
+                 "tasks": [{"task_id": "task", "family_id": "family", "kind": "base", "split": "dev",
+                            "turns": [{"user_message": "预算20元以内", "limit": 1,
+                                       "gold": {"k": 1, "hard": [{"field": "price", "op": "lte", "value": 20}]}}]}]}
+    def adapter(request):
+        return {"turns": [{"item_ids": [], "outcome": "invalid_output", "status": "failed"}],
+                "trace": [{"event": "model_call_started", "data": {"model_call_id": "failed-call"}},
+                          {"event": "model_call_completed", "data": {"model_call_id": "failed-call",
+                           "status": "error", "usage_final": False, "usage": {}}}]}
+    run = run_benchmark(benchmark, adapter, {"adapter_kind": "engineering_only"})
+    assert run["trials"][0]["model_usage"]["model_calls"] == 1
+    assert run["trials"][0]["model_usage"]["fields"]["total_tokens"]["total"] is None
+    assert run["summary"]["execution_failures"] == 1

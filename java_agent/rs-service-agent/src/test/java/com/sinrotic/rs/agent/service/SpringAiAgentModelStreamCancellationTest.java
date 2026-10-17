@@ -59,7 +59,8 @@ class SpringAiAgentModelStreamCancellationTest {
 
         assertThat(result.finishReason()).isEqualTo(AgentFinishReason.FINAL_ANSWER);
         assertThat(result.assistantMessage()).isEqualTo("完整回答");
-        assertThat(events).extracting(AgentStreamEventVO::event).containsExactly("answer_block", "done");
+        assertThat(events.stream().filter(event -> !event.event().startsWith("model_call_")))
+                .extracting(AgentStreamEventVO::event).containsExactly("answer_block", "done");
         assertThat(cancelled).as("upstream generation must stop when the Agent has finished").isTrue();
     }
 

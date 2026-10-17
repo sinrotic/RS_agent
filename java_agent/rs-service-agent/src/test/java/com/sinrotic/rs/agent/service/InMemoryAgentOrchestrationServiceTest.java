@@ -150,7 +150,7 @@ class InMemoryAgentOrchestrationServiceTest {
         assertThat(toolRanOnVirtualThread).isTrue();
         assertThat(modelCalls).hasValue(2);
         assertThat(events).extracting(AgentStreamEventVO::event)
-                .containsSequence("token", "tool_use", "tool_result", "token", "done");
+                .containsSubsequence("token", "tool_use", "tool_result", "token", "done");
         assertThat(events.stream()
                 .filter(event -> "tool_use".equals(event.event()))
                 .findFirst()
@@ -198,7 +198,7 @@ class InMemoryAgentOrchestrationServiceTest {
         assertThat(secondLoopContext.get()).containsKey("tool_results");
         assertThat((List<?>) secondLoopContext.get().get("tool_results")).hasSize(1);
         assertThat(events).extracting(AgentStreamEventVO::event)
-                .containsSequence("tool_use", "tool_result", "token", "done");
+                .containsSubsequence("tool_use", "tool_result", "token", "done");
         assertThat(service.sessionTurns("sess_loop").turns().getFirst().assistantMessage())
                 .isEqualTo("final answer");
     }

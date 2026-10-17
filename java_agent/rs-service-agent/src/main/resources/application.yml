@@ -92,6 +92,10 @@ rs:
         connection-timeout-ms: ${RS_AGENT_MYSQL_CONNECTION_TIMEOUT_MS:3000}
     trace:
       enabled: ${RS_AGENT_TRACE_ENABLED:false}
+      queue-capacity: ${RS_AGENT_TRACE_QUEUE_CAPACITY:512}
+      request-timeout-ms: ${RS_AGENT_TRACE_REQUEST_TIMEOUT_MS:2000}
+      shutdown-timeout-ms: ${RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS:3000}
+      max-event-bytes: ${RS_AGENT_TRACE_MAX_EVENT_BYTES:65536}
       platform-trace-base-url: ${RS_PLATFORM_TRACE_SERVICE_URL:http://rs-service-platform-trace:18108}
     execution:
       max-active-loops: ${RS_AGENT_MAX_ACTIVE_LOOPS:32}

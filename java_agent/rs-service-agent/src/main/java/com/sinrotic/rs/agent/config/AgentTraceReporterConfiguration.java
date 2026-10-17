@@ -19,7 +19,7 @@ public class AgentTraceReporterConfiguration {
         return new NoopAgentTraceReporter();
     }
 
-    @Bean
+    @Bean(destroyMethod = "close")
     @ConditionalOnProperty(prefix = "rs.agent.trace", name = "enabled", havingValue = "true")
     public AgentTraceReporter httpAgentTraceReporter(
             RestClient.Builder restClientBuilder,

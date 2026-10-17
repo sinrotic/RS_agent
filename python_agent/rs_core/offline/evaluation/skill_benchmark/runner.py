@@ -17,6 +17,7 @@ from .scoring import evaluate_turn, scorer_fingerprint
 from .readiness import calibration_passes
 from .profile_matching import contrast_metrics
 from .natural import natural_metrics
+from .execution_metrics import summarize_trace_usage
 
 
 class SubprocessAgent:
@@ -297,6 +298,10 @@ def run_benchmark(
                         "runtime": actual_runtime,
                     }
                 )
+                try:
+                    trials[-1]["model_usage"] = summarize_trace_usage(trials[-1]["agent_trace"])
+                except (TypeError, ValueError, KeyError, AttributeError):
+                    trials[-1]["model_usage"] = {"status": "invalid_observation_trace", "cost": None}
                 if quality_enabled:
                     quality_turns = [turn["quality"] for turn in turns]
                     trials[-1]["quality_success"] = (False if failure or not dialogue_complete

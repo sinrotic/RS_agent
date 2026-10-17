@@ -12,6 +12,31 @@ TOKEN_FIELDS = (
 )
 
 
+def summarize_trace_usage(trace):
+    """消费 Java Loop 的开始/完成观测；中间 model_usage 不再重复计量。"""
+    calls, completed = {}, set()
+    for event in trace:
+        if event.get("event") not in {"model_call_started", "model_call_completed"}:
+            continue
+        data = event["data"]
+        call_id = data.get("model_call_id")
+        if not isinstance(call_id, str) or not call_id:
+            raise ValueError("模型观测缺少 model_call_id")
+        calls.setdefault(call_id, {"model_call_id": call_id, "status": "incomplete",
+                                   "usage": {}, "usage_final": False})
+        if event["event"] == "model_call_completed":
+            row = {"model_call_id": call_id, "status": data["status"],
+                   "usage": data["usage"], "usage_final": data["usage_final"]}
+            if call_id in completed and calls[call_id] != row:
+                raise ValueError("同一模型调用的最终观测冲突")
+            calls[call_id] = row
+            completed.add(call_id)
+    report = summarize_model_usage(calls.values())
+    report["completed_observations"] = len(completed)
+    report["coverage_basis"] = "observed_generation_attempts_only"
+    return report
+
+
 def summarize_model_usage(calls):
     """calls 必须含每次真实模型尝试，失败/重试也在内；缺失 usage 用空映射。"""
     unique = {}
@@ -29,10 +54,13 @@ def summarize_model_usage(calls):
         if any(value is not None and (type(value) is not int or value < 0) for value in values):
             raise ValueError(f"{name} 必须为非负整数或缺失")
         observed = [value for value in values if value is not None]
+        finalized = sum(value is not None and call.get("usage_final", True) is True
+                        for value, call in zip(values, unique.values()))
         fields[name] = {
-            "total": sum(observed) if count and len(observed) == count else None,
+            "total": sum(observed) if count and finalized == count else None,
             "known_subtotal": sum(observed) if observed else None,
             "observed_calls": len(observed),
+            "finalized_calls": finalized,
             "planned_calls": count,
             "coverage": len(observed) / count if count else None,
         }

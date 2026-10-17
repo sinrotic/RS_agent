@@ -107,7 +107,12 @@ public final class SkillBenchmarkMain {
                 String base = String.valueOf(model.get("base_url")).replaceAll("/+$", "");
                 var response = post(URI.create(base + "/chat/completions"), body, true);
                 var message = map(map(list(response.get("choices")).getFirst()).get("message"));
-                if (response.get("usage") instanceof Map<?, ?>) consumer.accept(AgentModelStreamEvent.usage(map(response.get("usage"))));
+                if (response.get("usage") instanceof Map<?, ?>) {
+                    var usage = new LinkedHashMap<>(map(response.get("usage")));
+                    // 此 Adapter 已完整读取非流式 HTTP 响应，可证明这是最终 usage。
+                    usage.put("usage_final", true);
+                    consumer.accept(AgentModelStreamEvent.usage(usage));
+                }
                 for (Object raw : list(message.get("tool_calls"))) {
                     var call = map(raw);
                     var function = map(call.get("function"));

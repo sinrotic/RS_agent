@@ -164,6 +164,8 @@ def run_java_selfcheck(command, *, profile_store=None):
                     },
                 )
             response = {
+                # 仅为协议传播检查设置的合成计数，不是 tokenizer 或真实模型消耗。
+                "usage": {"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15},
                 "choices": [
                     {
                         "message": {

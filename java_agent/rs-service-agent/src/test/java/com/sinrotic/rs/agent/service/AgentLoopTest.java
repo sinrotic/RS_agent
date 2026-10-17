@@ -43,6 +43,7 @@ class AgentLoopTest {
         var beforeModel = new CountDownLatch(1);
         var requestId = new java.util.concurrent.atomic.AtomicReference<String>();
         var modelCalls = new AtomicInteger();
+        var observations = new java.util.concurrent.CopyOnWriteArrayList<AgentStreamEventVO>();
         try (var workers = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
              var tools = new VirtualThreadAgentToolUseExecutor()) {
             var holder = workers.submit(() -> limiter.runWithModelStream(() -> {
@@ -63,12 +64,13 @@ class AgentLoopTest {
                         return AgentLoopHookResult.proceed();
                     }, interrupter, limiter);
             var turn = workers.submit(() -> loop.run(new AgentChatRequestDTO(
-                    "queued-model-session", "profile", "推荐鼠标", 5, Map.of()), event -> {}));
+                    "queued-model-session", "profile", "推荐鼠标", 5, Map.of()), observations::add));
             try {
                 assertThat(beforeModel.await(2, TimeUnit.SECONDS)).isTrue();
                 assertThat(interrupter.interrupt(requestId.get(), "user_stop")).isTrue();
                 assertThat(turn.get(1, TimeUnit.SECONDS).finishReason()).isEqualTo(AgentFinishReason.INTERRUPTED);
                 assertThat(modelCalls).hasValue(0);
+                assertThat(observations).noneMatch(event -> event.event().startsWith("model_call_"));
             } finally {
                 release.countDown();
                 holder.get(2, TimeUnit.SECONDS);
@@ -121,7 +123,7 @@ class AgentLoopTest {
         assertThat(result.toolCalls().getFirst().toolName()).isEqualTo("custom_lookup");
         assertThat(result.toolCalls().getFirst().service()).isEqualTo("rs-service-custom");
         assertThat(events).extracting(AgentStreamEventVO::event)
-                .containsSequence("tool_use", "tool_result", "token", "done");
+                .containsSubsequence("tool_use", "tool_result", "token", "done");
     }
 
     @Test
@@ -160,6 +162,7 @@ class AgentLoopTest {
         assertThat(result.finishReason()).isEqualTo(AgentFinishReason.FINAL_ANSWER);
         assertThat(result.assistantMessage()).isEqualTo("我建议先看这两款。\n第一款更适合通勤，第二款更适合防水。");
         assertThat(result.toolCalls()).isEmpty();
+        events.removeIf(event -> event.event().startsWith("model_call_"));
         assertThat(events).extracting(AgentStreamEventVO::event)
                 .containsExactly("answer_block", "answer_block", "answer_block", "done");
         assertThat(events.getLast().data()).containsEntry("finish_reason", "FINAL_ANSWER");
@@ -451,6 +454,9 @@ class AgentLoopTest {
 
         assertThat(result.assistantMessage()).isEqualTo("partial ");
         assertThat(result.finishReason()).isEqualTo(AgentFinishReason.INTERRUPTED);
+        assertThat(events.stream().filter(event -> event.event().equals("model_call_completed")).findFirst().orElseThrow().data())
+                .containsEntry("status", "interrupted").containsEntry("usage_final", false);
+        events.removeIf(event -> event.event().startsWith("model_call_"));
         assertThat(events).extracting(AgentStreamEventVO::event)
                 .containsExactly("token", "interrupted", "done");
         assertThat(events.get(1).data())

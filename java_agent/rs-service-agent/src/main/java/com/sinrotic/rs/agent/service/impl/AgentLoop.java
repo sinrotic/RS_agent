@@ -314,7 +314,8 @@ public abstract class AgentLoop {
                     if (preparedAnswer.isPresent()) {
                         modelConsumer.accept(AgentModelStreamEvent.toolUse("emit_final_answer", preparedAnswer.get()));
                     } else {
-                        streamAssistantEvents(requestId, currentLoopRequest, interruptContext, modelConsumer);
+                        modelUsage.clear();
+                        streamAssistantEvents(requestId, loopIndex, currentLoopRequest, interruptContext, modelConsumer, consumer);
                     }
                     if (toolRun.hasSubmittedTools()) {
                         state.set(state.get().withPhase(AgentLoopPhase.TOOL_EXECUTING));
@@ -630,13 +631,38 @@ public abstract class AgentLoop {
 
     private void streamAssistantEvents(
             String requestId,
+            int loopIndex,
             AgentChatRequestDTO request,
             AgentInterruptContext interruptContext,
-            Consumer<AgentModelStreamEvent> consumer
+            Consumer<AgentModelStreamEvent> consumer,
+            Consumer<AgentStreamEventVO> observations
     ) {
         try {
-            executionLimiter.runWithModelStream(() -> modelStreamClient.streamAssistantEvents(
-                    requestId, request, consumer, interruptContext), interruptContext::interrupted);
+            executionLimiter.runWithModelStream(() -> {
+                var observation = new AgentModelCallObservation(requestId, request.sessionId(), loopIndex, observations);
+                String status = "error";
+                boolean transportFinished = false;
+                try {
+                    modelStreamClient.streamAssistantEvents(requestId, request, event -> {
+                        observation.record(event);
+                        consumer.accept(event);
+                    }, interruptContext);
+                    transportFinished = !interruptContext.interrupted();
+                    status = transportFinished ? "completed" : "interrupted";
+                } catch (AgentLoopFinalAnswerSignal finalAnswer) {
+                    status = "answer_emitted";
+                    throw finalAnswer;
+                } catch (AgentLoopHookStoppedSignal stopped) {
+                    status = "hook_stopped";
+                    throw stopped;
+                } catch (RuntimeException failure) {
+                    status = interruptContext.interrupted() || failure instanceof CancellationException
+                            || failure instanceof AgentLoopInterruptedSignal ? "interrupted" : "error";
+                    throw failure;
+                } finally {
+                    observation.finish(status, transportFinished);
+                }
+            }, interruptContext::interrupted);
         } catch (RuntimeException error) {
             if (error instanceof AgentLoopFinalAnswerSignal || error instanceof AgentLoopHookStoppedSignal) {
                 throw error;

@@ -177,6 +177,11 @@ def test_real_java_loop_uses_fixture_and_isolates_candidate_skill():
     )
     result = run_java_selfcheck(command)
     assert result["baseline"]["summary"]["mean_ranking_score"] == pytest.approx(100)
+    for trial in result["baseline"]["trials"]:
+        ledger = trial["model_usage"]
+        assert ledger["model_calls"] > 0
+        assert ledger["fields"]["total_tokens"]["total"] == 15 * ledger["model_calls"]
+        assert ledger["fields"]["total_tokens"]["finalized_calls"] == ledger["model_calls"]
     assert result["candidate"]["summary"]["mean_ranking_score"] == pytest.approx(92.31984112820403)
     assert result["comparison"]["eligible_for_promotion"] is False
     assert (

@@ -12,6 +12,8 @@ ROOT = Path(__file__).resolve().parents[3]
 SAFE_CONFIG_KEYS = (
     "RS_AGENT_OPENAI_MODEL", "RS_AGENT_RECOMMENDATION_TYPE", "RS_AGENT_SESSION_STORE_TYPE",
     "RS_AGENT_SESSION_PERSISTENCE_ENABLED", "RS_AGENT_TRACE_ENABLED",
+    "RS_AGENT_TRACE_QUEUE_CAPACITY", "RS_AGENT_TRACE_REQUEST_TIMEOUT_MS",
+    "RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS", "RS_AGENT_TRACE_MAX_EVENT_BYTES",
     "RS_AGENT_CONSTRAINED_DECODING_ENABLED", "RS_AGENT_MAX_ACTIVE_LOOPS",
     "RS_AGENT_MAX_MODEL_STREAMS", "RS_AGENT_MAX_RECOMMENDATION_CALLS", "RS_AGENT_MAX_TOOL_CALLS",
     "RS_AGENT_MAX_SESSION_QUEUE_SIZE", "RS_RECOMMEND_TWO_TOWER_ENABLED",
@@ -29,8 +31,12 @@ def build_manifest(root=ROOT):
         "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/config/AgentTemplateProperties.java",
         "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/InMemoryAgentRuntimeConfigurationService.java",
         "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/SpringAiChatResponseMapper.java",
+        "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentModelCallObservation.java",
+        "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentLoop.java",
+        "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/HttpAgentTraceReporter.java",
         "java_agent/rs-service-recommend/src/test/java/com/sinrotic/rs/recommend/service/FrozenAgentBaselineTest.java",
         "python_agent/rs_core/offline/evaluation/skill_benchmark/execution_metrics.py",
+        "python_agent/rs_core/offline/evaluation/skill_benchmark/runner.py",
         "java_agent/deploy/remote/app/docker-compose.yml",
         "java_agent/deploy/remote/app/.env.example",
         "java_agent/deploy/remote/app/product-three-tower-final.env.example",
@@ -58,6 +64,8 @@ def build_manifest(root=ROOT):
     selected_defaults = {key: agent[key] for key in ("recommendation", "session-store", "execution")}
     # recommendation 含服务地址，但本报告只需要类型；不扩大允许输出的字段。
     selected_defaults["recommendation"] = {"type": agent["recommendation"]["type"]}
+    selected_defaults["trace"] = {key: agent["trace"][key] for key in (
+        "enabled", "queue-capacity", "request-timeout-ms", "shutdown-timeout-ms", "max-event-bytes")}
     return {
         "schema_version": "rs-agent-baseline-manifest/1",
         "base_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip(),
