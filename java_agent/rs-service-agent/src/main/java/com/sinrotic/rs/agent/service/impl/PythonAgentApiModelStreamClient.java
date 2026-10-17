@@ -34,14 +34,26 @@ public class PythonAgentApiModelStreamClient implements AgentModelStreamClient {
             AgentChatRequestDTO request,
             Consumer<AgentModelStreamEvent> consumer
     ) {
+        streamAssistantEvents(requestId, request, consumer, null, ignored -> { });
+    }
+
+    @Override
+    public void streamAssistantEvents(String requestId, AgentChatRequestDTO request,
+            Consumer<AgentModelStreamEvent> consumer, AgentInterruptContext interruptContext,
+            Consumer<Map<String, Object>> requestObservation) {
         Map<String, Object> payload = Map.of(
                 "session_id", request.sessionId(),
                 "message", request.userMessage(),
                 "context", request.resolvedContext()
         );
+        String body = writeJson(payload);
+        AgentModelRequestFingerprint.publish(requestObservation, () -> AgentModelRequestFingerprint.capture(
+                "python_agent_adapter_request", PythonAgentApiModelStreamClient.class, request,
+                request.resolvedContext().getOrDefault("system_prompt", ""),
+                request.resolvedContext().getOrDefault("available_tools", java.util.List.of()), payload, Map.of(), ""));
         httpClient.streamJson(
                 joinUrl(properties.pythonApi().getBaseUrl(), properties.pythonApi().getStreamPath()),
-                writeJson(payload),
+                body,
                 "text/event-stream",
                 line -> parseSseLine(line, consumer)
         );

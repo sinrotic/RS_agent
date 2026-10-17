@@ -80,10 +80,18 @@ public final class OtlpAgentTraceEncoder implements Function<AgentTraceEventVO, 
                     if (finalized && key.equals("completion_tokens")) attribute(attributes, "gen_ai.usage.output_tokens", value);
                 }
             }
-            for (String key : List.of("prompt_sha256", "tools_sha256", "skills_sha256")) {
+            // request_sha256 涉及用户内容，只保留内部，不能扩入此白名单。
+            for (String key : List.of("prompt_sha256", "tools_sha256", "skills_sha256", "request_options_sha256",
+                    "adapter_sha256", "declared_model_sha256")) {
                 Object value = event.data().get(key);
                 if (value instanceof String text && text.matches("[a-f0-9]{64}")) attribute(attributes, "rs.version." + key, text);
             }
+            Object fingerprintScope = event.data().get("fingerprint_scope");
+            if (fingerprintScope instanceof String scope && AgentModelRequestFingerprint.SCOPES.contains(scope))
+                attribute(attributes, "rs.version.scope", scope);
+            Object fingerprintStatus = event.data().get("fingerprint_status");
+            if (fingerprintStatus instanceof String value && Set.of("observed", "not_reported", "unavailable", "invalid", "conflict").contains(value))
+                attribute(attributes, "rs.version.status", value);
         }
         var span = new LinkedHashMap<String, Object>();
         span.put("traceId", traceId); span.put("spanId", spanId);

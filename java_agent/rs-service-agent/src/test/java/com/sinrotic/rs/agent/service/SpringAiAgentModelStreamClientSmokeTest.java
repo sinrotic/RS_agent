@@ -80,10 +80,21 @@ class SpringAiAgentModelStreamClientSmokeTest {
                         RsAgentLoop loop = customLoop
                                 ? new RsAgentLoop(runtime, executor, model, new NoopAgentLoopHookDispatcher(), new InMemoryAgentInterrupter()) { }
                                 : new RsAgentLoop(runtime, executor, model, new NoopAgentLoopHookDispatcher(), new InMemoryAgentInterrupter());
-                        var result = loop.run(new AgentChatRequestDTO("skill-wire", "user", "推荐鼠标", 5, Map.of()), event -> {});
+                        var observations = new ArrayList<com.sinrotic.rs.agent.domain.vo.AgentStreamEventVO>();
+                        var result = loop.run(new AgentChatRequestDTO("skill-wire", "user", "推荐鼠标", 5, Map.of()), observations::add);
                         assertThat(result.finishReason()).isEqualTo(AgentFinishReason.FINAL_ANSWER);
                         assertThat(result.assistantMessage()).isEqualTo("完整模型推荐回答");
                         assertThat(requests).hasSize(2);
+                        var calls = observations.stream().filter(event -> event.event().equals("model_call_completed")).toList();
+                        assertThat(calls).hasSize(requests.size());
+                        for (int index = 0; index < requests.size(); index++) {
+                            try {
+                                var wire = mapper.readValue(requests.get(index), Map.class);
+                                assertThat(calls.get(index).data()).containsEntry("fingerprint_status", "observed");
+                                assertThat(calls.get(index).data().get("tools_sha256"))
+                                        .isEqualTo(com.sinrotic.rs.agent.service.impl.AgentModelRequestFingerprint.sha256(wire.get("tools")));
+                            } catch (IOException failure) { throw new IllegalStateException(failure); }
+                        }
                         assertThat(requests.get(1)).contains("explicit-need-recommendation");
                         assertThat(requests.get(1)).doesNotContain("__agent_allow_loaded_skill_reuse");
                         try {

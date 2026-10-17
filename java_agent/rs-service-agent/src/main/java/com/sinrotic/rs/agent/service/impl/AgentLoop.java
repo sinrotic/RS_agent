@@ -646,7 +646,7 @@ public abstract class AgentLoop {
                     modelStreamClient.streamAssistantEvents(requestId, request, event -> {
                         observation.record(event);
                         consumer.accept(event);
-                    }, interruptContext);
+                    }, interruptContext, observation::recordRequest);
                     transportFinished = !interruptContext.interrupted();
                     status = transportFinished ? "completed" : "interrupted";
                 } catch (AgentLoopFinalAnswerSignal finalAnswer) {

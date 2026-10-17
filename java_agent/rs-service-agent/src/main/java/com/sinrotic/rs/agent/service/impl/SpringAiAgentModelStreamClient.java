@@ -43,6 +43,8 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
     private int defaultMaxTokens;
 
     private boolean compactToolSchemasEnabled;
+    private String declaredModel = "";
+    private Map<String, Object> declaredModelOptions = Map.of("status", "unknown");
 
     public SpringAiAgentModelStreamClient(ChatClient.Builder chatClientBuilder) {
         this(chatClientBuilder.build(), null);
@@ -53,11 +55,11 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
     }
 
     public SpringAiAgentModelStreamClient(ChatModel chatModel) {
-        this(ChatClient.builder(chatModel).build(), null);
+        this(chatModel, null);
     }
 
     public SpringAiAgentModelStreamClient(ChatModel chatModel, AgentRuntimeConfigurationService runtimeConfigurationService) {
-        this(ChatClient.builder(chatModel).build(), runtimeConfigurationService);
+        this(chatModel, runtimeConfigurationService, null);
     }
 
     public SpringAiAgentModelStreamClient(
@@ -65,7 +67,7 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
             AgentRuntimeConfigurationService runtimeConfigurationService,
             AgentToolResultStore toolResultStore
     ) {
-        this(ChatClient.builder(chatModel).build(), runtimeConfigurationService, toolResultStore);
+        this(chatModel, runtimeConfigurationService, toolResultStore, false);
     }
 
     public SpringAiAgentModelStreamClient(
@@ -75,6 +77,23 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
             boolean constrainedDecodingEnabled
     ) {
         this(ChatClient.builder(chatModel).build(), runtimeConfigurationService, toolResultStore, constrainedDecodingEnabled);
+        var defaults = chatModel.getDefaultOptions();
+        if (defaults != null) {
+            declaredModel = defaults.getModel();
+            var selected = new LinkedHashMap<String, Object>();
+            selected.put("model", defaults.getModel()); selected.put("temperature", defaults.getTemperature());
+            selected.put("max_tokens", defaults.getMaxTokens()); selected.put("top_p", defaults.getTopP());
+            selected.put("stop", defaults.getStopSequences());
+            selected.put("top_k", defaults.getTopK());
+            if (defaults instanceof OpenAiChatOptions openAi) {
+                selected.put("max_completion_tokens", openAi.getMaxCompletionTokens()); selected.put("seed", openAi.getSeed());
+                selected.put("frequency_penalty", openAi.getFrequencyPenalty()); selected.put("presence_penalty", openAi.getPresencePenalty());
+                selected.put("reasoning_effort", openAi.getReasoningEffort()); selected.put("verbosity", openAi.getVerbosity());
+                selected.put("response_format", openAi.getResponseFormat()); selected.put("logit_bias", openAi.getLogitBias());
+                selected.put("n", openAi.getN());
+            }
+            declaredModelOptions = java.util.Collections.unmodifiableMap(selected);
+        }
     }
 
     public SpringAiAgentModelStreamClient(ChatClient chatClient) {
@@ -163,8 +182,15 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
             Consumer<AgentModelStreamEvent> consumer,
             AgentInterruptContext interruptContext
     ) {
+        streamAssistantEvents(requestId, request, consumer, interruptContext, ignored -> { });
+    }
+
+    @Override
+    public void streamAssistantEvents(String requestId, AgentChatRequestDTO request,
+            Consumer<AgentModelStreamEvent> consumer, AgentInterruptContext interruptContext,
+            Consumer<Map<String, Object>> requestObservation) {
         if (streamResources == null) {
-            streamAssistantEventsWithHeaders(request, consumer, null, interruptContext);
+            streamAssistantEventsWithHeaders(request, consumer, null, interruptContext, requestObservation);
             return;
         }
         try (var scope = streamResources.open()) {
@@ -173,7 +199,7 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
             }
             var headers = new LinkedHashMap<>(defaultCustomHeaders);
             headers.putAll(scope.headers());
-            streamAssistantEventsWithHeaders(request, consumer, headers, interruptContext);
+            streamAssistantEventsWithHeaders(request, consumer, headers, interruptContext, requestObservation);
         }
     }
 
@@ -181,12 +207,14 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
             AgentChatRequestDTO request,
             Consumer<AgentModelStreamEvent> consumer,
             Map<String, String> headers,
-            AgentInterruptContext interruptContext
+            AgentInterruptContext interruptContext,
+            Consumer<Map<String, Object>> requestObservation
     ) {
+        String system = systemPrompt(request), user = userPrompt(request);
         var promptSpec = chatClient.prompt()
                 .advisors(AdvisorParams.toolCallingAdvisorAutoRegister(false))
-                .system(systemPrompt(request))
-                .user(userPrompt(request));
+                .system(system)
+                .user(user);
         Object completed = request.resolvedContext().get("tool_results");
         List<?> reusableSkills = constrainedDecodingEnabled && compactToolSchemasEnabled
                 && Boolean.TRUE.equals(request.resolvedContext().get(AgentLoop.INTERNAL_SKILL_REUSE_CONTEXT_KEY))
@@ -195,11 +223,13 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
                 Boolean.TRUE.equals(request.resolvedContext().get("final_answer_only")), reusableSkills);
         boolean structuredToolMode = !toolCallbacks.isEmpty();
         OpenAiChatOptions.Builder options = null;
+        List<Map<String, Object>> strictTools = List.of();
         if (!toolCallbacks.isEmpty()) {
             if (constrainedDecodingEnabled) {
                 // Send the definitions once through the wire adapter. Registering callbacks too
                 // would serialize duplicate tools fields through OpenAI additionalBodyProperties.
-                options = strictToolOptions(toolCallbacks,
+                strictTools = toolCallbackFactory.strictToolDefinitions(toolCallbacks, compactToolSchemasEnabled);
+                options = strictToolOptions(strictTools,
                         Boolean.TRUE.equals(request.resolvedContext().get("final_answer_only")));
             } else {
                 promptSpec = promptSpec.toolCallbacks(toolCallbacks);
@@ -212,6 +242,22 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
         if (options != null) {
             promptSpec = promptSpec.options(options);
         }
+        var finalStrictTools = strictTools;
+        AgentModelRequestFingerprint.publish(requestObservation, () -> {
+            Object tools = constrainedDecodingEnabled ? finalStrictTools : toolCallbacks.stream().map(callback -> {
+                var definition = callback.getToolDefinition();
+                return Map.of("name", definition.name(), "description", definition.description(),
+                        "input_schema", definition.inputSchema());
+            }).toList();
+            var flags = Map.of("declared_defaults", declaredModelOptions, "constrained_decoding", constrainedDecodingEnabled,
+                    "compact_tool_schemas", compactToolSchemasEnabled,
+                    "final_answer_only", Boolean.TRUE.equals(request.resolvedContext().get("final_answer_only")),
+                    "synthesis_only", Boolean.TRUE.equals(request.resolvedContext().get("recommendation_synthesis_only")),
+                    "final_answer_max_tokens", finalAnswerMaxTokens, "default_max_tokens", defaultMaxTokens);
+            return AgentModelRequestFingerprint.capture("spring_ai_prepared_request", SpringAiAgentModelStreamClient.class,
+                    request, configuredSystemPrompt(request), tools, Map.of("system", system, "user", user, "tools", tools, "options", flags),
+                    flags, declaredModel);
+        });
         AtomicBoolean toolCallSeen = new AtomicBoolean(false);
         var responseFlux = promptSpec.stream().chatResponse();
         if (interruptContext != null) {
@@ -243,8 +289,7 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
         consumer.accept(AgentModelStreamEvent.done());
     }
 
-    private OpenAiChatOptions.Builder strictToolOptions(List<ToolCallback> callbacks, boolean finalAnswerOnly) {
-        List<Map<String, Object>> tools = toolCallbackFactory.strictToolDefinitions(callbacks, compactToolSchemasEnabled);
+    private OpenAiChatOptions.Builder strictToolOptions(List<Map<String, Object>> tools, boolean finalAnswerOnly) {
         Object toolChoice = finalAnswerOnly
                 ? ChatCompletionToolChoiceOption.ofNamedToolChoice(ChatCompletionNamedToolChoice.builder()
                         .function(ChatCompletionNamedToolChoice.Function.builder().name("emit_final_answer").build())
@@ -264,17 +309,8 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
     private String systemPrompt(AgentChatRequestDTO request) {
         Map<String, Object> context = new LinkedHashMap<>(request.resolvedContext());
         context.remove(AgentLoop.INTERNAL_SKILL_REUSE_CONTEXT_KEY);
-        Object configuredPrompt = context.remove("system_prompt");
-        StringBuilder prompt = new StringBuilder();
-        if (configuredPrompt != null && !String.valueOf(configuredPrompt).isBlank()) {
-            prompt.append(configuredPrompt);
-        } else {
-            prompt.append("""
-                    你是一个中文购物推荐智能体。
-                    除非用户明确要求其他语言，所有面向用户的回答、追问、总结和推荐理由都必须使用中文。
-                    如果用户需求已经明确，直接基于候选商品和证据给出推荐，不要重复追问品类。
-                    """);
-        }
+        context.remove("system_prompt");
+        StringBuilder prompt = new StringBuilder(configuredSystemPrompt(request));
         // 固定规则和运行配置放在动态商品、Session 与工具证据之前，增加真实 KV 前缀复用。
         if (compactToolSchemasEnabled) appendOutputRules(prompt);
         appendContext(prompt, "available_skills", context.remove("available_skills"));
@@ -301,6 +337,19 @@ public class SpringAiAgentModelStreamClient implements AgentModelStreamClient {
         }
         if (!compactToolSchemasEnabled) appendOutputRules(prompt);
         return prompt.toString();
+    }
+
+    private String configuredSystemPrompt(AgentChatRequestDTO request) {
+        Object configuredPrompt = request.resolvedContext().get("system_prompt");
+        if (configuredPrompt != null && !String.valueOf(configuredPrompt).isBlank()) {
+            return String.valueOf(configuredPrompt);
+        } else {
+            return """
+                    你是一个中文购物推荐智能体。
+                    除非用户明确要求其他语言，所有面向用户的回答、追问、总结和推荐理由都必须使用中文。
+                    如果用户需求已经明确，直接基于候选商品和证据给出推荐，不要重复追问品类。
+                    """;
+        }
     }
 
     private void appendOutputRules(StringBuilder prompt) {

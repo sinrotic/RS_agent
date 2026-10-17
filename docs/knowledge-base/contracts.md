@@ -150,6 +150,8 @@ Python 当前有两类入口：
 
 ## 事件契约
 
+2026-10-18：内部 `model_call_completed` 可携带 `rs-agent-model-request-fingerprint/1` 的配置及实际请求摘要，按同一调用 ID 关联；旧 Adapter 的版本为 `not_reported`。`request_sha256` 仅内部使用，不能加入外部 OTLP 白名单；scope 区分 Spring AI 组装与 HTTP 转发，不等于远端实际权重版本。Python 账本保留逐次摘要与各字段覆盖率，详情见 [请求指纹报告](../reports/agent-request-fingerprints-20261018/README.md)。公开 SSE 类型和 Context Checkpoint 不变。
+
 2026-10-18：平台 Agent Monitor 的 summary 输入/输出/总 token 和 phase 总 token 允许 null，未知不再补零。新增 `usage_coverage` 区分最终逐次调用、未核验历史与混合记录，返回各字段小计和最终回执覆盖率；原始事件入口保留。summary/phase 的耗时改为已测量时间区间并集，阶段可重叠，不能再次相加。新前后端配套升级。外部 OTLP 只发送白名单元数据与 HMAC 标识，并保持独立关闭，完整契约与验证见 [平台计量及 OTLP 报告](../reports/agent-otlp-and-usage-20261018/README.md)。
 
 - Agent 会话事实使用领域定义的 Session Event；事件顺序与恢复约束见 [领域模型与核心不变量](domain-and-invariants.md)。

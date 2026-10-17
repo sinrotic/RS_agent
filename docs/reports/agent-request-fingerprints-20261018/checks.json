@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-18",
+  "scope": "prepared-model-request-fingerprints-and-evaluation-coverage",
+  "java": {
+    "command": "mvn -B -f java_agent/pom.xml -pl rs-service-agent -am package",
+    "exit_code": 0,
+    "module": "rs-service-agent",
+    "totals": {
+      "tests": 263,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "production_http_evidence": "SpringAiAgentModelStreamClientSmokeTest.actualLoopKeepsLoadedSkillEvidenceAndPreservesCustomLoopBehavior: strict tool digest equals actual sent tool definitions in all three parameterized cases"
+  },
+  "python_ci_markers": {
+    "selector": "scripts/ci/select_tests_by_marker.py --marker unit --marker smoke --marker serving",
+    "selected_files": 125,
+    "command": "pytest -m \"unit or smoke or serving\" -q <selected files>",
+    "exit_code": 0,
+    "passed": 1269,
+    "skipped": 5
+  },
+  "final_python_java_interop_and_ledger": {
+    "command": "pytest tests/test_skill_benchmark.py tests/test_agent_execution_metrics.py -q",
+    "exit_code": 0,
+    "passed": 42,
+    "java": "explicit JDK21 after package; no concurrent compilation",
+    "note": "Custom benchmark JSON adapter remains fingerprint_status=not_reported; production path verified separately by real Spring AI HTTP tests"
+  },
+  "ruff": {
+    "command": "ruff check rs_core scripts/ci/validate_engineering_contracts.py scripts/ci/select_tests_by_marker.py tests",
+    "exit_code": 0
+  },
+  "root_contracts": {
+    "command": "pytest tests -q",
+    "passed": 56,
+    "exit_code": 0
+  },
+  "frontend_and_platform": {
+    "status": "not_repeated",
+    "reason": "Unchanged in this batch; prior report contains the tests for those changes"
+  },
+  "not_run": [
+    "Formal model weights loading or quality/performance experiment",
+    "Remote deployment or Langfuse acceptance",
+    "Training",
+    "All unrelated Java modules"
+  ],
+  "known_engineering_contract_violations": {
+    "count": 36,
+    "basis": "Existing baseline report, not fixed or recounted in this batch"
+  },
+  "request_hash_export_policy": "request_sha256 retained internally; absent from OTLP allowlist; checked with a valid 64-character sentinel hash"
+}

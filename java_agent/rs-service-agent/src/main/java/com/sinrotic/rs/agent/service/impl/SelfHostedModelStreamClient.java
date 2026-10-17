@@ -35,6 +35,13 @@ public class SelfHostedModelStreamClient implements AgentModelStreamClient {
             AgentChatRequestDTO request,
             Consumer<AgentModelStreamEvent> consumer
     ) {
+        streamAssistantEvents(requestId, request, consumer, null, ignored -> { });
+    }
+
+    @Override
+    public void streamAssistantEvents(String requestId, AgentChatRequestDTO request,
+            Consumer<AgentModelStreamEvent> consumer, AgentInterruptContext interruptContext,
+            Consumer<Map<String, Object>> requestObservation) {
         Map<String, Object> payload = Map.of(
                 "model_key", properties.selfHosted().getModelKey(),
                 "request_id", requestId,
@@ -42,9 +49,15 @@ public class SelfHostedModelStreamClient implements AgentModelStreamClient {
                 "context", request.resolvedContext(),
                 "options", Map.of("stream", true)
         );
+        String body = writeJson(payload);
+        AgentModelRequestFingerprint.publish(requestObservation, () -> AgentModelRequestFingerprint.capture(
+                "self_hosted_adapter_request", SelfHostedModelStreamClient.class, request,
+                request.resolvedContext().getOrDefault("system_prompt", ""),
+                request.resolvedContext().getOrDefault("available_tools", List.of()), payload,
+                payload.get("options"), properties.selfHosted().getModelKey()));
         httpClient.streamJson(
                 joinUrl(properties.selfHosted().getBaseUrl(), properties.selfHosted().getStreamPath()),
-                writeJson(payload),
+                body,
                 "text/event-stream",
                 line -> parseSseLine(line, consumer)
         );

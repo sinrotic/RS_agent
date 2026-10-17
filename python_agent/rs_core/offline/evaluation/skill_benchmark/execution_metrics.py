@@ -1,6 +1,7 @@
 """执行指标契约：完整分母、显式缺失和按模型调用去重；不推断满意度。"""
 
 from collections import Counter
+import re
 
 VERSION = "rs-agent-execution-metrics/1"
 TERMINAL_REASONS = frozenset({
@@ -10,6 +11,39 @@ TOKEN_FIELDS = (
     "prompt_tokens", "completion_tokens", "total_tokens",
     "cache_read_input_tokens", "cache_write_input_tokens",
 )
+FINGERPRINT_VERSION = "rs-agent-model-request-fingerprint/1"
+FINGERPRINT_HASH_FIELDS = (
+    "prompt_sha256", "tools_sha256", "skills_sha256", "request_sha256",
+    "request_options_sha256", "adapter_sha256", "declared_model_sha256",
+)
+FINGERPRINT_SCOPES = frozenset({
+    "spring_ai_prepared_request", "self_hosted_adapter_request", "python_agent_adapter_request",
+})
+
+
+def _request_fingerprint(data):
+    """只保留生产端明确报告的摘要；普通输入或 runtime 名称不能推断请求版本。"""
+    status = data.get("fingerprint_status", "not_reported")
+    if not isinstance(status, str) or status not in {"not_reported", "observed", "unavailable", "invalid", "conflict"}:
+        return {"fingerprint_status": "invalid"}
+    result = {"fingerprint_status": status}
+    if status != "observed":
+        return result
+    if (data.get("fingerprint_schema_version") != FINGERPRINT_VERSION
+            or not isinstance(data.get("fingerprint_scope"), str)
+            or data["fingerprint_scope"] not in FINGERPRINT_SCOPES
+            or not isinstance(data.get("request_sha256"), str)
+            or not re.fullmatch("[a-f0-9]{64}", data["request_sha256"])):
+        return {"fingerprint_status": "invalid"}
+    result.update(fingerprint_schema_version=FINGERPRINT_VERSION, fingerprint_scope=data["fingerprint_scope"])
+    for name in FINGERPRINT_HASH_FIELDS:
+        value = data.get(name)
+        if isinstance(value, str) and re.fullmatch("[a-f0-9]{64}", value):
+            result[name] = value
+    identity = data.get("model_identity_status", "unknown")
+    if isinstance(identity, str) and identity in {"configured_alias", "unknown"}:
+        result["model_identity_status"] = identity
+    return result
 
 
 def summarize_trace_usage(trace):
@@ -23,10 +57,12 @@ def summarize_trace_usage(trace):
         if not isinstance(call_id, str) or not call_id:
             raise ValueError("模型观测缺少 model_call_id")
         calls.setdefault(call_id, {"model_call_id": call_id, "status": "incomplete",
-                                   "usage": {}, "usage_final": False})
+                                   "usage": {}, "usage_final": False,
+                                   "request_fingerprint": {"fingerprint_status": "not_reported"}})
         if event["event"] == "model_call_completed":
             row = {"model_call_id": call_id, "status": data["status"],
-                   "usage": data["usage"], "usage_final": data["usage_final"]}
+                   "usage": data["usage"], "usage_final": data["usage_final"],
+                   "request_fingerprint": _request_fingerprint(data)}
             if call_id in completed and calls[call_id] != row:
                 raise ValueError("同一模型调用的最终观测冲突")
             calls[call_id] = row
@@ -34,6 +70,18 @@ def summarize_trace_usage(trace):
     report = summarize_model_usage(calls.values())
     report["completed_observations"] = len(completed)
     report["coverage_basis"] = "observed_generation_attempts_only"
+    report["request_fingerprints"] = [
+        {"model_call_id": key, **call["request_fingerprint"]} for key, call in calls.items()
+    ]
+    report["fingerprint_coverage"] = {
+        "model_calls": len(calls),
+        "observed_calls": sum(call["request_fingerprint"]["fingerprint_status"] == "observed" for call in calls.values()),
+        "statuses": dict(Counter(call["request_fingerprint"]["fingerprint_status"] for call in calls.values())),
+        "fields_observed_calls": {
+            name: sum(name in call["request_fingerprint"] for call in calls.values())
+            for name in FINGERPRINT_HASH_FIELDS
+        },
+    }
     return report
 
 

@@ -108,3 +108,42 @@ def test_benchmark_persists_call_ledger_even_when_model_attempt_failed():
     assert run["trials"][0]["model_usage"]["model_calls"] == 1
     assert run["trials"][0]["model_usage"]["fields"]["total_tokens"]["total"] is None
     assert run["summary"]["execution_failures"] == 1
+
+
+def test_trace_versions_keep_call_association_and_do_not_infer_missing_metadata():
+    metadata = {"fingerprint_schema_version": "rs-agent-model-request-fingerprint/1",
+                "fingerprint_status": "observed", "fingerprint_scope": "spring_ai_prepared_request",
+                "request_sha256": "a" * 64, "tools_sha256": "b" * 64,
+                "prompt": "private-body", "declared_model_sha256": "invalid"}
+    completed = {"event": "model_call_completed", "data": {
+        "model_call_id": "a", "status": "completed", "usage": {"total_tokens": 10}, "usage_final": True, **metadata}}
+    trace = [completed, copy.deepcopy(completed), {"event": "model_call_started", "data": {"model_call_id": "b"}}]
+    report = summarize_trace_usage(trace)
+    coverage = report["fingerprint_coverage"]
+    assert coverage["model_calls"] == 2
+    assert coverage["observed_calls"] == 1
+    assert coverage["statuses"] == {"observed": 1, "not_reported": 1}
+    assert coverage["fields_observed_calls"]["tools_sha256"] == 1
+    assert coverage["fields_observed_calls"]["declared_model_sha256"] == 0
+    assert report["request_fingerprints"][0]["tools_sha256"] == "b" * 64
+    assert "prompt" not in report["request_fingerprints"][0]
+    assert "declared_model_sha256" not in report["request_fingerprints"][0]
+    changed = copy.deepcopy(completed)
+    changed["data"]["request_sha256"] = "c" * 64
+    with pytest.raises(ValueError, match="冲突"):
+        summarize_trace_usage([completed, changed])
+
+
+@pytest.mark.parametrize("metadata", [
+    {}, {"fingerprint_status": "conflict"},
+    {"fingerprint_status": "observed", "request_sha256": "fake"},
+    {"fingerprint_status": "unknown-version"},
+    {"fingerprint_status": []},
+    {"fingerprint_status": "observed", "fingerprint_schema_version": "rs-agent-model-request-fingerprint/1",
+     "fingerprint_scope": {}, "request_sha256": "a" * 64},
+])
+def test_unavailable_or_malformed_versions_do_not_change_usage_results(metadata):
+    report = summarize_trace_usage([{"event": "model_call_completed", "data": {
+        "model_call_id": "a", "status": "completed", "usage": {"total_tokens": 10}, "usage_final": True, **metadata}}])
+    assert report["fields"]["total_tokens"]["total"] == 10
+    assert report["fingerprint_coverage"]["observed_calls"] == 0

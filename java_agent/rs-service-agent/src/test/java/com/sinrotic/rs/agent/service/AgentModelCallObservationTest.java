@@ -15,6 +15,26 @@ import static org.assertj.core.api.Assertions.*;
 
 class AgentModelCallObservationTest {
     @Test
+    void requestMetadataIsAllowlistedConflictIsStickyAndLateRecordsCannotRewriteAnAttempt() {
+        var events = new ArrayList<AgentStreamEventVO>();
+        var observation = new AgentModelCallObservation("turn", "session", 0, events::add);
+        var metadata = new java.util.LinkedHashMap<String, Object>(Map.of("fingerprint_schema_version", AgentModelRequestFingerprint.VERSION,
+                "fingerprint_scope", "spring_ai_prepared_request", "fingerprint_status", "observed", "request_sha256", "a".repeat(64),
+                "prompt_sha256", "b".repeat(64), "prompt", "private-body", "model_call_id", "forged"));
+        observation.recordRequest(metadata);
+        observation.recordRequest(metadata);
+        observation.finish("completed", true);
+        metadata.put("request_sha256", "c".repeat(64)); observation.recordRequest(metadata);
+        var data = events.getLast().data();
+        assertThat(data).containsEntry("request_sha256", "a".repeat(64)).doesNotContainKey("prompt");
+        assertThat(data.get("model_call_id")).isNotEqualTo("forged");
+        var conflicts = new ArrayList<AgentStreamEventVO>();
+        var conflicted = new AgentModelCallObservation("turn", "session", 0, conflicts::add);
+        conflicted.recordRequest(metadata); metadata.put("request_sha256", "d".repeat(64)); conflicted.recordRequest(metadata);
+        conflicted.recordRequest(metadata); conflicted.finish("completed", true);
+        assertThat(conflicts.getLast().data()).containsEntry("fingerprint_status", "conflict").doesNotContainKey("request_sha256");
+    }
+    @Test
     void finalSnapshotIsDeduplicatedAndTimingDoesNotDependOnWallClock() {
         var time = new AtomicLong(1_000_000);
         var events = new ArrayList<AgentStreamEventVO>();

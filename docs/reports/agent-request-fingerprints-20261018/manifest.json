@@ -1,0 +1,134 @@
+{
+  "schema_version": "rs-agent-baseline-manifest/1",
+  "base_commit": "301b4579d8961a23d96545d9524250dc2f7ecf22",
+  "snapshot_kind": "working_tree_files_identified_by_sha256",
+  "file_sha256": {
+    "java_agent/rs-service-agent/src/main/resources/application.yml": "54bb03f6af820c8a0cf5ea699f85fa3f18c2aada368426ea413d45565503d7a6",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/config/AgentTemplateProperties.java": "233752e846714eeaded6619101ba711516a56fceecd6cd706b74f64f51a64be2",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/InMemoryAgentRuntimeConfigurationService.java": "4409c4eb1a30992dc61e787746cad3c442cdb7d7f0c67407e073b69c91f9c5ce",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/SpringAiChatResponseMapper.java": "7790a93143e285884588e0899a8f576ab3ae2d7ad2a08943e2ddfe207ec181db",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentModelCallObservation.java": "90ef5ceaf2a90992e354e882e086234590491ce0bfc64e761d41f091498adef4",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentLoop.java": "af757055e1577cde4e2314aa73f3e37c376504d5a4f801eb99f2c8dd05fc7789",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/HttpAgentTraceReporter.java": "7462410925a2bf440006c2723a95fb16c84e3edd0485d51df5f6b860938f8770",
+    "java_agent/rs-service-recommend/src/test/java/com/sinrotic/rs/recommend/service/FrozenAgentBaselineTest.java": "2907dacaa30d6aadf6b87ef5bc2c607b8797c4832b7dead38ee9d95179a8fdfe",
+    "python_agent/rs_core/offline/evaluation/skill_benchmark/execution_metrics.py": "cd25d6a4cc60036cd99699120d3abb5c7744d2060106bd4eb841b7aa3eacb6f9",
+    "python_agent/rs_core/offline/evaluation/skill_benchmark/runner.py": "bf2a0906a863375fbb9004f4d4a75f2df343e688ffc1f2965c13d8c12378d39d",
+    "java_agent/deploy/remote/app/docker-compose.yml": "f83af4ae781996f7081195187e2526923b5118864cacb6ea552730d074a8881b",
+    "java_agent/deploy/remote/app/.env.example": "ee019ec08e7175da2f46adece48d4b57cff702ddeb11c659cf35eda189032c3e",
+    "java_agent/deploy/remote/app/product-three-tower-final.env.example": "374d6d91491dc695e75951b21b5ad72cec29752a2a0f58876f976e24792e2025",
+    "java_agent/deploy/remote/app/agent-gpu1-concurrency.env.example": "f9582c8c8932fc24f533bb9e8a4a25df8d1df590477a52ede1b0e124e114aecf",
+    "docs/reports/product-three-tower-final/RESULTS.txt": "10c17114d246a04d9aeceda80a0189b14dc6017a1b200ec88ef2fff39c0e8ce4",
+    "artifacts/models/product_three_tower_final_v1/manifest.json": "01eb4faf15551f0b5eb57bee94c588d14d459592b94de24bd48aa07f874fd4c1",
+    "python_agent/benchmarks/skill_benchmark/agent-baseline-v1.json": "ada59699bf3b688333e566fc7baf718bee06a50263dd5e03146153bf73ae69f3",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/a2ui-interface/SKILL.md": "8547fbb3199f637128c6954864756b74dc730fc42ae5d3ef2616fb88ceb61307",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/cold-user-onboarding/SKILL.md": "267a6b0a1eb11cd2388859272948f7a6bd15dd76228723b499dee3eddb1e549c",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/evidence-grounded-explanation/SKILL.md": "c916559bfc507dcf4219b95f87d4b1d098c0141c225d2ca4cc5e1d817f93b87b",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/explicit-need-recommendation/SKILL.md": "355dd1ac7fa038e0ceede20f877ff2a72f00e7cf136938f979476c915270cf9d",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/feedback-adaptation/SKILL.md": "104eb737aa8a774d64c0ddd074c43154720acda5888064b291d9d5cb8c6596a5",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/unclear-need-clarification/SKILL.md": "fb98dbd852126a1cca448871a629a89bfcbad8b1e0b3024f71d956d419e7a46a",
+    "docs/knowledge-base/contracts.md": "8c3c2ba44c5eb637d4de9345f600ba1a97205a001b34824ca512df5822d9cb3e",
+    "docs/knowledge-base/development-guide.md": "e6e84428950d29b89ecfb0a247ea31103639aa17cc8ffd4872341e3927f3fc9c",
+    "docs/superpowers/plans/2026-10-18-agent-capability-completion.md": "9b3446cb3bc6488c6e23e4b7039f1971b881628ce92d8fb32518922040c35967",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/AgentModelStreamClient.java": "7b923977eb49b833f4ca30c8dc941fe053d7195270e9f0286a6c6f443576b2fa",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/OtlpAgentTraceEncoder.java": "1cf57962513a278e5c035c3888edc489ea9e110b49239c56d1c95199706867a7",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/PythonAgentApiModelStreamClient.java": "bdc19a7dd1d7501b8229cc84a5e15df27939fadc92995faea1808a36b7061570",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/SelfHostedModelStreamClient.java": "8083743fa3fd7fe08eb95feb1d5477b3fe018358a0af77a4ae212dd2a1bb126e",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/SpringAiAgentModelStreamClient.java": "2109c0ad0acdcb3598344657cdc2b75d2ebcb1cd5280bfbb6ed920df629e8f87",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/AgentModelCallObservationTest.java": "98a37fa1b1d99cb3d4727e71b852247f79abe25a71c57efabbc6d041ce0cdb7b",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/OtlpAgentTraceEncoderTest.java": "1d54427c311c2d0b91edb9ad31912ce2c828344002e0a7bd5e7749bf5dbd202d",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/SpringAiAgentModelStreamClientSmokeTest.java": "13332072a0d285f61debac1b3b0b16be2551286208390c40f90f3abfbaa9a4c9",
+    "python_agent/tests/test_agent_execution_metrics.py": "26ab5542889642c362b04fcc7abde01f9943c9329e4c26466a70be4354045ba0",
+    "docs/reports/agent-request-fingerprints-20261018/README.md": "fb5897fa4014cf3ce6bb50d4eb2a8c823f6f319bdfd1b1d67e47540589fbac17",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentModelRequestFingerprint.java": "0636ca3fba26fb5f1c0ee3ecc9e8555e30828661e65ab0b8a9b29a40aebfc866",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/AgentModelRequestFingerprintTest.java": "98d55d8b6141d69aa0362eaf475816ecd9adb4ef3789dca5c4c15713e75ed76e"
+  },
+  "repository_defaults": {
+    "recommendation": {
+      "type": "${RS_AGENT_RECOMMENDATION_TYPE:memory}"
+    },
+    "session-store": {
+      "type": "${RS_AGENT_SESSION_STORE_TYPE:memory}",
+      "key-prefix": "${RS_AGENT_SESSION_STORE_KEY_PREFIX:agent:session:}",
+      "ttl": "${RS_AGENT_SESSION_STORE_TTL:15m}"
+    },
+    "execution": {
+      "max-active-loops": "${RS_AGENT_MAX_ACTIVE_LOOPS:32}",
+      "active-loop-acquire-timeout-ms": "${RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS:300}",
+      "max-model-streams": "${RS_AGENT_MAX_MODEL_STREAMS:8}",
+      "model-stream-acquire-timeout-ms": "${RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS:200}",
+      "max-tool-calls": "${RS_AGENT_MAX_TOOL_CALLS:64}",
+      "tool-acquire-timeout-ms": "${RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS:300}",
+      "max-recommendation-calls": "${RS_AGENT_MAX_RECOMMENDATION_CALLS:8}",
+      "recommendation-acquire-timeout-ms": "${RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS:15000}",
+      "max-session-queue-size": "${RS_AGENT_MAX_SESSION_QUEUE_SIZE:2}",
+      "session-queue-timeout-ms": "${RS_AGENT_SESSION_QUEUE_TIMEOUT_MS:500}"
+    },
+    "trace": {
+      "enabled": "${RS_AGENT_TRACE_ENABLED:false}",
+      "queue-capacity": "${RS_AGENT_TRACE_QUEUE_CAPACITY:512}",
+      "request-timeout-ms": "${RS_AGENT_TRACE_REQUEST_TIMEOUT_MS:2000}",
+      "shutdown-timeout-ms": "${RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS:3000}",
+      "max-event-bytes": "${RS_AGENT_TRACE_MAX_EVENT_BYTES:65536}"
+    }
+  },
+  "versioned_presets": {
+    "java_agent/deploy/remote/app/.env.example": {
+      "RS_AGENT_SESSION_PERSISTENCE_ENABLED": "true",
+      "RS_RECOMMEND_TWO_TOWER_ENABLED": "false",
+      "RS_RECOMMEND_MULTI_RECALL_ENABLED": "false",
+      "RS_RECOMMEND_TRAINED_RANKING_ENABLED": "false",
+      "RS_RECOMMEND_TWO_TOWER_MODEL_KEY": "two_tower_sparse_aware_epoch5_queryv2",
+      "RS_RECOMMEND_TWO_TOWER_COLLECTION": "rs_agent_two_tower_epoch5_20260913",
+      "RS_RECOMMEND_TWO_TOWER_DIMENSION": "64",
+      "RS_RECOMMEND_TWO_TOWER_PRIMARY_SHARE": "0",
+      "RS_RECOMMEND_QUERY_TOWER_ENABLED": "false",
+      "RS_AGENT_CONSTRAINED_DECODING_ENABLED": "false",
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "8",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "8",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2",
+      "RS_AGENT_TRACE_QUEUE_CAPACITY": "512",
+      "RS_AGENT_TRACE_REQUEST_TIMEOUT_MS": "2000",
+      "RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS": "3000",
+      "RS_AGENT_TRACE_MAX_EVENT_BYTES": "65536"
+    },
+    "java_agent/deploy/remote/app/product-three-tower-final.env.example": {
+      "RS_RECOMMEND_TWO_TOWER_ENABLED": "true",
+      "RS_RECOMMEND_TWO_TOWER_MODEL_KEY": "product_three_tower_final_v1",
+      "RS_RECOMMEND_TWO_TOWER_COLLECTION": "rs_agent_product_three_tower_final_v1_20261013",
+      "RS_RECOMMEND_TWO_TOWER_DIMENSION": "1024",
+      "RS_RECOMMEND_TWO_TOWER_PRIMARY_SHARE": "0.65",
+      "RS_RECOMMEND_TWO_TOWER_PROTECTED_HEAD_COUNT": "0",
+      "RS_RECOMMEND_QUERY_TOWER_ENABLED": "true"
+    },
+    "java_agent/deploy/remote/app/agent-gpu1-concurrency.env.example": {
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "16",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "4",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2"
+    }
+  },
+  "runtime_probe": {
+    "status": "not_performed",
+    "reason": "本轮未连接远程实例核验，不由模板推断当前生效配置"
+  },
+  "model_route_evidence": {
+    "model_key": "product_three_tower_final_v1",
+    "dimension": 1024,
+    "basis": "docs/reports/product-three-tower-final/RESULTS.txt",
+    "status": "historical_deployment_report_not_live_probe"
+  },
+  "product_path": "Java Agent → Java Recommend/Catalog；Python 模型服务、仿真、评测和训练",
+  "scope": "prepared-model-request-fingerprints-and-evaluation-coverage",
+  "compiled_class_sha256": {
+    "com.sinrotic.rs.agent.service.impl.SpringAiAgentModelStreamClient": "cb1208383aeb0a446f07115afca36889f4b5c9f080a678d509d2a34dc8e6c2dd",
+    "com.sinrotic.rs.agent.service.impl.PythonAgentApiModelStreamClient": "fefb4ca29cbadac68c49f99c2dc9bd6b509df04690b67bb41080d21070649158",
+    "com.sinrotic.rs.agent.service.impl.SelfHostedModelStreamClient": "2a5999ec3c8042fc2013f6639bc32e7f6ff9cf6b8743a5a3330e987fb61a33ef",
+    "com.sinrotic.rs.agent.service.impl.AgentModelRequestFingerprint": "b1438ff50011338ae6114b09c39e41266c174980b72e3f4ddd84435abeebf1ba",
+    "com.sinrotic.rs.agent.service.impl.AgentModelCallObservation": "1819e944c22082bf2a669105d558462e1f21176f96cb010c4a790bd174c7d282",
+    "com.sinrotic.rs.agent.service.impl.AgentLoop": "da06c07d1d2c1e4c208b6ab97309151ec1fa367e23c3cdf738218ee8913a51ea"
+  },
+  "compiled_artifacts_basis": "Local Corretto JDK21.0.5 build; source hashes above; not remote binaries"
+}

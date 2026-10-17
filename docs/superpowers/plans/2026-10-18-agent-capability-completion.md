@@ -105,7 +105,7 @@
 
 ### P1：观测与实验底座（C14、C16、C22）
 
-- [ ] P1.1 规范 `session_id/turn_id/run_id/tool_call_id` 与父子任务、模型／Prompt／Skill／数据版本字段，复用现有 Trace 事件。（已接入生成尝试独立 ID、Turn/Loop 关联；委派及完整版本仍待补。）
+- [ ] P1.1 规范 `session_id/turn_id/run_id/tool_call_id` 与父子任务、模型／Prompt／Skill／数据版本字段，复用现有 Trace 事件。（已接入生成尝试独立 ID、Turn/Loop 关联，以及请求组装处 Prompt/工具/Skill/选项/Adapter 指纹；Java 主线真实 HTTP 校验通过，评测保留逐次摘要与字段覆盖率。范围与未知项见 [请求指纹报告](../../reports/agent-request-fingerprints-20261018/README.md)；跨 HTTP 委派、完整数据/权重来源和不可变配置资产仍待补。）
 - [ ] P1.2 在真实模型请求处记录普通生成、摘要、Judge、失败重试的 usage；按服务支持字段拆输入、输出、缓存读写，未知保持未知。（普通生成及失败/取消快照已接通，其他种类待补；提前停止不假设用量已完整。）
 - [ ] P1.3 提供 Langfuse／OTLP Adapter，并保留现有平台观察能力；可配置关闭、受控脱敏、异步队列有界、退出 flush 和丢失可观察。（已完成双目标独立开关/队列、外发白名单/HMAC、OTLP JSON 与 Langfuse 适配、部分拒绝处理及本地 HTTP 验收；平台已改为最终调用账本和时间区间并集。真实目标验收、指标注册与重放待补。）
 - [ ] P1.4 固定评测运行器输出逐条轨迹、规则结果、Judge 原因与完整资源账本，失败样例可从报告定位到调用。（Skill Benchmark 已接入生成调用账本及最终/缺失覆盖率，受控 Java HTTP 联调通过；仍非全系统资源账本。）

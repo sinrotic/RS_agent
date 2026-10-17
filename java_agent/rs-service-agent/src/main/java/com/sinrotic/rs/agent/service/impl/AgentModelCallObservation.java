@@ -23,6 +23,34 @@ public final class AgentModelCallObservation {
     private Long firstToken;
     private boolean finished;
     private boolean explicitlyFinalUsage;
+    private Map<String, Object> requestFingerprint = Map.of("fingerprint_status", "not_reported");
+
+    public synchronized void recordRequest(Map<String, Object> fields) {
+        if (finished || "conflict".equals(requestFingerprint.get("fingerprint_status"))) return;
+        if (fields == null) fields = Map.of();
+        var selected = new LinkedHashMap<String, Object>();
+        String status = String.valueOf(fields.get("fingerprint_status"));
+        if (!AgentModelRequestFingerprint.VERSION.equals(fields.get("fingerprint_schema_version"))
+                || !List.of("observed", "unavailable").contains(status)) {
+            selected.put("fingerprint_status", "invalid");
+        } else {
+            selected.put("fingerprint_schema_version", AgentModelRequestFingerprint.VERSION);
+            selected.put("fingerprint_status", status);
+            Object scope = fields.get("fingerprint_scope");
+            if (scope instanceof String text && AgentModelRequestFingerprint.SCOPES.contains(text)) selected.put("fingerprint_scope", text);
+            for (var key : AgentModelRequestFingerprint.HASH_FIELDS) {
+                Object value = fields.get(key);
+                if (value instanceof String hash && hash.matches("[a-f0-9]{64}")) selected.put(key, hash);
+            }
+            Object modelIdentity = fields.get("model_identity_status");
+            selected.put("model_identity_status", modelIdentity instanceof String name && List.of("configured_alias", "unknown").contains(name)
+                    ? name : "unknown");
+            if (status.equals("observed") && (!selected.containsKey("fingerprint_scope")
+                    || !selected.containsKey("request_sha256"))) selected = new LinkedHashMap<>(Map.of("fingerprint_status", "invalid"));
+        }
+        requestFingerprint = requestFingerprint.get("fingerprint_status").equals("not_reported") || requestFingerprint.equals(selected)
+                ? Map.copyOf(selected) : Map.of("fingerprint_status", "conflict");
+    }
 
     public AgentModelCallObservation(String requestId, String sessionId, int loopIndex,
                                      Consumer<AgentStreamEventVO> sink) {
@@ -60,6 +88,7 @@ public final class AgentModelCallObservation {
         if (finished) return;
         finished = true;
         var data = new LinkedHashMap<>(identity);
+        data.putAll(requestFingerprint);
         data.put("status", status);
         data.put("latency_ms", Math.max(0L, (nanoTime.getAsLong() - started) / 1_000_000));
         if (firstToken != null) data.put("first_token_ms", Math.max(0L, (firstToken - started) / 1_000_000));

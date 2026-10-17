@@ -26,7 +26,7 @@ class OtlpAgentTraceEncoderTest {
                 "model_call_id", SECRET, "usage_final", true, "status", "completed",
                 "usage", Map.of("prompt_tokens", 10, "completion_tokens", 5, "total_tokens", 15),
                 "prompt", SECRET, "native_usage", Map.of("credential", SECRET),
-                "prompt_sha256", "a".repeat(64), "tools_sha256", SECRET), 3);
+                "prompt_sha256", "a".repeat(64), "tools_sha256", SECRET, "request_sha256", "b".repeat(64)), 3);
         var envelope = json.valueToTree(encoder.apply(completed).orElseThrow());
         var model = span(envelope);
         var root = span(json.valueToTree(encoder.apply(event("agent_done", "", Map.of(), 4)).orElseThrow()));
@@ -40,6 +40,7 @@ class OtlpAgentTraceEncoderTest {
         assertThat(attribute(model, "gen_ai.usage.input_tokens").path("intValue").asText()).isEqualTo("10");
         assertThat(attribute(model, "rs.version.prompt_sha256").path("stringValue").asText()).isEqualTo("a".repeat(64));
         assertThat(attribute(model, "rs.version.tools_sha256").isMissingNode()).isTrue();
+        assertThat(envelope.toString()).doesNotContain("request_sha256", "b".repeat(64));
         assertThat(span(json.valueToTree(encoder.apply(completed).orElseThrow()))).isEqualTo(model);
         var changedKey = config();
         changedKey.setIdentityKey("different-identity-key-for-test");
