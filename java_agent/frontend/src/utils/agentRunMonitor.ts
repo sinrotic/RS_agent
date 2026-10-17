@@ -1,4 +1,4 @@
-import type { AgentRunEventVO, AgentRunMonitorVO, AgentRunStatus } from '../types/platformTrace';
+import type { AgentRunEventVO, AgentRunMonitorVO, AgentRunStatus, AgentRunSummaryVO } from '../types/platformTrace';
 
 export function formatMs(value?: number): string {
   if (!value || value <= 0) return '-';
@@ -6,9 +6,22 @@ export function formatMs(value?: number): string {
   return `${(value / 1000).toFixed(1)} s`;
 }
 
-export function formatTokens(value?: number): string {
-  if (!value || value <= 0) return '-';
+export function formatTokens(value?: number | null): string {
+  if (value == null || !Number.isFinite(value) || value < 0) return '-';
   return value.toLocaleString();
+}
+
+export function usageCoverageLabel(summary: AgentRunSummaryVO): string {
+  const coverage = summary.usage_coverage;
+  if (!coverage || coverage.mode === 'legacy_unverified') return '历史用量尚未核验';
+  if (coverage.mode === 'not_observed') return '尚未收到调用计量';
+  const count = coverage.model_calls || 0;
+  const final = coverage.fields?.total_tokens?.finalized_calls || 0;
+  const conflicts = coverage.conflicting_observations || 0;
+  return `已观测 ${count} 次调用 · 最终用量 ${final}/${count}`
+    + (summary.total_tokens == null ? ' · 总量不完整' : '')
+    + (coverage.legacy_runs ? ' · 包含未核验历史记录' : '')
+    + (conflicts ? ` · ${conflicts} 次计量冲突` : '');
 }
 
 export function statusTone(status?: AgentRunStatus | 'error' | string): string {

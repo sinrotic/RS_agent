@@ -3,7 +3,7 @@ id: kb-development-guide
 type: runbook
 status: current
 owner: project-maintainers
-last_verified: 2026-09-05
+last_verified: 2026-10-18
 confidence: confirmed
 ---
 
@@ -230,7 +230,7 @@ Set-Location python_agent
 
 ## 完成一次迭代的最小清单
 
-2026-10-18 起，个人推荐 Agent 的固定多轮 API 验收及计量口径见 [本地基线](../reports/agent-capability-baseline-20261018/README.md)。真实模型尝试的逐次观测、Skill Benchmark 用量账本与 Trace 有界导出参数见 [P1 首批实现](../reports/agent-model-observation-20261018/README.md)。当前平台汇总页仍为旧口径，完整模型用量以带覆盖率的评测账本为准；缺失或提前停止的未确认用量不能当作 0。
+2026-10-18 起，个人推荐 Agent 的固定多轮 API 验收及计量口径见 [本地基线](../reports/agent-capability-baseline-20261018/README.md)。真实模型尝试的逐次观测、Skill Benchmark 用量账本与 Trace 有界导出参数见 [P1 首批实现](../reports/agent-model-observation-20261018/README.md)。平台现已接入最终调用账本和覆盖率，缺失或提前停止的未确认用量不能当作 0；独立 OTLP/Langfuse 开关、外发字段控制与本地验收见 [平台计量及 OTLP 报告](../reports/agent-otlp-and-usage-20261018/README.md)。外部导出默认关闭，真实远程验收和运维指标注册仍待补齐。
 
 1. Issue/PRD 的验收条件可以映射到代码和测试。
 2. 使用规范领域词汇，没有引入同义概念。

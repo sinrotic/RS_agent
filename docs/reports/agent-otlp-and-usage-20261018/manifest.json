@@ -1,0 +1,136 @@
+{
+  "schema_version": "rs-agent-baseline-manifest/1",
+  "base_commit": "cd7418195acb9d52ba8ef0a238934a2e3417913e",
+  "snapshot_kind": "working_tree_files_identified_by_sha256",
+  "file_sha256": {
+    "java_agent/rs-service-agent/src/main/resources/application.yml": "54bb03f6af820c8a0cf5ea699f85fa3f18c2aada368426ea413d45565503d7a6",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/config/AgentTemplateProperties.java": "233752e846714eeaded6619101ba711516a56fceecd6cd706b74f64f51a64be2",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/InMemoryAgentRuntimeConfigurationService.java": "4409c4eb1a30992dc61e787746cad3c442cdb7d7f0c67407e073b69c91f9c5ce",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/SpringAiChatResponseMapper.java": "7790a93143e285884588e0899a8f576ab3ae2d7ad2a08943e2ddfe207ec181db",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentModelCallObservation.java": "c904d45a4c2f55574cd686be9946574c5f41ef38716bfed300be4175a56f6195",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/AgentLoop.java": "93ca572bb568b21cef40f4eb55840e282f0c7cf9b275977e50e72adbfed4b283",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/HttpAgentTraceReporter.java": "7462410925a2bf440006c2723a95fb16c84e3edd0485d51df5f6b860938f8770",
+    "java_agent/rs-service-recommend/src/test/java/com/sinrotic/rs/recommend/service/FrozenAgentBaselineTest.java": "2907dacaa30d6aadf6b87ef5bc2c607b8797c4832b7dead38ee9d95179a8fdfe",
+    "python_agent/rs_core/offline/evaluation/skill_benchmark/execution_metrics.py": "04b693b1bb6cf40a86527022ede3a470f2c5fee7ba19954942824d761ef81fb9",
+    "python_agent/rs_core/offline/evaluation/skill_benchmark/runner.py": "bf2a0906a863375fbb9004f4d4a75f2df343e688ffc1f2965c13d8c12378d39d",
+    "java_agent/deploy/remote/app/docker-compose.yml": "f83af4ae781996f7081195187e2526923b5118864cacb6ea552730d074a8881b",
+    "java_agent/deploy/remote/app/.env.example": "ee019ec08e7175da2f46adece48d4b57cff702ddeb11c659cf35eda189032c3e",
+    "java_agent/deploy/remote/app/product-three-tower-final.env.example": "374d6d91491dc695e75951b21b5ad72cec29752a2a0f58876f976e24792e2025",
+    "java_agent/deploy/remote/app/agent-gpu1-concurrency.env.example": "f9582c8c8932fc24f533bb9e8a4a25df8d1df590477a52ede1b0e124e114aecf",
+    "docs/reports/product-three-tower-final/RESULTS.txt": "10c17114d246a04d9aeceda80a0189b14dc6017a1b200ec88ef2fff39c0e8ce4",
+    "artifacts/models/product_three_tower_final_v1/manifest.json": "01eb4faf15551f0b5eb57bee94c588d14d459592b94de24bd48aa07f874fd4c1",
+    "python_agent/benchmarks/skill_benchmark/agent-baseline-v1.json": "ada59699bf3b688333e566fc7baf718bee06a50263dd5e03146153bf73ae69f3",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/a2ui-interface/SKILL.md": "8547fbb3199f637128c6954864756b74dc730fc42ae5d3ef2616fb88ceb61307",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/cold-user-onboarding/SKILL.md": "267a6b0a1eb11cd2388859272948f7a6bd15dd76228723b499dee3eddb1e549c",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/evidence-grounded-explanation/SKILL.md": "c916559bfc507dcf4219b95f87d4b1d098c0141c225d2ca4cc5e1d817f93b87b",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/explicit-need-recommendation/SKILL.md": "355dd1ac7fa038e0ceede20f877ff2a72f00e7cf136938f979476c915270cf9d",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/feedback-adaptation/SKILL.md": "104eb737aa8a774d64c0ddd074c43154720acda5888064b291d9d5cb8c6596a5",
+    "java_agent/rs-service-agent/src/main/resources/agent-skills/unclear-need-clarification/SKILL.md": "fb98dbd852126a1cca448871a629a89bfcbad8b1e0b3024f71d956d419e7a46a",
+    "docs/knowledge-base/contracts.md": "95cf942873718afbded2fce85a2e6428ca40c278d7b07fb6a4a9bca5ce738aaa",
+    "docs/knowledge-base/development-guide.md": "34b74abedb0d718190be241871a5a9882999c869ef6f59f5fe8b9565db07a587",
+    "docs/superpowers/plans/2026-10-18-agent-capability-completion.md": "8dcabe9f605c946f41ae8bc6204f2f40c945a27989b2d76d55eb4e3a410cc5d2",
+    "java_agent/frontend/src/components/AgentRunMonitorPanel.tsx": "1bcff6ee17a3058f500005fadd3e19a07256a2393b8df11328f1a93a012294f7",
+    "java_agent/frontend/src/types/platformTrace.ts": "68889484c5f078c2491dd28f29d51b4ff60cf13e28e958adf228e4e140379345",
+    "java_agent/frontend/src/utils/agentRunMonitor.ts": "da2b3ef1abbd7a22b159ba48262e9dd6e3006ee5a02aeae1c14441607072c6f1",
+    "java_agent/frontend/src/views/ObserveConsole.tsx": "cfa8c8e09acd6a10b92636b4fff9216dda3873819cc00d63080838f1f84a0a96",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/config/AgentTraceReporterConfiguration.java": "d585840c27a0ba57d5e29135272087466fa66878ab7f467b78020073b4fce772",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/config/AgentTraceReporterProperties.java": "4f05acd833842384d0e6f72c9b6bd8fef015ebe38cd109b81c911aea0a7f78b3",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/AgentTraceReporter.java": "56bc09a029131f154d2de4535857923ca9343cd06ba4a8752754adeadecdabb6",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/AgentTraceReporterConfigurationTest.java": "dbda444546bab903a908b3d48df428cb59184c4e8fdf6f69f4ed019b804dd8d1",
+    "java_agent/rs-service-platform-trace/src/main/java/com/sinrotic/rs/platformtrace/domain/vo/AgentRunPhaseVO.java": "d957ac0bd95ab333d53567dcccad4d03f8aec2e2cfe9594f18efcfbc257316b6",
+    "java_agent/rs-service-platform-trace/src/main/java/com/sinrotic/rs/platformtrace/domain/vo/AgentRunSummaryVO.java": "4a6266c60a9206b0a6f9d80f2207e814bb07747641a82d8f9cabad485127f735",
+    "java_agent/rs-service-platform-trace/src/main/java/com/sinrotic/rs/platformtrace/service/impl/InMemoryPlatformTraceService.java": "653a9feeec56a57b504a173c2a486803bc994d70e1a7fe2076d6b3c1b6076458",
+    "java_agent/rs-service-platform-trace/src/test/java/com/sinrotic/rs/platformtrace/controller/PlatformTraceControllerTest.java": "ff500fe74fcaa7b4953cd7d4012d67a2d76a071c9c8d3cc1edf3bb07bc14d1ce",
+    "java_agent/rs-service-platform-trace/src/test/java/com/sinrotic/rs/platformtrace/service/InMemoryPlatformTraceServiceTest.java": "729e6386185df6485d058fab91a0caa2bc7d58904bf142b4064ac7b47a3383e8",
+    "docs/reports/agent-otlp-and-usage-20261018/README.md": "563513c8366e479bae204de95453ef76aa000e5fb9e629cf1b447b301dd58952",
+    "java_agent/frontend/src/components/AgentRunMonitorPanel.test.tsx": "0802e0753db5150241f4c06bfd947d46ca584d63d2d325ca36d25e78de6b3a51",
+    "java_agent/frontend/src/utils/agentRunMonitor.test.ts": "c74f951d64e9b43d3a36fcd812e88562e9d93ded06ae7a8ab91c36423593cfa7",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/CompositeAgentTraceReporter.java": "0f4b446e3e5bd5564c622612c8df7742858c16602cb707e3741d1dea0d11ea8b",
+    "java_agent/rs-service-agent/src/main/java/com/sinrotic/rs/agent/service/impl/OtlpAgentTraceEncoder.java": "f1c719cec0ac3c0e6b9c87a0f6591e2cf33fd15126b500f5809f5130ad2c769e",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/OtlpAgentTraceEncoderTest.java": "112c98dccf30cab1e01901dc3f0e7be05231427e9ee490983e5c659eb00328c8",
+    "java_agent/rs-service-agent/src/test/java/com/sinrotic/rs/agent/service/OtlpAgentTraceReporterTest.java": "d1863435231c720d447f2af0d5eaf432500ae08104f6d2667882451ab442c37a",
+    "java_agent/rs-service-platform-trace/src/main/java/com/sinrotic/rs/platformtrace/service/impl/AgentUsageLedger.java": "03dae862c9b59b27c59943c8944cebd726ef77008d502e02df423f1db6dfaeb1",
+    "java_agent/rs-service-platform-trace/src/main/java/com/sinrotic/rs/platformtrace/service/impl/ObservedTraceTime.java": "8f536256be8ef40373df1a26397c414a7d1dfb0f7cc37045cfaf332b073370ac",
+    "java_agent/rs-service-platform-trace/src/test/java/com/sinrotic/rs/platformtrace/service/CanonicalModelUsageTest.java": "a74cb144aff54c55e40f42cc9ea15da4a8f738ca1173445b934239b3fdc7be71"
+  },
+  "repository_defaults": {
+    "recommendation": {
+      "type": "${RS_AGENT_RECOMMENDATION_TYPE:memory}"
+    },
+    "session-store": {
+      "type": "${RS_AGENT_SESSION_STORE_TYPE:memory}",
+      "key-prefix": "${RS_AGENT_SESSION_STORE_KEY_PREFIX:agent:session:}",
+      "ttl": "${RS_AGENT_SESSION_STORE_TTL:15m}"
+    },
+    "execution": {
+      "max-active-loops": "${RS_AGENT_MAX_ACTIVE_LOOPS:32}",
+      "active-loop-acquire-timeout-ms": "${RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS:300}",
+      "max-model-streams": "${RS_AGENT_MAX_MODEL_STREAMS:8}",
+      "model-stream-acquire-timeout-ms": "${RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS:200}",
+      "max-tool-calls": "${RS_AGENT_MAX_TOOL_CALLS:64}",
+      "tool-acquire-timeout-ms": "${RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS:300}",
+      "max-recommendation-calls": "${RS_AGENT_MAX_RECOMMENDATION_CALLS:8}",
+      "recommendation-acquire-timeout-ms": "${RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS:15000}",
+      "max-session-queue-size": "${RS_AGENT_MAX_SESSION_QUEUE_SIZE:2}",
+      "session-queue-timeout-ms": "${RS_AGENT_SESSION_QUEUE_TIMEOUT_MS:500}"
+    },
+    "trace": {
+      "enabled": "${RS_AGENT_TRACE_ENABLED:false}",
+      "queue-capacity": "${RS_AGENT_TRACE_QUEUE_CAPACITY:512}",
+      "request-timeout-ms": "${RS_AGENT_TRACE_REQUEST_TIMEOUT_MS:2000}",
+      "shutdown-timeout-ms": "${RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS:3000}",
+      "max-event-bytes": "${RS_AGENT_TRACE_MAX_EVENT_BYTES:65536}"
+    }
+  },
+  "versioned_presets": {
+    "java_agent/deploy/remote/app/.env.example": {
+      "RS_AGENT_SESSION_PERSISTENCE_ENABLED": "true",
+      "RS_RECOMMEND_TWO_TOWER_ENABLED": "false",
+      "RS_RECOMMEND_MULTI_RECALL_ENABLED": "false",
+      "RS_RECOMMEND_TRAINED_RANKING_ENABLED": "false",
+      "RS_RECOMMEND_TWO_TOWER_MODEL_KEY": "two_tower_sparse_aware_epoch5_queryv2",
+      "RS_RECOMMEND_TWO_TOWER_COLLECTION": "rs_agent_two_tower_epoch5_20260913",
+      "RS_RECOMMEND_TWO_TOWER_DIMENSION": "64",
+      "RS_RECOMMEND_TWO_TOWER_PRIMARY_SHARE": "0",
+      "RS_RECOMMEND_QUERY_TOWER_ENABLED": "false",
+      "RS_AGENT_CONSTRAINED_DECODING_ENABLED": "false",
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "8",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "8",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2",
+      "RS_AGENT_TRACE_QUEUE_CAPACITY": "512",
+      "RS_AGENT_TRACE_REQUEST_TIMEOUT_MS": "2000",
+      "RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS": "3000",
+      "RS_AGENT_TRACE_MAX_EVENT_BYTES": "65536"
+    },
+    "java_agent/deploy/remote/app/product-three-tower-final.env.example": {
+      "RS_RECOMMEND_TWO_TOWER_ENABLED": "true",
+      "RS_RECOMMEND_TWO_TOWER_MODEL_KEY": "product_three_tower_final_v1",
+      "RS_RECOMMEND_TWO_TOWER_COLLECTION": "rs_agent_product_three_tower_final_v1_20261013",
+      "RS_RECOMMEND_TWO_TOWER_DIMENSION": "1024",
+      "RS_RECOMMEND_TWO_TOWER_PRIMARY_SHARE": "0.65",
+      "RS_RECOMMEND_TWO_TOWER_PROTECTED_HEAD_COUNT": "0",
+      "RS_RECOMMEND_QUERY_TOWER_ENABLED": "true"
+    },
+    "java_agent/deploy/remote/app/agent-gpu1-concurrency.env.example": {
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "16",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "4",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2"
+    }
+  },
+  "runtime_probe": {
+    "status": "not_performed",
+    "reason": "本轮未连接远程实例核验，不由模板推断当前生效配置"
+  },
+  "model_route_evidence": {
+    "model_key": "product_three_tower_final_v1",
+    "dimension": 1024,
+    "basis": "docs/reports/product-three-tower-final/RESULTS.txt",
+    "status": "historical_deployment_report_not_live_probe"
+  },
+  "product_path": "Java Agent → Java Recommend/Catalog；Python 模型服务、仿真、评测和训练",
+  "scope": "platform-final-usage-ledger-and-otlp-metadata-export"
+}

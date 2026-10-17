@@ -37,7 +37,6 @@ export function ObserveConsole() {
   const canQueryRecommend = Boolean(requestId.trim());
   const canQueryAgentRequest = Boolean(agentRequestId.trim());
   const canQuery = canQuerySession || canQueryRecommend || canQueryAgentRequest;
-  const totalSessionTokens = overview?.timeline.reduce((sum, event) => sum + numberValue(event.data.total_tokens), 0) || 0;
 
   const nextObserveRequestSequence = () => {
     observeRequestSequence.current += 1;
@@ -201,7 +200,7 @@ export function ObserveConsole() {
   }, [autoRefresh, loading, monitor, monitorScope]);
 
   const headerStatus = monitor?.status || (overview ? 'loaded' : 'idle');
-  const headerTokens = monitor ? formatTokens(monitor.summary.total_tokens) : String(totalSessionTokens || 0);
+  const headerTokens = formatTokens(monitor?.summary.total_tokens);
   const headerTools = monitor
     ? String(monitor.summary.tool_call_count || 0)
     : String((overview?.agent_trace.turns || []).reduce((sum, turn) => sum + turn.tool_calls.length, 0));

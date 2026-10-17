@@ -10,6 +10,25 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentTraceReporterConfigurationTest {
 
     @Test
+    void externalExporterCanBeEnabledIndependentlyOfPlatformReporter() {
+        contextRunner.withPropertyValues("rs.agent.trace.enabled=false", "rs.agent.trace.otlp.enabled=true",
+                        "rs.agent.trace.otlp.endpoint=http://localhost:4318/v1/traces",
+                        "rs.agent.trace.otlp.identity-key=test-identity-key-long-enough")
+                .run(context -> assertThat(context.getBean(AgentTraceReporter.class)).isInstanceOf(HttpAgentTraceReporter.class));
+    }
+
+    @Test
+    void twoTargetsUseCompositeAndInvalidEnabledConfigurationFailsStartup() {
+        contextRunner.withPropertyValues("rs.agent.trace.enabled=true", "rs.agent.trace.otlp.enabled=true",
+                        "rs.agent.trace.otlp.endpoint=http://localhost:4318/v1/traces",
+                        "rs.agent.trace.otlp.identity-key=test-identity-key-long-enough")
+                .run(context -> assertThat(context.getBean(AgentTraceReporter.class))
+                        .isInstanceOf(com.sinrotic.rs.agent.service.impl.CompositeAgentTraceReporter.class));
+        contextRunner.withPropertyValues("rs.agent.trace.otlp.enabled=true")
+                .run(context -> assertThat(context).hasFailed());
+    }
+
+    @Test
     void enabledReporterIsClosedWithTheApplicationContext() {
         var reporter = new java.util.concurrent.atomic.AtomicReference<HttpAgentTraceReporter>();
         contextRunner.withBean(org.springframework.web.client.RestClient.Builder.class,

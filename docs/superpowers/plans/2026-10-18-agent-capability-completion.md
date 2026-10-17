@@ -1,6 +1,6 @@
 # 个人推荐 Agent 能力完善实施计划
 
-日期：2026-10-18。状态：**P0.2–P0.4 本地基线与验收已提交；P0.1 远程连接超时；P1 已接通生成调用观测、评测账本和现有平台有界导出，其他范围仍在实施清单中**。详见 [基线报告](../../reports/agent-capability-baseline-20261018/README.md) 与 [P1 首批报告](../../reports/agent-model-observation-20261018/README.md)。
+日期：2026-10-18。状态：**P0.2–P0.4 本地基线与验收已提交；P0.1 远程连接超时；P1 已接通生成调用观测、平台与评测账本、有界平台及 OTLP 元数据导出，其他范围仍在实施清单中**。详见 [基线报告](../../reports/agent-capability-baseline-20261018/README.md)、[P1 首批报告](../../reports/agent-model-observation-20261018/README.md) 与 [平台计量及 OTLP 报告](../../reports/agent-otlp-and-usage-20261018/README.md)。
 
 本轮授权：将已整理的、适用于个人推荐 Agent 的能力完整落实到项目；先保存并 push 当前代码，再形成计划，随后分阶段实施。AgentTeam 实习项目不在本次范围。
 
@@ -107,7 +107,7 @@
 
 - [ ] P1.1 规范 `session_id/turn_id/run_id/tool_call_id` 与父子任务、模型／Prompt／Skill／数据版本字段，复用现有 Trace 事件。（已接入生成尝试独立 ID、Turn/Loop 关联；委派及完整版本仍待补。）
 - [ ] P1.2 在真实模型请求处记录普通生成、摘要、Judge、失败重试的 usage；按服务支持字段拆输入、输出、缓存读写，未知保持未知。（普通生成及失败/取消快照已接通，其他种类待补；提前停止不假设用量已完整。）
-- [ ] P1.3 提供 Langfuse／OTLP Adapter，并保留现有平台观察能力；可配置关闭、受控脱敏、异步队列有界、退出 flush 和丢失可观察。（已有平台导出完成有界队列/负载、网络期限、关闭 flush、丢失统计；OTLP/完整脱敏及指标注册待补。）
+- [ ] P1.3 提供 Langfuse／OTLP Adapter，并保留现有平台观察能力；可配置关闭、受控脱敏、异步队列有界、退出 flush 和丢失可观察。（已完成双目标独立开关/队列、外发白名单/HMAC、OTLP JSON 与 Langfuse 适配、部分拒绝处理及本地 HTTP 验收；平台已改为最终调用账本和时间区间并集。真实目标验收、指标注册与重放待补。）
 - [ ] P1.4 固定评测运行器输出逐条轨迹、规则结果、Judge 原因与完整资源账本，失败样例可从报告定位到调用。（Skill Benchmark 已接入生成调用账本及最终/缺失覆盖率，受控 Java HTTP 联调通过；仍非全系统资源账本。）
 
 **主要入口：**`HttpAgentTraceReporter`、`TraceReportingAgentCapabilityAuditSink`、`InMemoryAgentOrchestrationService`、`rs-service-platform-trace`、`online_evaluation/evaluator.py`。

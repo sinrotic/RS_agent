@@ -29,6 +29,34 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class PlatformTraceControllerTest {
 
+    @Test
+    void canonicalUsageSurvivesHttpIngestionAndMissingCallsRemainExplicit() throws Exception {
+        var completed = """
+                {"event_id":"canonical-done","session_id":"ledger-session","request_id":"ledger-run",
+                 "event_type":"model_call_completed","latency_ms":100,
+                 "data":{"model_call_id":"model-one","usage_final":true,"status":"completed",
+                         "usage":{"prompt_tokens":10,"completion_tokens":5,"total_tokens":15}},
+                 "created_at":"2026-10-18T00:00:01Z"}
+                """;
+        for (int i = 0; i < 2; i++)
+            mockMvc.perform(post("/internal/platform-trace/agent/events")
+                    .contentType("application/json").content(completed)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/platform/agent/runs/ledger-run/monitor"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.total_tokens").value(15))
+                .andExpect(jsonPath("$.summary.usage_coverage.model_calls").value(1));
+        mockMvc.perform(post("/internal/platform-trace/agent/events").contentType("application/json").content("""
+                {"event_id":"canonical-start","session_id":"ledger-session","request_id":"ledger-run",
+                 "event_type":"model_call_started","data":{"model_call_id":"model-two"}}
+                """)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/platform/agent/runs/ledger-run/monitor"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary.total_tokens").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.summary.usage_coverage.fields.total_tokens.known_subtotal").value(15))
+                .andExpect(jsonPath("$.summary.usage_coverage.fields.total_tokens.finalized_calls").value(1))
+                .andExpect(jsonPath("$.summary.usage_coverage.model_calls").value(2));
+    }
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -127,7 +155,8 @@ class PlatformTraceControllerTest {
                 .andExpect(jsonPath("$.request_id").value("agent_req_001"))
                 .andExpect(jsonPath("$.session_id").value("sess_001"))
                 .andExpect(jsonPath("$.status").value("success"))
-                .andExpect(jsonPath("$.summary.total_tokens").value(125))
+                .andExpect(jsonPath("$.summary.total_tokens").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.summary.usage_coverage.mode").value("legacy_unverified"))
                 .andExpect(jsonPath("$.events[0].phase").value("final_answer"));
     }
 

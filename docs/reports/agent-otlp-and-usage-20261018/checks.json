@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-18",
+  "scope": "platform-final-usage-ledger-and-otlp-metadata-export",
+  "java": {
+    "command": "mvn -B -f java_agent/pom.xml -pl rs-service-agent,rs-service-platform-trace -am package",
+    "exit_code": 0,
+    "modules": {
+      "rs-service-agent": {
+        "tests": 257,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      "rs-service-platform-trace": {
+        "tests": 45,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "skipped_reason": "Existing local vLLM smoke requires an actual model service"
+  },
+  "frontend": {
+    "typecheck_exit_code": 0,
+    "tests_passed": 108,
+    "test_files_passed": 19,
+    "build_exit_code": 0,
+    "commands": [
+      "npm run lint",
+      "npm test",
+      "npm run build"
+    ]
+  },
+  "root_contracts": {
+    "command": ".venv/Scripts/python.exe -m pytest tests -q",
+    "passed": 56,
+    "exit_code": 0
+  },
+  "python_java_interop": {
+    "command": "../.venv/Scripts/python.exe -m pytest tests/test_skill_benchmark.py tests/test_agent_execution_metrics.py -q",
+    "passed": 35,
+    "exit_code": 0,
+    "java": "JDK21 explicitly supplied; compiled Java entry and HTTP model stub"
+  },
+  "browser": {
+    "command": "RS_E2E_BASE_URL=http://127.0.0.1:15173 npm run test:e2e",
+    "exit_code": 0,
+    "basis": "Playwright browser + HTTP fixtures; not remote deployment"
+  },
+  "otlp": {
+    "basis": "Local actual HTTP receiver + JSON projection tests; not a deployed collector or Langfuse instance",
+    "real_destination_verified": false
+  },
+  "remote_probe": {
+    "status": "not_retried",
+    "reason": "Previously documented server alias SSH connection timed out; no new reachable target supplied"
+  },
+  "not_run": [
+    "Real model quality/performance evaluation",
+    "Remote deployment",
+    "Training",
+    "All unrelated Java modules and full Python gate in this batch"
+  ],
+  "known_engineering_contract_violations": {
+    "count": 36,
+    "basis": "Prior baseline report; not repaired or recounted in this batch"
+  },
+  "final_uri_validation_regression": {
+    "command": "mvn -B -f java_agent/pom.xml -pl rs-service-agent -am -Dtest=AgentTraceReporterConfigurationTest,OtlpAgentTraceEncoderTest,OtlpAgentTraceReporterTest -Dsurefire.failIfNoSpecifiedTests=false test",
+    "passed": 11,
+    "exit_code": 0
+  }
+}

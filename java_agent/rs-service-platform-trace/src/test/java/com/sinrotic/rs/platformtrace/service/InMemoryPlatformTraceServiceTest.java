@@ -326,9 +326,10 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.events()).extracting("eventId")
                 .containsExactly("agent_evt_001", "agent_evt_002", "agent_evt_003", "agent_evt_004");
         assertThat(monitor.summary().totalLatencyMs()).isEqualTo(650L);
-        assertThat(monitor.summary().promptTokens()).isEqualTo(63);
-        assertThat(monitor.summary().completionTokens()).isEqualTo(30);
-        assertThat(monitor.summary().totalTokens()).isEqualTo(93);
+        assertThat(monitor.summary().promptTokens()).isNull();
+        assertThat(monitor.summary().completionTokens()).isNull();
+        assertThat(monitor.summary().totalTokens()).isNull();
+        assertThat(monitor.summary().usageCoverage()).containsEntry("mode", "legacy_unverified");
         assertThat(monitor.summary().toolCallCount()).isEqualTo(1);
         assertThat(monitor.summary().errorCount()).isEqualTo(1);
         assertThat(monitor.summary().recommendItemCount()).isEqualTo(2);
@@ -357,9 +358,9 @@ class InMemoryPlatformTraceServiceTest {
         assertThat(monitor.requestId()).isEqualTo("agent_req_missing");
         assertThat(monitor.status()).isEqualTo("partial");
         assertThat(monitor.summary().totalLatencyMs()).isZero();
-        assertThat(monitor.summary().promptTokens()).isZero();
-        assertThat(monitor.summary().completionTokens()).isZero();
-        assertThat(monitor.summary().totalTokens()).isZero();
+        assertThat(monitor.summary().promptTokens()).isNull();
+        assertThat(monitor.summary().completionTokens()).isNull();
+        assertThat(monitor.summary().totalTokens()).isNull();
         assertThat(monitor.summary().toolCallCount()).isZero();
         assertThat(monitor.summary().errorCount()).isZero();
         assertThat(monitor.summary().recommendItemCount()).isZero();
@@ -927,7 +928,7 @@ class InMemoryPlatformTraceServiceTest {
                 "gpt-5",
                 4_001L,
                 Map.of("content", "draft"),
-                Instant.parse("2026-06-29T10:00:02Z")
+                Instant.parse("2026-06-29T10:00:05.001Z")
         ));
 
         AgentRunMonitorVO monitor = service.agentRequestMonitor("agent_req_high_latency");

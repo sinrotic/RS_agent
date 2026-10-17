@@ -97,6 +97,14 @@ rs:
       shutdown-timeout-ms: ${RS_AGENT_TRACE_SHUTDOWN_TIMEOUT_MS:3000}
       max-event-bytes: ${RS_AGENT_TRACE_MAX_EVENT_BYTES:65536}
       platform-trace-base-url: ${RS_PLATFORM_TRACE_SERVICE_URL:http://rs-service-platform-trace:18108}
+      otlp:
+        enabled: ${RS_AGENT_TRACE_OTLP_ENABLED:false}
+        endpoint: ${RS_AGENT_TRACE_OTLP_ENDPOINT:}
+        authorization: ${RS_AGENT_TRACE_OTLP_AUTHORIZATION:}
+        identity-key: ${RS_AGENT_TRACE_OTLP_IDENTITY_KEY:}
+        langfuse: ${RS_AGENT_TRACE_OTLP_LANGFUSE:false}
+        service-name: ${RS_AGENT_TRACE_OTLP_SERVICE_NAME:rs-service-agent}
+        model-name: ${RS_AGENT_TRACE_OTLP_MODEL_NAME:}
     execution:
       max-active-loops: ${RS_AGENT_MAX_ACTIVE_LOOPS:32}
       active-loop-acquire-timeout-ms: ${RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS:300}

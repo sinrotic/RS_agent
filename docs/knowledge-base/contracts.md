@@ -3,7 +3,7 @@ id: kb-contracts
 type: contracts
 status: current
 owner: project-maintainers
-last_verified: 2026-09-05
+last_verified: 2026-10-18
 confidence: confirmed
 ---
 
@@ -149,6 +149,8 @@ Python 当前有两类入口：
 路由权威入口为 [factory.py](../../python_agent/rs_core/serving/api/factory.py)、[split_factory.py](../../python_agent/rs_core/serving/api/split_factory.py) 和 `rs_core/serving/api/routers/`。Python API 是 prototype/试运行契约，不能在没有集成决策时被当作 Java Gateway 的同名替代品。
 
 ## 事件契约
+
+2026-10-18：平台 Agent Monitor 的 summary 输入/输出/总 token 和 phase 总 token 允许 null，未知不再补零。新增 `usage_coverage` 区分最终逐次调用、未核验历史与混合记录，返回各字段小计和最终回执覆盖率；原始事件入口保留。summary/phase 的耗时改为已测量时间区间并集，阶段可重叠，不能再次相加。新前后端配套升级。外部 OTLP 只发送白名单元数据与 HMAC 标识，并保持独立关闭，完整契约与验证见 [平台计量及 OTLP 报告](../reports/agent-otlp-and-usage-20261018/README.md)。
 
 - Agent 会话事实使用领域定义的 Session Event；事件顺序与恢复约束见 [领域模型与核心不变量](domain-and-invariants.md)。
 - `full-commerce` 秒杀使用 Kafka 主题 `seckill-order-create`，Order 以 consumer group `rs-service-order` 消费。

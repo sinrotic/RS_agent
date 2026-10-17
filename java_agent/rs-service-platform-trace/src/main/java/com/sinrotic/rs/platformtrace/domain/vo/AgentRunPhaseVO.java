@@ -17,6 +17,5 @@ public record AgentRunPhaseVO(
         status = status == null ? "" : status;
         eventCount = eventCount == null ? 0 : eventCount;
         latencyMs = latencyMs == null ? 0L : latencyMs;
-        totalTokens = totalTokens == null ? 0 : totalTokens;
     }
 }

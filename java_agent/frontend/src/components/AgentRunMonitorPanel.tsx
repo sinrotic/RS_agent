@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, Wrench } from 'lucide-react';
 import type { AgentRunEventVO, AgentRunMonitorVO } from '../types/platformTrace';
-import { eventTitle, formatMs, formatTokens, sortRunEvents, statusTone } from '../utils/agentRunMonitor';
+import { eventTitle, formatMs, formatTokens, sortRunEvents, statusTone, usageCoverageLabel } from '../utils/agentRunMonitor';
 
 interface AgentRunMonitorPanelProps {
   monitor: AgentRunMonitorVO | null;
@@ -153,13 +153,14 @@ export function AgentRunMonitorPanel({
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-7">
           {metricValue('Status', monitor.status, statusTone(monitor.status).split(' ')[0])}
-          {metricValue('Latency', formatMs(monitor.summary.total_latency_ms), 'text-cyan-300')}
+          {metricValue('Observed latency', formatMs(monitor.summary.total_latency_ms), 'text-cyan-300')}
           {metricValue('Tokens', formatTokens(monitor.summary.total_tokens), 'text-cyan-300')}
           {metricValue('Model', monitor.summary.model_name || monitor.summary.model_provider || '-', 'text-slate-100')}
           {metricValue('Tools', String(monitor.summary.tool_call_count || 0), 'text-indigo-300')}
           {metricValue('Errors', String(monitor.summary.error_count || 0), monitor.summary.error_count ? 'text-rose-300' : 'text-emerald-300')}
           {metricValue('Final', monitor.summary.has_final_answer ? 'Present' : 'Missing', monitor.summary.has_final_answer ? 'text-emerald-300' : 'text-amber-300')}
         </div>
+        <p className="mt-3 text-xs text-slate-400">{usageCoverageLabel(monitor.summary)}</p>
       </div>
 
       <div className="grid gap-4 p-4 2xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">

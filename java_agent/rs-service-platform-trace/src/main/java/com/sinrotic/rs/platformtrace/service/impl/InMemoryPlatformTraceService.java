@@ -263,23 +263,22 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         int recommendItemCount = recommendItemCount(sessionId, recommendScopeRequestId);
         boolean hasFinalAnswer = events.stream().anyMatch(this::hasFinalAnswer);
         boolean hasError = events.stream().anyMatch(this::isErrorEvent);
-        long totalLatencyMs = events.stream().mapToLong(event -> event.latencyMs() == null ? 0L : event.latencyMs()).sum();
-        int promptTokens = events.stream().mapToInt(event -> event.promptTokens() == null ? 0 : event.promptTokens()).sum();
-        int completionTokens = events.stream().mapToInt(event -> event.completionTokens() == null ? 0 : event.completionTokens()).sum();
-        int totalTokens = events.stream().mapToInt(event -> event.totalTokens() == null ? 0 : event.totalTokens()).sum();
+        long totalLatencyMs = ObservedTraceTime.milliseconds(events);
+        var usage = AgentUsageLedger.summarize(events);
         int toolCallCount = toolCallCount(events);
         int errorCount = (int) events.stream().filter(this::isErrorEvent).count();
         AgentRunSummaryVO summary = new AgentRunSummaryVO(
                 totalLatencyMs,
-                promptTokens,
-                completionTokens,
-                totalTokens,
+                usage.promptTokens(),
+                usage.completionTokens(),
+                usage.totalTokens(),
                 firstText(events.stream().map(AgentRunEventVO::modelProvider).toList()),
                 firstText(events.stream().map(AgentRunEventVO::modelName).toList()),
                 toolCallCount,
                 errorCount,
                 recommendItemCount,
-                hasFinalAnswer
+                hasFinalAnswer,
+                usage.coverage()
         );
         return new AgentRunMonitorVO(
                 sessionId,
@@ -578,14 +577,12 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
 
     private static class PhaseAccumulator {
         private int eventCount;
-        private long latencyMs;
-        private int totalTokens;
+        private final List<AgentRunEventVO> events = new ArrayList<>();
         private boolean hasError;
 
         void add(AgentRunEventVO event) {
             eventCount++;
-            latencyMs += event.latencyMs() == null ? 0L : event.latencyMs();
-            totalTokens += event.totalTokens() == null ? 0 : event.totalTokens();
+            events.add(event);
             hasError = hasError
                     || "error".equalsIgnoreCase(event.status())
                     || "failed".equalsIgnoreCase(event.status())
@@ -593,7 +590,8 @@ public class InMemoryPlatformTraceService implements PlatformTraceService {
         }
 
         AgentRunPhaseVO toPhase(String phase) {
-            return new AgentRunPhaseVO(phase, hasError ? "failed" : "success", eventCount, latencyMs, totalTokens);
+            return new AgentRunPhaseVO(phase, hasError ? "failed" : "success", eventCount,
+                    ObservedTraceTime.milliseconds(events), AgentUsageLedger.summarize(events).totalTokens());
         }
     }
 }

@@ -84,15 +84,22 @@ export type AgentRunStatus = 'running' | 'success' | 'failed' | 'partial';
 
 export interface AgentRunSummaryVO {
   total_latency_ms: number;
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
+  prompt_tokens: number | null;
+  completion_tokens: number | null;
+  total_tokens: number | null;
   model_provider: string;
   model_name: string;
   tool_call_count: number;
   error_count: number;
   recommend_item_count: number;
   has_final_answer: boolean;
+  usage_coverage?: {
+    mode: string;
+    model_calls?: number;
+    conflicting_observations?: number;
+    legacy_runs?: number;
+    fields?: Record<string, { total: number | null; known_subtotal: number | null; observed_calls: number; finalized_calls: number }>;
+  };
 }
 
 export interface AgentRunPhaseVO {
@@ -100,7 +107,7 @@ export interface AgentRunPhaseVO {
   status: AgentRunStatus | string;
   event_count: number;
   latency_ms: number;
-  total_tokens: number;
+  total_tokens: number | null;
 }
 
 export interface AgentRunEventVO {
