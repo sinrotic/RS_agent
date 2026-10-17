@@ -1,0 +1,25 @@
+{
+  "schema_version": "rs-agent-baseline-checks/1",
+  "date": "2026-10-18",
+  "scope": "本地代码与受控 Adapter；非远程发布或模型质量验收",
+  "environment": {"os":"Windows","python":"3.13.14","java":"21.0.5","maven_heap_limit_mb":1024},
+  "checks": [
+    {"name":"initial_java_all","command":"mvn -B -f java_agent/pom.xml test","status":"passed","collected":711,"skipped":1,"failures":0,"errors":0},
+    {"name":"frozen_recommend_feedback_api","command":"mvn -B -f java_agent/pom.xml -pl rs-service-recommend -am -Dtest=FrozenAgentBaselineTest -Dsurefire.failIfNoSpecifiedTests=false test","status":"passed","collected":7,"skipped":0,"reports":"api/*.json"},
+    {"name":"agent_usage_regression_and_package","command":"mvn -B -f java_agent/pom.xml -pl rs-service-agent -am package","status":"passed","agent_collected":239,"agent_skipped":1,"failures":0,"errors":0},
+    {"name":"initial_python_selected","markers":["unit","smoke","serving"],"selected_files":122,"status":"passed","passed":1197,"skipped":3},
+    {"name":"python_selected_after_changes","markers":["unit","smoke","serving"],"selected_files":125,"java_selfchecks_enabled":true,"status":"passed","passed":1261,"skipped":3},
+    {"name":"python_metrics_skill_online_evaluation","command":"pytest tests/test_agent_execution_metrics.py tests/test_skill_benchmark.py tests/test_online_evaluation.py -q","java_selfchecks_enabled":true,"status":"passed","passed":64},
+    {"name":"ruff","status":"passed","initial_unused_imports":1,"remaining_unused_imports":0},
+    {"name":"engineering_contracts","status":"failed_existing","initial_violations":38,"remaining_violations":36,"remaining_by_check":{"script_main_guard":6,"test_file_marker_required":30},"details":"engineering-contract-violations.txt"},
+    {"name":"root_deployment_model_contracts","command":"python -m pytest tests -q","status":"passed","passed":56},
+    {"name":"java_frontend","checks":["lint","test","build","audit --audit-level=moderate"],"status":"passed","test_files":17,"tests":105,"audit_vulnerabilities":0},
+    {"name":"java_frontend_browser","command":"npm run test:e2e","status":"passed","base_url":"http://127.0.0.1:15173","fixture_backend":true},
+    {"name":"python_frontend","command":"npm --prefix python_agent/frontend run lint","status":"passed"},
+    {"name":"remote_live_configuration","status":"not_performed"},
+    {"name":"real_model_training_or_quality","status":"not_performed"}
+  ],
+  "result": "local_regressions_pass_with_existing_engineering_contract_debt",
+  "promotion_eligible": false,
+  "note": "各专项测试范围存在重叠，禁止将行内数量相加作为总用例数；API 夹具无真实模型耗时/费用或满意度结论。"
+}

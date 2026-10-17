@@ -19,6 +19,8 @@ from rs_core.offline.evaluation.skill_benchmark.adapters import prepare_java_com
 from rs_core.online_evaluation.adapters import HttpCatalog, JsonModel
 from rs_core.common.openai_compatible_client import OpenAICompatibleClient
 
+pytestmark = pytest.mark.serving
+
 
 CATALOG = [{"item_id": "pen", "title": "Gel Pen 0.7mm", "category": "Gel Ink Rollerball Pens",
             "tip_mm": "0.7", "price": 30.0, "currency": "CNY"}]

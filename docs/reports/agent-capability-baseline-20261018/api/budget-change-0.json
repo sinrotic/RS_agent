@@ -1,0 +1,77 @@
+{
+  "model_called" : false,
+  "repeat" : 0,
+  "scope" : "Java Controller + 推荐约束/偏好/交付/反馈；合成目录/身份；非模型或真实数据库验收",
+  "task_id" : "budget-change",
+  "fixture_sha256" : "ada59699bf3b688333e566fc7baf718bee06a50263dd5e03146153bf73ae69f3",
+  "steps" : [ {
+    "action" : "recommend",
+    "query" : "预算50元以内，推荐两款中性笔",
+    "response" : {
+      "request_id" : "rec_req_agent_rank_e3089f3c-1dc8-4cfe-956f-f0f0e8c9a6f4",
+      "agent_id" : "baseline-agent",
+      "task_id" : "fixture-session-train",
+      "profile_user_id" : "fixture-profile-train",
+      "candidates" : [ {
+        "item_id" : "pen-10",
+        "title" : "基础中性笔",
+        "category_path" : "Pens",
+        "price" : 10,
+        "rating_summary" : "",
+        "short_text" : "基础中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      }, {
+        "item_id" : "pen-12",
+        "title" : "便携中性笔",
+        "category_path" : "Pens",
+        "price" : 12,
+        "rating_summary" : "",
+        "short_text" : "便携中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      } ],
+      "degradation_reasons" : [ ]
+    },
+    "expected_item_ids" : [ "pen-10", "pen-12" ]
+  }, {
+    "action" : "recommend",
+    "query" : "预算改为15元以内，还是两款",
+    "response" : {
+      "request_id" : "rec_req_agent_rank_e27b6f30-67e2-4474-88ef-60e1f0355786",
+      "agent_id" : "baseline-agent",
+      "task_id" : "fixture-session-train",
+      "profile_user_id" : "fixture-profile-train",
+      "candidates" : [ {
+        "item_id" : "pen-10",
+        "title" : "基础中性笔",
+        "category_path" : "Pens",
+        "price" : 10,
+        "rating_summary" : "",
+        "short_text" : "基础中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      }, {
+        "item_id" : "pen-12",
+        "title" : "便携中性笔",
+        "category_path" : "Pens",
+        "price" : 12,
+        "rating_summary" : "",
+        "short_text" : "便携中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      } ],
+      "degradation_reasons" : [ ]
+    },
+    "expected_item_ids" : [ "pen-10", "pen-12" ]
+  }, {
+    "action" : "recommend",
+    "query" : "现在只能花9元，请如实说明没有符合的商品",
+    "response" : {
+      "request_id" : "rec_req_agent_rank_d285afec-7fa1-491a-b70b-e076d340f6b4",
+      "agent_id" : "baseline-agent",
+      "task_id" : "fixture-session-train",
+      "profile_user_id" : "fixture-profile-train",
+      "candidates" : [ ],
+      "degradation_reasons" : [ ]
+    },
+    "expected_item_ids" : [ ]
+  } ],
+  "schema_version" : "rs-agent-api-baseline/1"
+}

@@ -1,0 +1,36 @@
+[script_main_guard] scripts/experiments/product_v10_model.py: Python 入口必须使用 if __name__ == '__main__' 包住执行逻辑。
+[script_main_guard] scripts/experiments/product_v11_model.py: Python 入口必须使用 if __name__ == '__main__' 包住执行逻辑。
+[script_main_guard] scripts/experiments/product_v12_distillation.py: Python 入口必须使用 if __name__ == '__main__' 包住执行逻辑。
+[script_main_guard] scripts/experiments/product_v13_model.py: Python 入口必须使用 if __name__ == '__main__' 包住执行逻辑。
+[script_main_guard] scripts/experiments/product_v14_guard.py: Python 入口必须使用 if __name__ == '__main__' 包住执行逻辑。
+[script_main_guard] scripts/experiments/product_v15_joint.py: Python 入口必须使用 if __name__ == '__main__' 包住执行逻辑。
+[test_file_marker_required] tests/test_build_semantic_dataset.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_customer_skill_benchmark.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_natural_profile_skill_benchmark.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_personalized_skill_benchmark.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_recall_v5.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_three_tower_v6.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v10.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v11.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v12_distillation.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v13.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v14_guard.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v15_joint.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v15_selection.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v4_comparison.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v7_catalog.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v8.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_product_v9.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_profile_contrast_skill_benchmark.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_candidate_review.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_contract.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_contract_v3.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_protocol_regression.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_reextraction.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_reextraction_comparison.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_request_synthesis.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_skill_benchmark_population.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_skill_benchmark_readiness.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_skill_quality_evolution.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_three_tower_residual.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。
+[test_file_marker_required] tests/test_three_tower_smoke.py: 测试文件必须声明文件级 pytestmark，明确属于 unit/smoke/slow/gpu/experiment/serving/frontend。

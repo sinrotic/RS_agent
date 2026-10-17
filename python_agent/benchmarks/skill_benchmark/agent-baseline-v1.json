@@ -1,0 +1,323 @@
+{
+  "schema_version": "rs-skill-benchmark/1",
+  "environment": {
+    "max_tool_calls_per_turn": 8
+  },
+  "manifest": {
+    "catalog_sha256": "556dd12fda0aee1a26ee8a3f51d0eb5ef272539edf5bdda1706b0e945dc3a33f",
+    "baseline_version": "agent-baseline/1",
+    "purpose": "Java API 工程契约回归；合成数据，不用于证明推荐满意度或泛化质量",
+    "human_reviewed": false,
+    "split_policy": "按完整任务 family 和合成身份分组；共享商品目录，非独立质量留出集",
+    "trusted_identity_source": "仅测试环境的身份校验 Adapter；生产身份仍由 Gateway/User 提供",
+    "java_contract": "recommend-feedback-api/1"
+  },
+  "catalog": [
+    {
+      "item_id": "pen-10",
+      "title": "基础中性笔",
+      "category": "Pens",
+      "brand": "Atlas",
+      "price": 10,
+      "currency": "CNY"
+    },
+    {
+      "item_id": "pen-12",
+      "title": "便携中性笔",
+      "category": "Pens",
+      "brand": "Nova",
+      "price": 12,
+      "currency": "CNY"
+    },
+    {
+      "item_id": "pen-20",
+      "title": "握持中性笔",
+      "category": "Pens",
+      "brand": "Orion",
+      "price": 20,
+      "currency": "CNY"
+    },
+    {
+      "item_id": "pen-40",
+      "title": "礼盒中性笔",
+      "category": "Pens",
+      "brand": "Vega",
+      "price": 40,
+      "currency": "CNY"
+    },
+    {
+      "item_id": "pen-100",
+      "title": "高价中性笔",
+      "category": "Pens",
+      "brand": "Sirius",
+      "price": 100,
+      "currency": "CNY"
+    },
+    {
+      "item_id": "pen-unknown",
+      "title": "价格待核验中性笔",
+      "category": "Pens",
+      "brand": "Lyra",
+      "price": null,
+      "currency": "CNY"
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "budget-change",
+      "family_id": "budget-change",
+      "kind": "budget_change",
+      "split": "train",
+      "trusted_identity": {
+        "account_id": "fixture-account-train",
+        "profile_user_id": "fixture-profile-train",
+        "session_id": "fixture-session-train"
+      },
+      "turns": [
+        {
+          "user_message": "预算50元以内，推荐两款中性笔",
+          "limit": 2,
+          "constraints": {
+            "price_max": 50
+          },
+          "expected_item_ids": [
+            "pen-10",
+            "pen-12"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 50
+              }
+            ]
+          }
+        },
+        {
+          "user_message": "预算改为15元以内，还是两款",
+          "limit": 2,
+          "constraints": {
+            "price_max": 15
+          },
+          "expected_item_ids": [
+            "pen-10",
+            "pen-12"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 15
+              }
+            ]
+          }
+        },
+        {
+          "user_message": "现在只能花9元，请如实说明没有符合的商品",
+          "limit": 2,
+          "constraints": {
+            "price_max": 9
+          },
+          "expected_item_ids": [],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 9
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "dislike-recommend",
+      "family_id": "dislike-recommend",
+      "kind": "feedback",
+      "split": "dev",
+      "trusted_identity": {
+        "account_id": "fixture-account-dev",
+        "profile_user_id": "fixture-profile-dev",
+        "session_id": "fixture-session-dev"
+      },
+      "turns": [
+        {
+          "user_message": "25元以内挑两款笔",
+          "limit": 2,
+          "constraints": {
+            "price_max": 25
+          },
+          "expected_item_ids": [
+            "pen-10",
+            "pen-12"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 25
+              }
+            ]
+          }
+        },
+        {
+          "user_message": "不喜欢基础中性笔，换两款",
+          "limit": 2,
+          "before": {
+            "action": "dislike",
+            "item_id": "pen-10"
+          },
+          "constraints": {
+            "price_max": 25
+          },
+          "expected_item_ids": [
+            "pen-12",
+            "pen-20"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 25
+              },
+              {
+                "field": "item_id",
+                "op": "not_in",
+                "value": [
+                  "pen-10"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "user_message": "预算再降到15元，仍然不要基础中性笔",
+          "limit": 2,
+          "constraints": {
+            "price_max": 15
+          },
+          "expected_item_ids": [
+            "pen-12"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 15
+              },
+              {
+                "field": "item_id",
+                "op": "not_in",
+                "value": [
+                  "pen-10"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "task_id": "feedback-reversal",
+      "family_id": "feedback-reversal",
+      "kind": "reversal",
+      "split": "test",
+      "trusted_identity": {
+        "account_id": "fixture-account-test",
+        "profile_user_id": "fixture-profile-test",
+        "session_id": "fixture-session-test"
+      },
+      "turns": [
+        {
+          "user_message": "50元内推荐两款笔供我比较",
+          "limit": 2,
+          "constraints": {
+            "price_max": 50
+          },
+          "expected_item_ids": [
+            "pen-10",
+            "pen-12"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 50
+              }
+            ]
+          }
+        },
+        {
+          "user_message": "先排除基础中性笔",
+          "limit": 2,
+          "before": {
+            "action": "dislike",
+            "item_id": "pen-10"
+          },
+          "constraints": {
+            "price_max": 50
+          },
+          "expected_item_ids": [
+            "pen-12",
+            "pen-20"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 50
+              },
+              {
+                "field": "item_id",
+                "op": "not_in",
+                "value": [
+                  "pen-10"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "user_message": "撤回刚才的不喜欢，按原条件重新推荐",
+          "limit": 2,
+          "before": {
+            "action": "reversal"
+          },
+          "constraints": {
+            "price_max": 50
+          },
+          "expected_item_ids": [
+            "pen-10",
+            "pen-12"
+          ],
+          "gold": {
+            "k": 2,
+            "hard": [
+              {
+                "field": "price",
+                "op": "lte",
+                "value": 50
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

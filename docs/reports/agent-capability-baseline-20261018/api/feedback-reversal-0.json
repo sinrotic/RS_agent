@@ -1,0 +1,137 @@
+{
+  "model_called" : false,
+  "repeat" : 0,
+  "scope" : "Java Controller + 推荐约束/偏好/交付/反馈；合成目录/身份；非模型或真实数据库验收",
+  "task_id" : "feedback-reversal",
+  "fixture_sha256" : "ada59699bf3b688333e566fc7baf718bee06a50263dd5e03146153bf73ae69f3",
+  "steps" : [ {
+    "action" : "recommend",
+    "query" : "50元内推荐两款笔供我比较",
+    "response" : {
+      "request_id" : "rec_req_agent_rank_e4b9ff5b-c2db-4e64-90bc-f6651c16fd9a",
+      "agent_id" : "baseline-agent",
+      "task_id" : "fixture-session-test",
+      "profile_user_id" : "fixture-profile-test",
+      "candidates" : [ {
+        "item_id" : "pen-10",
+        "title" : "基础中性笔",
+        "category_path" : "Pens",
+        "price" : 10,
+        "rating_summary" : "",
+        "short_text" : "基础中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      }, {
+        "item_id" : "pen-12",
+        "title" : "便携中性笔",
+        "category_path" : "Pens",
+        "price" : 12,
+        "rating_summary" : "",
+        "short_text" : "便携中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      } ],
+      "degradation_reasons" : [ ]
+    },
+    "expected_item_ids" : [ "pen-10", "pen-12" ]
+  }, {
+    "action" : "dislike",
+    "duplicate_ack" : {
+      "feedback_id" : "fb_evt_5e35fa78-619c-4d81-aff4-db6759280dd9",
+      "accepted" : true,
+      "feedback_type" : "dislike",
+      "accepted_count" : 0,
+      "duplicate" : true,
+      "application_status" : "APPLIED",
+      "preference_version" : 1,
+      "operation_complete" : null
+    },
+    "ack" : {
+      "feedback_id" : "fb_evt_5e35fa78-619c-4d81-aff4-db6759280dd9",
+      "accepted" : true,
+      "feedback_type" : "dislike",
+      "accepted_count" : 1,
+      "duplicate" : false,
+      "application_status" : "APPLIED",
+      "preference_version" : 1,
+      "operation_complete" : null
+    }
+  }, {
+    "action" : "recommend",
+    "query" : "先排除基础中性笔",
+    "response" : {
+      "request_id" : "rec_req_agent_rank_ecc30e17-1d2f-45f2-ab79-cf28caae6bcf",
+      "agent_id" : "baseline-agent",
+      "task_id" : "fixture-session-test",
+      "profile_user_id" : "fixture-profile-test",
+      "candidates" : [ {
+        "item_id" : "pen-12",
+        "title" : "便携中性笔",
+        "category_path" : "Pens",
+        "price" : 12,
+        "rating_summary" : "",
+        "short_text" : "便携中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      }, {
+        "item_id" : "pen-20",
+        "title" : "握持中性笔",
+        "category_path" : "Pens",
+        "price" : 20,
+        "rating_summary" : "",
+        "short_text" : "握持中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      } ],
+      "degradation_reasons" : [ ]
+    },
+    "expected_item_ids" : [ "pen-12", "pen-20" ]
+  }, {
+    "action" : "reversal",
+    "duplicate_ack" : {
+      "feedback_id" : "fb_evt_9a57971a-d4d3-4851-a4b1-ae6de089e514",
+      "accepted" : true,
+      "feedback_type" : "reversal",
+      "accepted_count" : 0,
+      "duplicate" : true,
+      "application_status" : "APPLIED",
+      "preference_version" : 2,
+      "operation_complete" : null
+    },
+    "ack" : {
+      "feedback_id" : "fb_evt_9a57971a-d4d3-4851-a4b1-ae6de089e514",
+      "accepted" : true,
+      "feedback_type" : "reversal",
+      "accepted_count" : 1,
+      "duplicate" : false,
+      "application_status" : "APPLIED",
+      "preference_version" : 2,
+      "operation_complete" : null
+    }
+  }, {
+    "action" : "recommend",
+    "query" : "撤回刚才的不喜欢，按原条件重新推荐",
+    "response" : {
+      "request_id" : "rec_req_agent_rank_e0a14b44-5271-469a-aeae-c0e456e3c528",
+      "agent_id" : "baseline-agent",
+      "task_id" : "fixture-session-test",
+      "profile_user_id" : "fixture-profile-test",
+      "candidates" : [ {
+        "item_id" : "pen-10",
+        "title" : "基础中性笔",
+        "category_path" : "Pens",
+        "price" : 10,
+        "rating_summary" : "",
+        "short_text" : "基础中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      }, {
+        "item_id" : "pen-12",
+        "title" : "便携中性笔",
+        "category_path" : "Pens",
+        "price" : 12,
+        "rating_summary" : "",
+        "short_text" : "便携中性笔",
+        "reason_hint" : "结合你的需求与偏好推荐"
+      } ],
+      "degradation_reasons" : [ ]
+    },
+    "expected_item_ids" : [ "pen-10", "pen-12" ]
+  } ],
+  "schema_version" : "rs-agent-api-baseline/1"
+}

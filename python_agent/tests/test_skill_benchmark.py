@@ -8,6 +8,8 @@ from rs_core.offline.evaluation.skill_benchmark.environment import FixtureEnviro
 from rs_core.offline.evaluation.skill_benchmark.dataset import build_benchmark, validate_benchmark
 from rs_core.offline.evaluation.skill_benchmark.runner import run_benchmark, compare_runs
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture
 def catalog():

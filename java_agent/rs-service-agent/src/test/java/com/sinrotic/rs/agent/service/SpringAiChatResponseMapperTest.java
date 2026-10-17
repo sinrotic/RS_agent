@@ -12,8 +12,56 @@ import org.springframework.ai.chat.model.Generation;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class SpringAiChatResponseMapperTest {
+
+    @Test
+    void missingCacheUsageStaysMissingInsteadOfClaimingZeroCacheHits() {
+        var response = new ChatResponse(List.of(), ChatResponseMetadata.builder()
+                .usage(new DefaultUsage(100, 20, 120)).build());
+        var usage = SpringAiChatResponseMapper.toEvents(response).getFirst().arguments();
+        assertThat(usage).containsEntry("total_tokens", 120)
+                .doesNotContainKeys("cache_read_input_tokens", "cache_write_input_tokens");
+    }
+
+    @Test
+    void explicitlyReportedZeroUsageIsRetained() {
+        var response = new ChatResponse(List.of(), ChatResponseMetadata.builder()
+                .usage(new DefaultUsage(0, 0, 0, null, 0L, null)).build());
+        var events = SpringAiChatResponseMapper.toEvents(response);
+        assertThat(events).hasSize(1);
+        assertThat(events.getFirst().arguments()).containsEntry("total_tokens", 0)
+                .containsEntry("cache_read_input_tokens", 0L).doesNotContainKey("cache_write_input_tokens");
+    }
+
+    @Test
+    void partialUsageDoesNotFillUnknownFields() {
+        var partial = mock(org.springframework.ai.chat.metadata.Usage.class);
+        when(partial.getPromptTokens()).thenReturn(null);
+        when(partial.getCompletionTokens()).thenReturn(20);
+        when(partial.getTotalTokens()).thenReturn(null);
+        when(partial.getCacheReadInputTokens()).thenReturn(null);
+        when(partial.getCacheWriteInputTokens()).thenReturn(null);
+        var response = new ChatResponse(List.of(), ChatResponseMetadata.builder().usage(partial).build());
+        assertThat(SpringAiChatResponseMapper.toEvents(response).getFirst().arguments())
+                .containsEntry("completion_tokens", 20)
+                .doesNotContainKeys("prompt_tokens", "total_tokens", "cache_read_input_tokens", "cache_write_input_tokens");
+    }
+
+    @Test
+    void defaultInterfaceTotalFromPartialUsageIsNotACompleteMeasurement() {
+        var partial = new org.springframework.ai.chat.metadata.Usage() {
+            public Integer getPromptTokens() { return null; }
+            public Integer getCompletionTokens() { return 20; }
+            public Object getNativeUsage() { return null; }
+        };
+        assertThat(partial.getTotalTokens()).isEqualTo(20);
+        var response = new ChatResponse(List.of(), ChatResponseMetadata.builder().usage(partial).build());
+        assertThat(SpringAiChatResponseMapper.toEvents(response).getFirst().arguments())
+                .containsEntry("completion_tokens", 20).doesNotContainKeys("prompt_tokens", "total_tokens");
+    }
 
     @Test
     void mapsAssistantContentToTokenEvent() {
