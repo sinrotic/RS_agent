@@ -53,12 +53,14 @@ class PlatformAgentRuntimeControllerTest {
                         && "Prefer tool evidence.".equals(request.content())
         ))).thenReturn(new AgentRuntimeSystemPromptVO("custom", "Prefer tool evidence."));
 
-        mockMvc.perform(get("/api/platform/agent/runtime/system-prompt"))
+        mockMvc.perform(get("/api/platform/agent/runtime/system-prompt")
+                        .header("X-User-Roles", "AGENT_OPERATOR"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("default"))
                 .andExpect(jsonPath("$.content").value("Use concise recommendation reasoning."));
 
         mockMvc.perform(put("/api/platform/agent/runtime/system-prompt")
+                        .header("X-User-Roles", "ADMIN")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new AgentRuntimeSystemPromptUpdateDTO(
                                 "custom",
@@ -94,17 +96,20 @@ class PlatformAgentRuntimeControllerTest {
                 )
         )).thenReturn(skill);
 
-        mockMvc.perform(get("/api/platform/agent/runtime/skills"))
+        mockMvc.perform(get("/api/platform/agent/runtime/skills")
+                        .header("X-User-Roles", "AGENT_OPERATOR"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("explicit-need-recommendation"))
                 .andExpect(jsonPath("$[0].source").value("custom"))
                 .andExpect(jsonPath("$[0].enabled").value(true));
 
-        mockMvc.perform(get("/api/platform/agent/runtime/skills/explicit-need-recommendation"))
+        mockMvc.perform(get("/api/platform/agent/runtime/skills/explicit-need-recommendation")
+                        .header("X-User-Roles", "AGENT_OPERATOR"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value(skill.content()));
 
         mockMvc.perform(put("/api/platform/agent/runtime/skills/explicit-need-recommendation")
+                        .header("X-User-Roles", "ADMIN")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new AgentRuntimeSkillUpsertDTO(
                                 "Use when the user gives a clear need.",
@@ -136,12 +141,14 @@ class PlatformAgentRuntimeControllerTest {
                 )
         )).thenReturn(tool);
 
-        mockMvc.perform(get("/api/platform/agent/runtime/tools"))
+        mockMvc.perform(get("/api/platform/agent/runtime/tools")
+                        .header("X-User-Roles", "AGENT_OPERATOR"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("recommend_candidates"))
                 .andExpect(jsonPath("$[0].service").value("rs-service-recommend"));
 
         mockMvc.perform(put("/api/platform/agent/runtime/tools/recommend_candidates")
+                        .header("X-User-Roles", "ADMIN")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new AgentRuntimeToolUpsertDTO(
                                 "rs-service-recommend",
@@ -151,5 +158,21 @@ class PlatformAgentRuntimeControllerTest {
                         ))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.enabled").value(true));
+    }
+
+    @Test
+    void ordinaryUserCannotReadOrModifyRuntimeConfiguration() throws Exception {
+        mockMvc.perform(get("/api/platform/agent/runtime/system-prompt")
+                        .header("X-User-Roles", "USER"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(put("/api/platform/agent/runtime/system-prompt")
+                        .header("X-User-Roles", "AGENT_OPERATOR")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new AgentRuntimeSystemPromptUpdateDTO(
+                                "custom",
+                                "blocked"
+                        ))))
+                .andExpect(status().isForbidden());
     }
 }

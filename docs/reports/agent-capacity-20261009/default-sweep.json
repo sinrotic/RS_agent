@@ -1,0 +1,4986 @@
+{
+  "config": {
+    "base": "http://127.0.0.1:18204",
+    "model_base": "http://127.0.0.1:18082",
+    "gpu": 1,
+    "pid": 3502054,
+    "levels": "1,2,4,6,8,9,12,16,32",
+    "rounds": 3,
+    "timeout": 90,
+    "p95_budget": 30,
+    "output": "/tmp/rs-agent-capacity-20261009/default-sweep.json",
+    "label": "default",
+    "prompt": "mixed",
+    "stop_after_failed_levels": 2,
+    "run_id": "c6a2eb67b1"
+  },
+  "model": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791516295,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 16384,
+        "permission": [
+          {
+            "id": "modelperm-a67cee99a405dc3f",
+            "object": "model_permission",
+            "created": 1791516295,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "started_at": 1791516295.490159,
+  "scope": "真实 Java Agent/模型；内存会话和固定候选；不包含网关、数据库与在线推荐",
+  "phases": [
+    {
+      "concurrency": 1,
+      "requests": 3,
+      "successful": 3,
+      "success_rate": 1.0,
+      "elapsed_s": 6.121,
+      "successful_turns_per_s": 0.49,
+      "p50_s": 1.053,
+      "p95_s": 4.118,
+      "p99_s": 4.118,
+      "first_answer_p95_s": 4.116,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 29501.0,
+        "vllm:generation_tokens_total": 984.0,
+        "vllm:request_success_total": 14.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 13671.0,
+        "vllm:iteration_tokens_total_count": 984.0,
+        "vllm:iteration_tokens_total_sum": 17285.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 55776.0,
+        "vllm:generation_tokens_total": 1512.0,
+        "vllm:request_success_total": 19.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 21030.0,
+        "vllm:iteration_tokens_total_count": 1512.0,
+        "vllm:iteration_tokens_total_sum": 21384.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-1-0-795cc022",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516295.5017085,
+          "http_status": 200,
+          "latency_s": 1.053,
+          "first_event_s": 1.052,
+          "first_answer_s": 1.052
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-1-1-fcc8dccd",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：通勤时可能需长时间背负，建议选择有加厚肩垫、可调节肩带和背负系统的款式。良好的背负设计能分散重量，减少肩部和背部的疲劳感。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包会经历日常磨损，建议选择耐磨面料（如尼龙、帆布）和加固缝线。防水或防泼水功能也能应对雨天通勤场景。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516296.555695,
+          "http_status": 200,
+          "latency_s": 4.118,
+          "first_event_s": 4.116,
+          "first_answer_s": 4.116
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-1-2-8370c943",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516300.6745236,
+          "http_status": 200,
+          "latency_s": 0.946,
+          "first_event_s": 0.944,
+          "first_answer_s": 0.944
+        }
+      ],
+      "passes": true,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 26275.0,
+        "vllm:generation_tokens_total": 528.0,
+        "vllm:request_success_total": 5.0
+      }
+    },
+    {
+      "concurrency": 2,
+      "requests": 6,
+      "successful": 6,
+      "success_rate": 1.0,
+      "elapsed_s": 11.731,
+      "successful_turns_per_s": 0.511,
+      "p50_s": 1.326,
+      "p95_s": 5.992,
+      "p99_s": 5.992,
+      "first_answer_p95_s": 5.989,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 55776.0,
+        "vllm:generation_tokens_total": 1512.0,
+        "vllm:request_success_total": 19.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 21030.0,
+        "vllm:iteration_tokens_total_count": 1512.0,
+        "vllm:iteration_tokens_total_sum": 21384.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 108326.0,
+        "vllm:generation_tokens_total": 2591.0,
+        "vllm:request_success_total": 29.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 32779.0,
+        "vllm:iteration_tokens_total_count": 2372.0,
+        "vllm:iteration_tokens_total_sum": 32773.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-2-0-444328fb",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516303.6426535,
+          "http_status": 200,
+          "latency_s": 3.072,
+          "first_event_s": 3.07,
+          "first_answer_s": 3.07
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-2-1-99f9a56f",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背部的支撑设计至关重要。选择带有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516303.6423492,
+          "http_status": 200,
+          "latency_s": 5.992,
+          "first_event_s": 5.989,
+          "first_answer_s": 5.989
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-2-2-1372a828",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516309.634913,
+          "http_status": 200,
+          "latency_s": 1.113,
+          "first_event_s": 1.112,
+          "first_answer_s": 1.112
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-2-3-d4edbe23",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516309.634659,
+          "http_status": 200,
+          "latency_s": 1.326,
+          "first_event_s": 1.325,
+          "first_answer_s": 1.325
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-2-4-a5cbcdb3",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：通勤通常涉及长时间行走或乘坐公共交通。选择带有加厚肩垫、可调节肩带和良好透气背板的设计，能有效减轻肩部压力，提升长时间背负的舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤场景可能面临雨天、碰撞等意外情况。建议选择耐磨面料（如尼龙、聚酯纤维）并具备防水或防泼水功能，同时注意拉链和扣件的耐用性，确保日常使用的可靠性。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516310.9619212,
+          "http_status": 200,
+          "latency_s": 4.41,
+          "first_event_s": 4.408,
+          "first_answer_s": 4.408
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-2-5-6a2099bf",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516310.9616578,
+          "http_status": 200,
+          "latency_s": 1.173,
+          "first_event_s": 1.171,
+          "first_answer_s": 1.171
+        }
+      ],
+      "passes": true,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 52550.0,
+        "vllm:generation_tokens_total": 1079.0,
+        "vllm:request_success_total": 10.0
+      }
+    },
+    {
+      "concurrency": 4,
+      "requests": 12,
+      "successful": 12,
+      "success_rate": 1.0,
+      "elapsed_s": 14.027,
+      "successful_turns_per_s": 0.855,
+      "p50_s": 1.723,
+      "p95_s": 4.757,
+      "p99_s": 4.757,
+      "first_answer_p95_s": 4.755,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 108326.0,
+        "vllm:generation_tokens_total": 2591.0,
+        "vllm:request_success_total": 29.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 32779.0,
+        "vllm:iteration_tokens_total_count": 2372.0,
+        "vllm:iteration_tokens_total_sum": 32773.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 213446.0,
+        "vllm:generation_tokens_total": 4713.0,
+        "vllm:request_success_total": 49.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 48066.0,
+        "vllm:iteration_tokens_total_count": 3510.0,
+        "vllm:iteration_tokens_total_sum": 55535.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-0-72ec337c",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516317.39395,
+          "http_status": 200,
+          "latency_s": 1.886,
+          "first_event_s": 1.885,
+          "first_answer_s": 1.885
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-4-1-3ba81780",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516317.3943317,
+          "http_status": 200,
+          "latency_s": 4.728,
+          "first_event_s": 4.726,
+          "first_answer_s": 4.726
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-2-a7738a51",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516317.3941436,
+          "http_status": 200,
+          "latency_s": 1.557,
+          "first_event_s": 1.556,
+          "first_answer_s": 1.556
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-3-d9a4a296",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516317.3937523,
+          "http_status": 200,
+          "latency_s": 1.886,
+          "first_event_s": 1.885,
+          "first_answer_s": 1.885
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-4-4-f54f9b2d",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516322.1240847,
+          "http_status": 200,
+          "latency_s": 4.757,
+          "first_event_s": 4.755,
+          "first_answer_s": 4.755
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-5-8f1b26f6",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516322.1242948,
+          "http_status": 200,
+          "latency_s": 1.271,
+          "first_event_s": 1.27,
+          "first_answer_s": 1.27
+        },
+        {
+          "number": 6,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-6-2889e082",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516322.1244848,
+          "http_status": 200,
+          "latency_s": 1.723,
+          "first_event_s": 1.722,
+          "first_answer_s": 1.722
+        },
+        {
+          "number": 7,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-4-7-5ff3ea73",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：根据日常携带物品选择合适容量（通常15-25升适合通勤），并关注是否有电脑隔层、文件袋等分区设计，方便分类存放。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统**：选择有良好肩垫、背板支撑和透气设计的背包，长时间背负能减少肩部和背部压力，提升舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **便携性与安全性**：考虑背包是否有可拆卸肩带（方便手提或单肩背），以及是否有防盗拉链、隐藏口袋等安全设计。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516322.123846,
+          "http_status": 200,
+          "latency_s": 4.391,
+          "first_event_s": 4.39,
+          "first_answer_s": 4.39
+        },
+        {
+          "number": 8,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-8-aa2d6ab0",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516326.8823822,
+          "http_status": 200,
+          "latency_s": 1.319,
+          "first_event_s": 1.318,
+          "first_answer_s": 1.318
+        },
+        {
+          "number": 9,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-9-2ab227a0",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516326.8827958,
+          "http_status": 200,
+          "latency_s": 1.647,
+          "first_event_s": 1.646,
+          "first_answer_s": 1.646
+        },
+        {
+          "number": 10,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-4-10-73afa82f",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包通常需容纳笔记本电脑、文件和水杯。建议选择有独立电脑隔层、容量在15-25升之间、内部有合理分区的款式，方便分类存放物品。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：长时间背负需要良好的支撑。关注肩带宽窄、是否有背板支撑、是否可调节肩带，以及背包重量是否轻便，避免长时间使用导致肩背疲劳。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需经受日常使用。选择耐磨面料（如尼龙、聚酯纤维），检查拉链顺滑度、背带和提手加固情况，以及是否有防水或防泼水功能，适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516326.8826005,
+          "http_status": 200,
+          "latency_s": 4.537,
+          "first_event_s": 4.535,
+          "first_answer_s": 4.535
+        },
+        {
+          "number": 11,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-4-11-cb5936ff",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516326.882151,
+          "http_status": 200,
+          "latency_s": 1.352,
+          "first_event_s": 1.351,
+          "first_answer_s": 1.351
+        }
+      ],
+      "passes": true,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 105120.0,
+        "vllm:generation_tokens_total": 2122.0,
+        "vllm:request_success_total": 20.0
+      }
+    },
+    {
+      "concurrency": 6,
+      "requests": 18,
+      "successful": 18,
+      "success_rate": 1.0,
+      "elapsed_s": 15.568,
+      "successful_turns_per_s": 1.156,
+      "p50_s": 1.945,
+      "p95_s": 5.57,
+      "p99_s": 5.57,
+      "first_answer_p95_s": 5.568,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 213446.0,
+        "vllm:generation_tokens_total": 4713.0,
+        "vllm:request_success_total": 49.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 48066.0,
+        "vllm:iteration_tokens_total_count": 3510.0,
+        "vllm:iteration_tokens_total_sum": 55535.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 390359.0,
+        "vllm:generation_tokens_total": 7843.0,
+        "vllm:request_success_total": 82.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 62731.0,
+        "vllm:iteration_tokens_total_count": 4643.0,
+        "vllm:iteration_tokens_total_sum": 91962.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-0-cd7bb771",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516333.4427037,
+          "http_status": 200,
+          "latency_s": 1.945,
+          "first_event_s": 1.944,
+          "first_answer_s": 1.944
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-6-1-cbb30c84",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水性能，能延长使用寿命并适应不同天气。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516333.443289,
+          "http_status": 200,
+          "latency_s": 4.966,
+          "first_event_s": 4.965,
+          "first_answer_s": 4.965
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-2-ce6b82d9",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516333.4431002,
+          "http_status": 200,
+          "latency_s": 1.73,
+          "first_event_s": 1.728,
+          "first_answer_s": 1.728
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-3-724e921f",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516333.442906,
+          "http_status": 200,
+          "latency_s": 1.945,
+          "first_event_s": 1.943,
+          "first_answer_s": 1.943
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-6-4-e0f4fcd5",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：通勤通常涉及长时间行走或站立。选择有加厚肩垫、可调节肩带、背部透气网布或背负系统的款式，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包会频繁接触各种环境。建议选择耐磨面料（如尼龙、聚酯纤维），并检查拉链顺滑度、缝线牢固度等细节，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516333.4434772,
+          "http_status": 200,
+          "latency_s": 4.976,
+          "first_event_s": 4.974,
+          "first_answer_s": 4.974
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-5-2d8c1184",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516333.4424884,
+          "http_status": 200,
+          "latency_s": 1.552,
+          "first_event_s": 1.551,
+          "first_answer_s": 1.551
+        },
+        {
+          "number": 6,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-6-fb4e5010",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516338.421077,
+          "http_status": 200,
+          "latency_s": 1.887,
+          "first_event_s": 1.886,
+          "first_answer_s": 1.886
+        },
+        {
+          "number": 7,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-6-7-8709d0f4",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计至关重要。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性，避免长时间佩戴不适。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，能延长使用寿命并适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516338.4216714,
+          "http_status": 200,
+          "latency_s": 5.015,
+          "first_event_s": 5.014,
+          "first_answer_s": 5.014
+        },
+        {
+          "number": 8,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-8-34dcdd3d",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516338.421899,
+          "http_status": 200,
+          "latency_s": 1.487,
+          "first_event_s": 1.485,
+          "first_answer_s": 1.485
+        },
+        {
+          "number": 9,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-9-6dfaedce",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516338.421281,
+          "http_status": 200,
+          "latency_s": 1.876,
+          "first_event_s": 1.875,
+          "first_answer_s": 1.875
+        },
+        {
+          "number": 10,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-6-10-a972b86e",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516338.421472,
+          "http_status": 200,
+          "latency_s": 4.935,
+          "first_event_s": 4.933,
+          "first_answer_s": 4.933
+        },
+        {
+          "number": 11,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-11-53ea7313",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516338.4208457,
+          "http_status": 200,
+          "latency_s": 1.421,
+          "first_event_s": 1.419,
+          "first_answer_s": 1.419
+        },
+        {
+          "number": 12,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-12-6a1305fd",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516343.4389236,
+          "http_status": 200,
+          "latency_s": 2.268,
+          "first_event_s": 2.267,
+          "first_answer_s": 2.267
+        },
+        {
+          "number": 13,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-6-13-1a204b5d",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516343.4391887,
+          "http_status": 200,
+          "latency_s": 5.57,
+          "first_event_s": 5.568,
+          "first_answer_s": 5.568
+        },
+        {
+          "number": 14,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-14-8ca1aed5",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516343.4395673,
+          "http_status": 200,
+          "latency_s": 1.799,
+          "first_event_s": 1.797,
+          "first_answer_s": 1.797
+        },
+        {
+          "number": 15,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-15-bc59e511",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516343.4394083,
+          "http_status": 200,
+          "latency_s": 2.279,
+          "first_event_s": 2.278,
+          "first_answer_s": 2.278
+        },
+        {
+          "number": 16,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-6-16-673d6926",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议重点关注以下三个方面：",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516343.4398758,
+          "http_status": 200,
+          "latency_s": 5.446,
+          "first_event_s": 5.445,
+          "first_answer_s": 5.445
+        },
+        {
+          "number": 17,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-6-17-8bcf3558",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516343.438638,
+          "http_status": 200,
+          "latency_s": 1.87,
+          "first_event_s": 1.869,
+          "first_answer_s": 1.869
+        }
+      ],
+      "passes": true,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 176913.0,
+        "vllm:generation_tokens_total": 3130.0,
+        "vllm:request_success_total": 33.0
+      }
+    },
+    {
+      "concurrency": 8,
+      "requests": 24,
+      "successful": 24,
+      "success_rate": 1.0,
+      "elapsed_s": 15.991,
+      "successful_turns_per_s": 1.501,
+      "p50_s": 2.168,
+      "p95_s": 5.629,
+      "p99_s": 5.648,
+      "first_answer_p95_s": 5.627,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 390359.0,
+        "vllm:generation_tokens_total": 7843.0,
+        "vllm:request_success_total": 82.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 62731.0,
+        "vllm:iteration_tokens_total_count": 4643.0,
+        "vllm:iteration_tokens_total_sum": 91962.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 600649.0,
+        "vllm:generation_tokens_total": 11885.0,
+        "vllm:request_success_total": 122.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 77243.0,
+        "vllm:iteration_tokens_total_count": 5772.0,
+        "vllm:iteration_tokens_total_sum": 130998.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-0-75bb03a3",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.0341835,
+          "http_status": 200,
+          "latency_s": 2.168,
+          "first_event_s": 2.168,
+          "first_answer_s": 2.168
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-1-cf79b5ad",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：通勤通常涉及长时间行走或乘坐公共交通。选择肩带宽、有加厚衬垫、并配有可调节胸带和腰带的款式，能有效分散重量，减轻肩部压力。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包会经历日常磨损和不同天气环境。建议选择耐磨面料（如尼龙或帆布），并检查拉链顺滑度、背带连接处等细节，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.03511,
+          "http_status": 200,
+          "latency_s": 5.246,
+          "first_event_s": 5.244,
+          "first_answer_s": 5.244
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-2-f4d13799",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.0343776,
+          "http_status": 200,
+          "latency_s": 1.59,
+          "first_event_s": 1.588,
+          "first_answer_s": 1.588
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-3-f88ff093",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.034807,
+          "http_status": 200,
+          "latency_s": 2.232,
+          "first_event_s": 2.231,
+          "first_answer_s": 2.231
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-4-2ac092c6",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.0354884,
+          "http_status": 200,
+          "latency_s": 2.799,
+          "first_event_s": 2.798,
+          "first_answer_s": 2.798
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-5-899c47aa",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.0353005,
+          "http_status": 200,
+          "latency_s": 1.67,
+          "first_event_s": 1.669,
+          "first_answer_s": 1.669
+        },
+        {
+          "number": 6,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-6-a614758b",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.034604,
+          "http_status": 200,
+          "latency_s": 2.237,
+          "first_event_s": 2.236,
+          "first_answer_s": 2.236
+        },
+        {
+          "number": 7,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-7-7970188a",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：根据日常携带物品选择合适容量（通常15-25升适合通勤），并确认是否有电脑隔层、文件袋等分区设计，方便分类存放。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：选择有加厚肩垫、可调节肩带和腰部支撑的款式，长时间背负不易疲劳，且能更好地分散重量。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：优选耐磨、防水或易清洁的材质，同时检查拉链、扣件等五金件质量，确保日常使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516351.0339751,
+          "http_status": 200,
+          "latency_s": 4.942,
+          "first_event_s": 4.94,
+          "first_answer_s": 4.94
+        },
+        {
+          "number": 8,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-8-cace13c8",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.2834287,
+          "http_status": 200,
+          "latency_s": 1.706,
+          "first_event_s": 1.705,
+          "first_answer_s": 1.705
+        },
+        {
+          "number": 9,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-9-89117f15",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.284505,
+          "http_status": 200,
+          "latency_s": 2.036,
+          "first_event_s": 2.035,
+          "first_answer_s": 2.035
+        },
+        {
+          "number": 10,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-10-088aec3c",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背部的支撑设计至关重要。选择带有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量拉链的产品，能延长使用寿命。同时注意防水性能，应对雨天通勤需求。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.2836802,
+          "http_status": 200,
+          "latency_s": 5.068,
+          "first_event_s": 5.066,
+          "first_answer_s": 5.066
+        },
+        {
+          "number": 11,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-11-0bea1bd6",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.2847555,
+          "http_status": 200,
+          "latency_s": 1.704,
+          "first_event_s": 1.703,
+          "first_answer_s": 1.703
+        },
+        {
+          "number": 12,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-12-bb5478bd",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.283888,
+          "http_status": 200,
+          "latency_s": 2.037,
+          "first_event_s": 2.037,
+          "first_answer_s": 2.037
+        },
+        {
+          "number": 13,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-13-e202b3f5",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.2840648,
+          "http_status": 200,
+          "latency_s": 5.087,
+          "first_event_s": 5.085,
+          "first_answer_s": 5.085
+        },
+        {
+          "number": 14,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-14-10d58784",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.2842429,
+          "http_status": 200,
+          "latency_s": 1.543,
+          "first_event_s": 1.543,
+          "first_answer_s": 1.543
+        },
+        {
+          "number": 15,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-15-b4fc4401",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516356.2831469,
+          "http_status": 200,
+          "latency_s": 2.038,
+          "first_event_s": 2.037,
+          "first_answer_s": 2.037
+        },
+        {
+          "number": 16,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-16-25aec2b6",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背部的支撑设计至关重要。选择带有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.37337,
+          "http_status": 200,
+          "latency_s": 5.629,
+          "first_event_s": 5.627,
+          "first_answer_s": 5.627
+        },
+        {
+          "number": 17,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-17-46a3ae8f",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.3742826,
+          "http_status": 200,
+          "latency_s": 1.876,
+          "first_event_s": 1.875,
+          "first_answer_s": 1.875
+        },
+        {
+          "number": 18,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-18-4724e844",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.3735824,
+          "http_status": 200,
+          "latency_s": 2.467,
+          "first_event_s": 2.466,
+          "first_answer_s": 2.466
+        },
+        {
+          "number": 19,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-19-c0d2435e",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包通常需容纳笔记本电脑、文件和水杯。建议选择有独立电脑隔层、内部分区合理的款式，确保物品有序且保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带、透气背板或背负系统的款式，减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需经受日常使用磨损。建议选择耐磨面料（如尼龙、聚酯纤维），并检查拉链、扣件等五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.3737812,
+          "http_status": 200,
+          "latency_s": 5.462,
+          "first_event_s": 5.46,
+          "first_answer_s": 5.46
+        },
+        {
+          "number": 20,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-20-7ee856c1",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.374683,
+          "http_status": 200,
+          "latency_s": 1.857,
+          "first_event_s": 1.855,
+          "first_answer_s": 1.855
+        },
+        {
+          "number": 21,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-21-37ea2511",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.3744805,
+          "http_status": 200,
+          "latency_s": 2.484,
+          "first_event_s": 2.483,
+          "first_answer_s": 2.483
+        },
+        {
+          "number": 22,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-8-22-9c0caa7e",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.3740678,
+          "http_status": 200,
+          "latency_s": 5.648,
+          "first_event_s": 5.647,
+          "first_answer_s": 5.647
+        },
+        {
+          "number": 23,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-8-23-82c6df5e",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516361.3731256,
+          "http_status": 200,
+          "latency_s": 1.882,
+          "first_event_s": 1.881,
+          "first_answer_s": 1.881
+        }
+      ],
+      "passes": true,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 210290.0,
+        "vllm:generation_tokens_total": 4042.0,
+        "vllm:request_success_total": 40.0
+      }
+    },
+    {
+      "concurrency": 9,
+      "requests": 27,
+      "successful": 24,
+      "success_rate": 0.8888888888888888,
+      "elapsed_s": 15.927,
+      "successful_turns_per_s": 1.507,
+      "p50_s": 2.221,
+      "p95_s": 5.497,
+      "p99_s": 5.549,
+      "first_answer_p95_s": 5.496,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 600649.0,
+        "vllm:generation_tokens_total": 11885.0,
+        "vllm:request_success_total": 122.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 77243.0,
+        "vllm:iteration_tokens_total_count": 5772.0,
+        "vllm:iteration_tokens_total_sum": 130998.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 822742.0,
+        "vllm:generation_tokens_total": 15959.0,
+        "vllm:request_success_total": 164.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 91978.0,
+        "vllm:iteration_tokens_total_count": 6901.0,
+        "vllm:iteration_tokens_total_sum": 169197.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-0-f1aa5bea",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.048482,
+          "http_status": 200,
+          "latency_s": 2.179,
+          "first_event_s": 2.178,
+          "first_answer_s": 2.178
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-1-b152f9cd",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背部的支撑设计至关重要。选择带有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.0498796,
+          "http_status": 200,
+          "latency_s": 5.277,
+          "first_event_s": 5.276,
+          "first_answer_s": 5.276
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-2-12802a39",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.0486946,
+          "http_status": 200,
+          "latency_s": 1.68,
+          "first_event_s": 1.678,
+          "first_answer_s": 1.678
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-3-a05e11be",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516369.0502048,
+          "http_status": 200,
+          "latency_s": 0.206,
+          "first_event_s": 0.205,
+          "first_answer_s": null
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-4-b68fea50",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：根据日常携带物品选择合适容量（通常15-25升适合通勤），并关注是否有电脑隔层、文件袋等分区设计，方便分类存放。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：选择有加厚肩垫、可调节肩带和背负系统的款式，长时间背负能减轻肩部压力，提升舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：优选耐磨、防水或易清洁的材质，如尼龙、聚酯纤维等，能延长使用寿命并适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.049463,
+          "http_status": 200,
+          "latency_s": 4.94,
+          "first_event_s": 4.939,
+          "first_answer_s": 4.939
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-5-9793e8de",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.0490847,
+          "http_status": 200,
+          "latency_s": 1.753,
+          "first_event_s": 1.753,
+          "first_answer_s": 1.753
+        },
+        {
+          "number": 6,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-6-5d57e862",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.0488877,
+          "http_status": 200,
+          "latency_s": 2.181,
+          "first_event_s": 2.18,
+          "first_answer_s": 2.18
+        },
+        {
+          "number": 7,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-7-4989ec17",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：根据日常携带物品选择合适容量（通常15-25升适合通勤），并关注是否有电脑隔层、文件袋等分区设计，方便分类存放。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统**：选择有良好肩垫、背板支撑和透气设计的背包，长时间背负能减少肩部和背部压力，提升舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **便携性与安全性**：考虑背包是否有可拆卸肩带（方便手提或单肩背），以及是否有防盗拉链、隐藏口袋等安全设计。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.049683,
+          "http_status": 200,
+          "latency_s": 4.95,
+          "first_event_s": 4.949,
+          "first_answer_s": 4.949
+        },
+        {
+          "number": 8,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-8-a829abf7",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516369.0482621,
+          "http_status": 200,
+          "latency_s": 1.756,
+          "first_event_s": 1.755,
+          "first_answer_s": 1.755
+        },
+        {
+          "number": 9,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-9-02bb7f94",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.3297646,
+          "http_status": 200,
+          "latency_s": 2.218,
+          "first_event_s": 2.207,
+          "first_answer_s": 2.207
+        },
+        {
+          "number": 10,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-10-999a4100",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水性能，能延长使用寿命并适应不同天气。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.3309588,
+          "http_status": 200,
+          "latency_s": 5.089,
+          "first_event_s": 5.088,
+          "first_answer_s": 5.088
+        },
+        {
+          "number": 11,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-11-d54fd19e",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516374.3299758,
+          "http_status": 200,
+          "latency_s": 0.206,
+          "first_event_s": 0.205,
+          "first_answer_s": null
+        },
+        {
+          "number": 12,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-12-87307bd3",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.3313015,
+          "http_status": 200,
+          "latency_s": 2.221,
+          "first_event_s": 2.22,
+          "first_answer_s": 2.22
+        },
+        {
+          "number": 13,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-13-35a429f2",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.3301766,
+          "http_status": 200,
+          "latency_s": 2.841,
+          "first_event_s": 2.841,
+          "first_answer_s": 2.841
+        },
+        {
+          "number": 14,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-14-ba17c23f",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.3303618,
+          "http_status": 200,
+          "latency_s": 1.632,
+          "first_event_s": 1.631,
+          "first_answer_s": 1.631
+        },
+        {
+          "number": 15,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-15-447a3c2a",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.3307304,
+          "http_status": 200,
+          "latency_s": 2.147,
+          "first_event_s": 2.145,
+          "first_answer_s": 2.145
+        },
+        {
+          "number": 16,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-16-47c50925",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.330543,
+          "http_status": 200,
+          "latency_s": 2.83,
+          "first_event_s": 2.83,
+          "first_answer_s": 2.83
+        },
+        {
+          "number": 17,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-17-cf66adc8",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516374.329502,
+          "http_status": 200,
+          "latency_s": 1.633,
+          "first_event_s": 1.632,
+          "first_answer_s": 1.632
+        },
+        {
+          "number": 18,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-18-7f62b6dd",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.422443,
+          "http_status": 200,
+          "latency_s": 2.359,
+          "first_event_s": 2.358,
+          "first_answer_s": 2.358
+        },
+        {
+          "number": 19,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-19-7fe24838",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：通勤通常涉及长时间行走或乘坐公共交通。选择带有加厚肩垫、可调节肩带和良好透气背板的设计，能有效减轻肩部压力，提升长时间背负的舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤场景可能面临雨天、碰撞等意外情况。建议选择耐磨面料（如尼龙、聚酯纤维）并具备防水或防泼水功能，同时注意拉链和扣件的耐用性，确保日常使用的可靠性。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.4234211,
+          "http_status": 200,
+          "latency_s": 5.549,
+          "first_event_s": 5.548,
+          "first_answer_s": 5.548
+        },
+        {
+          "number": 20,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-20-60077c0f",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.4226682,
+          "http_status": 200,
+          "latency_s": 2.131,
+          "first_event_s": 2.13,
+          "first_answer_s": 2.13
+        },
+        {
+          "number": 21,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-21-a0423fdd",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.4236274,
+          "http_status": 200,
+          "latency_s": 2.299,
+          "first_event_s": 2.298,
+          "first_answer_s": 2.298
+        },
+        {
+          "number": 22,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-22-2d4e57c5",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背部的支撑设计至关重要。选择带有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.4238868,
+          "http_status": 200,
+          "latency_s": 5.476,
+          "first_event_s": 5.475,
+          "first_answer_s": 5.475
+        },
+        {
+          "number": 23,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-23-1e2808e9",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.423224,
+          "http_status": 200,
+          "latency_s": 2.005,
+          "first_event_s": 2.003,
+          "first_answer_s": 2.003
+        },
+        {
+          "number": 24,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-24-81c80cdb",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.4228623,
+          "http_status": 200,
+          "latency_s": 2.385,
+          "first_event_s": 2.385,
+          "first_answer_s": 2.385
+        },
+        {
+          "number": 25,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-9-25-ce338972",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516379.4230285,
+          "http_status": 200,
+          "latency_s": 5.497,
+          "first_event_s": 5.496,
+          "first_answer_s": 5.496
+        },
+        {
+          "number": 26,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-9-26-d7e5ed65",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516379.4222035,
+          "http_status": 200,
+          "latency_s": 0.207,
+          "first_event_s": 0.206,
+          "first_answer_s": null
+        }
+      ],
+      "passes": false,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 222093.0,
+        "vllm:generation_tokens_total": 4074.0,
+        "vllm:request_success_total": 42.0
+      }
+    },
+    {
+      "concurrency": 12,
+      "requests": 36,
+      "successful": 24,
+      "success_rate": 0.6666666666666666,
+      "elapsed_s": 16.649,
+      "successful_turns_per_s": 1.442,
+      "p50_s": 2.32,
+      "p95_s": 5.85,
+      "p99_s": 5.85,
+      "first_answer_p95_s": 5.848,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 822742.0,
+        "vllm:generation_tokens_total": 15959.0,
+        "vllm:request_success_total": 164.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 91978.0,
+        "vllm:iteration_tokens_total_count": 6901.0,
+        "vllm:iteration_tokens_total_sum": 169197.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 1056614.0,
+        "vllm:generation_tokens_total": 20710.0,
+        "vllm:request_success_total": 208.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 106495.0,
+        "vllm:iteration_tokens_total_count": 8034.0,
+        "vllm:iteration_tokens_total_sum": 216684.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-0-6df2cafc",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0010302,
+          "http_status": 200,
+          "latency_s": 2.205,
+          "first_event_s": 2.204,
+          "first_answer_s": 2.204
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-1-e802495f",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：通勤通常涉及长时间行走或乘坐公共交通。选择带有加厚肩垫、可调节肩带和良好透气背板的设计，能有效减轻肩部压力，提升长时间背负的舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤场景可能面临雨天、碰撞等意外情况。建议选择耐磨面料（如尼龙、聚酯纤维）并具备防水或防泼水功能，同时注意拉链和扣件的耐用性，确保日常使用的可靠性。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0024676,
+          "http_status": 200,
+          "latency_s": 5.353,
+          "first_event_s": 5.353,
+          "first_answer_s": 5.353
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-2-39a460d9",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516387.0012248,
+          "http_status": 200,
+          "latency_s": 0.209,
+          "first_event_s": 0.209,
+          "first_answer_s": null
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-3-0b691b13",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0026891,
+          "http_status": 200,
+          "latency_s": 2.142,
+          "first_event_s": 2.141,
+          "first_answer_s": 2.141
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-4-8a97a851",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：根据日常携带物品选择合适容量（通常15-25升适合通勤），并确认是否有电脑隔层、文件袋等分区设计，方便分类存放。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：选择有加厚肩垫、可调节肩带和腰部支撑的款式，长时间背负不易疲劳，且能更好地分散重量。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：优选耐磨防水面料（如尼龙、聚酯纤维），并检查拉链顺滑度、背带连接处等细节，确保日常使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0018723,
+          "http_status": 200,
+          "latency_s": 4.998,
+          "first_event_s": 4.997,
+          "first_answer_s": 4.997
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-5-b235e833",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0014136,
+          "http_status": 200,
+          "latency_s": 1.741,
+          "first_event_s": 1.74,
+          "first_answer_s": 1.74
+        },
+        {
+          "number": 6,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-6-3ec2818f",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516387.0016987,
+          "http_status": 200,
+          "latency_s": 0.208,
+          "first_event_s": 0.207,
+          "first_answer_s": null
+        },
+        {
+          "number": 7,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-7-173c354c",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：通勤时可能需长时间背负，建议选择有加厚肩垫、可调节肩带和良好背负系统的款式。良好的透气性和重量分布能减少肩部疲劳。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包会频繁使用，建议选择耐磨、防水或易清洁的材质。尼龙、牛津布等材质通常性价比较高，同时注意拉链和扣件的耐用性。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.003195,
+          "http_status": 200,
+          "latency_s": 5.24,
+          "first_event_s": 5.239,
+          "first_answer_s": 5.239
+        },
+        {
+          "number": 8,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-8-97a1ca1a",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0029576,
+          "http_status": 200,
+          "latency_s": 1.58,
+          "first_event_s": 1.579,
+          "first_answer_s": 1.579
+        },
+        {
+          "number": 9,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-9-ca0205fc",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516387.002233,
+          "http_status": 200,
+          "latency_s": 0.208,
+          "first_event_s": 0.207,
+          "first_answer_s": null
+        },
+        {
+          "number": 10,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-10-6f864a24",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516387.0020626,
+          "http_status": 200,
+          "latency_s": 0.208,
+          "first_event_s": 0.207,
+          "first_answer_s": null
+        },
+        {
+          "number": 11,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-11-d61a6700",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516387.0008292,
+          "http_status": 200,
+          "latency_s": 1.831,
+          "first_event_s": 1.83,
+          "first_answer_s": 1.83
+        },
+        {
+          "number": 12,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-12-af91aa93",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516392.3595178,
+          "http_status": 200,
+          "latency_s": 0.208,
+          "first_event_s": 0.208,
+          "first_answer_s": null
+        },
+        {
+          "number": 13,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-13-aa5d895b",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：根据日常携带物品选择合适容量（通常15-25升适合通勤），并关注是否有电脑隔层、文件袋等分区设计，方便分类存放。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统**：选择有良好肩垫、背板支撑和透气设计的背包，长时间背负能减少肩部和背部压力，提升舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **便携性与安全性**：考虑背包是否有可拆卸肩带（方便手提或单肩背），以及是否有防盗拉链、隐藏口袋等安全设计。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.3609347,
+          "http_status": 200,
+          "latency_s": 5.023,
+          "first_event_s": 5.022,
+          "first_answer_s": 5.022
+        },
+        {
+          "number": 14,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-14-c3bc429e",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516392.3611908,
+          "http_status": 200,
+          "latency_s": 0.207,
+          "first_event_s": 0.206,
+          "first_answer_s": null
+        },
+        {
+          "number": 15,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-15-b258014a",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516392.3606932,
+          "http_status": 200,
+          "latency_s": 0.207,
+          "first_event_s": 0.206,
+          "first_answer_s": null
+        },
+        {
+          "number": 16,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-16-e4a97993",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516392.3597417,
+          "http_status": 200,
+          "latency_s": 0.208,
+          "first_event_s": 0.208,
+          "first_answer_s": null
+        },
+        {
+          "number": 17,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-17-82cb5f3b",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.3599381,
+          "http_status": 200,
+          "latency_s": 1.676,
+          "first_event_s": 1.675,
+          "first_answer_s": 1.675
+        },
+        {
+          "number": 18,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-18-56ca3415",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.3601065,
+          "http_status": 200,
+          "latency_s": 2.257,
+          "first_event_s": 2.256,
+          "first_answer_s": 2.256
+        },
+        {
+          "number": 19,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-19-51807f13",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.363141,
+          "http_status": 200,
+          "latency_s": 5.428,
+          "first_event_s": 5.427,
+          "first_answer_s": 5.427
+        },
+        {
+          "number": 20,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-20-b7609afe",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.3603,
+          "http_status": 200,
+          "latency_s": 1.675,
+          "first_event_s": 1.675,
+          "first_answer_s": 1.675
+        },
+        {
+          "number": 21,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-21-7507fdd4",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.3629432,
+          "http_status": 200,
+          "latency_s": 2.26,
+          "first_event_s": 2.259,
+          "first_answer_s": 2.259
+        },
+        {
+          "number": 22,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-22-6d594edb",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：通勤通常涉及长时间行走或站立。选择有加厚肩垫、可调节肩带、背部透气网布或胸扣设计的背包，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤场景可能遇到雨天或意外碰撞。建议选择耐磨面料（如尼龙、聚酯纤维），并检查拉链顺滑度、缝线牢固度，确保日常使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.360467,
+          "http_status": 200,
+          "latency_s": 5.411,
+          "first_event_s": 5.41,
+          "first_answer_s": 5.41
+        },
+        {
+          "number": 23,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-23-8a692aad",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516392.3592827,
+          "http_status": 200,
+          "latency_s": 1.677,
+          "first_event_s": 1.676,
+          "first_answer_s": 1.676
+        },
+        {
+          "number": 24,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-24-fc2c4dfc",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516397.7947896,
+          "http_status": 200,
+          "latency_s": 0.207,
+          "first_event_s": 0.206,
+          "first_answer_s": null
+        },
+        {
+          "number": 25,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-25-30853f06",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负系统与舒适度**：通勤通常涉及长时间行走或站立。选择有加厚肩垫、可调节肩带、背部透气网布或背负系统的款式，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包会频繁接触各种环境。建议选择耐磨面料（如尼龙、聚酯纤维），并检查拉链顺滑度、扣件牢固度等细节，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.7961564,
+          "http_status": 200,
+          "latency_s": 5.85,
+          "first_event_s": 5.848,
+          "first_answer_s": 5.848
+        },
+        {
+          "number": 26,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-26-44e4c015",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.7950008,
+          "http_status": 200,
+          "latency_s": 2.32,
+          "first_event_s": 2.319,
+          "first_answer_s": 2.319
+        },
+        {
+          "number": 27,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-27-b777a5b4",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516397.7965302,
+          "http_status": 200,
+          "latency_s": 0.205,
+          "first_event_s": 0.204,
+          "first_answer_s": null
+        },
+        {
+          "number": 28,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-28-263d8134",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.7952008,
+          "http_status": 200,
+          "latency_s": 5.85,
+          "first_event_s": 5.849,
+          "first_answer_s": 5.849
+        },
+        {
+          "number": 29,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-29-f1f569d2",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.7957456,
+          "http_status": 200,
+          "latency_s": 1.953,
+          "first_event_s": 1.95,
+          "first_answer_s": 1.95
+        },
+        {
+          "number": 30,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-30-c56578d4",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516397.7953756,
+          "http_status": 200,
+          "latency_s": 0.206,
+          "first_event_s": 0.206,
+          "first_answer_s": null
+        },
+        {
+          "number": 31,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-31-ac2643a5",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背板的设计直接影响舒适度。选择有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和加固缝线的款式，同时注意拉链顺滑度和五金件质量，确保长期使用不易损坏。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.795944,
+          "http_status": 200,
+          "latency_s": 5.84,
+          "first_event_s": 5.839,
+          "first_answer_s": 5.839
+        },
+        {
+          "number": 32,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-32-87f2b21f",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "error_code": "AGENT_STREAM_FAILED",
+              "message": "agent stream failed"
+            }
+          ],
+          "finish_reason": "error",
+          "started_at": 1791516397.7971318,
+          "http_status": 200,
+          "latency_s": 0.204,
+          "first_event_s": 0.204,
+          "first_answer_s": null
+        },
+        {
+          "number": 33,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-33-17999818",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.7967818,
+          "http_status": 200,
+          "latency_s": 2.685,
+          "first_event_s": 2.683,
+          "first_answer_s": 2.683
+        },
+        {
+          "number": 34,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-c6a2eb67b1-12-34-64d93504",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：长时间背负时，肩带和背部的支撑设计至关重要。选择带有加厚肩垫、可调节肩带和透气背板的产品，能有效减轻肩部压力并提升透气性。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤包需要经受日常使用考验。选择耐磨面料（如尼龙、聚酯纤维）和高质量五金配件，同时考虑防水或防泼水功能，以适应不同天气环境。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.795573,
+          "http_status": 200,
+          "latency_s": 5.841,
+          "first_event_s": 5.839,
+          "first_answer_s": 5.839
+        },
+        {
+          "number": 35,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-c6a2eb67b1-12-35-7df4219c",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791516397.7945154,
+          "http_status": 200,
+          "latency_s": 2.32,
+          "first_event_s": 2.319,
+          "first_answer_s": 2.319
+        }
+      ],
+      "passes": false,
+      "model_counter_deltas": {
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 233872.0,
+        "vllm:generation_tokens_total": 4751.0,
+        "vllm:request_success_total": 44.0
+      }
+    }
+  ],
+  "instance": {
+    "pid": 3502054,
+    "jar_sha256": "12f21aaabde344bf2d8484c88a21828951b4a84cc55d9735ee3c1e6a0e1f0677",
+    "streams": 8,
+    "loops": 32,
+    "model_wait_ms": 200,
+    "max_tokens": 1024,
+    "command": [
+      "java",
+      "-Xms256m",
+      "-Xmx2g",
+      "-jar",
+      "/tmp/rs-agent-capacity-20261009/agent.jar",
+      "--spring.profiles.active=local-qwen",
+      "--server.port=18204",
+      "--server.address=127.0.0.1",
+      "--spring.cloud.nacos.discovery.enabled=false",
+      "--spring.cloud.nacos.config.enabled=false",
+      "--spring.ai.openai.chat.completions-path=/chat/completions",
+      "--spring.mvc.async.request-timeout=180000"
+    ],
+    "scope": "isolated-memory-agent",
+    "log": "/tmp/rs-agent-capacity-20261009/agent-streams-8-loops-32-wait-200-tokens-1024.log"
+  },
+  "host_cpu_count": 128,
+  "samples": [
+    {
+      "time": 1791516295.4905424,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 51,
+      "agent_rss_mib": 542.38,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 29501.0,
+        "vllm:generation_tokens_total": 984.0,
+        "vllm:request_success_total": 14.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 13671.0,
+        "vllm:iteration_tokens_total_count": 984.0,
+        "vllm:iteration_tokens_total_sum": 17285.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516297.5532744,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 48,
+      "temperature_c": 59,
+      "agent_rss_mib": 550.5,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 44695.0,
+        "vllm:generation_tokens_total": 1144.0,
+        "vllm:request_success_total": 17.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 15892.0,
+        "vllm:iteration_tokens_total_count": 1144.0,
+        "vllm:iteration_tokens_total_sum": 18911.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516299.6200345,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 60,
+      "agent_rss_mib": 550.51,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 50948.0,
+        "vllm:generation_tokens_total": 1333.0,
+        "vllm:request_success_total": 17.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 18529.0,
+        "vllm:iteration_tokens_total_count": 1333.0,
+        "vllm:iteration_tokens_total_sum": 21129.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516301.6821089,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 61,
+      "agent_rss_mib": 550.87,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 55776.0,
+        "vllm:generation_tokens_total": 1512.0,
+        "vllm:request_success_total": 19.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 21030.0,
+        "vllm:iteration_tokens_total_count": 1512.0,
+        "vllm:iteration_tokens_total_sum": 21384.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516303.7383342,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 54,
+      "agent_rss_mib": 559.13,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 55776.0,
+        "vllm:generation_tokens_total": 1512.0,
+        "vllm:request_success_total": 19.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 21030.0,
+        "vllm:iteration_tokens_total_count": 1512.0,
+        "vllm:iteration_tokens_total_sum": 21384.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516305.7943451,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 55,
+      "agent_rss_mib": 559.27,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 65427.0,
+        "vllm:generation_tokens_total": 1577.0,
+        "vllm:request_success_total": 19.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 21451.0,
+        "vllm:iteration_tokens_total_count": 1545.0,
+        "vllm:iteration_tokens_total_sum": 21596.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516307.8479035,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 61,
+      "agent_rss_mib": 561.7,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 77225.0,
+        "vllm:generation_tokens_total": 1793.0,
+        "vllm:request_success_total": 22.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 23874.0,
+        "vllm:iteration_tokens_total_count": 1722.0,
+        "vllm:iteration_tokens_total_sum": 25162.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516309.9058952,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 62,
+      "agent_rss_mib": 562.07,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 86877.0,
+        "vllm:generation_tokens_total": 1979.0,
+        "vllm:request_success_total": 23.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 26360.0,
+        "vllm:iteration_tokens_total_count": 1901.0,
+        "vllm:iteration_tokens_total_sum": 26552.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516311.9665885,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 56,
+      "temperature_c": 62,
+      "agent_rss_mib": 572.25,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 102073.0,
+        "vllm:generation_tokens_total": 2273.0,
+        "vllm:request_success_total": 26.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 28486.0,
+        "vllm:iteration_tokens_total_count": 2064.0,
+        "vllm:iteration_tokens_total_sum": 30426.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516314.0251038,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 63,
+      "agent_rss_mib": 572.33,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 108326.0,
+        "vllm:generation_tokens_total": 2464.0,
+        "vllm:request_success_total": 28.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 31001.0,
+        "vllm:iteration_tokens_total_count": 2245.0,
+        "vllm:iteration_tokens_total_sum": 32646.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516316.0850682,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 59,
+      "agent_rss_mib": 572.37,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 108326.0,
+        "vllm:generation_tokens_total": 2591.0,
+        "vllm:request_success_total": 29.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 32779.0,
+        "vllm:iteration_tokens_total_count": 2372.0,
+        "vllm:iteration_tokens_total_sum": 32773.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516318.136599,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 58,
+      "agent_rss_mib": 576.95,
+      "model_metrics": {
+        "vllm:num_requests_running": 4.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 127629.0,
+        "vllm:generation_tokens_total": 2716.0,
+        "vllm:request_success_total": 29.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 33186.0,
+        "vllm:iteration_tokens_total_count": 2404.0,
+        "vllm:iteration_tokens_total_sum": 33193.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516320.191642,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 64,
+      "agent_rss_mib": 577.29,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 139433.0,
+        "vllm:generation_tokens_total": 3046.0,
+        "vllm:request_success_total": 34.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 35383.0,
+        "vllm:iteration_tokens_total_count": 2567.0,
+        "vllm:iteration_tokens_total_sum": 36879.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516322.2541783,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "agent_rss_mib": 578.05,
+      "model_metrics": {
+        "vllm:num_requests_running": 4.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 139433.0,
+        "vllm:generation_tokens_total": 3230.0,
+        "vllm:request_success_total": 35.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 37959.0,
+        "vllm:iteration_tokens_total_count": 2751.0,
+        "vllm:iteration_tokens_total_sum": 37063.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516324.3103857,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 64,
+      "agent_rss_mib": 578.82,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 182331.0,
+        "vllm:generation_tokens_total": 3670.0,
+        "vllm:request_success_total": 41.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 39824.0,
+        "vllm:iteration_tokens_total_count": 2898.0,
+        "vllm:iteration_tokens_total_sum": 46609.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516326.3664727,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 64,
+      "agent_rss_mib": 578.82,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 182331.0,
+        "vllm:generation_tokens_total": 4038.0,
+        "vllm:request_success_total": 41.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 42216.0,
+        "vllm:iteration_tokens_total_count": 3082.0,
+        "vllm:iteration_tokens_total_sum": 46977.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516328.427714,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "agent_rss_mib": 580.39,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 213446.0,
+        "vllm:generation_tokens_total": 4420.0,
+        "vllm:request_success_total": 47.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 44039.0,
+        "vllm:iteration_tokens_total_count": 3222.0,
+        "vllm:iteration_tokens_total_sum": 55242.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516330.4851577,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "agent_rss_mib": 580.41,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 213446.0,
+        "vllm:generation_tokens_total": 4627.0,
+        "vllm:request_success_total": 48.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 46862.0,
+        "vllm:iteration_tokens_total_count": 3424.0,
+        "vllm:iteration_tokens_total_sum": 55449.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516332.5458424,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 61,
+      "agent_rss_mib": 580.45,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 213446.0,
+        "vllm:generation_tokens_total": 4713.0,
+        "vllm:request_success_total": 49.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 48066.0,
+        "vllm:iteration_tokens_total_count": 3510.0,
+        "vllm:iteration_tokens_total_sum": 55535.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516334.598928,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 97,
+      "temperature_c": 64,
+      "agent_rss_mib": 587.26,
+      "model_metrics": {
+        "vllm:num_requests_running": 6.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 253494.0,
+        "vllm:generation_tokens_total": 5050.0,
+        "vllm:request_success_total": 51.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 48803.0,
+        "vllm:iteration_tokens_total_count": 3569.0,
+        "vllm:iteration_tokens_total_sum": 58960.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516336.6640737,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "agent_rss_mib": 587.64,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 266004.0,
+        "vllm:generation_tokens_total": 5482.0,
+        "vllm:request_success_total": 57.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 50880.0,
+        "vllm:iteration_tokens_total_count": 3730.0,
+        "vllm:iteration_tokens_total_sum": 63454.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516338.723393,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "agent_rss_mib": 597.16,
+      "model_metrics": {
+        "vllm:num_requests_running": 6.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 294966.0,
+        "vllm:generation_tokens_total": 5852.0,
+        "vllm:request_success_total": 59.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 53012.0,
+        "vllm:iteration_tokens_total_count": 3895.0,
+        "vllm:iteration_tokens_total_sum": 64274.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516340.789604,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "agent_rss_mib": 597.55,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 318572.0,
+        "vllm:generation_tokens_total": 6415.0,
+        "vllm:request_success_total": 67.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 54761.0,
+        "vllm:iteration_tokens_total_count": 4032.0,
+        "vllm:iteration_tokens_total_sum": 71547.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516342.8484232,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "agent_rss_mib": 597.55,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 318572.0,
+        "vllm:generation_tokens_total": 6785.0,
+        "vllm:request_success_total": 67.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 57166.0,
+        "vllm:iteration_tokens_total_count": 4217.0,
+        "vllm:iteration_tokens_total_sum": 71917.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516344.9095902,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 72,
+      "temperature_c": 70,
+      "agent_rss_mib": 598.47,
+      "model_metrics": {
+        "vllm:num_requests_running": 6.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 358640.0,
+        "vllm:generation_tokens_total": 7209.0,
+        "vllm:request_success_total": 71.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 58534.0,
+        "vllm:iteration_tokens_total_count": 4326.0,
+        "vllm:iteration_tokens_total_sum": 81785.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516346.9774556,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "agent_rss_mib": 599.45,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 377487.0,
+        "vllm:generation_tokens_total": 7551.0,
+        "vllm:request_success_total": 78.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 60594.0,
+        "vllm:iteration_tokens_total_count": 4480.0,
+        "vllm:iteration_tokens_total_sum": 88302.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516349.0370293,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 600.23,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 390359.0,
+        "vllm:generation_tokens_total": 7843.0,
+        "vllm:request_success_total": 82.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 62731.0,
+        "vllm:iteration_tokens_total_count": 4643.0,
+        "vllm:iteration_tokens_total_sum": 91962.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516351.0913637,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 62,
+      "agent_rss_mib": 601.3,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 390359.0,
+        "vllm:generation_tokens_total": 7843.0,
+        "vllm:request_success_total": 82.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 62731.0,
+        "vllm:iteration_tokens_total_count": 4643.0,
+        "vllm:iteration_tokens_total_sum": 91962.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516353.1575818,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 76,
+      "temperature_c": 65,
+      "agent_rss_mib": 602.04,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 464386.0,
+        "vllm:generation_tokens_total": 8526.0,
+        "vllm:request_success_total": 91.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 63929.0,
+        "vllm:iteration_tokens_total_count": 4740.0,
+        "vllm:iteration_tokens_total_sum": 103312.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516355.2264473,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 602.15,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 464386.0,
+        "vllm:generation_tokens_total": 8955.0,
+        "vllm:request_success_total": 94.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 66308.0,
+        "vllm:iteration_tokens_total_count": 4923.0,
+        "vllm:iteration_tokens_total_sum": 103741.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516357.2856123,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 89,
+      "temperature_c": 70,
+      "agent_rss_mib": 603.09,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 514104.0,
+        "vllm:generation_tokens_total": 9476.0,
+        "vllm:request_success_total": 98.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 68153.0,
+        "vllm:iteration_tokens_total_count": 5065.0,
+        "vllm:iteration_tokens_total_sum": 107516.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516359.344959,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 603.26,
+      "model_metrics": {
+        "vllm:num_requests_running": 2.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 526610.0,
+        "vllm:generation_tokens_total": 10021.0,
+        "vllm:request_success_total": 106.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 70074.0,
+        "vllm:iteration_tokens_total_count": 5214.0,
+        "vllm:iteration_tokens_total_sum": 112119.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516361.404535,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 603.6,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 526610.0,
+        "vllm:generation_tokens_total": 10375.0,
+        "vllm:request_success_total": 108.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 72390.0,
+        "vllm:iteration_tokens_total_count": 5392.0,
+        "vllm:iteration_tokens_total_sum": 112473.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516363.4864457,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 90,
+      "temperature_c": 66,
+      "agent_rss_mib": 603.86,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 588133.0,
+        "vllm:generation_tokens_total": 10994.0,
+        "vllm:request_success_total": 117.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 73448.0,
+        "vllm:iteration_tokens_total_count": 5479.0,
+        "vllm:iteration_tokens_total_sum": 126039.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516365.5572684,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "agent_rss_mib": 603.93,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 600649.0,
+        "vllm:generation_tokens_total": 11532.0,
+        "vllm:request_success_total": 119.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 75629.0,
+        "vllm:iteration_tokens_total_count": 5648.0,
+        "vllm:iteration_tokens_total_sum": 130645.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516367.6172962,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 64,
+      "agent_rss_mib": 604.0,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 600649.0,
+        "vllm:generation_tokens_total": 11885.0,
+        "vllm:request_success_total": 122.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 77243.0,
+        "vllm:iteration_tokens_total_count": 5772.0,
+        "vllm:iteration_tokens_total_sum": 130998.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516369.6715891,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 34,
+      "temperature_c": 65,
+      "agent_rss_mib": 605.88,
+      "model_metrics": {
+        "vllm:num_requests_running": 7.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 639262.0,
+        "vllm:generation_tokens_total": 12146.0,
+        "vllm:request_success_total": 123.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 77670.0,
+        "vllm:iteration_tokens_total_count": 5806.0,
+        "vllm:iteration_tokens_total_sum": 131856.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516371.749411,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 98,
+      "temperature_c": 66,
+      "agent_rss_mib": 606.32,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 674646.0,
+        "vllm:generation_tokens_total": 12724.0,
+        "vllm:request_success_total": 133.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 79130.0,
+        "vllm:iteration_tokens_total_count": 5922.0,
+        "vllm:iteration_tokens_total_sum": 142474.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516373.8066974,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 606.32,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 674646.0,
+        "vllm:generation_tokens_total": 13264.0,
+        "vllm:request_success_total": 133.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 81470.0,
+        "vllm:iteration_tokens_total_count": 6102.0,
+        "vllm:iteration_tokens_total_sum": 143014.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516375.870128,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 76,
+      "temperature_c": 66,
+      "agent_rss_mib": 607.29,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 729918.0,
+        "vllm:generation_tokens_total": 13931.0,
+        "vllm:request_success_total": 142.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 83075.0,
+        "vllm:iteration_tokens_total_count": 6226.0,
+        "vllm:iteration_tokens_total_sum": 148265.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516377.9384892,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "agent_rss_mib": 615.17,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 748703.0,
+        "vllm:generation_tokens_total": 14280.0,
+        "vllm:request_success_total": 149.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 85159.0,
+        "vllm:iteration_tokens_total_count": 6382.0,
+        "vllm:iteration_tokens_total_sum": 154727.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516379.9973152,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 72,
+      "agent_rss_mib": 615.84,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 787328.0,
+        "vllm:generation_tokens_total": 14591.0,
+        "vllm:request_success_total": 150.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 87393.0,
+        "vllm:iteration_tokens_total_count": 6545.0,
+        "vllm:iteration_tokens_total_sum": 157759.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516382.0688682,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 77,
+      "temperature_c": 70,
+      "agent_rss_mib": 616.04,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 822742.0,
+        "vllm:generation_tokens_total": 15224.0,
+        "vllm:request_success_total": 161.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 88736.0,
+        "vllm:iteration_tokens_total_count": 6652.0,
+        "vllm:iteration_tokens_total_sum": 168462.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516384.1260018,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "agent_rss_mib": 616.05,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 822742.0,
+        "vllm:generation_tokens_total": 15761.0,
+        "vllm:request_success_total": 161.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 91063.0,
+        "vllm:iteration_tokens_total_count": 6831.0,
+        "vllm:iteration_tokens_total_sum": 168999.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516386.1829903,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 62,
+      "agent_rss_mib": 616.11,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 822742.0,
+        "vllm:generation_tokens_total": 15959.0,
+        "vllm:request_success_total": 164.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 91978.0,
+        "vllm:iteration_tokens_total_count": 6901.0,
+        "vllm:iteration_tokens_total_sum": 169197.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516388.239571,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 75,
+      "temperature_c": 66,
+      "agent_rss_mib": 620.96,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 877990.0,
+        "vllm:generation_tokens_total": 16392.0,
+        "vllm:request_success_total": 167.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 92693.0,
+        "vllm:iteration_tokens_total_count": 6959.0,
+        "vllm:iteration_tokens_total_sum": 174190.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516390.3005474,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 621.07,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 896755.0,
+        "vllm:generation_tokens_total": 16950.0,
+        "vllm:request_success_total": 175.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 94528.0,
+        "vllm:iteration_tokens_total_count": 7102.0,
+        "vllm:iteration_tokens_total_sum": 180841.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516392.357763,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 622.89,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 896755.0,
+        "vllm:generation_tokens_total": 17437.0,
+        "vllm:request_success_total": 178.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 96840.0,
+        "vllm:iteration_tokens_total_count": 7279.0,
+        "vllm:iteration_tokens_total_sum": 181328.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516394.429297,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 71,
+      "agent_rss_mib": 624.53,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 970778.0,
+        "vllm:generation_tokens_total": 18081.0,
+        "vllm:request_success_total": 187.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 97960.0,
+        "vllm:iteration_tokens_total_count": 7370.0,
+        "vllm:iteration_tokens_total_sum": 192635.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516396.5013006,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "agent_rss_mib": 624.54,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 970778.0,
+        "vllm:generation_tokens_total": 18636.0,
+        "vllm:request_success_total": 189.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 100274.0,
+        "vllm:iteration_tokens_total_count": 7548.0,
+        "vllm:iteration_tokens_total_sum": 193190.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516398.5574057,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 73,
+      "agent_rss_mib": 632.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 1009410.0,
+        "vllm:generation_tokens_total": 19079.0,
+        "vllm:request_success_total": 192.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 101937.0,
+        "vllm:iteration_tokens_total_count": 7679.0,
+        "vllm:iteration_tokens_total_sum": 201641.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516400.6296697,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 74,
+      "agent_rss_mib": 633.28,
+      "model_metrics": {
+        "vllm:num_requests_running": 4.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 1056614.0,
+        "vllm:generation_tokens_total": 19688.0,
+        "vllm:request_success_total": 204.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 103167.0,
+        "vllm:iteration_tokens_total_count": 7778.0,
+        "vllm:iteration_tokens_total_sum": 215662.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516402.6897411,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "agent_rss_mib": 629.12,
+      "model_metrics": {
+        "vllm:num_requests_running": 4.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 1056614.0,
+        "vllm:generation_tokens_total": 20400.0,
+        "vllm:request_success_total": 204.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 105481.0,
+        "vllm:iteration_tokens_total_count": 7956.0,
+        "vllm:iteration_tokens_total_sum": 216374.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    }
+  ],
+  "stopped_reason": "consecutive failed levels",
+  "finished_at": 1791516403.6648474
+}

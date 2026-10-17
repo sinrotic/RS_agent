@@ -1,6 +1,7 @@
 package com.sinrotic.rs.catalog.service;
 
 import com.sinrotic.rs.catalog.cache.CatalogItemCache;
+import com.sinrotic.rs.catalog.cache.CaffeineCatalogLocalCache;
 import com.sinrotic.rs.catalog.domain.dto.BatchItemIdsRequestDTO;
 import com.sinrotic.rs.catalog.domain.dto.CatalogItemEmbeddingPageRequestDTO;
 import com.sinrotic.rs.catalog.domain.entity.CatalogItem;
@@ -18,6 +19,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -143,7 +148,47 @@ class DefaultCatalogServiceTest {
         assertEquals(1, repository.findByItemIdsCalls);
     }
 
-    private static final class FakeCatalogItemRepository implements CatalogItemRepository {
+    @Test
+    void localNegativeCachePreventsRepeatedUnknownIdLookups() {
+        FakeCatalogItemRepository repository = new FakeCatalogItemRepository();
+        DefaultCatalogService service = new DefaultCatalogService(
+                repository,
+                new FakeCatalogItemCache(),
+                new CaffeineCatalogLocalCache(100, 300, 30)
+        );
+
+        service.listItemCards(new BatchItemIdsRequestDTO(List.of("UNKNOWN")));
+        service.listItemCards(new BatchItemIdsRequestDTO(List.of("UNKNOWN")));
+
+        assertEquals(1, repository.findByItemIdsCalls);
+    }
+
+    @Test
+    void concurrentHotMissesShareOneMysqlLoad() throws Exception {
+        SlowCatalogItemRepository repository = new SlowCatalogItemRepository();
+        DefaultCatalogService service = new DefaultCatalogService(repository, new FakeCatalogItemCache());
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            Future<List<CatalogItemCardVO>> first = executor.submit(() -> {
+                start.await();
+                return service.listItemCards(new BatchItemIdsRequestDTO(List.of("B001")));
+            });
+            Future<List<CatalogItemCardVO>> second = executor.submit(() -> {
+                start.await();
+                return service.listItemCards(new BatchItemIdsRequestDTO(List.of("B001")));
+            });
+            start.countDown();
+
+            assertEquals("B001", first.get().getFirst().itemId());
+            assertEquals("B001", second.get().getFirst().itemId());
+            assertEquals(1, repository.findByItemIdsCalls);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private static class FakeCatalogItemRepository implements CatalogItemRepository {
 
         private final Map<String, CatalogItem> items = Map.of(
                 "B001", new CatalogItem(
@@ -203,7 +248,7 @@ class DefaultCatalogServiceTest {
 
         private int lastLimit;
 
-        private int findByItemIdsCalls;
+        protected int findByItemIdsCalls;
 
         private List<String> lastRequestedItemIds = List.of();
 
@@ -251,6 +296,19 @@ class DefaultCatalogServiceTest {
         @Override
         public List<String> listStoreNames() {
             return List.of();
+        }
+    }
+
+    private static final class SlowCatalogItemRepository extends FakeCatalogItemRepository {
+        @Override
+        public List<CatalogItem> findByItemIds(List<String> itemIds) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("interrupted", ex);
+            }
+            return super.findByItemIds(itemIds);
         }
     }
 

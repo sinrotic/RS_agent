@@ -1,0 +1,51 @@
+{
+  "status": "restored-original-bf16",
+  "model": {
+    "action": "restore",
+    "pid": 447366,
+    "gpu": 1,
+    "max_model_len": "4096",
+    "quantization": "auto",
+    "quantization_config": "",
+    "log": "/tmp/rs-agent-quantization-20261009/model-restore-1791539415.log",
+    "weight_only": false,
+    "prefix_keepalive": "true"
+  },
+  "models": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791539526,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 4096,
+        "permission": [
+          {
+            "id": "modelperm-8d24e0834b0b4ec6",
+            "object": "model_permission",
+            "created": 1791539526,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "ready": true,
+  "script_restored_exactly": true,
+  "environment_file_restored_exactly": true,
+  "gpu_processes": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb, 41487, 17770 MiB\nGPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9, 449079, 20234 MiB\nGPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad, 41488, 17770 MiB\n",
+  "training_pids_preserved": true,
+  "test_agent_stopped": true,
+  "quantization_enabled": false
+}

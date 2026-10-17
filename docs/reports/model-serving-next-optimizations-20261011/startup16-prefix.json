@@ -1,0 +1,232 @@
+{
+  "label": "startup16",
+  "scope": "六条真实规划前缀及两条最终回答，固定1token响应计时；非完整回答验收、不执行工具",
+  "planning_first_response_median_ms": 617.4107389524579,
+  "samples": 16,
+  "rows": [
+    {
+      "case": 0,
+      "profile": "shopping_final_0",
+      "repeat": 0,
+      "input_sha256": "035dba0f2b820757eb6a3988f6c03a40e061899974c80449576e22e7e74a4327",
+      "elapsed_ms": 153.02943624556065,
+      "usage": {
+        "prompt_tokens": 6494,
+        "total_tokens": 6495,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 0,
+      "profile": "shopping_final_0",
+      "repeat": 1,
+      "input_sha256": "035dba0f2b820757eb6a3988f6c03a40e061899974c80449576e22e7e74a4327",
+      "elapsed_ms": 99.85161293298006,
+      "usage": {
+        "prompt_tokens": 6494,
+        "total_tokens": 6495,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 1,
+      "profile": "shopping_final_1",
+      "repeat": 0,
+      "input_sha256": "acc42d77e617fb0467f32d1a228c9fed565794dc3814cc9afc09e6c1c9a732d1",
+      "elapsed_ms": 114.78598043322563,
+      "usage": {
+        "prompt_tokens": 6109,
+        "total_tokens": 6110,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 1,
+      "profile": "shopping_final_1",
+      "repeat": 1,
+      "input_sha256": "acc42d77e617fb0467f32d1a228c9fed565794dc3814cc9afc09e6c1c9a732d1",
+      "elapsed_ms": 113.72730042785406,
+      "usage": {
+        "prompt_tokens": 6109,
+        "total_tokens": 6110,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 2,
+      "profile": "planning_0",
+      "repeat": 0,
+      "input_sha256": "5301edfb2dca47bb49406330442adde31c8ae671667aacfd7fd2eca8eb9733b3",
+      "elapsed_ms": 1479.6285647898912,
+      "usage": {
+        "prompt_tokens": 10512,
+        "total_tokens": 10513,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 2,
+      "profile": "planning_0",
+      "repeat": 1,
+      "input_sha256": "5301edfb2dca47bb49406330442adde31c8ae671667aacfd7fd2eca8eb9733b3",
+      "elapsed_ms": 173.06372988969088,
+      "usage": {
+        "prompt_tokens": 10512,
+        "total_tokens": 10513,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 3,
+      "profile": "planning_1",
+      "repeat": 0,
+      "input_sha256": "f5d7e2013f08f2fd1f088cc2bc1a74da48ed629a5978cea6ffdefb8336677b17",
+      "elapsed_ms": 380.86574897170067,
+      "usage": {
+        "prompt_tokens": 11676,
+        "total_tokens": 11677,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 3,
+      "profile": "planning_1",
+      "repeat": 1,
+      "input_sha256": "f5d7e2013f08f2fd1f088cc2bc1a74da48ed629a5978cea6ffdefb8336677b17",
+      "elapsed_ms": 156.96031134575605,
+      "usage": {
+        "prompt_tokens": 11676,
+        "total_tokens": 11677,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 4,
+      "profile": "planning_2",
+      "repeat": 0,
+      "input_sha256": "8caf7321d955c4e1470ad7e95c7d51fd44a1a718e443b684e5e22d7b15ebd21b",
+      "elapsed_ms": 214.917516335845,
+      "usage": {
+        "prompt_tokens": 10480,
+        "total_tokens": 10481,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 4,
+      "profile": "planning_2",
+      "repeat": 1,
+      "input_sha256": "8caf7321d955c4e1470ad7e95c7d51fd44a1a718e443b684e5e22d7b15ebd21b",
+      "elapsed_ms": 155.6670516729355,
+      "usage": {
+        "prompt_tokens": 10480,
+        "total_tokens": 10481,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 5,
+      "profile": "planning_3",
+      "repeat": 0,
+      "input_sha256": "13b125bff7fbcf73c168bffa139ece560fdfbd74f2ff92ebf7f1b3ff0db181cf",
+      "elapsed_ms": 221.31139691919088,
+      "usage": {
+        "prompt_tokens": 10636,
+        "total_tokens": 10637,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 5,
+      "profile": "planning_3",
+      "repeat": 1,
+      "input_sha256": "13b125bff7fbcf73c168bffa139ece560fdfbd74f2ff92ebf7f1b3ff0db181cf",
+      "elapsed_ms": 134.5980716869235,
+      "usage": {
+        "prompt_tokens": 10636,
+        "total_tokens": 10637,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 6,
+      "profile": "planning_4",
+      "repeat": 0,
+      "input_sha256": "90d7d576b30c9457c29977c69053356587d115e3dc79a0f7c27ca69446968153",
+      "elapsed_ms": 853.9557289332151,
+      "usage": {
+        "prompt_tokens": 9714,
+        "total_tokens": 9715,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 6,
+      "profile": "planning_4",
+      "repeat": 1,
+      "input_sha256": "90d7d576b30c9457c29977c69053356587d115e3dc79a0f7c27ca69446968153",
+      "elapsed_ms": 133.1608286127448,
+      "usage": {
+        "prompt_tokens": 9714,
+        "total_tokens": 9715,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 7,
+      "profile": "planning_5",
+      "repeat": 0,
+      "input_sha256": "c045fc7d90430c6c73190d7deca5173262bdb956c6a34d292aa28578d01d3858",
+      "elapsed_ms": 911.4708639681339,
+      "usage": {
+        "prompt_tokens": 11813,
+        "total_tokens": 11814,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    },
+    {
+      "case": 7,
+      "profile": "planning_5",
+      "repeat": 1,
+      "input_sha256": "c045fc7d90430c6c73190d7deca5173262bdb956c6a34d292aa28578d01d3858",
+      "elapsed_ms": 151.42796747386456,
+      "usage": {
+        "prompt_tokens": 11813,
+        "total_tokens": 11814,
+        "completion_tokens": 1,
+        "prompt_tokens_details": null
+      },
+      "passed": true
+    }
+  ]
+}

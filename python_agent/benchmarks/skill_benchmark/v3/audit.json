@@ -1,0 +1,53 @@
+{
+  "schema_version": "rs-skill-readiness-audit/1",
+  "benchmark_sha256": "331bf0638c511c42450a82c4ca1336ee79beabc8eba723217f535588426b7d1e",
+  "summary": {
+    "catalog_count": 900,
+    "task_count": 1200,
+    "family_count": 150,
+    "turn_count": 1650,
+    "split_counts": {
+      "train": 720,
+      "dev": 240,
+      "test": 240
+    },
+    "kind_counts": {
+      "category_switch": 150,
+      "explicit_overrides_profile": 150,
+      "no_match": 150,
+      "personalized": 150,
+      "personalized_budget_change": 150,
+      "personalized_exclude_previous": 150,
+      "tool_unavailable": 150,
+      "unknown_attribute": 150
+    },
+    "human_reviewed": false,
+    "profile_count": 150
+  },
+  "independent_users_per_split": {
+    "train": 90,
+    "dev": 30,
+    "test": 30
+  },
+  "outcome_turn_counts": {
+    "recommend": 1350,
+    "no_match": 150,
+    "uncertain_match": 150
+  },
+  "reference_path_failures": [],
+  "zero_idcg_recommendation_turns": [],
+  "profile_history_metadata_min": 4,
+  "formula_controls": {
+    "origin": "not_real_agent; diagnostic_only; oracle_exclusion_path",
+    "price_only_mean_ranking_score": 80.49983723703211,
+    "price_only_nonoptimal_turns": 772,
+    "ranking_turns": 1350
+  },
+  "ready_for_baseline_diagnostics": true,
+  "ready_for_validated_skill_iteration": false,
+  "readiness_blockers": [
+    "human_task_review_pending",
+    "scoring_calibration_pending"
+  ],
+  "auto_deploy": false
+}

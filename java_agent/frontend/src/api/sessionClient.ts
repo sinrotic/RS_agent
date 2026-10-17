@@ -1,7 +1,7 @@
-import { StartSessionResponse, EndSessionResponse } from '../types/session';
-import { isMockMode, postJson, requestHeaders, API_BASE_URL, mockDelay } from './shared';
+import { StartSessionResponse, EndSessionResponse, UserSession } from '../types/session';
+import { isMockMode, postJson, getJson, requestHeaders, API_BASE_URL, mockDelay } from './shared';
 
-export async function startSession(userId?: string): Promise<StartSessionResponse> {
+export async function startSession(_userId?: string, entryScene = 'web'): Promise<StartSessionResponse> {
   if (isMockMode()) {
     await mockDelay(300);
     return {
@@ -9,9 +9,16 @@ export async function startSession(userId?: string): Promise<StartSessionRespons
     };
   }
 
-  // Real request to Java Endpoint: rs-service-user -> POST /api/sessions (if route is configured in Gateway)
-  // If the UserSessionController doesn't have post mapped, it will return error, which will be caught and can fall back.
-  return postJson<StartSessionResponse>('/sessions', userId ? { profileUserId: userId } : {});
+  return postJson<StartSessionResponse>('/sessions', { entryScene });
+}
+
+export async function listSessions(): Promise<UserSession[]> {
+  if (isMockMode()) return [];
+  return getJson<UserSession[]>('/sessions?entryScene=agent_chat&limit=50');
+}
+
+export async function getSession(sessionId: string): Promise<UserSession> {
+  return getJson<UserSession>(`/sessions/${encodeURIComponent(sessionId)}`);
 }
 
 export async function endSession(sessionId: string, reason = 'manual'): Promise<EndSessionResponse> {

@@ -1,0 +1,51 @@
+{
+  "checked_at": "2026-10-11T02:24:24.895591+00:00",
+  "deployment": {
+    "MODEL_PATH": "/mnt/data/luo/models/Qwen3.5-4B",
+    "SERVED_MODEL_NAME": "qwen35-4b",
+    "CUDA_VISIBLE_DEVICES": "1",
+    "VLLM_MAX_MODEL_LEN": "16384",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_PREFIX_KEEPALIVE": "true",
+    "VLLM_KEEPALIVE_INTERVAL_SEC": "300",
+    "VLLM_WARMUP_MAX_TOKENS": "1",
+    "AGENT_SYSTEM_PROMPT_URL": "http://127.0.0.1:18104/api/platform/agent/runtime/system-prompt"
+  },
+  "versions": {
+    "vllm": "0.24.0",
+    "xgrammar": "0.2.3",
+    "torch": "2.11.0",
+    "flashinfer-python": "0.6.12"
+  },
+  "engine": {
+    "dtype": "torch.bfloat16",
+    "quantization": "None",
+    "kv_cache_dtype": "auto",
+    "max_seq_len": "16384",
+    "enable_prefix_caching": "True",
+    "enable_chunked_prefill": "True",
+    "enforce_eager": "False",
+    "speculative_config": "None",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "compile_backend": "inductor",
+    "max_cudagraph_capture_size": 512
+  },
+  "runtime_log_path": "/home/luo/RS_agent_java/model_deploy/context-optimization-20261010/model.log",
+  "runtime_log_evidence": [
+    "(APIServer pid=1505267) WARNING 10-10 23:48:51 [config.py:422] Mamba cache mode is set to 'align' for Qwen3_5ForConditionalGeneration by default when prefix caching is enabled",
+    "(EngineCore pid=1507573) INFO 10-10 23:49:41 [gpu_model_runner.py:5255] Model loading took 8.61 GiB memory and 5.524722 seconds",
+    "(EngineCore pid=1507573) INFO 10-10 23:49:41 [interface.py:773] Setting attention block size to 528 tokens to ensure that attention page size is >= mamba page size.",
+    "(EngineCore pid=1507573) INFO 10-10 23:49:54 [gpu_worker.py:508] Available KV cache memory: 7.38 GiB",
+    "(EngineCore pid=1507573) INFO 10-10 23:49:54 [kv_cache_utils.py:2146] GPU KV cache size: 197,470 tokens",
+    "(EngineCore pid=1507573) INFO 10-10 23:49:54 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 12.05x",
+    "(EngineCore pid=1507573) INFO 10-10 23:50:00 [gpu_model_runner.py:6656] Graph capturing finished in 5 secs, took 0.56 GiB"
+  ],
+  "warmup_prompt_endpoint_state": "URLError: <urlopen error [Errno 111] Connection refused>",
+  "model_config": {
+    "model_type": "qwen3_5",
+    "text_dtype": "bfloat16",
+    "mtp_num_hidden_layers": 1,
+    "mtp_tensor_count": 15
+  },
+  "gpu_snapshot": "index, name, memory.total [MiB], memory.used [MiB], utilization.gpu [%], pstate\n0, NVIDIA GeForce RTX 4090, 24564 MiB, 17793 MiB, 100 %, P2\n1, NVIDIA GeForce RTX 4090, 24564 MiB, 21637 MiB, 0 %, P2\n2, NVIDIA GeForce RTX 4090, 24564 MiB, 15 MiB, 0 %, P8\n"
+}

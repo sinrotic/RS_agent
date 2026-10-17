@@ -1,0 +1,24 @@
+{
+  "label": "full-first",
+  "route": "fast",
+  "query": "推荐耳机",
+  "session_id": "sess_1840b58b82844793bc4562f5a54a0985",
+  "agent_done_ms": 3199.68,
+  "response": null,
+  "events": [
+    {
+      "request_id": "agent_req_5b011f7b62a6389c923b2e492bc1039f"
+    },
+    {
+      "error_code": "AGENT_STREAM_FAILED",
+      "retryable": true,
+      "status": 500,
+      "message": "agent stream failed"
+    },
+    {
+      "done": true,
+      "finish_reason": "error"
+    }
+  ],
+  "error": null
+}

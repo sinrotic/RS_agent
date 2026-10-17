@@ -11,12 +11,21 @@ import org.springframework.web.client.RestClient;
 public class RestInventoryClient implements InventoryClient {
 
     private final RestClient restClient;
+    public record ActivityMovement(String activityId,long orderId,String skuId,int quantity) {}
+    @Override
+    public void activity(String action,String activityId,Long orderId,String skuId,Integer quantity) {
+        restClient.post().uri("/internal/inventory/activities/movements/{action}",action)
+                .body(new ActivityMovement(activityId,orderId,skuId,quantity)).retrieve().toBodilessEntity();
+    }
 
     public RestInventoryClient(
             RestClient.Builder restClientBuilder,
             @Value("${rs.inventory.base-url:http://localhost:8092}") String inventoryBaseUrl
     ) {
-        this.restClient = restClientBuilder.baseUrl(inventoryBaseUrl).build();
+        var factory = new org.springframework.http.client.SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(2000);
+        factory.setReadTimeout(3000);
+        this.restClient = restClientBuilder.baseUrl(inventoryBaseUrl).requestFactory(factory).build();
     }
 
     @Override
@@ -44,5 +53,12 @@ public class RestInventoryClient implements InventoryClient {
                 .body(new InventoryReleaseRequestDTO(requestId, orderId, skuId, quantity))
                 .retrieve()
                 .toBodilessEntity();
+    }
+
+    @Override
+    public void cancel(String requestId, Long orderId, String skuId, Integer quantity) {
+        restClient.post().uri("/internal/inventory/cancel")
+                .body(new InventoryReleaseRequestDTO(requestId,orderId,skuId,quantity))
+                .retrieve().toBodilessEntity();
     }
 }

@@ -1,0 +1,20 @@
+[
+  {
+    "suite": "SpringAiAgentModelStreamCancellationTest",
+    "tests": "2",
+    "failures": "2",
+    "errors": "0",
+    "cases": [
+      {
+        "name": "finalAnswerStopsTheUpstreamStreamWithoutWaitingForItsTail",
+        "seconds": "0.615",
+        "failure": "[upstream generation must stop when the Agent has finished] \nExpecting AtomicBoolean(false) to have value:\n  true\nbut did not."
+      },
+      {
+        "name": "consumerFailureAlsoStopsTheUpstreamStreamAndPreservesTheOriginalError",
+        "seconds": "0.017",
+        "failure": "[failed consumers must not leave generation running] \nExpecting AtomicBoolean(false) to have value:\n  true\nbut did not."
+      }
+    ]
+  }
+]

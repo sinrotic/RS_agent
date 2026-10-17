@@ -6,6 +6,7 @@ import com.sinrotic.rs.recommend.domain.vo.RagPipelineProviderStatusVO;
 import com.sinrotic.rs.recommend.domain.vo.RagPipelineStageCountsVO;
 import com.sinrotic.rs.recommend.domain.vo.RagTraceVO;
 import com.sinrotic.rs.recommend.service.RagTraceService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +17,17 @@ import java.util.Map;
  */
 @Service
 public class InMemoryRagTraceService implements RagTraceService {
+
+    private final String elasticsearchIndex;
+    private final String milvusCollection;
+
+    public InMemoryRagTraceService(
+            @Value("${rs.recommend.rag.elasticsearch-index:rs_agent_rag_bm25_v1}") String elasticsearchIndex,
+            @Value("${rs.recommend.rag.milvus-collection:rs_agent_rag_chunks_milvus_v1}") String milvusCollection
+    ) {
+        this.elasticsearchIndex = elasticsearchIndex;
+        this.milvusCollection = milvusCollection;
+    }
 
     @Override
     public RagTraceVO getTrace(String requestId) {
@@ -39,8 +51,8 @@ public class InMemoryRagTraceService implements RagTraceService {
         return new RagHealthVO(
                 "UP",
                 List.of(
-                        new RagHealthProviderVO("elasticsearch_bm25", "READY", "rs_agent_rag_bm25_v1", ""),
-                        new RagHealthProviderVO("milvus_vector", "READY", "", "rs_agent_rag_chunks_milvus_v1")
+                        new RagHealthProviderVO("elasticsearch_bm25", "READY", elasticsearchIndex, ""),
+                        new RagHealthProviderVO("milvus_vector", "READY", "", milvusCollection)
                 )
         );
     }

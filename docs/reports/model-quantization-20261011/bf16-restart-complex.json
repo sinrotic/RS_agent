@@ -1,0 +1,63 @@
+{
+  "business_regression": [
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 26070.07,
+      "complete_with_catalog_ms": 26077.07,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 163,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "load_skill",
+        "load_skill",
+        "load_skill",
+        "rag_support",
+        "call_agent",
+        "load_skill"
+      ],
+      "answer_sha256": "a60ccaad30a3ea4166fc7389c22751ea761fbff1de8c7e5e12720a7133b817d3",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 20231.54,
+      "complete_with_catalog_ms": 20237.36,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 822,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text",
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_support",
+        "load_skill",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search"
+      ],
+      "answer_sha256": "f5edd0f695d13f0e3b8a687658d27a3df46d2655671d56c1f3ebb983a6ed4a47",
+      "passed": true
+    }
+  ]
+}

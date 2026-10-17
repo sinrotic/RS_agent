@@ -1,0 +1,21 @@
+{
+  "state_cleaned": true,
+  "owned_containers_remaining": [],
+  "initial_infra_running_after": {
+    "rs-agent-java-mysql": false,
+    "rs-agent-java-scylla": false,
+    "rs-agent-java-milvus-etcd": false,
+    "rs-agent-java-milvus-minio": false,
+    "rs-agent-java-elasticsearch": false,
+    "rs-agent-java-milvus-standalone": false
+  },
+  "gpu_after": "0, NVIDIA GeForce RTX 4090, 17793 MiB, 99 %\n1, NVIDIA GeForce RTX 4090, 20257 MiB, 0 %\n2, NVIDIA GeForce RTX 4090, 17793 MiB, 99 %\n",
+  "vllm_health_status": 200,
+  "private_credentials_removed": true,
+  "nvme_private_database_directory_removed": true,
+  "private_env_files_remaining": [],
+  "rotational": {
+    "sdb": "1",
+    "nvme0n1": "0"
+  }
+}

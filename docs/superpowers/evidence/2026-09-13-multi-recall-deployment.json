@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "recommend_sha256": "a8d38f15c3ec59314b0b9171065662f3f2cea358884f3fd084851ed688360199",
+  "runtime": {
+    "status": "UP",
+    "version": "multi_recall_20260913",
+    "sources": {
+      "itemcf_weak": 16454229,
+      "itemcf_strong": 514216,
+      "swing_recall": 457372,
+      "usercf_recall": 64327024,
+      "category": 107942,
+      "popular": 762622
+    }
+  },
+  "settings": {
+    "RS_RECOMMEND_MULTI_RECALL_ENABLED": "true",
+    "RS_RECOMMEND_MULTI_RECALL_BASE_URL": "http://172.21.0.1:18118",
+    "RS_RECOMMEND_MULTI_RECALL_VERSION": "multi_recall_20260913"
+  },
+  "backup": "/home/luo/RS_agent_java/backups/20260913-multi-recall"
+}

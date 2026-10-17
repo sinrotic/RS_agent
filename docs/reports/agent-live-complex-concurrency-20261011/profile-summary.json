@@ -1,0 +1,14 @@
+{
+  "agent_traces": [],
+  "exception_type_counts": {
+    "com.openai.errors.OpenAIIoException": 3,
+    "java.io.InterruptedIOException": 3,
+    "java.net.SocketException": 3
+  },
+  "exception_classifications": {
+    "exception_mentions_timeout": 3,
+    "exception_mentions_socket_closed": 3
+  },
+  "java_timing_agent_enabled": false,
+  "scope": "共享时间窗口异常类型；没有匿名调用树时不得推导纯模型耗时占比"
+}

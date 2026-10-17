@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ShieldCheck, UserPlus, KeyRound, Sparkles } from 'lucide-react';
 import { register, login } from '../api/authClient';
+import { captureAuthSession, isCurrentAuthSession } from '../api/shared';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -11,9 +12,8 @@ export function Login({ onLoginSuccess }: LoginProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
-  const [bindStrategy, setBindStrategy] = useState<'random' | 'manual' | 'segment'>('random');
+  const [bindStrategy, setBindStrategy] = useState<'random' | 'selected'>('random');
   const [profileUserId, setProfileUserId] = useState('');
-  const [segment, setSegment] = useState('Smart Tech Commuters');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,8 +31,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
           password,
           nickname: nickname || undefined,
           bindStrategy,
-          profileUserId: bindStrategy === 'manual' ? profileUserId : undefined,
-          segment: bindStrategy === 'segment' ? segment : undefined
+          profileUserId: bindStrategy === 'selected' ? profileUserId : undefined,
         });
         setSuccessMsg('注册成功！正在进入推荐系统...');
       } else {
@@ -40,8 +39,9 @@ export function Login({ onLoginSuccess }: LoginProps) {
         setSuccessMsg('登录成功！正在加载个性化商城...');
       }
 
+      const session = captureAuthSession();
       setTimeout(() => {
-        onLoginSuccess();
+        if (isCurrentAuthSession(session)) onLoginSuccess();
       }, 1000);
     } catch (err: any) {
       setError(err.message || '操作失败，请检查后端服务');
@@ -59,7 +59,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
 
         <div className="relative z-10 flex flex-col items-center">
           {/* Header Icon */}
-          <div className="bg-gradient-to-tr from-indigo-500 to-purple-500 p-3.5 rounded-2xl text-white shadow-lg shadow-indigo-500/20 mb-6">
+          <div className="bg-linear-to-tr from-indigo-500 to-purple-500 p-3.5 rounded-2xl text-white shadow-lg shadow-indigo-500/20 mb-6">
             {isRegister ? <UserPlus size={28} /> : <KeyRound size={28} />}
           </div>
 
@@ -95,7 +95,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
                 value={username}
                 onChange={e => setUsername(e.target.value)}
                 placeholder="输入用户名"
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
+                className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
               />
             </div>
 
@@ -109,7 +109,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="输入账户密码"
-                className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
+                className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
               />
             </div>
 
@@ -124,7 +124,7 @@ export function Login({ onLoginSuccess }: LoginProps) {
                     value={nickname}
                     onChange={e => setNickname(e.target.value)}
                     placeholder="选填，默认同用户名"
-                    className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
+                    className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
                   />
                 </div>
 
@@ -135,15 +135,14 @@ export function Login({ onLoginSuccess }: LoginProps) {
                   <select
                     value={bindStrategy}
                     onChange={e => setBindStrategy(e.target.value as any)}
-                    className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all cursor-pointer"
+                    className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all cursor-pointer"
                   >
                     <option value="random">随机画像绑定 (推荐)</option>
-                    <option value="manual">手动指定画像 ID (profileUserId)</option>
-                    <option value="segment">按特定特征人群划分 (Segment)</option>
+                    <option value="selected">手动指定画像 ID (profileUserId)</option>
                   </select>
                 </div>
 
-                {bindStrategy === 'manual' && (
+                {bindStrategy === 'selected' && (
                   <div>
                     <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 pl-1">
                       画像用户 ID (profile_user_id)
@@ -154,35 +153,18 @@ export function Login({ onLoginSuccess }: LoginProps) {
                       value={profileUserId}
                       onChange={e => setProfileUserId(e.target.value)}
                       placeholder="例如: user_12345"
-                      className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
+                      className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-hidden focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all pl-4 placeholder-slate-600"
                     />
                   </div>
                 )}
 
-                {bindStrategy === 'segment' && (
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 pl-1">
-                      人群特征组 (Segment)
-                    </label>
-                    <select
-                      value={segment}
-                      onChange={e => setSegment(e.target.value)}
-                      className="w-full rounded-xl bg-slate-950/60 border border-slate-700/60 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 px-4 py-3 text-xs text-white transition-all cursor-pointer"
-                    >
-                      <option value="Smart Tech Commuters">智能数码通勤族</option>
-                      <option value="Home Comfort Seekers">居家舒适乐享派</option>
-                      <option value="Outdoor Sports Enthusiasts">户外运动达人</option>
-                      <option value="Budget Accessory Finders">低价性价比配件型</option>
-                    </select>
-                  </div>
-                )}
               </>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold rounded-xl py-3.5 text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer mt-4"
+              className="w-full bg-linear-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 text-white font-bold rounded-xl py-3.5 text-xs transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer mt-4"
             >
               {loading ? (
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>

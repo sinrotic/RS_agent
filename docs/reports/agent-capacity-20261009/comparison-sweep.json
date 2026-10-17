@@ -1,0 +1,2546 @@
+{
+  "config": {
+    "base": "http://127.0.0.1:18204",
+    "model_base": "http://127.0.0.1:18082",
+    "gpu": 1,
+    "pid": 3536229,
+    "levels": "1,8,16,32,48",
+    "rounds": 1,
+    "timeout": 90,
+    "p95_budget": 30,
+    "output": "/tmp/rs-agent-capacity-20261009/comparison-sweep.json",
+    "label": "longer-comparison",
+    "prompt": "comparison",
+    "stop_after_failed_levels": 1,
+    "require_exclusive_gpu": true,
+    "run_id": "b920b5df33"
+  },
+  "model": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791517829,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 16384,
+        "permission": [
+          {
+            "id": "modelperm-a8df6610066cf018",
+            "object": "model_permission",
+            "created": 1791517829,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "started_at": 1791517829.371797,
+  "scope": "真实 Java Agent/模型；内存会话和固定候选；不包含网关、数据库与在线推荐",
+  "phases": [
+    {
+      "concurrency": 1,
+      "requests": 1,
+      "successful": 1,
+      "success_rate": 1.0,
+      "elapsed_s": 27.949,
+      "successful_turns_per_s": 0.036,
+      "p50_s": 27.947,
+      "p95_s": 27.947,
+      "p99_s": 27.947,
+      "first_answer_p95_s": 27.946,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 61551953.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44287056.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34830491.0,
+        "vllm:generation_tokens_total": 625422.0,
+        "vllm:request_success_total": 6603.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 483060.0,
+        "vllm:iteration_tokens_total_count": 41760.0,
+        "vllm:iteration_tokens_total_sum": 9960905.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 61573745.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44299728.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34852283.0,
+        "vllm:generation_tokens_total": 628078.0,
+        "vllm:request_success_total": 6607.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 520206.0,
+        "vllm:iteration_tokens_total_count": 44416.0,
+        "vllm:iteration_tokens_total_sum": 9972681.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-1-0-b8e89043",
+          "success": true,
+          "events": {
+            "answer_block": 11,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 五种维度的比较",
+              "type": "text"
+            },
+            {
+              "content": "1. **重量**：轻量型最轻，适合长时间背负；电脑保护型因内置防震层稍重；防雨型因防水涂层和加厚面料略重。",
+              "type": "text"
+            },
+            {
+              "content": "2. **保护**：电脑保护型最佳，有独立防震仓和缓冲材料；防雨型侧重防水而非防震；轻量型保护性一般，适合轻装通勤。",
+              "type": "text"
+            },
+            {
+              "content": "3. **收纳**：防雨型通常空间较大，适合多件物品；电脑保护型有固定电脑位但其他空间有限；轻量型收纳灵活但容量较小。",
+              "type": "text"
+            },
+            {
+              "content": "4. **舒适度**：轻量型肩带设计简单，透气性好；防雨型因面料厚重可能影响透气；电脑保护型若过重可能增加肩部负担。",
+              "type": "text"
+            },
+            {
+              "content": "5. **使用场景**：轻量型适合日常通勤、短途出行；电脑保护型适合需要携带贵重设备的办公场景；防雨型适合多雨地区或户外通勤。",
+              "type": "text"
+            },
+            {
+              "content": "### 选购建议",
+              "type": "text"
+            },
+            {
+              "content": "• 若追求轻便和日常使用，选择轻量型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若需保护笔记本电脑等贵重设备，选择电脑保护型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若所在地区多雨或经常户外活动，选择防雨型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517829.3838823,
+          "http_status": 200,
+          "latency_s": 27.947,
+          "first_event_s": 27.946,
+          "first_answer_s": 27.946
+        }
+      ],
+      "passes": true,
+      "gpu_process_count_peak": 1,
+      "shared_gpu_detected": false,
+      "started_at": 1791517829.3821259,
+      "finished_at": 1791517857.3417,
+      "model_counter_deltas": {
+        "vllm:prefix_cache_queries_total": 21792.0,
+        "vllm:prefix_cache_hits_total": 12672.0,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 21792.0,
+        "vllm:generation_tokens_total": 2656.0,
+        "vllm:request_success_total": 4.0
+      }
+    },
+    {
+      "concurrency": 8,
+      "requests": 8,
+      "successful": 8,
+      "success_rate": 1.0,
+      "elapsed_s": 65.95,
+      "successful_turns_per_s": 0.121,
+      "p50_s": 53.859,
+      "p95_s": 65.946,
+      "p99_s": 65.946,
+      "first_answer_p95_s": 65.946,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 61573745.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44299728.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34852283.0,
+        "vllm:generation_tokens_total": 628078.0,
+        "vllm:request_success_total": 6607.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 520206.0,
+        "vllm:iteration_tokens_total_count": 44416.0,
+        "vllm:iteration_tokens_total_sum": 9972681.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 61919254.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44555808.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35086712.0,
+        "vllm:generation_tokens_total": 657460.0,
+        "vllm:request_success_total": 6649.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 581945.0,
+        "vllm:iteration_tokens_total_count": 49183.0,
+        "vllm:iteration_tokens_total_sum": 10062780.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-0-cb652ed8",
+          "success": true,
+          "events": {
+            "answer_block": 8,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路在五个维度的比较：",
+              "type": "text"
+            },
+            {
+              "content": "1. 轻量型：重量最轻，适合长时间背负；保护性一般，适合存放轻薄物品；收纳空间有限；舒适度较好，但肩带支撑可能较弱；适合日常通勤、短途出行。",
+              "type": "text"
+            },
+            {
+              "content": "2. 电脑保护型：重量中等，注重防震防压；保护性最强，专为笔记本电脑设计；收纳空间较大，可容纳电脑、文件等；舒适度较好，通常有加厚肩带；适合需要携带电脑办公的用户。",
+              "type": "text"
+            },
+            {
+              "content": "3. 防雨型：重量中等偏重，因防水材料；保护性中等，防水为主；收纳空间一般；舒适度中等，防水设计可能影响透气性；适合多雨地区或需要应对恶劣天气的场景。",
+              "type": "text"
+            },
+            {
+              "content": "选购建议：",
+              "type": "text"
+            },
+            {
+              "content": "- 如果主要追求轻便和日常使用，选择轻量型；",
+              "type": "text"
+            },
+            {
+              "content": "- 如果需要经常携带电脑且注重保护，选择电脑保护型；",
+              "type": "text"
+            },
+            {
+              "content": "- 如果所在地区多雨或经常需要应对恶劣天气，选择防雨型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.356338,
+          "http_status": 200,
+          "latency_s": 37.453,
+          "first_event_s": 37.452,
+          "first_answer_s": 37.452
+        },
+        {
+          "number": 1,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-1-2f9170a7",
+          "success": true,
+          "events": {
+            "answer_block": 11,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 五种维度的比较",
+              "type": "text"
+            },
+            {
+              "content": "1. **重量**：轻量型最轻，适合长时间背负；电脑保护型因内置防震层稍重；防雨型因防水涂层和加厚面料略重。",
+              "type": "text"
+            },
+            {
+              "content": "2. **保护**：电脑保护型最佳，有独立防震仓；防雨型侧重防水而非防震；轻量型保护性一般，适合轻装通勤。",
+              "type": "text"
+            },
+            {
+              "content": "3. **收纳**：防雨型通常收纳空间最大；电脑保护型为电脑预留空间，其他物品收纳适中；轻量型收纳空间有限。",
+              "type": "text"
+            },
+            {
+              "content": "4. **舒适度**：轻量型因重量轻，长时间背负更舒适；防雨型和电脑保护型因重量稍大，肩带设计需注重缓冲。",
+              "type": "text"
+            },
+            {
+              "content": "5. **使用场景**：轻量型适合日常通勤、轻装出行；电脑保护型适合携带笔记本电脑的商务人士；防雨型适合多雨地区或户外通勤。",
+              "type": "text"
+            },
+            {
+              "content": "### 选购建议",
+              "type": "text"
+            },
+            {
+              "content": "• 若追求轻便和日常使用，选择轻量型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若需保护笔记本电脑，选择电脑保护型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若所在地区多雨或需防水功能，选择防雨型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3555212,
+          "http_status": 200,
+          "latency_s": 65.794,
+          "first_event_s": 65.793,
+          "first_answer_s": 65.793
+        },
+        {
+          "number": 2,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-2-0d3938aa",
+          "success": true,
+          "events": {
+            "answer_block": 12,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 轻量型通勤包（重量优先）",
+              "type": "text"
+            },
+            {
+              "content": "**重量**：最轻，通常1-1.5kg，适合长时间背负或需要减轻负担的场景。",
+              "type": "text"
+            },
+            {
+              "content": "**保护**：基础防护，适合存放轻薄设备，对笔记本电脑等贵重物品保护有限。",
+              "type": "text"
+            },
+            {
+              "content": "**收纳**：空间紧凑，适合日常通勤，但大文件或多件物品收纳能力较弱。",
+              "type": "text"
+            },
+            {
+              "content": "**舒适度**：通常采用轻量化设计，肩带较细，长时间背负可能不如重型包舒适。",
+              "type": "text"
+            },
+            {
+              "content": "**使用场景**：适合轻办公、学生、短途通勤，或需要频繁携带其他物品的场景。",
+              "type": "text"
+            },
+            {
+              "content": "### 电脑保护型通勤包（保护优先）",
+              "type": "text"
+            },
+            {
+              "content": "**重量**：中等，因内置电脑隔层和缓冲材料，通常1.5-2kg。",
+              "type": "text"
+            },
+            {
+              "content": "**保护**：核心优势，内置防震隔层、加厚衬垫，有效保护笔记本电脑和电子设备。",
+              "type": "text"
+            },
+            {
+              "content": "**收纳**：空间适中，有专用电脑隔层，适合存放13-15英寸笔记本及常用配件。",
+              "type": "text"
+            },
+            {
+              "content": "**舒适度**：通常配备加厚肩带和背板，长时间背负舒适度较好。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3566272,
+          "http_status": 200,
+          "latency_s": 65.935,
+          "first_event_s": 65.935,
+          "first_answer_s": 65.935
+        },
+        {
+          "number": 3,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-3-c74acfb6",
+          "success": true,
+          "events": {
+            "answer_block": 11,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 五种维度的比较",
+              "type": "text"
+            },
+            {
+              "content": "1. **重量**：轻量型最轻，适合长时间背负；电脑保护型因内置防震层稍重；防雨型因防水涂层和加厚面料略重。",
+              "type": "text"
+            },
+            {
+              "content": "2. **保护**：电脑保护型最佳，有独立防震仓和缓冲材料；防雨型侧重防水，对电脑保护一般；轻量型保护性最弱，适合存放非贵重物品。",
+              "type": "text"
+            },
+            {
+              "content": "3. **收纳**：防雨型通常空间较大，适合多件衣物；电脑保护型有固定隔层，适合电脑为主；轻量型收纳空间有限，适合日常小物件。",
+              "type": "text"
+            },
+            {
+              "content": "4. **舒适度**：轻量型设计简洁，肩带较细，透气性一般；防雨型肩带宽厚，承重好但可能较硬；电脑保护型注重人体工学，但重量影响舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "5. **使用场景**：轻量型适合日常通勤、短途出行；电脑保护型适合需要携带笔记本电脑的办公场景；防雨型适合多雨地区或户外通勤。",
+              "type": "text"
+            },
+            {
+              "content": "### 选购建议",
+              "type": "text"
+            },
+            {
+              "content": "• 若主要携带电脑且对重量不敏感，选电脑保护型。",
+              "type": "text"
+            },
+            {
+              "content": "• 若经常下雨或需要多件衣物收纳，选防雨型。",
+              "type": "text"
+            },
+            {
+              "content": "• 若追求轻便、日常携带小物件，选轻量型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3557415,
+          "http_status": 200,
+          "latency_s": 39.472,
+          "first_event_s": 39.47,
+          "first_answer_s": 39.47
+        },
+        {
+          "number": 4,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-4-d3293f5a",
+          "success": true,
+          "events": {
+            "answer_block": 11,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 五种维度的比较",
+              "type": "text"
+            },
+            {
+              "content": "1. **重量**：轻量型最轻，适合长时间背负；电脑保护型因内置防震层稍重；防雨型因防水涂层和加厚面料略重。",
+              "type": "text"
+            },
+            {
+              "content": "2. **保护**：电脑保护型对电脑有专门防震设计，保护性最佳；轻量型和防雨型主要防刮擦，对电脑保护较弱。",
+              "type": "text"
+            },
+            {
+              "content": "3. **收纳**：防雨型通常有独立防水隔层，收纳性较好；轻量型收纳空间较灵活；电脑保护型因固定电脑结构，额外收纳空间较少。",
+              "type": "text"
+            },
+            {
+              "content": "4. **舒适度**：轻量型背包带设计更贴合人体工学，长时间背负更舒适；其他两种因功能强化，重量增加可能影响舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "5. **使用场景**：轻量型适合日常通勤、短途出行；电脑保护型适合需要携带贵重电子设备的办公场景；防雨型适合多雨地区或户外通勤。",
+              "type": "text"
+            },
+            {
+              "content": "### 选购建议",
+              "type": "text"
+            },
+            {
+              "content": "• 若追求轻便和日常使用，选择轻量型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若需重点保护电脑，选择电脑保护型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若常遇雨天或需多隔层收纳，选择防雨型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3561323,
+          "http_status": 200,
+          "latency_s": 53.859,
+          "first_event_s": 53.858,
+          "first_answer_s": 53.858
+        },
+        {
+          "number": 5,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-5-bf303e86",
+          "success": true,
+          "events": {
+            "answer_block": 12,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 轻量型通勤包（重量优先）",
+              "type": "text"
+            },
+            {
+              "content": "**重量**：最轻，通常 1-1.5kg，适合长时间背负或需要减轻负担的场景。",
+              "type": "text"
+            },
+            {
+              "content": "**保护**：基础防护，适合存放轻薄物品，对笔记本电脑等贵重物品保护有限。",
+              "type": "text"
+            },
+            {
+              "content": "**收纳**：空间适中，适合日常通勤物品，但大尺寸物品收纳能力较弱。",
+              "type": "text"
+            },
+            {
+              "content": "**舒适度**：轻量化设计通常配合人体工学，长时间背负压力较小。",
+              "type": "text"
+            },
+            {
+              "content": "**使用场景**：适合日常通勤、短途出行、学生或需要减轻负担的用户。",
+              "type": "text"
+            },
+            {
+              "content": "### 电脑保护型双肩包（保护优先）",
+              "type": "text"
+            },
+            {
+              "content": "**重量**：中等，因内置电脑隔层和缓冲材料，通常 1.5-2kg。",
+              "type": "text"
+            },
+            {
+              "content": "**保护**：优秀，内置防震、防水、防刮的电脑隔层，适合存放笔记本电脑、平板等贵重物品。",
+              "type": "text"
+            },
+            {
+              "content": "**收纳**：空间较大，可容纳电脑、文件、文具等，部分型号支持多设备收纳。",
+              "type": "text"
+            },
+            {
+              "content": "**舒适度**：因重量增加，需配合良好肩带和背板设计，长时间背负可能稍重。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3559332,
+          "http_status": 200,
+          "latency_s": 65.946,
+          "first_event_s": 65.946,
+          "first_answer_s": 65.946
+        },
+        {
+          "number": 6,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-6-92c6096f",
+          "success": true,
+          "events": {
+            "answer_block": 11,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 五种维度的比较",
+              "type": "text"
+            },
+            {
+              "content": "1. **重量**：轻量型最轻，适合长时间背负；电脑保护型因内置防震层稍重；防雨型因防水涂层和加厚面料略重。",
+              "type": "text"
+            },
+            {
+              "content": "2. **保护**：电脑保护型对电脑有专门防震设计，保护性最佳；轻量型主要靠普通隔层；防雨型侧重防水而非防震。",
+              "type": "text"
+            },
+            {
+              "content": "3. **收纳**：防雨型通常有较多外部口袋和防水收纳空间；轻量型收纳较简单；电脑保护型收纳适中，侧重电脑安全。",
+              "type": "text"
+            },
+            {
+              "content": "4. **舒适度**：轻量型因重量轻，长时间背负更舒适；防雨型和电脑保护型因重量稍大，肩带设计需注重缓冲。",
+              "type": "text"
+            },
+            {
+              "content": "5. **使用场景**：轻量型适合日常通勤、短途出行；电脑保护型适合需要携带贵重电子设备的办公场景；防雨型适合多雨地区或户外通勤。",
+              "type": "text"
+            },
+            {
+              "content": "### 选购建议",
+              "type": "text"
+            },
+            {
+              "content": "• 若追求轻便和日常使用，选择轻量型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若需重点保护电脑，选择电脑保护型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若常遇雨天或需多物品收纳，选择防雨型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3568835,
+          "http_status": 200,
+          "latency_s": 54.254,
+          "first_event_s": 54.253,
+          "first_answer_s": 54.253
+        },
+        {
+          "number": 7,
+          "prompt": "请比较通勤双肩包的三种选择思路：轻量型、电脑保护型、防雨型。从重量、保护、收纳、舒适度、使用场景五个方面给出一般性的比较，最后给出简短选购建议。不推荐具体商品，不查询商品或用户历史，不编造价格。",
+          "session_id": "capacity-b920b5df33-8-7-7771de26",
+          "success": true,
+          "events": {
+            "answer_block": 11,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "以下是通勤双肩包的三种选择思路比较：",
+              "type": "text"
+            },
+            {
+              "content": "### 五种维度的比较",
+              "type": "text"
+            },
+            {
+              "content": "1. **重量**：轻量型最轻，适合长时间背负；电脑保护型因内置防震层稍重；防雨型因防水涂层和加厚面料略重。",
+              "type": "text"
+            },
+            {
+              "content": "2. **保护**：电脑保护型最佳，有独立防震仓和缓冲材料；防雨型侧重防水而非防震；轻量型保护性一般，适合轻装通勤。",
+              "type": "text"
+            },
+            {
+              "content": "3. **收纳**：防雨型通常空间较大，适合多件物品；电脑保护型有固定电脑位但其他空间有限；轻量型收纳灵活但容量较小。",
+              "type": "text"
+            },
+            {
+              "content": "4. **舒适度**：轻量型肩带设计简单，透气性好；防雨型因面料厚重可能影响透气；电脑保护型若过重可能增加肩部负担。",
+              "type": "text"
+            },
+            {
+              "content": "5. **使用场景**：轻量型适合日常轻通勤、短途出行；电脑保护型适合需要携带笔记本电脑的办公场景；防雨型适合多雨地区或户外通勤。",
+              "type": "text"
+            },
+            {
+              "content": "### 选购建议",
+              "type": "text"
+            },
+            {
+              "content": "• 若主要需求是减轻负担，选择轻量型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若需保护笔记本电脑，选择电脑保护型；",
+              "type": "text"
+            },
+            {
+              "content": "• 若所在地区多雨或需携带大量物品，选择防雨型。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791517859.3553123,
+          "http_status": 200,
+          "latency_s": 39.093,
+          "first_event_s": 39.092,
+          "first_answer_s": 39.092
+        }
+      ],
+      "passes": false,
+      "gpu_process_count_peak": 1,
+      "shared_gpu_detected": false,
+      "started_at": 1791517859.353142,
+      "finished_at": 1791517925.3128903,
+      "model_counter_deltas": {
+        "vllm:prefix_cache_queries_total": 345509.0,
+        "vllm:prefix_cache_hits_total": 256080.0,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 234429.0,
+        "vllm:generation_tokens_total": 29382.0,
+        "vllm:request_success_total": 42.0
+      }
+    }
+  ],
+  "instance": {
+    "pid": 3536229,
+    "jar_sha256": "12f21aaabde344bf2d8484c88a21828951b4a84cc55d9735ee3c1e6a0e1f0677",
+    "streams": 256,
+    "loops": 256,
+    "model_wait_ms": 200,
+    "max_tokens": 1024,
+    "command": [
+      "java",
+      "-Xms256m",
+      "-Xmx2g",
+      "-jar",
+      "/tmp/rs-agent-capacity-20261009/agent.jar",
+      "--spring.profiles.active=local-qwen",
+      "--server.port=18204",
+      "--server.address=127.0.0.1",
+      "--spring.cloud.nacos.discovery.enabled=false",
+      "--spring.cloud.nacos.config.enabled=false",
+      "--spring.ai.openai.chat.completions-path=/chat/completions",
+      "--spring.mvc.async.request-timeout=180000"
+    ],
+    "scope": "isolated-memory-agent",
+    "log": "/tmp/rs-agent-capacity-20261009/agent-streams-256-loops-256-wait-200-tokens-1024.log"
+  },
+  "host_cpu_count": 128,
+  "samples": [
+    {
+      "time": 1791517829.3722565,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 0,
+      "temperature_c": 49,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1127.15,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 61551953.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44287056.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34830491.0,
+        "vllm:generation_tokens_total": 625422.0,
+        "vllm:request_success_total": 6603.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 483060.0,
+        "vllm:iteration_tokens_total_count": 41760.0,
+        "vllm:iteration_tokens_total_sum": 9960905.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517831.4793937,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 58,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1125.59,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.025044722719141377,
+        "vllm:prefix_cache_queries_total": 61562387.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44291280.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34840925.0,
+        "vllm:generation_tokens_total": 625589.0,
+        "vllm:request_success_total": 6604.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 485378.0,
+        "vllm:iteration_tokens_total_count": 41927.0,
+        "vllm:iteration_tokens_total_sum": 9967282.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517833.5906906,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 59,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1123.49,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61562387.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44291280.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34840925.0,
+        "vllm:generation_tokens_total": 625795.0,
+        "vllm:request_success_total": 6604.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 488262.0,
+        "vllm:iteration_tokens_total_count": 42133.0,
+        "vllm:iteration_tokens_total_sum": 9967488.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517835.69881,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 60,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1122.05,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61562387.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44291280.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34840925.0,
+        "vllm:generation_tokens_total": 626002.0,
+        "vllm:request_success_total": 6604.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 491160.0,
+        "vllm:iteration_tokens_total_count": 42340.0,
+        "vllm:iteration_tokens_total_sum": 9967695.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517837.810673,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 61,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1121.52,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61562387.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44291280.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34840925.0,
+        "vllm:generation_tokens_total": 626209.0,
+        "vllm:request_success_total": 6604.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 494058.0,
+        "vllm:iteration_tokens_total_count": 42547.0,
+        "vllm:iteration_tokens_total_sum": 9967902.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517839.9181745,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 62,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1120.82,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.028622540250447193,
+        "vllm:prefix_cache_queries_total": 61562387.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44291280.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34840925.0,
+        "vllm:generation_tokens_total": 626416.0,
+        "vllm:request_success_total": 6604.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 496956.0,
+        "vllm:iteration_tokens_total_count": 42754.0,
+        "vllm:iteration_tokens_total_sum": 9968109.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517842.0333846,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 63,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1120.74,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.025044722719141377,
+        "vllm:prefix_cache_queries_total": 61568031.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44295504.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34846569.0,
+        "vllm:generation_tokens_total": 626603.0,
+        "vllm:request_success_total": 6605.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 499565.0,
+        "vllm:iteration_tokens_total_count": 42941.0,
+        "vllm:iteration_tokens_total_sum": 9969716.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517844.139411,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 64,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1120.74,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61568031.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44295504.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34846569.0,
+        "vllm:generation_tokens_total": 626810.0,
+        "vllm:request_success_total": 6605.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 502463.0,
+        "vllm:iteration_tokens_total_count": 43148.0,
+        "vllm:iteration_tokens_total_sum": 9969923.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517846.246699,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.3,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61568031.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44295504.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34846569.0,
+        "vllm:generation_tokens_total": 627017.0,
+        "vllm:request_success_total": 6605.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 505361.0,
+        "vllm:iteration_tokens_total_count": 43355.0,
+        "vllm:iteration_tokens_total_sum": 9970130.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517848.3585193,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 65,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.3,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.028622540250447193,
+        "vllm:prefix_cache_queries_total": 61568031.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44295504.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34846569.0,
+        "vllm:generation_tokens_total": 627224.0,
+        "vllm:request_success_total": 6605.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 508259.0,
+        "vllm:iteration_tokens_total_count": 43562.0,
+        "vllm:iteration_tokens_total_sum": 9970337.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517850.4682732,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.3,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.028622540250447193,
+        "vllm:prefix_cache_queries_total": 61568031.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44295504.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34846569.0,
+        "vllm:generation_tokens_total": 627430.0,
+        "vllm:request_success_total": 6605.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 511143.0,
+        "vllm:iteration_tokens_total_count": 43768.0,
+        "vllm:iteration_tokens_total_sum": 9970543.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517852.5787852,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.31,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61573745.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44299728.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34852283.0,
+        "vllm:generation_tokens_total": 627622.0,
+        "vllm:request_success_total": 6606.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 513822.0,
+        "vllm:iteration_tokens_total_count": 43960.0,
+        "vllm:iteration_tokens_total_sum": 9972225.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517854.6835005,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.31,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61573745.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44299728.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34852283.0,
+        "vllm:generation_tokens_total": 627829.0,
+        "vllm:request_success_total": 6606.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 516720.0,
+        "vllm:iteration_tokens_total_count": 44167.0,
+        "vllm:iteration_tokens_total_sum": 9972432.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517856.795688,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 68,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.31,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.02683363148479423,
+        "vllm:prefix_cache_queries_total": 61573745.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44299728.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34852283.0,
+        "vllm:generation_tokens_total": 628036.0,
+        "vllm:request_success_total": 6606.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 519618.0,
+        "vllm:iteration_tokens_total_count": 44374.0,
+        "vllm:iteration_tokens_total_sum": 9972639.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517858.910579,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 0,
+      "temperature_c": 61,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.31,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 61573745.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44299728.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34852283.0,
+        "vllm:generation_tokens_total": 628078.0,
+        "vllm:request_success_total": 6607.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 520206.0,
+        "vllm:iteration_tokens_total_count": 44416.0,
+        "vllm:iteration_tokens_total_sum": 9972681.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517861.0132303,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 78,
+      "temperature_c": 73,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1118.99,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11270125223613592,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34919028.0,
+        "vllm:generation_tokens_total": 628354.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 520674.0,
+        "vllm:iteration_tokens_total_count": 44458.0,
+        "vllm:iteration_tokens_total_sum": 9988486.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517863.118414,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 77,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1119.0,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.10017889087656529,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34935761.0,
+        "vllm:generation_tokens_total": 629488.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 522503.0,
+        "vllm:iteration_tokens_total_count": 44600.0,
+        "vllm:iteration_tokens_total_sum": 9993681.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517865.236902,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 76,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1112.81,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11449016100178888,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34935761.0,
+        "vllm:generation_tokens_total": 630696.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 524466.0,
+        "vllm:iteration_tokens_total_count": 44751.0,
+        "vllm:iteration_tokens_total_sum": 9994889.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517867.3478205,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 95,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1112.82,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11449016100178888,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34935761.0,
+        "vllm:generation_tokens_total": 631976.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 526546.0,
+        "vllm:iteration_tokens_total_count": 44911.0,
+        "vllm:iteration_tokens_total_sum": 9996169.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517869.454961,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 81,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1112.82,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11449016100178888,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34935761.0,
+        "vllm:generation_tokens_total": 633232.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 528587.0,
+        "vllm:iteration_tokens_total_count": 45068.0,
+        "vllm:iteration_tokens_total_sum": 9997425.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517871.565355,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 97,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1112.82,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.12880143112701248,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34935761.0,
+        "vllm:generation_tokens_total": 634480.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 530615.0,
+        "vllm:iteration_tokens_total_count": 45224.0,
+        "vllm:iteration_tokens_total_sum": 9998673.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517873.6764436,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.12,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.12880143112701248,
+        "vllm:prefix_cache_queries_total": 61698965.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44395296.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34935761.0,
+        "vllm:generation_tokens_total": 635760.0,
+        "vllm:request_success_total": 6615.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 532695.0,
+        "vllm:iteration_tokens_total_count": 45384.0,
+        "vllm:iteration_tokens_total_sum": 9999953.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517875.7953055,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 77,
+      "temperature_c": 74,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1119.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.10017889087656529,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 636576.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 534036.0,
+        "vllm:iteration_tokens_total_count": 45491.0,
+        "vllm:iteration_tokens_total_sum": 10012134.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517877.910021,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 78,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.10017889087656529,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 637784.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 535999.0,
+        "vllm:iteration_tokens_total_count": 45642.0,
+        "vllm:iteration_tokens_total_sum": 10013342.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517880.014688,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11449016100178888,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 639048.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 538053.0,
+        "vllm:iteration_tokens_total_count": 45800.0,
+        "vllm:iteration_tokens_total_sum": 10014606.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517882.119034,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 93,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11449016100178888,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 640304.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 540094.0,
+        "vllm:iteration_tokens_total_count": 45957.0,
+        "vllm:iteration_tokens_total_sum": 10015862.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517884.2229023,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 94,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11449016100178888,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 641544.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 542109.0,
+        "vllm:iteration_tokens_total_count": 46112.0,
+        "vllm:iteration_tokens_total_sum": 10017102.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517886.3288345,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 99,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.12880143112701248,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 642808.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 544163.0,
+        "vllm:iteration_tokens_total_count": 46270.0,
+        "vllm:iteration_tokens_total_sum": 10018366.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517888.4335344,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 96,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.12880143112701248,
+        "vllm:prefix_cache_queries_total": 61766705.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44445984.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 34980918.0,
+        "vllm:generation_tokens_total": 644032.0,
+        "vllm:request_success_total": 6623.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 546152.0,
+        "vllm:iteration_tokens_total_count": 46423.0,
+        "vllm:iteration_tokens_total_sum": 10019590.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517890.5378208,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 74,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.10017889087656529,
+        "vllm:prefix_cache_queries_total": 61835261.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44496672.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35026621.0,
+        "vllm:generation_tokens_total": 644816.0,
+        "vllm:request_success_total": 6631.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 547441.0,
+        "vllm:iteration_tokens_total_count": 46526.0,
+        "vllm:iteration_tokens_total_sum": 10032285.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517892.643394,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 97,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11627906976744184,
+        "vllm:prefix_cache_queries_total": 61841682.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44500896.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35033042.0,
+        "vllm:generation_tokens_total": 645944.0,
+        "vllm:request_success_total": 6632.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 549278.0,
+        "vllm:iteration_tokens_total_count": 46668.0,
+        "vllm:iteration_tokens_total_sum": 10035610.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517894.7462337,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 83,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.11627906976744184,
+        "vllm:prefix_cache_queries_total": 61841682.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44500896.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35033042.0,
+        "vllm:generation_tokens_total": 647160.0,
+        "vllm:request_success_total": 6632.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 551254.0,
+        "vllm:iteration_tokens_total_count": 46820.0,
+        "vllm:iteration_tokens_total_sum": 10036826.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517896.8534505,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 88,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 7.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.10375670840787121,
+        "vllm:prefix_cache_queries_total": 61841682.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44500896.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35033042.0,
+        "vllm:generation_tokens_total": 648390.0,
+        "vllm:request_success_total": 6633.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 553269.0,
+        "vllm:iteration_tokens_total_count": 46975.0,
+        "vllm:iteration_tokens_total_sum": 10038056.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517898.9624436,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 93,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0805008944543828,
+        "vllm:prefix_cache_queries_total": 61841682.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44500896.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35033042.0,
+        "vllm:generation_tokens_total": 649422.0,
+        "vllm:request_success_total": 6635.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 555297.0,
+        "vllm:iteration_tokens_total_count": 47131.0,
+        "vllm:iteration_tokens_total_sum": 10039088.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517901.0707839,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.08765652951699465,
+        "vllm:prefix_cache_queries_total": 61841682.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44500896.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35033042.0,
+        "vllm:generation_tokens_total": 650232.0,
+        "vllm:request_success_total": 6635.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 557403.0,
+        "vllm:iteration_tokens_total_count": 47293.0,
+        "vllm:iteration_tokens_total_sum": 10039898.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517903.1738145,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 94,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.08765652951699465,
+        "vllm:prefix_cache_queries_total": 61841682.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44500896.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35033042.0,
+        "vllm:generation_tokens_total": 651037.0,
+        "vllm:request_success_total": 6635.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 559496.0,
+        "vllm:iteration_tokens_total_count": 47454.0,
+        "vllm:iteration_tokens_total_sum": 10040703.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517905.276615,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 98,
+      "temperature_c": 73,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 4.0,
+        "vllm:num_requests_waiting": 1.0,
+        "vllm:num_requests_waiting_by_reason": 1.0,
+        "vllm:kv_cache_usage_perc": 0.0661896243291592,
+        "vllm:prefix_cache_queries_total": 61883572.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44530464.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35044611.0,
+        "vllm:generation_tokens_total": 651506.0,
+        "vllm:request_success_total": 6640.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 561169.0,
+        "vllm:iteration_tokens_total_count": 47581.0,
+        "vllm:iteration_tokens_total_sum": 10044293.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517907.375068,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 98,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0805008944543828,
+        "vllm:prefix_cache_queries_total": 61895850.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44538912.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35069159.0,
+        "vllm:generation_tokens_total": 652158.0,
+        "vllm:request_success_total": 6641.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 562871.0,
+        "vllm:iteration_tokens_total_count": 47714.0,
+        "vllm:iteration_tokens_total_sum": 10052597.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517909.4825454,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 97,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0805008944543828,
+        "vllm:prefix_cache_queries_total": 61895850.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44538912.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35069159.0,
+        "vllm:generation_tokens_total": 652963.0,
+        "vllm:request_success_total": 6641.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 564964.0,
+        "vllm:iteration_tokens_total_count": 47875.0,
+        "vllm:iteration_tokens_total_sum": 10053402.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517911.5886064,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 88,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 5.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.08407871198568873,
+        "vllm:prefix_cache_queries_total": 61895850.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44538912.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35069159.0,
+        "vllm:generation_tokens_total": 653783.0,
+        "vllm:request_success_total": 6641.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 567096.0,
+        "vllm:iteration_tokens_total_count": 48039.0,
+        "vllm:iteration_tokens_total_sum": 10054222.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517913.701168,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 98,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.057245080500894496,
+        "vllm:prefix_cache_queries_total": 61895850.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44538912.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35069159.0,
+        "vllm:generation_tokens_total": 654551.0,
+        "vllm:request_success_total": 6643.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 569267.0,
+        "vllm:iteration_tokens_total_count": 48206.0,
+        "vllm:iteration_tokens_total_sum": 10054990.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517915.804867,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.057245080500894496,
+        "vllm:prefix_cache_queries_total": 61895850.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44538912.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35069159.0,
+        "vllm:generation_tokens_total": 655100.0,
+        "vllm:request_success_total": 6643.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 571646.0,
+        "vllm:iteration_tokens_total_count": 48389.0,
+        "vllm:iteration_tokens_total_sum": 10055539.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517917.91121,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 66,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1113.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.057245080500894496,
+        "vllm:prefix_cache_queries_total": 61895850.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44538912.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35069159.0,
+        "vllm:generation_tokens_total": 655649.0,
+        "vllm:request_success_total": 6643.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 574025.0,
+        "vllm:iteration_tokens_total_count": 48572.0,
+        "vllm:iteration_tokens_total_sum": 10056088.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517920.019286,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1115.98,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.051878354203935606,
+        "vllm:prefix_cache_queries_total": 61919254.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44555808.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35086712.0,
+        "vllm:generation_tokens_total": 656116.0,
+        "vllm:request_success_total": 6646.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 576055.0,
+        "vllm:iteration_tokens_total_count": 48730.0,
+        "vllm:iteration_tokens_total_sum": 10061436.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517922.122893,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1115.98,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.051878354203935606,
+        "vllm:prefix_cache_queries_total": 61919254.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44555808.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35086712.0,
+        "vllm:generation_tokens_total": 656668.0,
+        "vllm:request_success_total": 6646.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 578447.0,
+        "vllm:iteration_tokens_total_count": 48914.0,
+        "vllm:iteration_tokens_total_sum": 10061988.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791517924.227786,
+      "gpu_index": 1,
+      "memory_mib": 20261,
+      "utilization_pct": 100,
+      "temperature_c": 67,
+      "gpu_processes": [
+        {
+          "pid": 3503402,
+          "memory_mib": 20238
+        }
+      ],
+      "agent_rss_mib": 1115.98,
+      "model_metrics": {
+        "vllm:num_requests_running": 3.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.057245080500894496,
+        "vllm:prefix_cache_queries_total": 61919254.0,
+        "vllm:prefix_cache_queries_created": 1791516222.9147024,
+        "vllm:prefix_cache_hits_total": 44555808.0,
+        "vllm:prefix_cache_hits_created": 1791516222.9147239,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791516222.9147449,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791516222.9147675,
+        "vllm:num_preemptions_total": 6.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 35086712.0,
+        "vllm:generation_tokens_total": 657217.0,
+        "vllm:request_success_total": 6646.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 580826.0,
+        "vllm:iteration_tokens_total_count": 49097.0,
+        "vllm:iteration_tokens_total_sum": 10062537.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    }
+  ],
+  "stopped_reason": "consecutive failed levels",
+  "finished_at": 1791517925.3175333
+}

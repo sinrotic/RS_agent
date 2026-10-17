@@ -1,5 +1,7 @@
 package com.sinrotic.rs.user.domain.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Response object returned after register, login, or token refresh operations.
  */
@@ -10,7 +12,7 @@ public record AuthTokenVO(
         String profileUserId,
         String profileSummary,
         String accessToken,
-        String refreshToken,
+        @JsonIgnore String refreshToken,
         long expiresIn
 ) {
 }

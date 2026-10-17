@@ -14,6 +14,19 @@ public record AgentTurnVO(
         @JsonProperty("tool_calls")
         List<AgentToolCallVO> toolCalls,
         @JsonProperty("recommended_item_ids")
-        List<String> recommendedItemIds
+        List<String> recommendedItemIds,
+        @JsonProperty("answer_blocks") List<java.util.Map<String, Object>> answerBlocks,
+        @JsonProperty("finish_reason") String finishReason,
+        @JsonProperty("card_set_id") String cardSetId,
+        @JsonProperty("degradation_reasons") List<String> degradationReasons
 ) {
+    public AgentTurnVO(String requestId, String userMessage, String assistantMessage,
+            List<AgentToolCallVO> toolCalls, List<String> recommendedItemIds,
+            List<java.util.Map<String, Object>> answerBlocks, String finishReason, String cardSetId) {
+        this(requestId, userMessage, assistantMessage, toolCalls, recommendedItemIds, answerBlocks, finishReason, cardSetId, List.of());
+    }
+    public AgentTurnVO(String requestId, String userMessage, String assistantMessage,
+            List<AgentToolCallVO> toolCalls, List<String> recommendedItemIds) {
+        this(requestId, userMessage, assistantMessage, toolCalls, recommendedItemIds, List.of(), "FINAL_ANSWER", "");
+    }
 }

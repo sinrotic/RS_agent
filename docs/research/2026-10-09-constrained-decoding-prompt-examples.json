@@ -1,0 +1,415 @@
+{
+  "checked_at": "2026-10-09T02:57:17.154654+00:00",
+  "model": "qwen35-4b",
+  "examples": [
+    {
+      "name": "购物条件提取",
+      "request": {
+        "model": "qwen35-4b",
+        "temperature": 0,
+        "max_tokens": 512,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "你是购物需求提取助手。只提取用户明确提供的信息，不补造预算、品牌或商品。category 使用中文类目名；budget_max 是人民币预算上限，未提供时为 null。features 只保留用户明确提供的用途、尺寸、性能要求和排除条件；未提及的条件不添加，不填写‘无’等默认条件。本示例只将预算列为必需信息：缺少预算时 intent=clarify，missing_fields=[\"budget_max\"]；已有预算时 intent=recommend，missing_fields=[]。按照给定的 JSON Schema 输出。"
+          },
+          {
+            "role": "user",
+            "content": "我想买一个500元以内的通勤背包，能装14英寸电脑，下雨时防泼水，不要皮质。"
+          }
+        ],
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "shopping_intent",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "intent": {
+                  "type": "string",
+                  "enum": [
+                    "recommend",
+                    "clarify"
+                  ]
+                },
+                "category": {
+                  "type": "string"
+                },
+                "budget_max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "missing_fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "intent",
+                "category",
+                "budget_max",
+                "features",
+                "missing_fields"
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "chatcmpl-8c5df7f0c42c794e",
+        "object": "chat.completion",
+        "created": 1791514634,
+        "model": "qwen35-4b",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\n  \"intent\": \"recommend\",\n  \"category\": \"背包\",\n  \"budget_max\": 500,\n  \"features\": [\n    \"用途：通勤\",\n    \"尺寸：能装14英寸电脑\",\n    \"性能：防泼水\",\n    \"排除条件：不要皮质\"\n  ],\n  \"missing_fields\": []\n}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.24.0-427d467b",
+        "usage": {
+          "prompt_tokens": 160,
+          "total_tokens": 244,
+          "completion_tokens": 84,
+          "prompt_tokens_details": null
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null
+      },
+      "parsed_output": {
+        "intent": "recommend",
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "用途：通勤",
+          "尺寸：能装14英寸电脑",
+          "性能：防泼水",
+          "排除条件：不要皮质"
+        ],
+        "missing_fields": []
+      },
+      "elapsed_seconds": 0.926
+    },
+    {
+      "name": "缺少预算时澄清",
+      "request": {
+        "model": "qwen35-4b",
+        "temperature": 0,
+        "max_tokens": 512,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "你是购物需求提取助手。只提取用户明确提供的信息，不补造预算、品牌或商品。category 使用中文类目名；budget_max 是人民币预算上限，未提供时为 null。features 只保留用户明确提供的用途、尺寸、性能要求和排除条件；未提及的条件不添加，不填写‘无’等默认条件。本示例只将预算列为必需信息：缺少预算时 intent=clarify，missing_fields=[\"budget_max\"]；已有预算时 intent=recommend，missing_fields=[]。按照给定的 JSON Schema 输出。"
+          },
+          {
+            "role": "user",
+            "content": "帮我选双跑鞋，主要晚上慢跑。"
+          }
+        ],
+        "response_format": {
+          "type": "json_schema",
+          "json_schema": {
+            "name": "shopping_intent",
+            "strict": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "intent": {
+                  "type": "string",
+                  "enum": [
+                    "recommend",
+                    "clarify"
+                  ]
+                },
+                "category": {
+                  "type": "string"
+                },
+                "budget_max": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "missing_fields": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "intent",
+                "category",
+                "budget_max",
+                "features",
+                "missing_fields"
+              ]
+            }
+          }
+        }
+      },
+      "response": {
+        "id": "chatcmpl-bde9b64e69715244",
+        "object": "chat.completion",
+        "created": 1791514635,
+        "model": "qwen35-4b",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\n  \"intent\": \"clarify\",\n  \"category\": \"跑鞋\",\n  \"budget_max\": null,\n  \"features\": [\n    \"用途：晚上慢跑\"\n  ],\n  \"missing_fields\": [\n    \"budget_max\"\n  ]\n}",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.24.0-427d467b",
+        "usage": {
+          "prompt_tokens": 143,
+          "total_tokens": 206,
+          "completion_tokens": 63,
+          "prompt_tokens_details": null
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null
+      },
+      "parsed_output": {
+        "intent": "clarify",
+        "category": "跑鞋",
+        "budget_max": null,
+        "features": [
+          "用途：晚上慢跑"
+        ],
+        "missing_fields": [
+          "budget_max"
+        ]
+      },
+      "elapsed_seconds": 0.664
+    },
+    {
+      "name": "前端最终回答工具",
+      "request": {
+        "model": "qwen35-4b",
+        "temperature": 0,
+        "max_tokens": 512,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "messages": [
+          {
+            "role": "system",
+            "content": "你是购物助手。尚未检索商品，不要编造商品、价格或 item_id。用户缺少预算时，调用 emit_final_answer 输出两个 block：第一个 type=text，用一句话确认用户需求，不宣称已经开始搜索；第二个 type=followup_question，询问预算上限。两个 block 的 card_set_id、item_ids、layout 都设为 null。"
+          },
+          {
+            "role": "user",
+            "content": "帮我选双跑鞋，主要晚上慢跑。"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "emit_final_answer",
+              "description": "Emit ordered user-visible final answer blocks.",
+              "strict": true,
+              "parameters": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "blocks": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 12,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "text",
+                            "product_cards",
+                            "comparison_table",
+                            "followup_question"
+                          ]
+                        },
+                        "content": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 4000
+                        },
+                        "card_set_id": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 128
+                        },
+                        "item_ids": {
+                          "type": [
+                            "array",
+                            "null"
+                          ],
+                          "items": {
+                            "type": "string",
+                            "maxLength": 128
+                          },
+                          "maxItems": 20
+                        },
+                        "layout": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 64
+                        }
+                      },
+                      "required": [
+                        "type",
+                        "content",
+                        "card_set_id",
+                        "item_ids",
+                        "layout"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "blocks"
+                ]
+              }
+            }
+          }
+        ],
+        "tool_choice": {
+          "type": "function",
+          "function": {
+            "name": "emit_final_answer"
+          }
+        },
+        "parallel_tool_calls": false
+      },
+      "response": {
+        "id": "chatcmpl-9668fe0727b6b279",
+        "object": "chat.completion",
+        "created": 1791514636,
+        "model": "qwen35-4b",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "",
+              "refusal": null,
+              "annotations": null,
+              "audio": null,
+              "function_call": null,
+              "tool_calls": [
+                {
+                  "id": "chatcmpl-tool-862ff1c4d6d430d2",
+                  "type": "function",
+                  "function": {
+                    "name": "emit_final_answer",
+                    "arguments": "{\"blocks\": [{\"type\": \"text\", \"content\": \"好的，正在为您搜索适合晚上慢跑的跑鞋。\", \"card_set_id\": null, \"item_ids\": null, \"layout\": null}, {\"type\": \"followup_question\", \"content\": \"请问您的预算上限是多少？\", \"card_set_id\": null, \"item_ids\": null, \"layout\": null}]}"
+                  }
+                }
+              ],
+              "reasoning": null
+            },
+            "logprobs": null,
+            "finish_reason": "stop",
+            "stop_reason": null,
+            "token_ids": null,
+            "routed_experts": null
+          }
+        ],
+        "service_tier": null,
+        "system_fingerprint": "vllm-0.24.0-427d467b",
+        "usage": {
+          "prompt_tokens": 553,
+          "total_tokens": 659,
+          "completion_tokens": 106,
+          "prompt_tokens_details": null
+        },
+        "prompt_logprobs": null,
+        "prompt_token_ids": null,
+        "prompt_text": null,
+        "kv_transfer_params": null
+      },
+      "parsed_output": {
+        "blocks": [
+          {
+            "type": "text",
+            "content": "好的，正在为您搜索适合晚上慢跑的跑鞋。",
+            "card_set_id": null,
+            "item_ids": null,
+            "layout": null
+          },
+          {
+            "type": "followup_question",
+            "content": "请问您的预算上限是多少？",
+            "card_set_id": null,
+            "item_ids": null,
+            "layout": null
+          }
+        ]
+      },
+      "elapsed_seconds": 1.149
+    }
+  ]
+}

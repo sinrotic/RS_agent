@@ -1,0 +1,29 @@
+{
+  "variant": "bf16",
+  "repeat": 1,
+  "configuration": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "0",
+    "VLLM_CACHE_ROOT": "/tmp/rs-agent-quantization-retry-20261011/cache/bf16"
+  },
+  "passed": true,
+  "gpu_memory_mib": 18561,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T03:24:17.448886+00:00",
+    "elapsed_seconds": 8.261
+  }
+}

@@ -4,7 +4,11 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from scripts.serving.import_candidate_store_to_cassandra import import_candidate_store_to_cassandra
+
+pytestmark = pytest.mark.unit
 
 
 class FakeSession:

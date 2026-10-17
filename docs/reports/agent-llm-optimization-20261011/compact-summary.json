@@ -1,0 +1,210 @@
+{
+  "phase": "compact",
+  "target_ms": 300.0,
+  "requests": [
+    {
+      "label": "llm-0",
+      "query": "推荐鼠标",
+      "complete_ms": 51443.92,
+      "failed": false,
+      "llm_calls": 5,
+      "llm_total_ms": 48670.28737068176,
+      "completion_tokens": 4358,
+      "tool_names": [
+        "load_skill",
+        "load_skill",
+        "rag_evidence_search",
+        "call_agent",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        1297.5335121154785,
+        436.23948097229004,
+        472.7139472961426,
+        415.9090518951416,
+        672.7089881896973
+      ]
+    },
+    {
+      "label": "llm-3",
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "complete_ms": 95949.7,
+      "failed": false,
+      "llm_calls": 5,
+      "llm_total_ms": 94132.30085372925,
+      "completion_tokens": 8785,
+      "tool_names": [
+        "load_skill",
+        "load_skill",
+        "call_agent",
+        "call_agent",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        533.0090522766113,
+        380.6116580963135,
+        447.22557067871094,
+        435.20236015319824,
+        480.2670478820801
+      ]
+    },
+    {
+      "label": "multi-0",
+      "query": "请帮我推荐鼠标",
+      "complete_ms": 50315.87,
+      "failed": false,
+      "llm_calls": 7,
+      "llm_total_ms": 49361.50598526001,
+      "completion_tokens": 4456,
+      "tool_names": [
+        "load_skill",
+        "call_agent",
+        "load_skill",
+        "load_skill",
+        "load_skill",
+        "rag_evidence_search",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        544.7425842285156,
+        392.80104637145996,
+        430.941104888916,
+        434.8433017730713,
+        450.7913589477539,
+        476.2704372406006,
+        583.7092399597168
+      ]
+    },
+    {
+      "label": "multi-2",
+      "query": "再推荐五款鼠标，说明理由",
+      "complete_ms": 50919.07,
+      "failed": false,
+      "llm_calls": 3,
+      "llm_total_ms": 44565.46998023987,
+      "completion_tokens": 4210,
+      "tool_names": [
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "length"
+      ],
+      "first_delta_ms": [
+        573.0679035186768,
+        455.49869537353516,
+        388.2417678833008
+      ]
+    },
+    {
+      "label": "llm-1",
+      "query": "推荐鼠标",
+      "complete_ms": null,
+      "failed": true,
+      "llm_calls": 5,
+      "llm_total_ms": 47311.28478050232,
+      "completion_tokens": 4322,
+      "tool_names": [
+        "load_skill",
+        "load_skill",
+        "rag_evidence_search",
+        "call_agent",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        556.2744140625,
+        385.2500915527344,
+        467.87548065185547,
+        420.1648235321045,
+        518.0232524871826
+      ]
+    },
+    {
+      "label": "llm-2",
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "complete_ms": null,
+      "failed": true,
+      "llm_calls": 4,
+      "llm_total_ms": 46528.62358093262,
+      "completion_tokens": 4299,
+      "tool_names": [
+        "load_skill",
+        "call_agent",
+        "rag_evidence_search",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        568.1569576263428,
+        386.84606552124023,
+        451.7953395843506,
+        417.13595390319824
+      ]
+    },
+    {
+      "label": "multi-1",
+      "query": "换一批鼠标，适合办公使用",
+      "complete_ms": null,
+      "failed": true,
+      "llm_calls": 3,
+      "llm_total_ms": 9398.139476776123,
+      "completion_tokens": 808,
+      "tool_names": [
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        608.4609031677246,
+        393.2180404663086,
+        398.2410430908203
+      ]
+    }
+  ],
+  "complete_median_ms": 51181.494999999995,
+  "failed": 3,
+  "target_met": false
+}

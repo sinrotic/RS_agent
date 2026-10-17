@@ -1,0 +1,14 @@
+[Unit]
+Description=RS Agent versioned multi-source recall
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/RS_agent_java/model_deploy/multi_recall_runtime.py --directory %h/RS_agent_java/data/models/multi_recall_20260913
+Restart=always
+RestartSec=5
+MemoryMax=512M
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

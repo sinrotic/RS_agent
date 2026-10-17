@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
+@org.springframework.context.annotation.Profile("mock-models")
 public class InMemoryModelRegistryService implements ModelRegistryService {
 
     private final List<ModelDefinitionVO> models = List.of(

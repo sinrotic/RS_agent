@@ -35,4 +35,32 @@ public class RestCatalogEmbeddingTextClient implements CatalogEmbeddingTextClien
                 });
         return response == null ? List.of() : response;
     }
+
+    @Override
+    public List<ItemEmbeddingText> fetchItemEmbeddingTexts(List<String> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return List.of();
+        }
+        List<ItemEmbeddingText> response = restClient.post()
+                .uri("/internal/catalog/context/item-embedding-texts")
+                .body(Map.of("item_ids", itemIds))
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {
+                });
+        return response == null ? List.of() : response;
+    }
+
+    @Override
+    public List<ItemEmbeddingText> discover(String seed, int limit) {
+        List<ItemEmbeddingText> response = restClient.post().uri("/internal/catalog/context/discovery-embedding-texts")
+                .body(Map.of("seed", seed, "limit", limit)).retrieve().body(new ParameterizedTypeReference<>() { });
+        return response == null ? List.of() : response;
+    }
+
+    @Override
+    public List<ItemEmbeddingText> categoryCandidates(String category, String seed, int limit) {
+        List<ItemEmbeddingText> response = restClient.post().uri("/internal/catalog/context/category-embedding-texts")
+                .body(Map.of("category", category, "seed", seed, "limit", limit)).retrieve().body(new ParameterizedTypeReference<>() { });
+        return response == null ? List.of() : response;
+    }
 }

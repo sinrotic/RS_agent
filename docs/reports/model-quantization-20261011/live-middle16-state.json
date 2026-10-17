@@ -1,0 +1,100 @@
+{
+  "health": 200,
+  "ready_probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T03:56:51.235845+00:00",
+    "elapsed_seconds": 5.583
+  },
+  "models": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791691239,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 16384,
+        "permission": [
+          {
+            "id": "modelperm-81dc27755e8ba1a6",
+            "object": "model_permission",
+            "created": 1791691239,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "processes": [
+    {
+      "pid": 3710573,
+      "gpu": "1",
+      "arguments": [
+        "/mnt/data/luo/venvs/rsagent-vllm/bin/python",
+        "/mnt/data/luo/venvs/rsagent-vllm/bin/vllm",
+        "serve",
+        "/mnt/data/luo/models/Qwen3.5-4B",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "18082",
+        "--served-model-name",
+        "qwen35-4b",
+        "--trust-remote-code",
+        "--enable-prefix-caching",
+        "--max-model-len",
+        "16384",
+        "--gpu-memory-utilization",
+        "0.78",
+        "--structured-outputs-config",
+        "{\"backend\":\"xgrammar\",\"disable_any_whitespace\":true}",
+        "--quantization",
+        "fp8_per_block",
+        "--quantization-config",
+        "{\"ignore\":[\"lm_head\",\"re:.*visual.*\",\"re:.*linear_attn.*\",\"re:.*self_attn.*\",\"re:.*layers\\\\.(?:0|1|2|3|4|5|6|7|24|25|26|27|28|29|30|31)\\\\..*\"]}",
+        "--enable-auto-tool-choice",
+        "--tool-call-parser",
+        "qwen3_xml"
+      ],
+      "force_fp8_marlin": "1"
+    }
+  ],
+  "model_loading_gib": 7.6,
+  "quantization_config": null,
+  "env_sha256": "d841e74ea6eb76467ff0d2849ffae50aa70b4c4e66c253754e068eff0782d6f9",
+  "isolated_port_closed": true,
+  "gpu_memory": "0, 17793 MiB, 99 %\n1, 20761 MiB, 0 %\n2, 15 MiB, 0 %\n",
+  "kernel_evidence": [
+    "(EngineCore pid=3712980) INFO 10-11 11:55:38 [__init__.py:563] Selected MarlinFP8ScaledMMLinearKernel for Fp8PerBlockOnlineLinearMethod"
+  ],
+  "online_quantization_config": {
+    "ignore": [
+      "lm_head",
+      "re:.*visual.*",
+      "re:.*linear_attn.*",
+      "re:.*self_attn.*",
+      "re:.*layers\\.(?:0|1|2|3|4|5|6|7|24|25|26|27|28|29|30|31)\\..*"
+    ]
+  }
+}

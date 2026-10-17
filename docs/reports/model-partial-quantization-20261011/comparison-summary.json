@@ -1,0 +1,153 @@
+{
+  "control": {
+    "business": {
+      "passed": 8,
+      "samples": 8,
+      "failed_tools": 0,
+      "median_ms": 19638.184999999998
+    },
+    "planning": {
+      "samples": 16,
+      "schema_errors": 0,
+      "rag_missing_query": 2,
+      "incomplete_generations": 4,
+      "median_ms": 1025.17,
+      "completion_tokens": 6033,
+      "rag_support_or_delegate_calls": 11,
+      "complete_with_missing_query": 0,
+      "missing_query_argument_shapes": [
+        {
+          "case": 7,
+          "repeat": 0,
+          "tool_name": "call_agent",
+          "argument_keys": [
+            "agent_name"
+          ],
+          "complete": false
+        },
+        {
+          "case": 7,
+          "repeat": 1,
+          "tool_name": "call_agent",
+          "argument_keys": [
+            "agent_name"
+          ],
+          "complete": false
+        }
+      ]
+    },
+    "actual_model_requests": 43,
+    "actual_completion_tokens": 20102,
+    "actual_length_stops": 0,
+    "capture_errors": 0,
+    "actual_temperatures": [
+      0.1
+    ]
+  },
+  "mlp_only": {
+    "business": {
+      "passed": 8,
+      "samples": 8,
+      "failed_tools": 0,
+      "median_ms": 9903.945
+    },
+    "planning": {
+      "samples": 16,
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "incomplete_generations": 3,
+      "median_ms": 1005.36,
+      "completion_tokens": 4709,
+      "rag_support_or_delegate_calls": 6,
+      "complete_with_missing_query": 0,
+      "missing_query_argument_shapes": []
+    },
+    "model_loading_gib": 5.52,
+    "kv_cache_gib": 3.99,
+    "max_context_concurrency": 6.5,
+    "actual_model_requests": 41,
+    "actual_completion_tokens": 6145,
+    "actual_length_stops": 0,
+    "capture_errors": 0,
+    "actual_temperatures": [
+      0.1
+    ]
+  },
+  "gdn_bf16": {
+    "business": {
+      "passed": 8,
+      "samples": 8,
+      "failed_tools": 0,
+      "median_ms": 12542.425
+    },
+    "planning": {
+      "samples": 16,
+      "schema_errors": 0,
+      "rag_missing_query": 2,
+      "incomplete_generations": 1,
+      "median_ms": 1517.3400000000001,
+      "completion_tokens": 3619,
+      "rag_support_or_delegate_calls": 9,
+      "complete_with_missing_query": 1,
+      "missing_query_argument_shapes": [
+        {
+          "case": 7,
+          "repeat": 0,
+          "tool_name": "call_agent",
+          "argument_keys": [
+            "agent_name"
+          ],
+          "complete": true
+        },
+        {
+          "case": 7,
+          "repeat": 1,
+          "tool_name": "call_agent",
+          "argument_keys": [
+            "agent_name"
+          ],
+          "complete": false
+        }
+      ]
+    },
+    "model_loading_gib": 5.11,
+    "kv_cache_gib": 4.37,
+    "max_context_concurrency": 7.11,
+    "actual_model_requests": 43,
+    "actual_completion_tokens": 11884,
+    "actual_length_stops": 0,
+    "capture_errors": 0,
+    "actual_temperatures": [
+      0.1
+    ]
+  },
+  "winner_low_memory": {
+    "business": {
+      "passed": 8,
+      "samples": 8,
+      "failed_tools": 0,
+      "median_ms": 7170.795
+    },
+    "planning": {
+      "samples": 16,
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "incomplete_generations": 4,
+      "median_ms": 1059.045,
+      "completion_tokens": 6021,
+      "rag_support_or_delegate_calls": 5,
+      "complete_with_missing_query": 0,
+      "missing_query_argument_shapes": []
+    },
+    "model_loading_gib": 5.52,
+    "kv_cache_gib": 1.83,
+    "max_context_concurrency": 2.97,
+    "actual_model_requests": 36,
+    "actual_completion_tokens": 5516,
+    "actual_length_stops": 0,
+    "capture_errors": 0,
+    "actual_temperatures": [
+      0.1
+    ]
+  }
+}

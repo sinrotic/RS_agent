@@ -126,15 +126,15 @@ def test_item_quality_profile_has_required_p1_fields_and_v2_bucket(tmp_path: Pat
     assert dup["positive_event_count"] == 3
     assert dup["unique_positive_user_count"] == 1
     assert dup["train_only"] is True
-    assert dup["source_layer"] == "governance_train_only_v1"
+    assert dup["source_layer"] == "recent_2y_train_only_governance"
 
     hot = profiles["hot"]
     bucket_v2 = hot.get("quality_bucket_v2", hot.get("behavior_bucket_v2"))
-    assert bucket_v2 == "two_tower_train_eligible"
+    assert bucket_v2 == "embedding_ready"
 
     catalog_only = profiles["cold_catalog"]
     assert catalog_only["positive_event_count"] == 0
     assert catalog_only["unique_positive_user_count"] == 0
     assert catalog_only.get("quality_bucket_v2", catalog_only.get("behavior_bucket_v2")) == "no_positive"
     assert catalog_only["train_only"] is True
-    assert catalog_only["source_layer"] == "governance_train_only_v1"
+    assert catalog_only["source_layer"] == "recent_2y_train_only_governance"

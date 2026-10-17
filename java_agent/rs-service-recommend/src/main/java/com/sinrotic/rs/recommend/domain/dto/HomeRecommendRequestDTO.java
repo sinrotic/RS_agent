@@ -20,7 +20,7 @@ public record HomeRecommendRequestDTO(
     private static final int MAX_PAGE_SIZE = 20;
 
     public HomeRecommendRequestDTO withDefaults() {
-        int normalizedPageSize = pageSize == null ? DEFAULT_PAGE_SIZE : Math.min(pageSize, MAX_PAGE_SIZE);
+        int normalizedPageSize = pageSize == null ? DEFAULT_PAGE_SIZE : Math.max(1, Math.min(pageSize, MAX_PAGE_SIZE));
         return new HomeRecommendRequestDTO(
                 sessionId,
                 scene == null || scene.isBlank() ? DEFAULT_SCENE : scene,

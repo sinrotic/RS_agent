@@ -1,0 +1,167 @@
+{
+  "config": {
+    "base": "http://127.0.0.1:18204",
+    "model_base": "http://127.0.0.1:18082",
+    "gpu": 1,
+    "pid": 3495621,
+    "levels": "1",
+    "rounds": 1,
+    "timeout": 90,
+    "p95_budget": 30,
+    "output": "/tmp/rs-agent-capacity-20261009/smoke-tokens256.json",
+    "label": "default",
+    "prompt": "mixed",
+    "stop_after_failed_levels": 2,
+    "run_id": "c814289985"
+  },
+  "model": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791515908,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 4096,
+        "permission": [
+          {
+            "id": "modelperm-a66ff01ebc9766cf",
+            "object": "model_permission",
+            "created": 1791515908,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "started_at": 1791515908.031693,
+  "scope": "真实 Java Agent/模型；内存会话和固定候选；不包含网关、数据库与在线推荐",
+  "phases": [
+    {
+      "concurrency": 1,
+      "requests": 1,
+      "successful": 0,
+      "success_rate": 0.0,
+      "elapsed_s": 0.933,
+      "successful_turns_per_s": 0.0,
+      "p50_s": null,
+      "p95_s": null,
+      "p99_s": null,
+      "first_answer_p95_s": null,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791514166.8043838,
+        "vllm:prompt_tokens_total": 10203.0,
+        "vllm:generation_tokens_total": 1117.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957570834.022747,
+        "vllm:iteration_tokens_total_bucket": 15455.0,
+        "vllm:iteration_tokens_total_count": 1117.0,
+        "vllm:iteration_tokens_total_sum": 11320.0,
+        "vllm:iteration_tokens_total_created": 1791514166.8047915
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791514166.8043838,
+        "vllm:prompt_tokens_total": 10203.0,
+        "vllm:generation_tokens_total": 1117.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957570834.022747,
+        "vllm:iteration_tokens_total_bucket": 15455.0,
+        "vllm:iteration_tokens_total_count": 1117.0,
+        "vllm:iteration_tokens_total_sum": 11320.0,
+        "vllm:iteration_tokens_total_created": 1791514166.8047915
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-c814289985-1-0-bad851af",
+          "success": false,
+          "events": {
+            "error": 1,
+            "done": 1
+          },
+          "answer": [],
+          "errors": [
+            {
+              "message": "agent stream failed",
+              "error_code": "AGENT_STREAM_FAILED"
+            }
+          ],
+          "finish_reason": "error",
+          "http_status": 200,
+          "latency_s": 0.932,
+          "first_event_s": 0.927,
+          "first_answer_s": null
+        }
+      ],
+      "passes": false
+    }
+  ],
+  "samples": [
+    {
+      "time": 1791515908.0319111,
+      "gpu_index": 1,
+      "memory_mib": 20257,
+      "utilization_pct": 0,
+      "temperature_c": 46,
+      "agent_rss_mib": 533.32,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791514166.8043838,
+        "vllm:prompt_tokens_total": 10203.0,
+        "vllm:generation_tokens_total": 1117.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957570834.022747,
+        "vllm:iteration_tokens_total_bucket": 15455.0,
+        "vllm:iteration_tokens_total_count": 1117.0,
+        "vllm:iteration_tokens_total_sum": 11320.0,
+        "vllm:iteration_tokens_total_created": 1791514166.8047915
+      }
+    },
+    {
+      "time": 1791515910.0871792,
+      "gpu_index": 1,
+      "memory_mib": 20257,
+      "utilization_pct": 0,
+      "temperature_c": 46,
+      "agent_rss_mib": 556.92,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791514166.8043838,
+        "vllm:prompt_tokens_total": 10203.0,
+        "vllm:generation_tokens_total": 1117.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957570834.022747,
+        "vllm:iteration_tokens_total_bucket": 15455.0,
+        "vllm:iteration_tokens_total_count": 1117.0,
+        "vllm:iteration_tokens_total_sum": 11320.0,
+        "vllm:iteration_tokens_total_created": 1791514166.8047915
+      }
+    }
+  ],
+  "finished_at": 1791515910.9848237
+}

@@ -2,6 +2,12 @@
 -- This is a stable product catalog projection for Java services.
 -- Raw dataset tables such as metadata / amazon_items_base should be synchronized into this table.
 
+CREATE TABLE IF NOT EXISTS rs_schema_version (
+    component VARCHAR(128) PRIMARY KEY,
+    version VARCHAR(128) NOT NULL,
+    applied_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS rs_catalog_item (
     item_id VARCHAR(128) PRIMARY KEY,
     source_item_id VARCHAR(128) NOT NULL,
@@ -75,3 +81,7 @@ CREATE TABLE IF NOT EXISTS rs_catalog_projection_run (
 --     attributes_json = VALUES(attributes_json),
 --     raw_metadata_json = VALUES(raw_metadata_json),
 --     updated_at = CURRENT_TIMESTAMP;
+
+INSERT INTO rs_schema_version (component, version)
+VALUES ('rs-service-catalog', 'catalog_schema_v1')
+ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = CURRENT_TIMESTAMP(6);

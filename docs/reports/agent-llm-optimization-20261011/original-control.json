@@ -1,0 +1,1702 @@
+{
+  "single": [
+    {
+      "label": "llm-0",
+      "route": "fast",
+      "query": "推荐鼠标",
+      "session_id": "sess_187cc50fa07443129ad8243bc7a50606",
+      "start_epoch_ms": 1791686534216.7385,
+      "agent_done_ms": 3733.89,
+      "request_payload": {
+        "session_id": "sess_187cc50fa07443129ad8243bc7a50606",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "user_message": "推荐鼠标",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-0ab3b2fa33abd1800e216563",
+          "a2ui_state": []
+        }
+      },
+      "response": {
+        "turn_index": 1,
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "degradation_reasons": [],
+        "assistant_message": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：\n推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+        "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+        "session_id": "sess_187cc50fa07443129ad8243bc7a50606",
+        "request_id": "agent_req_91ee554359a03da19bfcb782fc6db960",
+        "answer_blocks": [
+          {
+            "content": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：",
+            "type": "text"
+          },
+          {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+            "item_ids": [
+              "B00EN165FQ",
+              "B01M1CQIFF",
+              "B07LGLYXNQ",
+              "B01MFERJDU",
+              "B08BQXL6DD"
+            ]
+          },
+          {
+            "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+            "type": "text"
+          }
+        ],
+        "recommended_items": [
+          {
+            "item_id": "B00EN165FQ",
+            "title": "Hippus L2UB-LC Wireless Light Click HandShoe Mouse (Right Hand, Large, Black)",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+          },
+          {
+            "item_id": "B01M1CQIFF",
+            "title": "Speedlink DECUS RESPEC Gaming Mouse - Ergonomic Mouse for Office/Home Office (Adjustable to 5000 dpi - Illumination in 7 Colors - Programmable Keys) for PC/Notebook/Laptop, Black-red",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+          },
+          {
+            "item_id": "B07LGLYXNQ",
+            "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+          },
+          {
+            "item_id": "B01MFERJDU",
+            "title": "KINGTOP 2.4G Wireless Vertical Ergonomic Optical Mouse, 800/1200/ 1600/2400/ 3200/4800 DPI, 6 Buttons with Mini USB Receiver, Cordless Mouse for Laptop, Desktop, PC (Black & Red)",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+          },
+          {
+            "item_id": "B08BQXL6DD",
+            "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+          }
+        ]
+      },
+      "events": [
+        {
+          "event": "started",
+          "data": {
+            "request_id": "agent_req_91ee554359a03da19bfcb782fc6db960"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：",
+            "type": "text"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+            "item_ids": [
+              "B00EN165FQ",
+              "B01M1CQIFF",
+              "B07LGLYXNQ",
+              "B01MFERJDU",
+              "B08BQXL6DD"
+            ]
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+            "type": "text"
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "done": true,
+            "response": {
+              "turn_index": 1,
+              "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+              "degradation_reasons": [],
+              "assistant_message": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：\n推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+              "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+              "session_id": "sess_187cc50fa07443129ad8243bc7a50606",
+              "request_id": "agent_req_91ee554359a03da19bfcb782fc6db960",
+              "answer_blocks": [
+                {
+                  "content": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：",
+                  "type": "text"
+                },
+                {
+                  "layout": "grid",
+                  "type": "product_cards",
+                  "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+                  "item_ids": [
+                    "B00EN165FQ",
+                    "B01M1CQIFF",
+                    "B07LGLYXNQ",
+                    "B01MFERJDU",
+                    "B08BQXL6DD"
+                  ]
+                },
+                {
+                  "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+                  "type": "text"
+                }
+              ],
+              "recommended_items": [
+                {
+                  "item_id": "B00EN165FQ",
+                  "title": "Hippus L2UB-LC Wireless Light Click HandShoe Mouse (Right Hand, Large, Black)",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+                },
+                {
+                  "item_id": "B01M1CQIFF",
+                  "title": "Speedlink DECUS RESPEC Gaming Mouse - Ergonomic Mouse for Office/Home Office (Adjustable to 5000 dpi - Illumination in 7 Colors - Programmable Keys) for PC/Notebook/Laptop, Black-red",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+                },
+                {
+                  "item_id": "B07LGLYXNQ",
+                  "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+                },
+                {
+                  "item_id": "B01MFERJDU",
+                  "title": "KINGTOP 2.4G Wireless Vertical Ergonomic Optical Mouse, 800/1200/ 1600/2400/ 3200/4800 DPI, 6 Buttons with Mini USB Receiver, Cordless Mouse for Laptop, Desktop, PC (Black & Red)",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+                },
+                {
+                  "item_id": "B08BQXL6DD",
+                  "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d"
+                }
+              ]
+            },
+            "finish_reason": "FINAL_ANSWER"
+          }
+        }
+      ],
+      "error": null,
+      "catalog_ms": 11.11,
+      "complete_with_catalog_ms": 3745.05,
+      "catalog": [
+        {
+          "item_id": "B00EN165FQ",
+          "title": "Hippus L2UB-LC Wireless Light Click HandShoe Mouse (Right Hand, Large, Black)",
+          "category": "Computers",
+          "brand": "Prestige",
+          "store_name": "HIPPUS",
+          "price": 109.95,
+          "image_url": "https://m.media-amazon.com/images/I/310mHzXqp5L._AC_.jpg",
+          "summary": "To provide optimal support for the human hand the Handshoe mouse is designed with a curvature and contour to support the fingers, palm, thumb and wrist."
+        },
+        {
+          "item_id": "B01M1CQIFF",
+          "title": "Speedlink DECUS RESPEC Gaming Mouse - Ergonomic Mouse for Office/Home Office (Adjustable to 5000 dpi - Illumination in 7 Colors - Programmable Keys) for PC/Notebook/Laptop, Black-red",
+          "category": "Computers",
+          "brand": "Speedlink",
+          "store_name": "Speedlink",
+          "price": null,
+          "image_url": "https://m.media-amazon.com/images/I/51WD6xU9EpL._AC_SL1000_.jpg",
+          "summary": "The ultimate in gaming experience, the DECUS RESPEC gaming mouse with its ultimate ergonomics and ultra-precise variable resolution optical sensor from 400 to 5000dpi offers the ultimate gaming experience."
+        },
+        {
+          "item_id": "B07LGLYXNQ",
+          "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+          "category": "All Electronics",
+          "brand": "WishLotus",
+          "store_name": "WishLotus",
+          "price": 12.99,
+          "image_url": "https://m.media-amazon.com/images/I/51Sq7pw42rL._AC_SL1000_.jpg",
+          "summary": "1.【LEFT HANDED MOUSE】: The unique design of the left-handed mouse is tailor-made for the left-hander. The C632 small mouse is exquisite and compact, with transparent LOGO. It was made with a matte process, which lets you feel more comfortable."
+        },
+        {
+          "item_id": "B01MFERJDU",
+          "title": "KINGTOP 2.4G Wireless Vertical Ergonomic Optical Mouse, 800/1200/ 1600/2400/ 3200/4800 DPI, 6 Buttons with Mini USB Receiver, Cordless Mouse for Laptop, Desktop, PC (Black & Red)",
+          "category": "All Electronics",
+          "brand": "KINGTOP",
+          "store_name": "KINGTOP",
+          "price": 21.99,
+          "image_url": "https://m.media-amazon.com/images/I/61B8V9ww5EL._AC_SL1407_.jpg",
+          "summary": "Plug & Play: Wireless mouse comes with a tiny USB receiver (stored within the back of the mouse), plug it into your PC, and then forget it. With 6 adjustable DPI levels (800-1200-1600-2400-3200-4800), you can freely choose your cursor speed."
+        },
+        {
+          "item_id": "B08BQXL6DD",
+          "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+          "category": "Computers",
+          "brand": "Razer",
+          "store_name": "Razer",
+          "price": 99.99,
+          "image_url": "https://m.media-amazon.com/images/I/51NV3LHMXtL._AC_SL1500_.jpg",
+          "summary": "Ergonomic Form Factor: All-day comfort at work"
+        }
+      ],
+      "history": {
+        "session_id": "sess_187cc50fa07443129ad8243bc7a50606",
+        "turns": [
+          {
+            "request_id": "agent_req_91ee554359a03da19bfcb782fc6db960",
+            "turn_index": 1,
+            "user_message": "推荐鼠标",
+            "assistant_message": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：\n推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+            "recommended_item_ids": [
+              "B00EN165FQ",
+              "B01M1CQIFF",
+              "B07LGLYXNQ",
+              "B01MFERJDU",
+              "B08BQXL6DD"
+            ],
+            "answer_blocks": [
+              {
+                "content": "根据您的要求，我为您推荐了以下几款鼠标，它们涵盖了不同使用场景和预算范围：",
+                "type": "text"
+              },
+              {
+                "layout": "grid",
+                "type": "product_cards",
+                "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+                "item_ids": [
+                  "B00EN165FQ",
+                  "B01M1CQIFF",
+                  "B07LGLYXNQ",
+                  "B01MFERJDU",
+                  "B08BQXL6DD"
+                ]
+              },
+              {
+                "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和电池续航等方面各有优势。如果您需要长时间办公，推荐人体工学设计的款式；如果需要游戏性能，建议选择高DPI和可编程按键的型号。具体选择可根据您的使用场景和预算来决定。",
+                "type": "text"
+              }
+            ],
+            "finish_reason": "FINAL_ANSWER",
+            "card_set_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+            "degradation_reasons": []
+          }
+        ]
+      },
+      "recommend_trace": {
+        "request_id": "rec_req_agent_rank_e02c589e-400b-469e-a4ff-09345026549d",
+        "session_id": "sess_187cc50fa07443129ad8243bc7a50606",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "scene": "agent_chat",
+        "config": {
+          "ranking_degraded": 0
+        },
+        "stage_counts": {
+          "deepfm_scored": 100,
+          "final": 5,
+          "bge_reranked": 96,
+          "fine_rank": 96,
+          "cold_scored": 100,
+          "recall": 100,
+          "coarse_rank": 100
+        },
+        "source_distribution": {
+          "semantic": 100
+        },
+        "items": [
+          {
+            "item_id": "B00EN165FQ",
+            "final_rank": 1,
+            "final_score": 0.6771267740682564,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 77,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B01M1CQIFF",
+            "final_rank": 2,
+            "final_score": 0.6603787271932564,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 80,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B07LGLYXNQ",
+            "final_rank": 3,
+            "final_score": 0.6536902258404654,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 29,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B01MFERJDU",
+            "final_rank": 4,
+            "final_score": 0.6431164468956154,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 17,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B08BQXL6DD",
+            "final_rank": 5,
+            "final_score": 0.5951080369402725,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 5,
+            "reason": "结合你的需求与偏好推荐"
+          }
+        ]
+      }
+    },
+    {
+      "label": "llm-1",
+      "route": "fast",
+      "query": "推荐鼠标",
+      "session_id": "sess_b5481ebeff1d4dd085316be88d74fbf2",
+      "start_epoch_ms": 1791686538008.303,
+      "agent_done_ms": 2904.55,
+      "request_payload": {
+        "session_id": "sess_b5481ebeff1d4dd085316be88d74fbf2",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "user_message": "推荐鼠标",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-b8f9e928078bddaed1f8649c",
+          "a2ui_state": []
+        }
+      },
+      "response": {
+        "turn_index": 1,
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "degradation_reasons": [],
+        "assistant_message": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：\n推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+        "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+        "session_id": "sess_b5481ebeff1d4dd085316be88d74fbf2",
+        "request_id": "agent_req_4170e15994423033a804aad6e0eeb902",
+        "answer_blocks": [
+          {
+            "content": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：",
+            "type": "text"
+          },
+          {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+            "item_ids": [
+              "B00EN165FQ",
+              "B01M1CQIFF",
+              "B07LGLYXNQ",
+              "B01MFERJDU",
+              "B08BQXL6DD"
+            ]
+          },
+          {
+            "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+            "type": "text"
+          }
+        ],
+        "recommended_items": [
+          {
+            "item_id": "B00EN165FQ",
+            "title": "Hippus L2UB-LC Wireless Light Click HandShoe Mouse (Right Hand, Large, Black)",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+          },
+          {
+            "item_id": "B01M1CQIFF",
+            "title": "Speedlink DECUS RESPEC Gaming Mouse - Ergonomic Mouse for Office/Home Office (Adjustable to 5000 dpi - Illumination in 7 Colors - Programmable Keys) for PC/Notebook/Laptop, Black-red",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+          },
+          {
+            "item_id": "B07LGLYXNQ",
+            "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+          },
+          {
+            "item_id": "B01MFERJDU",
+            "title": "KINGTOP 2.4G Wireless Vertical Ergonomic Optical Mouse, 800/1200/ 1600/2400/ 3200/4800 DPI, 6 Buttons with Mini USB Receiver, Cordless Mouse for Laptop, Desktop, PC (Black & Red)",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+          },
+          {
+            "item_id": "B08BQXL6DD",
+            "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+          }
+        ]
+      },
+      "events": [
+        {
+          "event": "started",
+          "data": {
+            "request_id": "agent_req_4170e15994423033a804aad6e0eeb902"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：",
+            "type": "text"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+            "item_ids": [
+              "B00EN165FQ",
+              "B01M1CQIFF",
+              "B07LGLYXNQ",
+              "B01MFERJDU",
+              "B08BQXL6DD"
+            ]
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+            "type": "text"
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "done": true,
+            "response": {
+              "turn_index": 1,
+              "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+              "degradation_reasons": [],
+              "assistant_message": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：\n推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+              "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+              "session_id": "sess_b5481ebeff1d4dd085316be88d74fbf2",
+              "request_id": "agent_req_4170e15994423033a804aad6e0eeb902",
+              "answer_blocks": [
+                {
+                  "content": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：",
+                  "type": "text"
+                },
+                {
+                  "layout": "grid",
+                  "type": "product_cards",
+                  "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+                  "item_ids": [
+                    "B00EN165FQ",
+                    "B01M1CQIFF",
+                    "B07LGLYXNQ",
+                    "B01MFERJDU",
+                    "B08BQXL6DD"
+                  ]
+                },
+                {
+                  "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+                  "type": "text"
+                }
+              ],
+              "recommended_items": [
+                {
+                  "item_id": "B00EN165FQ",
+                  "title": "Hippus L2UB-LC Wireless Light Click HandShoe Mouse (Right Hand, Large, Black)",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+                },
+                {
+                  "item_id": "B01M1CQIFF",
+                  "title": "Speedlink DECUS RESPEC Gaming Mouse - Ergonomic Mouse for Office/Home Office (Adjustable to 5000 dpi - Illumination in 7 Colors - Programmable Keys) for PC/Notebook/Laptop, Black-red",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+                },
+                {
+                  "item_id": "B07LGLYXNQ",
+                  "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+                },
+                {
+                  "item_id": "B01MFERJDU",
+                  "title": "KINGTOP 2.4G Wireless Vertical Ergonomic Optical Mouse, 800/1200/ 1600/2400/ 3200/4800 DPI, 6 Buttons with Mini USB Receiver, Cordless Mouse for Laptop, Desktop, PC (Black & Red)",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+                },
+                {
+                  "item_id": "B08BQXL6DD",
+                  "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce"
+                }
+              ]
+            },
+            "finish_reason": "FINAL_ANSWER"
+          }
+        }
+      ],
+      "error": null,
+      "catalog_ms": 10.29,
+      "complete_with_catalog_ms": 2914.88,
+      "catalog": [
+        {
+          "item_id": "B00EN165FQ",
+          "title": "Hippus L2UB-LC Wireless Light Click HandShoe Mouse (Right Hand, Large, Black)",
+          "category": "Computers",
+          "brand": "Prestige",
+          "store_name": "HIPPUS",
+          "price": 109.95,
+          "image_url": "https://m.media-amazon.com/images/I/310mHzXqp5L._AC_.jpg",
+          "summary": "To provide optimal support for the human hand the Handshoe mouse is designed with a curvature and contour to support the fingers, palm, thumb and wrist."
+        },
+        {
+          "item_id": "B01M1CQIFF",
+          "title": "Speedlink DECUS RESPEC Gaming Mouse - Ergonomic Mouse for Office/Home Office (Adjustable to 5000 dpi - Illumination in 7 Colors - Programmable Keys) for PC/Notebook/Laptop, Black-red",
+          "category": "Computers",
+          "brand": "Speedlink",
+          "store_name": "Speedlink",
+          "price": null,
+          "image_url": "https://m.media-amazon.com/images/I/51WD6xU9EpL._AC_SL1000_.jpg",
+          "summary": "The ultimate in gaming experience, the DECUS RESPEC gaming mouse with its ultimate ergonomics and ultra-precise variable resolution optical sensor from 400 to 5000dpi offers the ultimate gaming experience."
+        },
+        {
+          "item_id": "B07LGLYXNQ",
+          "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+          "category": "All Electronics",
+          "brand": "WishLotus",
+          "store_name": "WishLotus",
+          "price": 12.99,
+          "image_url": "https://m.media-amazon.com/images/I/51Sq7pw42rL._AC_SL1000_.jpg",
+          "summary": "1.【LEFT HANDED MOUSE】: The unique design of the left-handed mouse is tailor-made for the left-hander. The C632 small mouse is exquisite and compact, with transparent LOGO. It was made with a matte process, which lets you feel more comfortable."
+        },
+        {
+          "item_id": "B01MFERJDU",
+          "title": "KINGTOP 2.4G Wireless Vertical Ergonomic Optical Mouse, 800/1200/ 1600/2400/ 3200/4800 DPI, 6 Buttons with Mini USB Receiver, Cordless Mouse for Laptop, Desktop, PC (Black & Red)",
+          "category": "All Electronics",
+          "brand": "KINGTOP",
+          "store_name": "KINGTOP",
+          "price": 21.99,
+          "image_url": "https://m.media-amazon.com/images/I/61B8V9ww5EL._AC_SL1407_.jpg",
+          "summary": "Plug & Play: Wireless mouse comes with a tiny USB receiver (stored within the back of the mouse), plug it into your PC, and then forget it. With 6 adjustable DPI levels (800-1200-1600-2400-3200-4800), you can freely choose your cursor speed."
+        },
+        {
+          "item_id": "B08BQXL6DD",
+          "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+          "category": "Computers",
+          "brand": "Razer",
+          "store_name": "Razer",
+          "price": 99.99,
+          "image_url": "https://m.media-amazon.com/images/I/51NV3LHMXtL._AC_SL1500_.jpg",
+          "summary": "Ergonomic Form Factor: All-day comfort at work"
+        }
+      ],
+      "history": {
+        "session_id": "sess_b5481ebeff1d4dd085316be88d74fbf2",
+        "turns": [
+          {
+            "request_id": "agent_req_4170e15994423033a804aad6e0eeb902",
+            "turn_index": 1,
+            "user_message": "推荐鼠标",
+            "assistant_message": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：\n推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+            "recommended_item_ids": [
+              "B00EN165FQ",
+              "B01M1CQIFF",
+              "B07LGLYXNQ",
+              "B01MFERJDU",
+              "B08BQXL6DD"
+            ],
+            "answer_blocks": [
+              {
+                "content": "根据您的鼠标推荐需求，我为您筛选了以下5款鼠标，涵盖不同使用场景和预算范围：",
+                "type": "text"
+              },
+              {
+                "layout": "grid",
+                "type": "product_cards",
+                "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+                "item_ids": [
+                  "B00EN165FQ",
+                  "B01M1CQIFF",
+                  "B07LGLYXNQ",
+                  "B01MFERJDU",
+                  "B08BQXL6DD"
+                ]
+              },
+              {
+                "content": "推荐理由：这些鼠标在人体工学设计、无线连接、DPI调节和性价比方面各有优势。具体选择建议参考商品卡片中的详细参数和价格信息。如果您有特定需求（如预算范围、使用场景、特殊功能），欢迎告诉我以便进一步优化推荐。",
+                "type": "text"
+              }
+            ],
+            "finish_reason": "FINAL_ANSWER",
+            "card_set_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+            "degradation_reasons": []
+          }
+        ]
+      },
+      "recommend_trace": {
+        "request_id": "rec_req_agent_rank_0f71322f-29a6-4533-80e2-9487654767ce",
+        "session_id": "sess_b5481ebeff1d4dd085316be88d74fbf2",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "scene": "agent_chat",
+        "config": {
+          "ranking_degraded": 0
+        },
+        "stage_counts": {
+          "deepfm_scored": 100,
+          "final": 5,
+          "bge_reranked": 96,
+          "fine_rank": 96,
+          "cold_scored": 100,
+          "recall": 100,
+          "coarse_rank": 100
+        },
+        "source_distribution": {
+          "semantic": 100
+        },
+        "items": [
+          {
+            "item_id": "B00EN165FQ",
+            "final_rank": 1,
+            "final_score": 0.6771267740682564,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 77,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B01M1CQIFF",
+            "final_rank": 2,
+            "final_score": 0.6603787271932564,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 80,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B07LGLYXNQ",
+            "final_rank": 3,
+            "final_score": 0.6536902258404654,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 29,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B01MFERJDU",
+            "final_rank": 4,
+            "final_score": 0.6431164468956154,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 17,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B08BQXL6DD",
+            "final_rank": 5,
+            "final_score": 0.5951080369402725,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 5,
+            "reason": "结合你的需求与偏好推荐"
+          }
+        ]
+      }
+    },
+    {
+      "label": "llm-2",
+      "route": "fast",
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "session_id": "sess_245c2d648b644fb98939219003b79f6d",
+      "start_epoch_ms": 1791686540967.8154,
+      "agent_done_ms": 4408.76,
+      "request_payload": {
+        "session_id": "sess_245c2d648b644fb98939219003b79f6d",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "user_message": "推荐一款适合办公的鼠标，最好静音，说明理由",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-a96b4fcf1a24e58b1a7277a4",
+          "a2ui_state": []
+        }
+      },
+      "response": {
+        "turn_index": 1,
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "degradation_reasons": [],
+        "assistant_message": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：\n**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+        "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+        "session_id": "sess_245c2d648b644fb98939219003b79f6d",
+        "request_id": "agent_req_d5375f5b59b4344e886f08e98a03144c",
+        "answer_blocks": [
+          {
+            "content": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：",
+            "type": "text"
+          },
+          {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+            "item_ids": [
+              "B07X4D3BR6",
+              "B07RL3LRZ8",
+              "B08KQ2K2TT"
+            ]
+          },
+          {
+            "content": "**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+            "type": "text"
+          }
+        ],
+        "recommended_items": [
+          {
+            "item_id": "B07X4D3BR6",
+            "title": "Logitech Pebble Wireless Mouse with Bluetooth or 2.4 GHz Receiver, Silent, Slim Computer Mouse with Quiet Clicks, for Laptop/Notebook/iPad/PC/Mac/Chromebook - Blue Grey",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+          },
+          {
+            "item_id": "B07RL3LRZ8",
+            "title": "SHHHMOUSE Silent Wireless Mouse for Laptop Small Compact Cordless Computer Mice with USB 2.4 GHz – Quiet Click, 3 DPI Levels, Travel Mouse – Portable for PC, Chromebook [Black]",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+          },
+          {
+            "item_id": "B08KQ2K2TT",
+            "title": "Computer Mouse Wireless, ViCTEC Wireless Mouse, Ergonomic Silent Mouse with 5 Adjustable DPI & USB Receiver, Comfortable Mouse for Laptop, Chromebook, Notebook, PC, Tablet, Desktop",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+          },
+          {
+            "item_id": "B087Q5XTK9",
+            "title": "LeadsaiL Wireless Mouse Silent 2.4G USB Computer Mouse Compact Optical Cordless Mouse Mini Quiet Wireless Mice, Noiseless, 4 Buttons, 3 Adjustable DPI Mobile Mouse for PC/Laptop/Windows/Mac/Linux",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+          },
+          {
+            "item_id": "B07G4SQQH2",
+            "title": "DeLUX Ergonomic Wireless Vertical Silent Mouse - 2.4G USB Receiver, 3 DPI Levels (800/1200/1600), 6 Buttons, Removable Wrist Rest for Laptop PC (M618Plus Wireless-Black)",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+          }
+        ]
+      },
+      "events": [
+        {
+          "event": "started",
+          "data": {
+            "request_id": "agent_req_d5375f5b59b4344e886f08e98a03144c"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：",
+            "type": "text"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+            "item_ids": [
+              "B07X4D3BR6",
+              "B07RL3LRZ8",
+              "B08KQ2K2TT"
+            ]
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+            "type": "text"
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "done": true,
+            "response": {
+              "turn_index": 1,
+              "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+              "degradation_reasons": [],
+              "assistant_message": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：\n**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+              "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+              "session_id": "sess_245c2d648b644fb98939219003b79f6d",
+              "request_id": "agent_req_d5375f5b59b4344e886f08e98a03144c",
+              "answer_blocks": [
+                {
+                  "content": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：",
+                  "type": "text"
+                },
+                {
+                  "layout": "grid",
+                  "type": "product_cards",
+                  "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+                  "item_ids": [
+                    "B07X4D3BR6",
+                    "B07RL3LRZ8",
+                    "B08KQ2K2TT"
+                  ]
+                },
+                {
+                  "content": "**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+                  "type": "text"
+                }
+              ],
+              "recommended_items": [
+                {
+                  "item_id": "B07X4D3BR6",
+                  "title": "Logitech Pebble Wireless Mouse with Bluetooth or 2.4 GHz Receiver, Silent, Slim Computer Mouse with Quiet Clicks, for Laptop/Notebook/iPad/PC/Mac/Chromebook - Blue Grey",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+                },
+                {
+                  "item_id": "B07RL3LRZ8",
+                  "title": "SHHHMOUSE Silent Wireless Mouse for Laptop Small Compact Cordless Computer Mice with USB 2.4 GHz – Quiet Click, 3 DPI Levels, Travel Mouse – Portable for PC, Chromebook [Black]",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+                },
+                {
+                  "item_id": "B08KQ2K2TT",
+                  "title": "Computer Mouse Wireless, ViCTEC Wireless Mouse, Ergonomic Silent Mouse with 5 Adjustable DPI & USB Receiver, Comfortable Mouse for Laptop, Chromebook, Notebook, PC, Tablet, Desktop",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+                },
+                {
+                  "item_id": "B087Q5XTK9",
+                  "title": "LeadsaiL Wireless Mouse Silent 2.4G USB Computer Mouse Compact Optical Cordless Mouse Mini Quiet Wireless Mice, Noiseless, 4 Buttons, 3 Adjustable DPI Mobile Mouse for PC/Laptop/Windows/Mac/Linux",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+                },
+                {
+                  "item_id": "B07G4SQQH2",
+                  "title": "DeLUX Ergonomic Wireless Vertical Silent Mouse - 2.4G USB Receiver, 3 DPI Levels (800/1200/1600), 6 Buttons, Removable Wrist Rest for Laptop PC (M618Plus Wireless-Black)",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9"
+                }
+              ]
+            },
+            "finish_reason": "FINAL_ANSWER"
+          }
+        }
+      ],
+      "error": null,
+      "catalog_ms": 9.02,
+      "complete_with_catalog_ms": 4417.8,
+      "catalog": [
+        {
+          "item_id": "B07X4D3BR6",
+          "title": "Logitech Pebble Wireless Mouse with Bluetooth or 2.4 GHz Receiver, Silent, Slim Computer Mouse with Quiet Clicks, for Laptop/Notebook/iPad/PC/Mac/Chromebook - Blue Grey",
+          "category": "Computers",
+          "brand": "Logitech",
+          "store_name": "Logitech",
+          "price": null,
+          "image_url": "https://m.media-amazon.com/images/I/61U5bt3ScVL._AC_SL1500_.jpg",
+          "summary": "Find Your Color: Own your space with a cordless mouse that matches your aesthetic, whether you go fresh and vibrant or keep it minimalist"
+        },
+        {
+          "item_id": "B07RL3LRZ8",
+          "title": "SHHHMOUSE Silent Wireless Mouse for Laptop Small Compact Cordless Computer Mice with USB 2.4 GHz – Quiet Click, 3 DPI Levels, Travel Mouse – Portable for PC, Chromebook [Black]",
+          "category": "Computers",
+          "brand": "SHHHMOUSE",
+          "store_name": "SHHHMOUSE",
+          "price": 16.99,
+          "image_url": "https://m.media-amazon.com/images/I/61idnBvRkwL._AC_SL1500_.jpg",
+          "summary": "Silent Clickless Computer Mouse: ShhhMouse wireless mouse features 90% noise reduction- more than any other quiet mouse on the market! Quiet clicks eliminate your worry of bothering others and allow you to better focus on your work."
+        },
+        {
+          "item_id": "B08KQ2K2TT",
+          "title": "Computer Mouse Wireless, ViCTEC Wireless Mouse, Ergonomic Silent Mouse with 5 Adjustable DPI & USB Receiver, Comfortable Mouse for Laptop, Chromebook, Notebook, PC, Tablet, Desktop",
+          "category": "Computers",
+          "brand": "VicTec",
+          "store_name": "VicTec",
+          "price": null,
+          "image_url": "https://m.media-amazon.com/images/I/61O+0RUPadL._AC_SL1500_.jpg",
+          "summary": "【Silent Mouse】 VICTEC silent wireless mouse reduce 90% click sound and same click feel eliminates noise and distractions for you and others around you. Our cordless mouse will give you and your families a quiet environment. VICTIC quiet mouse can be used freely on the desktop without a mouse pad."
+        },
+        {
+          "item_id": "B087Q5XTK9",
+          "title": "LeadsaiL Wireless Mouse Silent 2.4G USB Computer Mouse Compact Optical Cordless Mouse Mini Quiet Wireless Mice, Noiseless, 4 Buttons, 3 Adjustable DPI Mobile Mouse for PC/Laptop/Windows/Mac/Linux",
+          "category": "Computers",
+          "brand": "LeadsaiL",
+          "store_name": "LeadsaiL",
+          "price": 8.99,
+          "image_url": "https://m.media-amazon.com/images/I/616gJ8DVlBL._AC_SL1500_.jpg",
+          "summary": "【Silent Click Noiseless Mouse】Would you like to do your job without missing a sound or disturbing your environment? Choose LeadsaiL quiet mice; you can enjoy the same click feeling with over 90% less click noise."
+        },
+        {
+          "item_id": "B07G4SQQH2",
+          "title": "DeLUX Ergonomic Wireless Vertical Silent Mouse - 2.4G USB Receiver, 3 DPI Levels (800/1200/1600), 6 Buttons, Removable Wrist Rest for Laptop PC (M618Plus Wireless-Black)",
+          "category": "All Electronics",
+          "brand": "DeLUX",
+          "store_name": "DeLUX",
+          "price": 29.99,
+          "image_url": "https://m.media-amazon.com/images/I/51-MqI796mL._AC_SL1000_.jpg",
+          "summary": "Optimal Ergonomic Design: Our vertical computer mouse features a unique volute bionic design that reduces arm discomfort and hand stiffness, providing superior comfort for users with larger hands."
+        }
+      ],
+      "history": {
+        "session_id": "sess_245c2d648b644fb98939219003b79f6d",
+        "turns": [
+          {
+            "request_id": "agent_req_d5375f5b59b4344e886f08e98a03144c",
+            "turn_index": 1,
+            "user_message": "推荐一款适合办公的鼠标，最好静音，说明理由",
+            "assistant_message": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：\n**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+            "recommended_item_ids": [
+              "B07X4D3BR6",
+              "B07RL3LRZ8",
+              "B08KQ2K2TT",
+              "B087Q5XTK9",
+              "B07G4SQQH2"
+            ],
+            "answer_blocks": [
+              {
+                "content": "根据您的办公场景和静音需求，我为您推荐以下几款静音鼠标：",
+                "type": "text"
+              },
+              {
+                "layout": "grid",
+                "type": "product_cards",
+                "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+                "item_ids": [
+                  "B07X4D3BR6",
+                  "B07RL3LRZ8",
+                  "B08KQ2K2TT"
+                ]
+              },
+              {
+                "content": "**推荐理由**：这些鼠标都具备静音点击功能，适合办公环境，避免打扰同事。Logitech Pebble 采用静音点击技术，设计轻薄便携；SHHHMOUSE 提供 3 档 DPI 调节，适合不同使用场景；ViCTEC 无线鼠标配备人体工学设计，长时间使用更舒适。所有产品都支持 2.4GHz 无线连接，操作流畅。",
+                "type": "text"
+              }
+            ],
+            "finish_reason": "FINAL_ANSWER",
+            "card_set_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+            "degradation_reasons": []
+          }
+        ]
+      },
+      "recommend_trace": {
+        "request_id": "rec_req_agent_rank_663e317a-cf7a-49d8-8d22-c767bbafe2d9",
+        "session_id": "sess_245c2d648b644fb98939219003b79f6d",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "scene": "agent_chat",
+        "config": {
+          "ranking_degraded": 0
+        },
+        "stage_counts": {
+          "deepfm_scored": 100,
+          "final": 5,
+          "bge_reranked": 96,
+          "fine_rank": 96,
+          "cold_scored": 100,
+          "recall": 100,
+          "coarse_rank": 100
+        },
+        "source_distribution": {
+          "semantic": 100
+        },
+        "items": [
+          {
+            "item_id": "B07X4D3BR6",
+            "final_rank": 1,
+            "final_score": 0.5649273826662328,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 2,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B07RL3LRZ8",
+            "final_rank": 2,
+            "final_score": 0.5278281698964233,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 8,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B08KQ2K2TT",
+            "final_rank": 3,
+            "final_score": 0.5211658061440899,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 21,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B087Q5XTK9",
+            "final_rank": 4,
+            "final_score": 0.5123585079958722,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 5,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B07G4SQQH2",
+            "final_rank": 5,
+            "final_score": 0.48917686371514635,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 1,
+            "reason": "结合你的需求与偏好推荐"
+          }
+        ]
+      }
+    }
+  ],
+  "multi_turn": [
+    {
+      "label": "multi-0",
+      "route": "fast",
+      "query": "请帮我推荐鼠标",
+      "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+      "start_epoch_ms": 1791686666124.4932,
+      "agent_done_ms": 3613.2,
+      "request_payload": {
+        "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+        "profile_user_id": "AE222GHCPAOQIDZDVHIMMGZ6WZSA",
+        "user_message": "请帮我推荐鼠标",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-7ae4d607ee4cc9e91f35786a",
+          "a2ui_state": []
+        }
+      },
+      "response": {
+        "turn_index": 1,
+        "profile_user_id": "AE222GHCPAOQIDZDVHIMMGZ6WZSA",
+        "degradation_reasons": [],
+        "assistant_message": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：\n推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+        "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+        "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+        "request_id": "agent_req_8002cec3ec783468ad0b7f10e6c055b0",
+        "answer_blocks": [
+          {
+            "content": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：",
+            "type": "text"
+          },
+          {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+            "item_ids": [
+              "B086MNX5Y5",
+              "B07H8X5ZTG",
+              "B08BQXL6DD",
+              "B076C75X1T",
+              "B07LGLYXNQ"
+            ]
+          },
+          {
+            "content": "推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+            "type": "text"
+          }
+        ],
+        "recommended_items": [
+          {
+            "item_id": "B086MNX5Y5",
+            "title": "memzuoix Wireless Ergonomic Mouse,Upgraded 2.4G Optical Cordless Mice with 800/1200/1600 DPI,Vertical Computer Wireless Mouse for Laptop,Mac,PC,Desktop (for Right Hand,Large),Black Mouse",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+          },
+          {
+            "item_id": "B07H8X5ZTG",
+            "title": "Perixx PERIMICE-713L, Wireless Ergonomic Left Handed Vertical Mouse, 6 Buttons Design, 3 Level DPI, Black, Medium",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+          },
+          {
+            "item_id": "B08BQXL6DD",
+            "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+          },
+          {
+            "item_id": "B076C75X1T",
+            "title": "Microsoft Classic Intellimouse - Gray. Ultra-Slim and Lightweight, Comfortable Ergonomic Design, Wired, USB Mouse for PC/Laptop/Desktop",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+          },
+          {
+            "item_id": "B07LGLYXNQ",
+            "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+            "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+            "score": 0.0,
+            "reason": "结合你的需求与偏好推荐",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+          }
+        ]
+      },
+      "events": [
+        {
+          "event": "started",
+          "data": {
+            "request_id": "agent_req_8002cec3ec783468ad0b7f10e6c055b0"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：",
+            "type": "text"
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "layout": "grid",
+            "type": "product_cards",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+            "item_ids": [
+              "B086MNX5Y5",
+              "B07H8X5ZTG",
+              "B08BQXL6DD",
+              "B076C75X1T",
+              "B07LGLYXNQ"
+            ]
+          }
+        },
+        {
+          "event": "answer_block",
+          "data": {
+            "content": "推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+            "type": "text"
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "done": true,
+            "response": {
+              "turn_index": 1,
+              "profile_user_id": "AE222GHCPAOQIDZDVHIMMGZ6WZSA",
+              "degradation_reasons": [],
+              "assistant_message": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：\n推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+              "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+              "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+              "request_id": "agent_req_8002cec3ec783468ad0b7f10e6c055b0",
+              "answer_blocks": [
+                {
+                  "content": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：",
+                  "type": "text"
+                },
+                {
+                  "layout": "grid",
+                  "type": "product_cards",
+                  "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+                  "item_ids": [
+                    "B086MNX5Y5",
+                    "B07H8X5ZTG",
+                    "B08BQXL6DD",
+                    "B076C75X1T",
+                    "B07LGLYXNQ"
+                  ]
+                },
+                {
+                  "content": "推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+                  "type": "text"
+                }
+              ],
+              "recommended_items": [
+                {
+                  "item_id": "B086MNX5Y5",
+                  "title": "memzuoix Wireless Ergonomic Mouse,Upgraded 2.4G Optical Cordless Mice with 800/1200/1600 DPI,Vertical Computer Wireless Mouse for Laptop,Mac,PC,Desktop (for Right Hand,Large),Black Mouse",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+                },
+                {
+                  "item_id": "B07H8X5ZTG",
+                  "title": "Perixx PERIMICE-713L, Wireless Ergonomic Left Handed Vertical Mouse, 6 Buttons Design, 3 Level DPI, Black, Medium",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+                },
+                {
+                  "item_id": "B08BQXL6DD",
+                  "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+                },
+                {
+                  "item_id": "B076C75X1T",
+                  "title": "Microsoft Classic Intellimouse - Gray. Ultra-Slim and Lightweight, Comfortable Ergonomic Design, Wired, USB Mouse for PC/Laptop/Desktop",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+                },
+                {
+                  "item_id": "B07LGLYXNQ",
+                  "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+                  "category": "Electronics > Computers & Accessories > Computer Accessories & Peripherals > Keyboards, Mice & Accessories > Mice",
+                  "score": 0.0,
+                  "reason": "结合你的需求与偏好推荐",
+                  "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737"
+                }
+              ]
+            },
+            "finish_reason": "FINAL_ANSWER"
+          }
+        }
+      ],
+      "error": null,
+      "catalog_ms": 12.38,
+      "complete_with_catalog_ms": 3625.61,
+      "catalog": [
+        {
+          "item_id": "B086MNX5Y5",
+          "title": "memzuoix Wireless Ergonomic Mouse,Upgraded 2.4G Optical Cordless Mice with 800/1200/1600 DPI,Vertical Computer Wireless Mouse for Laptop,Mac,PC,Desktop (for Right Hand,Large),Black Mouse",
+          "category": "All Electronics",
+          "brand": "Memzuoix",
+          "store_name": "memzuoix",
+          "price": 19.99,
+          "image_url": "https://m.media-amazon.com/images/I/61T883FABJL._AC_SL1500_.jpg",
+          "summary": "【ERGONOMIC MOUSE FOR YOUR RIGHT HAND】The wireless mouse with upgraded optical ergonomic and friendly design keeps your hand and arm staying more naturally. The ergonomic shape encourages healthy neutral \"handshake\" wrist and arm positions. Effectively smoother movement and less overall strain,compared with a regular wireless mouse."
+        },
+        {
+          "item_id": "B07H8X5ZTG",
+          "title": "Perixx PERIMICE-713L, Wireless Ergonomic Left Handed Vertical Mouse, 6 Buttons Design, 3 Level DPI, Black, Medium",
+          "category": "Computers",
+          "brand": "Perixx",
+          "store_name": "Perixx",
+          "price": 24.99,
+          "image_url": "https://m.media-amazon.com/images/I/61tuYuiOC5L._AC_SL1500_.jpg",
+          "summary": "LEFT-HANDED ERGO MOUSE: Natural ergonomic vertical with left-handed design. 6-button mouse to increase your productivity; Recommended for users with muscle strains and particularly for those who works long periods on the computer"
+        },
+        {
+          "item_id": "B08BQXL6DD",
+          "title": "Razer Pro Click Humanscale Wireless Mouse: Ergonomic Form Factor - 5G Advanced Optical Sensor - Multi-Host Connectivity - 8 Programmable Buttons - Extended Battery Life of up to 400 Hours",
+          "category": "Computers",
+          "brand": "Razer",
+          "store_name": "Razer",
+          "price": 99.99,
+          "image_url": "https://m.media-amazon.com/images/I/51NV3LHMXtL._AC_SL1500_.jpg",
+          "summary": "Ergonomic Form Factor: All-day comfort at work"
+        },
+        {
+          "item_id": "B076C75X1T",
+          "title": "Microsoft Classic Intellimouse - Gray. Ultra-Slim and Lightweight, Comfortable Ergonomic Design, Wired, USB Mouse for PC/Laptop/Desktop",
+          "category": "Computers",
+          "brand": "Microsoft",
+          "store_name": "Microsoft",
+          "price": null,
+          "image_url": "https://m.media-amazon.com/images/I/51VNwq+k08L._AC_SL1200_.jpg",
+          "summary": "Ultra-slim and lightweight."
+        },
+        {
+          "item_id": "B07LGLYXNQ",
+          "title": "WishLotus Left Handed Mouse Logo Laser Engraving and Matte Process 800 DPI Resolution 3D Button Plug and Play Mini USB Wired Mouse Suitable for Laptop",
+          "category": "All Electronics",
+          "brand": "WishLotus",
+          "store_name": "WishLotus",
+          "price": 12.99,
+          "image_url": "https://m.media-amazon.com/images/I/51Sq7pw42rL._AC_SL1000_.jpg",
+          "summary": "1.【LEFT HANDED MOUSE】: The unique design of the left-handed mouse is tailor-made for the left-hander. The C632 small mouse is exquisite and compact, with transparent LOGO. It was made with a matte process, which lets you feel more comfortable."
+        }
+      ],
+      "history": {
+        "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+        "turns": [
+          {
+            "request_id": "agent_req_8002cec3ec783468ad0b7f10e6c055b0",
+            "turn_index": 1,
+            "user_message": "请帮我推荐鼠标",
+            "assistant_message": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：\n推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+            "recommended_item_ids": [
+              "B086MNX5Y5",
+              "B07H8X5ZTG",
+              "B08BQXL6DD",
+              "B076C75X1T",
+              "B07LGLYXNQ"
+            ],
+            "answer_blocks": [
+              {
+                "content": "为您推荐 5 款适合办公和日常使用的鼠标，涵盖人体工学、无线连接和经典设计等不同需求：",
+                "type": "text"
+              },
+              {
+                "layout": "grid",
+                "type": "product_cards",
+                "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+                "item_ids": [
+                  "B086MNX5Y5",
+                  "B07H8X5ZTG",
+                  "B08BQXL6DD",
+                  "B076C75X1T",
+                  "B07LGLYXNQ"
+                ]
+              },
+              {
+                "content": "推荐理由：这些鼠标都经过筛选，适合不同使用场景。如果您需要长时间办公，推荐人体工学设计的垂直鼠标（如 memzuoix 和 Razer Pro Click）；如果需要无线自由移动，选择无线型号；如果偏好经典设计，Microsoft Classic 是可靠选择。具体选择可根据您的手型、预算和使用习惯决定。",
+                "type": "text"
+              }
+            ],
+            "finish_reason": "FINAL_ANSWER",
+            "card_set_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+            "degradation_reasons": []
+          }
+        ]
+      },
+      "recommend_trace": {
+        "request_id": "rec_req_agent_rank_ca6f6bc1-81a8-4a04-b29c-4e953de24737",
+        "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+        "profile_user_id": "AE222GHCPAOQIDZDVHIMMGZ6WZSA",
+        "scene": "agent_chat",
+        "config": {
+          "ranking_degraded": 0
+        },
+        "stage_counts": {
+          "deepfm_scored": 100,
+          "final": 5,
+          "bge_reranked": 96,
+          "fine_rank": 96,
+          "cold_scored": 100,
+          "recall": 100,
+          "coarse_rank": 100
+        },
+        "source_distribution": {
+          "semantic": 100
+        },
+        "items": [
+          {
+            "item_id": "B086MNX5Y5",
+            "final_rank": 1,
+            "final_score": 0.48140847866316927,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 4,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B07H8X5ZTG",
+            "final_rank": 2,
+            "final_score": 0.4207903114458983,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 5,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B08BQXL6DD",
+            "final_rank": 3,
+            "final_score": 0.4051544236590225,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 7,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B076C75X1T",
+            "final_rank": 4,
+            "final_score": 0.39756358672855413,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 10,
+            "reason": "结合你的需求与偏好推荐"
+          },
+          {
+            "item_id": "B07LGLYXNQ",
+            "final_rank": 5,
+            "final_score": 0.3672644445904655,
+            "recall_sources": [
+              "semantic",
+              "cold_coarse",
+              "deepfm_fine",
+              "bge_reranker"
+            ],
+            "coarse_rank": null,
+            "fine_rank": 24,
+            "reason": "结合你的需求与偏好推荐"
+          }
+        ]
+      }
+    }
+  ],
+  "failures": [
+    {
+      "label": "llm-3",
+      "route": "fast",
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "session_id": "sess_04d11f0084344e91855b885a8c7140e5",
+      "start_epoch_ms": 1791686545432.4294,
+      "agent_done_ms": 120644.51,
+      "request_payload": {
+        "session_id": "sess_04d11f0084344e91855b885a8c7140e5",
+        "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+        "user_message": "推荐适合编程使用的键盘，说明各自的区别",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-9c0a1fbd2cae93b4ad43107f",
+          "a2ui_state": []
+        }
+      },
+      "response": null,
+      "events": [
+        {
+          "event": "started",
+          "data": {
+            "request_id": "agent_req_3864b150c3b33c8c8dd79d1622d3680b"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "label": "multi-1",
+      "route": "fast",
+      "query": "换一批鼠标，适合办公使用",
+      "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+      "start_epoch_ms": 1791686669791.6165,
+      "agent_done_ms": 120277.16,
+      "request_payload": {
+        "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+        "profile_user_id": "AE222GHCPAOQIDZDVHIMMGZ6WZSA",
+        "user_message": "换一批鼠标，适合办公使用",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-83e53d08aea265f738327310",
+          "a2ui_state": []
+        }
+      },
+      "response": null,
+      "events": [
+        {
+          "event": "started",
+          "data": {
+            "request_id": "agent_req_89dc97d5a0b63adeadad1ce377660515"
+          }
+        }
+      ],
+      "error": null
+    },
+    {
+      "label": "multi-2",
+      "route": "fast",
+      "query": "再推荐五款鼠标，说明理由",
+      "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+      "start_epoch_ms": 1791686790076.8843,
+      "agent_done_ms": 512.56,
+      "request_payload": {
+        "session_id": "sess_81ef5a04db774b5abffdd72fda4259ab",
+        "profile_user_id": "AE222GHCPAOQIDZDVHIMMGZ6WZSA",
+        "user_message": "再推荐五款鼠标，说明理由",
+        "limit": 5,
+        "context": {
+          "scene": "agent_chat",
+          "client_turn_id": "e2e-51a88997c4141887b9c3cbf0",
+          "a2ui_state": []
+        }
+      },
+      "response": null,
+      "events": [
+        {
+          "event": "error",
+          "data": {
+            "retryable": true,
+            "status": 503,
+            "message": "agent stream failed",
+            "error_code": "AGENT_BUSY"
+          }
+        },
+        {
+          "event": "done",
+          "data": {
+            "finish_reason": "error",
+            "done": true
+          }
+        }
+      ],
+      "error": {
+        "retryable": true,
+        "status": 503,
+        "message": "agent stream failed",
+        "error_code": "AGENT_BUSY"
+      }
+    }
+  ]
+}

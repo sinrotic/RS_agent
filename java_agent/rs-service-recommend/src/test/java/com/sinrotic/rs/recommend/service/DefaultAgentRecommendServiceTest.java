@@ -15,13 +15,14 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class DefaultAgentRecommendServiceTest {
 
     @Test
     void candidatesBridgeAgentRequestToHomeRecommendationPipeline() {
         HomeRecommendService homeRecommendService = request -> {
-            assertEquals("A1XYZ", request.sessionId());
+            assertEquals("task_001", request.sessionId());
             assertEquals("home", request.scene());
             assertEquals(10, request.pageSize());
             return new HomeRecommendVO(
@@ -104,7 +105,40 @@ class DefaultAgentRecommendServiceTest {
     }
 
     @Test
-    void filtersCandidatesByPriceRangeWhenCandidatePriceIsAvailable() {
+    void semanticRecallUsesTheQueryAwareProvider() {
+        HomeRecommendService homeRecommendService = request -> new HomeRecommendVO(
+                "fallback", request.sessionId(), request.scene(), "A1XYZ", List.of(), false, "",
+                new HomeRecommendConfigVO(500, 100, 50, 20, 8)
+        );
+        SemanticItemRecallProvider provider = (requestId, query, limit) -> List.of(new com.sinrotic.rs.recommend.domain.recall.ItemEmbeddingText(
+                query.contains("headphones") ? "HEADPHONES" : "STAPLER",
+                "", query, "category", "category", "brand", BigDecimal.TEN, Map.of()
+        ));
+        DefaultAgentRecommendService service = new DefaultAgentRecommendService(homeRecommendService, provider);
+        var preferences = new com.sinrotic.rs.recommend.service.impl.InMemoryOnlinePreferenceStore();
+        var sessions = org.mockito.Mockito.mock(RecommendationSessionValidator.class);
+        org.mockito.Mockito.when(sessions.activeUntil("A1XYZ","A1XYZ","sess_001"))
+                .thenReturn(java.time.Instant.now().plus(java.time.Duration.ofHours(24)));
+        var ranker = new com.sinrotic.rs.recommend.service.impl.TrainedAgentCandidateRanker(
+                null, org.mockito.Mockito.mock(HomeModelRanker.class), (cursor,limit)->List.of(), preferences,
+                new com.sinrotic.rs.recommend.service.impl.PreferenceAwareFinalReranker(),
+                new com.sinrotic.rs.recommend.service.impl.DefaultRecommendationDeliveryService(
+                        new com.sinrotic.rs.recommend.service.impl.InMemoryRecommendationDeliveryStore(),java.time.Clock.systemUTC(),java.time.Duration.ofHours(24)),
+                new com.sinrotic.rs.recommend.service.impl.InMemoryRecommendTraceService());
+        ranker.setSessionPreferenceReader(new com.sinrotic.rs.recommend.service.impl.SessionPreferenceReader(
+                new com.sinrotic.rs.recommend.service.impl.InMemoryRecommendationFeedbackEventStore(),preferences,sessions));
+        service.setTrainedAgentRanker(ranker);
+
+        var headphones = service.semanticRecall(semanticRequest("noise cancelling headphones"));
+        var stapler = service.semanticRecall(semanticRequest("desktop stapler"));
+
+        assertNotEquals(headphones.candidates().getFirst().itemId(), stapler.candidates().getFirst().itemId());
+        assertEquals("HEADPHONES", headphones.candidates().getFirst().itemId());
+        assertEquals("STAPLER", stapler.candidates().getFirst().itemId());
+    }
+
+    @Test
+    void filtersCandidatesByPriceRangeAndRequiresKnownPriceWithBudget() {
         DefaultAgentRecommendService service = new DefaultAgentRecommendService(request -> new HomeRecommendVO(
                 "rec_req_price_001",
                 request.sessionId(),
@@ -151,8 +185,15 @@ class DefaultAgentRecommendServiceTest {
                 Map.of("price_min", 200, "price_max", 500)
         );
 
-        assertEquals(List.of("B_LOW", "B_UNKNOWN"), filtered.stream()
+        assertEquals(List.of("B_LOW"), filtered.stream()
                 .map(com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO::itemId)
                 .toList());
+    }
+
+    private AgentRecommendToolRequestDTO semanticRequest(String query) {
+        return new AgentRecommendToolRequestDTO(
+                "agent_001", "task_001", "sess_001", "A1XYZ", query,
+                null, 20, 5, null, "agent", Map.of()
+        ).withSemanticDefaults();
     }
 }

@@ -1,0 +1,30 @@
+services:
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    restart: unless-stopped
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=14d", "--storage.tsdb.retention.size=2GB"]
+    ports: ["127.0.0.1:19090:9090"]
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - ${RS_COMMERCE_PROMETHEUS_TARGETS:-./commerce-targets-disabled.yml}:/etc/prometheus/commerce-targets.yml:ro
+      - prometheus-data:/prometheus
+    mem_limit: 512m
+    networks: [rs-agent-java]
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    restart: unless-stopped
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    ports: ["127.0.0.1:19093:9093"]
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    mem_limit: 128m
+    networks: [rs-agent-java]
+networks:
+  rs-agent-java:
+    external: true
+    name: ${RS_DOCKER_NETWORK:-rs-agent-java_default}
+volumes:
+  prometheus-data:
+  alertmanager-data:

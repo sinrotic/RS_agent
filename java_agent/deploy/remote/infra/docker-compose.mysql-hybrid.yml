@@ -1,0 +1,7 @@
+# 仅在已有 rs_agent 库留在原盘时启用；事务日志、doublewrite 和系统表使用主数据目录。
+services:
+  mysql:
+    volumes:
+      - type: bind
+        source: ${RS_MYSQL_LEGACY_DATABASE_DIR:?必须指定已有 rs_agent 库目录}
+        target: /var/lib/mysql/rs_agent

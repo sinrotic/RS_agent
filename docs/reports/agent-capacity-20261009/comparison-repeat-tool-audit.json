@@ -1,0 +1,111 @@
+{
+  "source": "/tmp/rs-agent-capacity-20261009/comparison-repeat.json",
+  "requests": 3,
+  "trace_available": 3,
+  "requests_with_failed_tools": 3,
+  "failed_tools": 8,
+  "requests_detail": [
+    {
+      "concurrency": 1,
+      "number": 0,
+      "session_id": "capacity-87bffa22ad-1-0-b977323d",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 1,
+      "trace_available": true
+    },
+    {
+      "concurrency": 1,
+      "number": 1,
+      "session_id": "capacity-87bffa22ad-1-1-36cb1f94",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 3,
+      "trace_available": true
+    },
+    {
+      "concurrency": 1,
+      "number": 2,
+      "session_id": "capacity-87bffa22ad-1-2-a25db6b5",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 4,
+      "trace_available": true
+    }
+  ]
+}

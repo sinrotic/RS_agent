@@ -1,0 +1,47 @@
+{
+  "status": "EXPORTED_AWAITING_SERVING_VERIFICATION",
+  "model_key": "product_three_tower_final_v1",
+  "collection": "rs_agent_product_three_tower_final_v1_20261013",
+  "dimension": 1024,
+  "hidden": 256,
+  "candidate_count": 763080,
+  "pooling": "cohesion",
+  "BGE_frozen": true,
+  "protected_head_count": 0,
+  "filter_history": true,
+  "input_history_order": "recent_first_http / chronological_training",
+  "query_task_trained": true,
+  "trained_towers": [
+    "item",
+    "user",
+    "query"
+  ],
+  "release_is_new_training": false,
+  "source_checkpoint": "/mnt/data/luo/remote_runs/product_v14_training/export/model.pt",
+  "source_model_sha256": "654ef0e6dbf386297e0bce10ab54a58d35f73f2c73532ff10b9f58b8a5fe589a",
+  "source_training_config": {
+    "data": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/data",
+    "evaluation": "/mnt/data/luo/remote_runs/product_three_tower_v6_20261011/evaluation_v2/rec_dev.jsonl",
+    "output": "/mnt/data/luo/remote_runs/product_three_tower_v6_20261011/query_lr1e5",
+    "checkpoint": "/mnt/data/luo/remote_runs/product_recall_v5_gpu_20261011/shuffle32/last.pt",
+    "mode": "query",
+    "seed": 42,
+    "steps": 600,
+    "eval_every": 200,
+    "lr": 2e-06,
+    "query_lr": 1e-05,
+    "semantic_every": 5,
+    "semantic_weight": 0.1,
+    "anchor": 0.01,
+    "id_dim": 0,
+    "hidden": 256,
+    "history_half_life_days": 0,
+    "pooling": "cohesion"
+  },
+  "output_hashes": {
+    "model.pt": "9318795238fe676fcb111694889880e037e8fa30c4f14982d4b38205e3eb87df",
+    "item_vectors.npy": "307396da14822f9af050023868a16e2aa70823cdd57689328127796cfc86d65f",
+    "item_ids.jsonl": "d5d55afb424c60c1ae4d092e20b2f9d04bfecd01a2e3b870734de3b30dd950f3",
+    "model_definition.py": "3f3fa192c8fd45983b4f0d088c3e746fb7d07aec774fee9a985b27f03ffeeed7"
+  }
+}

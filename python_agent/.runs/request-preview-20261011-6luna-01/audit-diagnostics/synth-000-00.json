@@ -1,0 +1,45 @@
+{
+  "candidate_id": "synth-000-00",
+  "original_status": "quarantined",
+  "original_failed_stage": "audit",
+  "is_gold": false,
+  "raw_model_audit": {
+    "checks": {
+      "naturalness": "pass",
+      "extraction_fidelity": "fail",
+      "fact_boundary": "pass",
+      "clarification_policy": "pass"
+    },
+    "reason": {
+      "naturalness": "顾客用语像正常的购物询问：说明设备问题、目标产品、主要系统、预算和一项偏好。",
+      "extraction_fidelity": "产品类型、Windows 11 和双频偏好有原话支持；但把“预算三十左右”抽成硬性不超过 30（lte）过强。“左右”表达近似预算，并未明确绝不超过 30。purchase_for 标为 unknown 也过度谨慎：“家里台式机”没有说明购买者身份，但这不影响本人需求提取，且不应把购买者身份当作当前待澄清槽位。",
+      "fact_boundary": "目录中有一款标价 26.99、标题注明双频并支持 Windows 10/11 的 USB Wi‑Fi 适配器；但价格币种未确认，不能据此断言符合顾客实际币种下的预算。历史记录是过去的正向评价，不足以推断当前偏好，也不能补足预算币种。",
+      "clarification_policy": "无需先澄清即可继续检索或给出带条件的结果。若价格是否必须严格不超过 30 会影响筛选，可以说明币种未确认并询问；但这不是开始回应前的必要澄清。"
+    },
+    "evidence": [
+      {
+        "source": "customer",
+        "quote": "家里台式机的无线网卡不太稳定，想换个USB Wi‑Fi适配器，最好支持双频。主要是Windows 11用，预算三十左右，有合适的吗？"
+      },
+      {
+        "source": "catalog",
+        "quote": "USB WiFi Adapter, AX1800 USB 3.0 WiFi 6 Wireless Network Adapter USB Wireless Dongle with Dual Band 2.4GHz/5GHz for Desktop PC Laptop Support Windows 10/11"
+      },
+      {
+        "source": "catalog",
+        "quote": "26.99"
+      },
+      {
+        "source": "profile",
+        "quote": "past_positive_reviews_not_purchases"
+      }
+    ],
+    "issues": [
+      "“预算三十左右”不应无条件转成价格小于等于 30 的硬约束；宜保留为近似预算或偏好。",
+      "“purchase_for”身份未知不等于需求不明确；原话只说明适配器用于家里的台式机。",
+      "目录标价使用 SOURCE_UNIT，币种未确认，因此不能仅凭 26.99 判断实际币种下是否符合预算。"
+    ]
+  },
+  "protocol_valid": false,
+  "protocol_error": "无效或过长的文本"
+}

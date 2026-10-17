@@ -29,6 +29,7 @@ public class OrderKafkaConfiguration {
         );
         properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         properties.put(
                 ConsumerConfig.AUTO_OFFSET_RESET_CONFIG,
                 environment.getProperty("spring.kafka.consumer.auto-offset-reset", "latest")
@@ -40,11 +41,20 @@ public class OrderKafkaConfiguration {
     @ConditionalOnMissingBean(name = "kafkaListenerContainerFactory")
     public ConcurrentKafkaListenerContainerFactory<Object, Object> kafkaListenerContainerFactory(
             ConsumerFactory<Object, Object> consumerFactory,
-            Environment environment
+            Environment environment,
+            org.springframework.beans.factory.ObjectProvider<org.springframework.kafka.core.KafkaTemplate<Object,Object>> templates
     ) {
         ConcurrentKafkaListenerContainerFactory<Object, Object> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
+        factory.setConcurrency(environment.getProperty("rs.checkout.kafka.concurrency",Integer.class,3));
+        var template = templates.getIfAvailable();
+        if (template != null) {
+            var recoverer = new org.springframework.kafka.listener.DeadLetterPublishingRecoverer(template);
+            recoverer.setFailIfSendResultIsError(true);
+            factory.setCommonErrorHandler(new org.springframework.kafka.listener.DefaultErrorHandler(
+                    recoverer,new org.springframework.util.backoff.FixedBackOff(1000L,5L)));
+        }
         factory.setAutoStartup(environment.getProperty("spring.kafka.listener.auto-startup", Boolean.class, true));
         return factory;
     }

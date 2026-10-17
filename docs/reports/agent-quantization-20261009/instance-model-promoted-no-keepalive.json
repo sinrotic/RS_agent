@@ -1,0 +1,11 @@
+{
+  "action": "promote",
+  "pid": 436670,
+  "gpu": 1,
+  "max_model_len": "16384",
+  "quantization": "fp8_per_block",
+  "quantization_config": "{\"ignore\":[\"lm_head\",\"re:.*visual.*\",\"re:.*linear_attn.*\",\"re:.*self_attn.*\",\"re:.*layers\\\\.(?:0|1|2|3|4|5|6|7|24|25|26|27|28|29|30|31)\\\\..*\"]}",
+  "log": "/tmp/rs-agent-quantization-20261009/model-promote-no-keepalive-1791539217.log",
+  "weight_only": true,
+  "prefix_keepalive": "false"
+}

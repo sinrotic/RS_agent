@@ -1,0 +1,35 @@
+{
+  "selection_scope": "按前后两组小样本模型基线筛选；仍需候选功能、真实业务及正式同卡复验",
+  "gate": "混合请求几何平均耗时至少降低8%，固定128token不退化超过5%，场景中位数不退化超过10%，样本P95不退化超过15%",
+  "candidates": [
+    {
+      "label": "batch4096",
+      "eligible": false,
+      "state_passed": true,
+      "mixed_median_ratio_against_both_baselines": {
+        "mixed_c4": 1.00741372557104,
+        "mixed_c8": 1.0298587466327551,
+        "mixed_c16": 1.0315230864892233
+      },
+      "geometric_mean_mixed_ratio": 1.0228724761563672,
+      "worst_decode128_ratio": 0.9934277956183787,
+      "worst_median_ratio": 1.1298547454862669,
+      "worst_p95_ratio": 1.171558539017445
+    },
+    {
+      "label": "batch8192",
+      "eligible": false,
+      "state_passed": true,
+      "mixed_median_ratio_against_both_baselines": {
+        "mixed_c4": 1.0082275088645172,
+        "mixed_c8": 1.09475211150766,
+        "mixed_c16": 1.0392233952402121
+      },
+      "geometric_mean_mixed_ratio": 1.046793658754665,
+      "worst_decode128_ratio": 0.9946637454341523,
+      "worst_median_ratio": 1.1139794983871518,
+      "worst_p95_ratio": 1.1977995022194852
+    }
+  ],
+  "winner": null
+}

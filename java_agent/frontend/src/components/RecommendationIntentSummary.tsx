@@ -9,7 +9,7 @@ export function RecommendationIntentSummary({ viewModel }: RecommendationIntentS
   const { intentSummary, referenceContext } = viewModel;
 
   return (
-    <div className="rounded-2xl border border-slate-700/80 bg-gradient-to-br from-slate-800 via-slate-800/90 to-slate-900/90 p-4 text-left shadow-md">
+    <div className="rounded-2xl border border-slate-700/80 bg-linear-to-br from-slate-800 via-slate-800/90 to-slate-900/90 p-4 text-left shadow-md">
       <div className="flex items-start gap-3">
         <div className="rounded-full bg-indigo-500/10 border border-indigo-500/25 p-2 text-indigo-400">
           <Sparkles size={16} className="animate-pulse" />
@@ -20,7 +20,7 @@ export function RecommendationIntentSummary({ viewModel }: RecommendationIntentS
           {intentSummary.chips.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {intentSummary.chips.map((chip) => (
-                <span key={chip} className="rounded-full border border-slate-700 bg-slate-900/60 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300 shadow-sm">
+                <span key={chip} className="rounded-full border border-slate-700 bg-slate-900/60 px-2.5 py-0.5 text-[10px] font-semibold text-indigo-300 shadow-xs">
                   {chip}
                 </span>
               ))}

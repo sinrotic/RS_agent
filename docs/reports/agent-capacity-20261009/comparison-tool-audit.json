@@ -1,0 +1,320 @@
+{
+  "source": "/tmp/rs-agent-capacity-20261009/comparison-sweep.json",
+  "requests": 9,
+  "trace_available": 9,
+  "requests_with_failed_tools": 9,
+  "failed_tools": 26,
+  "requests_detail": [
+    {
+      "concurrency": 1,
+      "number": 0,
+      "session_id": "capacity-b920b5df33-1-0-b8e89043",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 2,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 0,
+      "session_id": "capacity-b920b5df33-8-0-cb652ed8",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 2,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 1,
+      "session_id": "capacity-b920b5df33-8-1-2f9170a7",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 4,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 2,
+      "session_id": "capacity-b920b5df33-8-2-0d3938aa",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 4,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 3,
+      "session_id": "capacity-b920b5df33-8-3-c74acfb6",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 2,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 4,
+      "session_id": "capacity-b920b5df33-8-4-d3293f5a",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 3,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 5,
+      "session_id": "capacity-b920b5df33-8-5-bf303e86",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 4,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 6,
+      "session_id": "capacity-b920b5df33-8-6-92c6096f",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 3,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 7,
+      "session_id": "capacity-b920b5df33-8-7-7771de26",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 2,
+      "trace_available": true
+    }
+  ]
+}

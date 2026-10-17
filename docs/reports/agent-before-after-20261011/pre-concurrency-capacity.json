@@ -1,0 +1,1920 @@
+{
+  "checked_at_utc": "2026-10-11T14:59:01.413119+00:00",
+  "phase": "capacity",
+  "version": "pre-concurrency",
+  "model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "target_model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "cases": [
+    {
+      "query": "推荐鼠标",
+      "passed": true,
+      "first_text_block_ms": 3478.15,
+      "done_event_ms": 3611.09,
+      "agent_done_ms": 3625.63,
+      "sse_event_counts": {
+        "started": 1,
+        "answer_block": 3,
+        "done": 1
+      },
+      "error_code": null,
+      "complete_ms": 3630.5,
+      "items": 5,
+      "answer_chars": 110,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "failed_tools": 0,
+      "stage_counts": {
+        "coarse_rank": 100,
+        "recall": 100,
+        "cold_scored": 100,
+        "fine_rank": 96,
+        "bge_reranked": 96,
+        "final": 5,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "failed_tool_codes": [],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "text_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "first_model_call_ttft_ms": 611.68,
+      "first_observed_model_count": 1.0,
+      "label": "warmup",
+      "concurrent_requests": 1,
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1064941.0,
+          "vllm:prefix_cache_hits_total": 708576.0,
+          "vllm:request_prompt_tokens_count": 136.0,
+          "vllm:request_prompt_tokens_sum": 1064941.0,
+          "vllm:time_to_first_token_seconds_count": 136.0,
+          "vllm:time_to_first_token_seconds_sum": 54.045350313186646,
+          "vllm:request_queue_time_seconds_count": 136.0,
+          "vllm:request_queue_time_seconds_sum": 16.862759083509445,
+          "vllm:request_prefill_time_seconds_count": 136.0,
+          "vllm:request_prefill_time_seconds_sum": 27.509209513664246
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1071523.0,
+          "vllm:prefix_cache_hits_total": 708576.0,
+          "vllm:request_prompt_tokens_count": 137.0,
+          "vllm:request_prompt_tokens_sum": 1071523.0,
+          "vllm:time_to_first_token_seconds_count": 137.0,
+          "vllm:time_to_first_token_seconds_sum": 54.65703058242798,
+          "vllm:request_queue_time_seconds_count": 137.0,
+          "vllm:request_queue_time_seconds_sum": 17.0047500282526,
+          "vllm:request_prefill_time_seconds_count": 137.0,
+          "vllm:request_prefill_time_seconds_sum": 27.9309124937281
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 6582.0,
+          "vllm:prefix_cache_hits_total": 0.0,
+          "vllm:request_prompt_tokens_count": 1.0,
+          "vllm:request_prompt_tokens_sum": 6582.0,
+          "vllm:time_to_first_token_seconds_count": 1.0,
+          "vllm:time_to_first_token_seconds_sum": 0.611680269241333,
+          "vllm:request_queue_time_seconds_count": 1.0,
+          "vllm:request_queue_time_seconds_sum": 0.14199094474315643,
+          "vllm:request_prefill_time_seconds_count": 1.0,
+          "vllm:request_prefill_time_seconds_sum": 0.42170298006385565
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 1.0,
+        "internally_consistent": true,
+        "input_tokens": 6582,
+        "cached_tokens": 0,
+        "cache_hit_percent": 0.0,
+        "mean_model_ttft_ms": 611.68,
+        "mean_model_queue_ms": 141.991,
+        "mean_model_prefill_ms": 421.703
+      }
+    }
+  ],
+  "stages": [
+    {
+      "repeat": 0,
+      "concurrent_requests": 8,
+      "distinct_accounts": 8,
+      "distinct_sessions": 8,
+      "batch_wall_ms": 8365.64,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6822.31,
+          "done_event_ms": 6888.04,
+          "agent_done_ms": 6889.68,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6894.23,
+          "items": 5,
+          "answer_chars": 102,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7646.53,
+          "done_event_ms": 7715.9,
+          "agent_done_ms": 7718.42,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7723.91,
+          "items": 5,
+          "answer_chars": 158,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8153.14,
+          "done_event_ms": 8241.97,
+          "agent_done_ms": 8243.42,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8247.97,
+          "items": 5,
+          "answer_chars": 210,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8032.2,
+          "done_event_ms": 8105.61,
+          "agent_done_ms": 8107.08,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8112.41,
+          "items": 5,
+          "answer_chars": 178,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8165.51,
+          "done_event_ms": 8248.91,
+          "agent_done_ms": 8250.08,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8253.34,
+          "items": 5,
+          "answer_chars": 220,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8275.52,
+          "done_event_ms": 8337.7,
+          "agent_done_ms": 8339.44,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8343.7,
+          "items": 5,
+          "answer_chars": 256,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7941.77,
+          "done_event_ms": 8016.35,
+          "agent_done_ms": 8017.82,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8022.25,
+          "items": 5,
+          "answer_chars": 177,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8097.32,
+          "done_event_ms": 8178.42,
+          "agent_done_ms": 8180.19,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8184.58,
+          "items": 5,
+          "answer_chars": 214,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1071523.0,
+          "vllm:prefix_cache_hits_total": 708576.0,
+          "vllm:request_prompt_tokens_count": 137.0,
+          "vllm:request_prompt_tokens_sum": 1071523.0,
+          "vllm:time_to_first_token_seconds_count": 137.0,
+          "vllm:time_to_first_token_seconds_sum": 54.65703058242798,
+          "vllm:request_queue_time_seconds_count": 137.0,
+          "vllm:request_queue_time_seconds_sum": 17.0047500282526,
+          "vllm:request_prefill_time_seconds_count": 137.0,
+          "vllm:request_prefill_time_seconds_sum": 27.9309124937281
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1157315.0,
+          "vllm:prefix_cache_hits_total": 776688.0,
+          "vllm:request_prompt_tokens_count": 145.0,
+          "vllm:request_prompt_tokens_sum": 1124318.0,
+          "vllm:time_to_first_token_seconds_count": 145.0,
+          "vllm:time_to_first_token_seconds_sum": 60.20805025100708,
+          "vllm:request_queue_time_seconds_count": 145.0,
+          "vllm:request_queue_time_seconds_sum": 18.444528334774077,
+          "vllm:request_prefill_time_seconds_count": 145.0,
+          "vllm:request_prefill_time_seconds_sum": 30.703095546923578
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 85792.0,
+          "vllm:prefix_cache_hits_total": 68112.0,
+          "vllm:request_prompt_tokens_count": 8.0,
+          "vllm:request_prompt_tokens_sum": 52795.0,
+          "vllm:time_to_first_token_seconds_count": 8.0,
+          "vllm:time_to_first_token_seconds_sum": 5.551019668579102,
+          "vllm:request_queue_time_seconds_count": 8.0,
+          "vllm:request_queue_time_seconds_sum": 1.4397783065214753,
+          "vllm:request_prefill_time_seconds_count": 8.0,
+          "vllm:request_prefill_time_seconds_sum": 2.7721830531954765
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 8.0,
+        "internally_consistent": false
+      },
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "successful_mean_ms": 7972.8,
+      "successful_median_ms": 8148.49,
+      "successful_p95_ms": 8343.7,
+      "successful_max_ms": 8343.7,
+      "completed_requests_per_second": 0.9563
+    },
+    {
+      "repeat": 0,
+      "concurrent_requests": 16,
+      "distinct_accounts": 8,
+      "distinct_sessions": 16,
+      "batch_wall_ms": 8055.66,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 518.0,
+          "agent_done_ms": 519.63,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7532.37,
+          "done_event_ms": 7602.35,
+          "agent_done_ms": 7604.37,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7608.79,
+          "items": 5,
+          "answer_chars": 195,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 519.08,
+          "agent_done_ms": 519.92,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6650.23,
+          "done_event_ms": 6722.42,
+          "agent_done_ms": 6724.21,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6728.83,
+          "items": 5,
+          "answer_chars": 132,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 514.02,
+          "agent_done_ms": 515.1,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7692.39,
+          "done_event_ms": 7758.58,
+          "agent_done_ms": 7760.01,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7764.56,
+          "items": 5,
+          "answer_chars": 253,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7913.33,
+          "done_event_ms": 7966.54,
+          "agent_done_ms": 7967.92,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7972.56,
+          "items": 5,
+          "answer_chars": 307,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 513.41,
+          "agent_done_ms": 515.22,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 7
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 517.93,
+          "agent_done_ms": 519.76,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 8
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 498.92,
+          "agent_done_ms": 500.83,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 9
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 513.41,
+          "agent_done_ms": 514.14,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 10
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 522.42,
+          "agent_done_ms": 523.1,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 11
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7360.91,
+          "done_event_ms": 7424.3,
+          "agent_done_ms": 7426.17,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7431.89,
+          "items": 5,
+          "answer_chars": 177,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 12
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7558.02,
+          "done_event_ms": 7627.93,
+          "agent_done_ms": 7628.44,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7632.84,
+          "items": 5,
+          "answer_chars": 171,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 13
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6120.98,
+          "done_event_ms": 6184.68,
+          "agent_done_ms": 6187.35,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6192.83,
+          "items": 5,
+          "answer_chars": 102,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 14
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7967.38,
+          "done_event_ms": 8030.34,
+          "agent_done_ms": 8031.54,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8036.2,
+          "items": 5,
+          "answer_chars": 304,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 15
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1157315.0,
+          "vllm:prefix_cache_hits_total": 776688.0,
+          "vllm:request_prompt_tokens_count": 145.0,
+          "vllm:request_prompt_tokens_sum": 1124318.0,
+          "vllm:time_to_first_token_seconds_count": 145.0,
+          "vllm:time_to_first_token_seconds_sum": 60.20805025100708,
+          "vllm:request_queue_time_seconds_count": 145.0,
+          "vllm:request_queue_time_seconds_sum": 18.444528334774077,
+          "vllm:request_prefill_time_seconds_count": 145.0,
+          "vllm:request_prefill_time_seconds_sum": 30.703095546923578
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1229871.0,
+          "vllm:prefix_cache_hits_total": 834768.0,
+          "vllm:request_prompt_tokens_count": 153.0,
+          "vllm:request_prompt_tokens_sum": 1177104.0,
+          "vllm:time_to_first_token_seconds_count": 153.0,
+          "vllm:time_to_first_token_seconds_sum": 64.64870619773865,
+          "vllm:request_queue_time_seconds_count": 153.0,
+          "vllm:request_queue_time_seconds_sum": 19.112109454348683,
+          "vllm:request_prefill_time_seconds_count": 153.0,
+          "vllm:request_prefill_time_seconds_sum": 33.09141762368381
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 72556.0,
+          "vllm:prefix_cache_hits_total": 58080.0,
+          "vllm:request_prompt_tokens_count": 8.0,
+          "vllm:request_prompt_tokens_sum": 52786.0,
+          "vllm:time_to_first_token_seconds_count": 8.0,
+          "vllm:time_to_first_token_seconds_sum": 4.440655946731567,
+          "vllm:request_queue_time_seconds_count": 8.0,
+          "vllm:request_queue_time_seconds_sum": 0.6675811195746064,
+          "vllm:request_prefill_time_seconds_count": 8.0,
+          "vllm:request_prefill_time_seconds_sum": 2.3883220767602324
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 8.0,
+        "internally_consistent": false
+      },
+      "total": 16,
+      "passed": 8,
+      "failed": 8,
+      "successful_mean_ms": 7421.06,
+      "successful_median_ms": 7620.82,
+      "successful_p95_ms": 8036.2,
+      "successful_max_ms": 8036.2,
+      "completed_requests_per_second": 0.9931
+    },
+    {
+      "repeat": 1,
+      "concurrent_requests": 8,
+      "distinct_accounts": 8,
+      "distinct_sessions": 8,
+      "batch_wall_ms": 9011.6,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6415.54,
+          "done_event_ms": 6481.59,
+          "agent_done_ms": 6483.33,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6487.35,
+          "items": 5,
+          "answer_chars": 88,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6796.68,
+          "done_event_ms": 6863.76,
+          "agent_done_ms": 6864.38,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6869.06,
+          "items": 5,
+          "answer_chars": 110,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7067.47,
+          "done_event_ms": 7135.4,
+          "agent_done_ms": 7137.2,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7155.13,
+          "items": 5,
+          "answer_chars": 127,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7988.5,
+          "done_event_ms": 8049.93,
+          "agent_done_ms": 8051.22,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8056.19,
+          "items": 5,
+          "answer_chars": 298,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7401.44,
+          "done_event_ms": 7468.42,
+          "agent_done_ms": 7469.82,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7478.92,
+          "items": 5,
+          "answer_chars": 138,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7424.23,
+          "done_event_ms": 7498.58,
+          "agent_done_ms": 7500.29,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7504.26,
+          "items": 5,
+          "answer_chars": 139,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8831.67,
+          "done_event_ms": 8986.61,
+          "agent_done_ms": 8987.95,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 8,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8992.71,
+          "items": 5,
+          "answer_chars": 341,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7580.76,
+          "done_event_ms": 7644.61,
+          "agent_done_ms": 7646.0,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7650.68,
+          "items": 5,
+          "answer_chars": 190,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1229871.0,
+          "vllm:prefix_cache_hits_total": 834768.0,
+          "vllm:request_prompt_tokens_count": 153.0,
+          "vllm:request_prompt_tokens_sum": 1177104.0,
+          "vllm:time_to_first_token_seconds_count": 153.0,
+          "vllm:time_to_first_token_seconds_sum": 64.64870619773865,
+          "vllm:request_queue_time_seconds_count": 153.0,
+          "vllm:request_queue_time_seconds_sum": 19.112109454348683,
+          "vllm:request_prefill_time_seconds_count": 153.0,
+          "vllm:request_prefill_time_seconds_sum": 33.09141762368381
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1302459.0,
+          "vllm:prefix_cache_hits_total": 892848.0,
+          "vllm:request_prompt_tokens_count": 161.0,
+          "vllm:request_prompt_tokens_sum": 1229882.0,
+          "vllm:time_to_first_token_seconds_count": 161.0,
+          "vllm:time_to_first_token_seconds_sum": 69.03619599342346,
+          "vllm:request_queue_time_seconds_count": 161.0,
+          "vllm:request_queue_time_seconds_sum": 19.760854640975595,
+          "vllm:request_prefill_time_seconds_count": 161.0,
+          "vllm:request_prefill_time_seconds_sum": 35.472614591009915
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 72588.0,
+          "vllm:prefix_cache_hits_total": 58080.0,
+          "vllm:request_prompt_tokens_count": 8.0,
+          "vllm:request_prompt_tokens_sum": 52778.0,
+          "vllm:time_to_first_token_seconds_count": 8.0,
+          "vllm:time_to_first_token_seconds_sum": 4.3874897956848145,
+          "vllm:request_queue_time_seconds_count": 8.0,
+          "vllm:request_queue_time_seconds_sum": 0.6487451866269112,
+          "vllm:request_prefill_time_seconds_count": 8.0,
+          "vllm:request_prefill_time_seconds_sum": 2.3811969673261046
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 8.0,
+        "internally_consistent": false
+      },
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "successful_mean_ms": 7524.29,
+      "successful_median_ms": 7491.59,
+      "successful_p95_ms": 8992.71,
+      "successful_max_ms": 8992.71,
+      "completed_requests_per_second": 0.8877
+    },
+    {
+      "repeat": 1,
+      "concurrent_requests": 16,
+      "distinct_accounts": 8,
+      "distinct_sessions": 16,
+      "batch_wall_ms": 7526.31,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 521.91,
+          "agent_done_ms": 522.95,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 515.22,
+          "agent_done_ms": 515.93,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 509.87,
+          "agent_done_ms": 511.09,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7031.01,
+          "done_event_ms": 7103.59,
+          "agent_done_ms": 7105.15,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7111.13,
+          "items": 5,
+          "answer_chars": 138,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6774.88,
+          "done_event_ms": 6844.73,
+          "agent_done_ms": 6845.54,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6850.91,
+          "items": 5,
+          "answer_chars": 124,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 1818.44,
+          "agent_done_ms": 1819.71,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7446.81,
+          "done_event_ms": 7502.3,
+          "agent_done_ms": 7503.53,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7508.01,
+          "items": 5,
+          "answer_chars": 247,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7329.21,
+          "done_event_ms": 7404.54,
+          "agent_done_ms": 7406.66,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7410.46,
+          "items": 5,
+          "answer_chars": 202,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7304.44,
+          "done_event_ms": 7384.96,
+          "agent_done_ms": 7386.86,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7391.57,
+          "items": 5,
+          "answer_chars": 184,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 8
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 499.54,
+          "agent_done_ms": 500.69,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 9
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7299.27,
+          "done_event_ms": 7384.95,
+          "agent_done_ms": 7386.38,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7391.67,
+          "items": 5,
+          "answer_chars": 178,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 10
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 511.28,
+          "agent_done_ms": 511.78,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 11
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 1343.7,
+          "agent_done_ms": 1345.0,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 12
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6834.81,
+          "done_event_ms": 6896.08,
+          "agent_done_ms": 6897.41,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6902.26,
+          "items": 5,
+          "answer_chars": 134,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 13
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7344.93,
+          "done_event_ms": 7422.04,
+          "agent_done_ms": 7423.14,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7426.54,
+          "items": 5,
+          "answer_chars": 195,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 14
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": false,
+          "done_event_ms": 512.81,
+          "agent_done_ms": 513.63,
+          "sse_event_counts": {
+            "started": 1,
+            "error": 1,
+            "done": 1
+          },
+          "error_code": "AGENT_BUSY",
+          "index": 15
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1302459.0,
+          "vllm:prefix_cache_hits_total": 892848.0,
+          "vllm:request_prompt_tokens_count": 161.0,
+          "vllm:request_prompt_tokens_sum": 1229882.0,
+          "vllm:time_to_first_token_seconds_count": 161.0,
+          "vllm:time_to_first_token_seconds_sum": 69.03619599342346,
+          "vllm:request_queue_time_seconds_count": 161.0,
+          "vllm:request_queue_time_seconds_sum": 19.760854640975595,
+          "vllm:request_prefill_time_seconds_count": 161.0,
+          "vllm:request_prefill_time_seconds_sum": 35.472614591009915
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1381544.0,
+          "vllm:prefix_cache_hits_total": 956208.0,
+          "vllm:request_prompt_tokens_count": 169.0,
+          "vllm:request_prompt_tokens_sum": 1282622.0,
+          "vllm:time_to_first_token_seconds_count": 169.0,
+          "vllm:time_to_first_token_seconds_sum": 73.37255644798279,
+          "vllm:request_queue_time_seconds_count": 169.0,
+          "vllm:request_queue_time_seconds_sum": 20.54871135018766,
+          "vllm:request_prefill_time_seconds_count": 169.0,
+          "vllm:request_prefill_time_seconds_sum": 37.84436286147684
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 79085.0,
+          "vllm:prefix_cache_hits_total": 63360.0,
+          "vllm:request_prompt_tokens_count": 8.0,
+          "vllm:request_prompt_tokens_sum": 52740.0,
+          "vllm:time_to_first_token_seconds_count": 8.0,
+          "vllm:time_to_first_token_seconds_sum": 4.336360454559326,
+          "vllm:request_queue_time_seconds_count": 8.0,
+          "vllm:request_queue_time_seconds_sum": 0.7878567092120647,
+          "vllm:request_prefill_time_seconds_count": 8.0,
+          "vllm:request_prefill_time_seconds_sum": 2.3717482704669237
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 8.0,
+        "internally_consistent": false
+      },
+      "total": 16,
+      "passed": 8,
+      "failed": 8,
+      "successful_mean_ms": 7249.07,
+      "successful_median_ms": 7391.62,
+      "successful_p95_ms": 7508.01,
+      "successful_max_ms": 7508.01,
+      "completed_requests_per_second": 1.0629
+    }
+  ],
+  "scope": "独立 Agent、真实当前 GPU1 模型和共享下游；独立 Session，非线上网关或浏览器耗时；非最大持续容量",
+  "model_comparison_scope": "模型量化、缓存预算、权重和参数固定，仅比较 Agent 版本及对应编排配置",
+  "quality_scope": "完整商品、正文、持久历史、DeepFM/BGE 与工具无失败；不替代解释语义人工回归",
+  "configuration": {
+    "version": "pre-concurrency",
+    "jar_sha256": "8a8385f3ee802ed38333ffc49bd43a6306b97b5d829e013b433ce75a9179fa03",
+    "model_port": 18082,
+    "flags": {
+      "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "false",
+      "RS_AGENT_LLM_SYNTHESIS_ENABLED": "true",
+      "RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED": "true",
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "8",
+      "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS": "200",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "8",
+      "RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS": "15000",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2"
+    }
+  },
+  "completed": true,
+  "model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "target_model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "target_model_process_unchanged": true,
+  "model_process_unchanged": true,
+  "dependencies_stable": true,
+  "clone_cleaned": true
+}

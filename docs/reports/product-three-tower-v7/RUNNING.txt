@@ -1,0 +1,31 @@
+2026-10-11 商品候选库扩容实验记录（已完成，最新结论见 RESULTS.txt）
+
+远程目录：/mnt/data/luo/remote_runs/product_v7_expansion
+当前调度服务：rs-product-v7-catalog-auto.service
+状态文件：status.json；编码进度：data/encoding_progress.json。
+最终结果完成后以 RESULTS.txt、analysis.json、evidence_bundle.json 为准。
+
+范围：冻结现网v4权重和v6分阶段三塔权重，在同一候选库/用户集合上配对复评。
+旧词表203887项，按训练期正反馈历史追加559199项，原始并集763086项。
+6项完全空文本保留原始记录，统一不参与检索或历史表示；可用候选763080项。
+这6项均不在当前评估用户的目标或历史中。旧203887个索引与BGE缓存原样保留。
+原始训练期候选库在读取valid目标前固定哈希；没有按验证目标补库。
+
+比较条件：旧库旧历史、扩库旧历史、扩库完整训练历史。
+保留v6的1485开发用户与1485确认用户，不重新选用户；确认用户此前已复评过，
+不再称为全新独立确认集。语义复用347条合成开发查询，不读取官方最终test。
+候选覆盖从开发63.77%→84.44%、确认63.03%→84.31%。这不是命中率提升结论。
+
+资源：GPU2共享授权，PyTorch显存分配上限20%，CPU配额2核，系统内存8GB，nice15。
+只读线上健康，异常时只停止自身任务。每512个新增商品特征刷盘、原子记录完成索引。
+两次有界batch试验均从断点恢复；同一512文本的两次重复测量选中batch32。
+batch16/32/64平均耗时1.134/1.004/1.005秒，没有因大batch继续增加资源。
+抽样重编码与旧缓存最低余弦相似度0.999997，最大分量差0.000488。
+
+评价通过两遍相同形状的分块矩阵乘法计算精确rank，不使用ANN。
+第一遍提取真实目标分数，第二遍屏蔽已知历史/空文本商品并计排名，验证目标分数逐位复现。
+测试覆盖平局、跨块目标、历史屏蔽、空文本排除、无历史与词表外目标保留在分母。
+
+源码：prepare_product_v7_catalog.py、encode_product_v7_catalog.py、evaluate_product_v7_catalog.py、
+run_product_v7_catalog.py、audit_product_v7_text.py、analyze_product_v7_catalog.py、package_product_v7_catalog.py。
+扩库数据、BGE缓存、两版商品向量、离线候选包均保存在服务器，不写线上索引。

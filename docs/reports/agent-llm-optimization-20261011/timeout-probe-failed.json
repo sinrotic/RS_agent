@@ -1,0 +1,50 @@
+{
+  "label": "timeout-probe",
+  "route": "fast",
+  "query": "推荐鼠标",
+  "session_id": "sess_9be7e7d159f8404bb76b3f52ff3843fc",
+  "start_epoch_ms": 1791687711257.6252,
+  "agent_done_ms": 37122.65,
+  "request_payload": {
+    "session_id": "sess_9be7e7d159f8404bb76b3f52ff3843fc",
+    "profile_user_id": "AE2227QSJSF6HV3XTTIGQAPA6WHQ",
+    "user_message": "推荐鼠标",
+    "limit": 5,
+    "context": {
+      "scene": "agent_chat",
+      "client_turn_id": "e2e-c273609a41fd00fcfae26d20",
+      "a2ui_state": []
+    }
+  },
+  "response": null,
+  "events": [
+    {
+      "event": "started",
+      "data": {
+        "request_id": "agent_req_e5e01476902f3f969b3f02d4703386f7"
+      }
+    },
+    {
+      "event": "error",
+      "data": {
+        "status": 500,
+        "retryable": true,
+        "error_code": "AGENT_STREAM_FAILED",
+        "message": "agent stream failed"
+      }
+    },
+    {
+      "event": "done",
+      "data": {
+        "finish_reason": "error",
+        "done": true
+      }
+    }
+  ],
+  "error": {
+    "status": 500,
+    "retryable": true,
+    "error_code": "AGENT_STREAM_FAILED",
+    "message": "agent stream failed"
+  }
+}

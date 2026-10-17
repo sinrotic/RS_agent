@@ -13,6 +13,7 @@
     <artifactId>rs-service-inventory</artifactId>
 
     <dependencies>
+        <dependency><groupId>com.h2database</groupId><artifactId>h2</artifactId><scope>test</scope></dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -44,6 +45,17 @@
 
     <build>
         <plugins>
+            <!-- 为跨服务回归测试保留可直接引用的类；部署仍使用原可执行 JAR。 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions><execution>
+                    <id>plain-test-dependency</id>
+                    <phase>process-classes</phase>
+                    <goals><goal>jar</goal></goals>
+                    <configuration><classifier>plain</classifier></configuration>
+                </execution></executions>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

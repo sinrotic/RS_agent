@@ -1,0 +1,949 @@
+[
+  {
+    "model": "qwen",
+    "item_id": "B0BRXR2GDP",
+    "language": "zh",
+    "query": "需要一个支持 USB 3.0 接口的便携式外置光驱",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BRXR2GDP",
+    "language": "en",
+    "query": "portable external CD DVD burner",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08TLR4W2M",
+    "language": "zh",
+    "query": "想要一个包含12种颜色、每色48张的自粘便签本",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Dimension 48mm incorrectly converted into sheet count"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08TLR4W2M",
+    "language": "en",
+    "query": "I want a self-sticky note set with 12 colors and a plastic holder box.",
+    "automatic_pass": false,
+    "decision": "reject",
+    "reasons": [
+      "历史自动检查未通过：语言/长度/引用字段与连续原文",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07Z64KSG9",
+    "language": "zh",
+    "query": "想买一个带笔槽的 iPad 保护壳",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "本轮通用需求要求不含品牌/产品系列；兼容性需求应另设生成任务"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07Z64KSG9",
+    "language": "en",
+    "query": null,
+    "automatic_pass": false,
+    "decision": "reject",
+    "reasons": [
+      "JSON 无法解析"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08MZC99S5",
+    "language": "zh",
+    "query": "想买一个12英寸的三角建筑尺",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08MZC99S5",
+    "language": "en",
+    "query": "I want a 12-inch triangular aluminum architect scale ruler",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07FY72VRN",
+    "language": "zh",
+    "query": "需要兼容 Blink 户外摄像头的可调节硅胶支架",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "本轮通用需求要求不含品牌/产品系列；兼容性需求应另设生成任务"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07FY72VRN",
+    "language": "en",
+    "query": "Adjustable silicone mount for Blink cameras",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "本轮通用需求要求不含品牌/产品系列；兼容性需求应另设生成任务",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B093L5RLLY",
+    "language": "zh",
+    "query": "想买一个带手柄的塑料文件收纳盒",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B093L5RLLY",
+    "language": "en",
+    "query": "Need a portable plastic storage box for 8.5 x 11 paper",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BYVW51MK",
+    "language": "zh",
+    "query": "需要一个支持 150W 快充的 USB-C 充电器",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Total charger wattage versus single-port wattage ambiguous",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BYVW51MK",
+    "language": "en",
+    "query": "A 150W USB-C charger with GaN technology",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Total charger wattage versus single-port wattage ambiguous",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0B4KKBQ71",
+    "language": "zh",
+    "query": "想买一个 5 英寸乘 12.6 英寸的加厚气泡信封",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0B4KKBQ71",
+    "language": "en",
+    "query": "I need a self-sealing bubble mailer with thick padding.",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B09Z2PPHXT",
+    "language": "zh",
+    "query": "想买一个带 S 笔支架的三星 Galaxy Tab S8 Ultra 2022 保护壳",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "本轮通用需求要求不含品牌/产品系列；兼容性需求应另设生成任务"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B09Z2PPHXT",
+    "language": "en",
+    "query": "wireless charging tablet case with auto sleep/wake",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "S-Pen charging incorrectly implies wireless-charging tablet case"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BSMP9BV3",
+    "language": "zh",
+    "query": "想买一个10x13英寸的透明干擦口袋",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BSMP9BV3",
+    "language": "en",
+    "query": "buy reusable dry erase pockets",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BNQBZXMT",
+    "language": "zh",
+    "query": "需要一个带金属底座和鹅颈臂的桌面摄像头支架",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BNQBZXMT",
+    "language": "en",
+    "query": "I need a webcam stand with a heavy metal base and a flexible gooseneck arm.",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B097BHNV2G",
+    "language": "zh",
+    "query": "想买一个兼容 7110 打印机的 932 喷头",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Model-number dominated query excluded from this bounded general-needs pilot"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B097BHNV2G",
+    "language": "en",
+    "query": "I need a remanufactured 932 printhead compatible with 7110 7510 7512 7612 6700 7610 7620 6600 printers",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Copied model-number list excluded",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BMLSJ152",
+    "language": "zh",
+    "query": "想要一根带 LED 显示充电功率的 USB C 数据线",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0BMLSJ152",
+    "language": "en",
+    "query": "I need a USB-C cable with LED display",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08BWP9N6T",
+    "language": "zh",
+    "query": "想要一个可拉伸的塑料弹簧腕带，用于挂钥匙",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08BWP9N6T",
+    "language": "en",
+    "query": "A plastic spring wrist coil with a metal key ring",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07MCMTCP3",
+    "language": "zh",
+    "query": "想买一个能适配 400x200mm 孔距的 VESA 电视支架",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Adapter plate described as complete TV mount",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07MCMTCP3",
+    "language": "en",
+    "query": "looking for a steel VESA adapter plate",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B09CRR8N44",
+    "language": "zh",
+    "query": "想买一个黑色便携笔记本",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Chinese notebook term ambiguous between paper journal and laptop"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B09CRR8N44",
+    "language": "en",
+    "query": "A black portable journal with a soft leather-like cover",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07SHFPD8S",
+    "language": "zh",
+    "query": "想要一个能左右旋转 90 度的电视挂架",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "90-degree limit omits screen-size condition"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B07SHFPD8S",
+    "language": "en",
+    "query": "I need a full motion TV wall mount bracket with articulating arms that swivel, tilt, and rotate.",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0C5HT8B2Y",
+    "language": "zh",
+    "query": "需要一个大号搬家纸箱，尺寸是20英寸乘20英寸乘15英寸",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B0C5HT8B2Y",
+    "language": "en",
+    "query": "I need a large moving box with dimensions of 20 inches by 20 inches by 15 inches.",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B082T78RKN",
+    "language": "zh",
+    "query": "需要一根支持快充的苹果 Lightning 充电线",
+    "automatic_pass": false,
+    "decision": "reject",
+    "reasons": [
+      "历史自动检查未通过：语言/长度/引用字段与连续原文"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B082T78RKN",
+    "language": "en",
+    "query": "buy a 6-foot nylon braided USB-A to Lightning cable",
+    "automatic_pass": false,
+    "decision": "reject",
+    "reasons": [
+      "历史自动检查未通过：语言/长度/引用字段与连续原文"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08KSVY49X",
+    "language": "zh",
+    "query": "想买一个带四重滚珠轴承的办公椅万向轮",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "qwen",
+    "item_id": "B08KSVY49X",
+    "language": "en",
+    "query": "I need a set of 5 heavy-duty office chair caster wheels with 2-inch diameter and quadruple ball bearings.",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "Pack quantity copied despite generation template restriction",
+      "引用超过提示词规定的 80 字符"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BRXR2GDP",
+    "language": "zh",
+    "query": "想买一个外置光盘驱动器",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BRXR2GDP",
+    "language": "en",
+    "query": "I’m looking for a portable external CD/DVD drive",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08TLR4W2M",
+    "language": "zh",
+    "query": "想买彩色自粘便签",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08TLR4W2M",
+    "language": "en",
+    "query": "I’m looking for colorful sticky notes",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07Z64KSG9",
+    "language": "zh",
+    "query": "想买一个带笔槽的平板保护壳",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07Z64KSG9",
+    "language": "en",
+    "query": "I’m looking for a tablet case with a built-in pencil holder",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08MZC99S5",
+    "language": "zh",
+    "query": "想买一个铝制建筑比例尺",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08MZC99S5",
+    "language": "en",
+    "query": "I'm looking for an aluminum architectural scale ruler.",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07FY72VRN",
+    "language": "zh",
+    "query": "想买一个可调节的摄像头支架",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07FY72VRN",
+    "language": "en",
+    "query": "I’m looking for an adjustable mount for a Blink camera",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "包含 Blink 品牌，违反本轮通用需求的提示词约束"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B093L5RLLY",
+    "language": "zh",
+    "query": "想买一个超大号剪贴簿纸张收纳盒",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B093L5RLLY",
+    "language": "en",
+    "query": "I’m looking for a scrapbook paper storage box with a handle",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BYVW51MK",
+    "language": "zh",
+    "query": "想买一个四口充电器",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BYVW51MK",
+    "language": "en",
+    "query": "I’m looking for a USB-C charger with four ports.",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0B4KKBQ71",
+    "language": "zh",
+    "query": "想买一个防水的气泡邮件袋",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0B4KKBQ71",
+    "language": "en",
+    "query": "I'm looking for a padded mailer with a self-seal closure",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B09Z2PPHXT",
+    "language": "zh",
+    "query": "想买一个带自动休眠唤醒功能的平板保护套",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B09Z2PPHXT",
+    "language": "en",
+    "query": "I’m looking for a tablet case with an S Pen holder",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BSMP9BV3",
+    "language": "zh",
+    "query": "想买可重复使用的白板书写文件套",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BSMP9BV3",
+    "language": "en",
+    "query": "I’m looking for reusable dry-erase pockets",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BNQBZXMT",
+    "language": "zh",
+    "query": "想买一个可调节角度的桌面摄像头支架",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BNQBZXMT",
+    "language": "en",
+    "query": "I’m looking for a webcam stand with a flexible arm",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B097BHNV2G",
+    "language": "zh",
+    "query": "想买一个兼容打印机的打印头",
+    "automatic_pass": true,
+    "decision": "reject",
+    "reasons": [
+      "兼容打印机的打印头未给出有效属性，需求过于笼统"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B097BHNV2G",
+    "language": "en",
+    "query": "I'm looking for a remanufactured printer printhead",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BMLSJ152",
+    "language": "zh",
+    "query": "想买一根支持100W PD快充的USB-C线",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0BMLSJ152",
+    "language": "en",
+    "query": "I’m looking for a USB-C cable with a real-time charging display",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08BWP9N6T",
+    "language": "zh",
+    "query": "想买一个塑料弹簧钥匙腕带",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08BWP9N6T",
+    "language": "en",
+    "query": "I’m looking for a stretchable wrist keychain",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07MCMTCP3",
+    "language": "zh",
+    "query": "想买一个适用于电视的 VESA 转接板",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07MCMTCP3",
+    "language": "en",
+    "query": "I’m looking for a steel VESA adapter plate for a TV",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B09CRR8N44",
+    "language": "zh",
+    "query": "想买一本带仿皮封面的密码记录本",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B09CRR8N44",
+    "language": "en",
+    "query": "I’m looking for a password-recording journal with a leather-like cover",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07SHFPD8S",
+    "language": "zh",
+    "query": "想买一个可调节角度的电视壁挂支架",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B07SHFPD8S",
+    "language": "en",
+    "query": "I’m looking for a full-motion TV wall mount that tilts",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0C5HT8B2Y",
+    "language": "zh",
+    "query": "想买大号搬家纸箱",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B0C5HT8B2Y",
+    "language": "en",
+    "query": "I’m looking for large moving boxes",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B082T78RKN",
+    "language": "zh",
+    "query": "想买一根编织款的 Lightning 充电线",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B082T78RKN",
+    "language": "en",
+    "query": "I’m looking for a USB-A to Lightning cable that’s MFi certified",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08KSVY49X",
+    "language": "zh",
+    "query": "想买一套适合办公椅的替换脚轮",
+    "automatic_pass": true,
+    "decision": "keep",
+    "reasons": [],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  },
+  {
+    "model": "luna",
+    "item_id": "B08KSVY49X",
+    "language": "en",
+    "query": "I'm looking for office chair replacement wheels that roll smoothly on hardwood floors",
+    "automatic_pass": false,
+    "decision": "reject",
+    "reasons": [
+      "历史自动检查未通过：语言/长度/引用字段与连续原文"
+    ],
+    "reviewer": "codex_agent_not_human",
+    "fact_review": "已对照完整输入核对；引用存在不等于引用覆盖全部主张"
+  }
+]

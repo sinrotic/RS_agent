@@ -1,0 +1,198 @@
+{
+  "phase": "optimized-final",
+  "target_ms": 300.0,
+  "requests": [
+    {
+      "label": "llm-0",
+      "query": "推荐鼠标",
+      "complete_ms": 6349.89,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 3680.028200149536,
+      "completion_tokens": 260,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        784.9640846252441
+      ]
+    },
+    {
+      "label": "llm-1",
+      "query": "推荐鼠标",
+      "complete_ms": 3087.21,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 2792.0310497283936,
+      "completion_tokens": 236,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        465.9879207611084
+      ]
+    },
+    {
+      "label": "llm-2",
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "complete_ms": 10372.14,
+      "failed": false,
+      "llm_calls": 4,
+      "llm_total_ms": 9428.154468536377,
+      "completion_tokens": 587,
+      "tool_names": [
+        "load_skill",
+        "call_agent",
+        "load_skill",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls"
+      ],
+      "first_delta_ms": [
+        1421.5986728668213,
+        958.6050510406494,
+        303.21526527404785,
+        992.0806884765625
+      ]
+    },
+    {
+      "label": "llm-3",
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "complete_ms": 12276.91,
+      "failed": false,
+      "llm_calls": 5,
+      "llm_total_ms": 10565.614700317383,
+      "completion_tokens": 806,
+      "tool_names": [
+        "load_skill",
+        "call_agent",
+        "load_skill",
+        "rag_support",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls"
+      ],
+      "first_delta_ms": [
+        632.4596405029297,
+        610.5327606201172,
+        316.4210319519043,
+        647.4676132202148,
+        404.0789604187012
+      ]
+    },
+    {
+      "label": "multi-0",
+      "query": "请帮我推荐鼠标",
+      "complete_ms": 2723.14,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 2156.536817550659,
+      "completion_tokens": 181,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        395.11847496032715
+      ]
+    },
+    {
+      "label": "multi-1",
+      "query": "换一批鼠标，适合办公使用",
+      "complete_ms": 18091.63,
+      "failed": false,
+      "llm_calls": 8,
+      "llm_total_ms": 16839.404821395874,
+      "completion_tokens": 1305,
+      "tool_names": [
+        "call_agent",
+        "call_agent",
+        "rag_evidence_search",
+        "call_agent",
+        "rag_evidence_search",
+        "load_skill",
+        "load_skill",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        587.9008769989014,
+        298.8619804382324,
+        337.65459060668945,
+        373.5918998718262,
+        348.53458404541016,
+        366.4054870605469,
+        1000.2186298370361,
+        700.3188133239746
+      ]
+    },
+    {
+      "label": "multi-2",
+      "query": "再推荐五款鼠标，说明理由",
+      "complete_ms": 19626.19,
+      "failed": false,
+      "llm_calls": 8,
+      "llm_total_ms": 18579.56600189209,
+      "completion_tokens": 1491,
+      "tool_names": [
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "load_skill",
+        "load_skill",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        644.1974639892578,
+        315.2146339416504,
+        328.72653007507324,
+        361.28854751586914,
+        324.1848945617676,
+        396.31032943725586,
+        801.0878562927246,
+        597.4206924438477
+      ]
+    }
+  ],
+  "complete_median_ms": 10372.14,
+  "failed": 0,
+  "target_met": false
+}

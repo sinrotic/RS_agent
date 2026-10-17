@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
-from typing import Any, Iterable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[5]
 if str(ROOT) not in sys.path:

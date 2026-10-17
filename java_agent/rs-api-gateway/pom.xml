@@ -13,6 +13,10 @@
     <artifactId>rs-api-gateway</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
         <!-- Spring Cloud Gateway (WebFlux based) -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

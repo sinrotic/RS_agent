@@ -4,11 +4,15 @@ import json
 from pathlib import Path
 from typing import Any
 
+import pytest
+
 from rs_core.data.review_text_store import (
     DEFAULT_SCHEMA_PATH,
     import_review_text_to_scylla,
     review_text_key,
 )
+
+pytestmark = pytest.mark.unit
 
 
 class FakeSession:

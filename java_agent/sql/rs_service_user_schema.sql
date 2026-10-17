@@ -1,6 +1,12 @@
 -- rs-service-user schema.
 -- profile_user_id stores the dataset/review user_id selected from imported 2y review data.
 
+CREATE TABLE IF NOT EXISTS rs_schema_version (
+    component VARCHAR(128) PRIMARY KEY,
+    version VARCHAR(128) NOT NULL,
+    applied_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS rs_auth_account (
     account_id VARCHAR(64) PRIMARY KEY,
     username VARCHAR(100) NOT NULL,
@@ -50,3 +56,27 @@ CREATE TABLE IF NOT EXISTS rs_auth_session (
     CONSTRAINT fk_rs_auth_session_account
         FOREIGN KEY (account_id) REFERENCES rs_auth_account(account_id)
 );
+
+CREATE TABLE IF NOT EXISTS rs_user_session (
+    session_id VARCHAR(64) PRIMARY KEY,
+    account_id VARCHAR(64) NOT NULL,
+    profile_user_id VARCHAR(128) NOT NULL,
+    entry_scene VARCHAR(64) NOT NULL DEFAULT 'web',
+    active_preferences_json JSON NOT NULL,
+    last_user_query TEXT,
+    status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_active_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    ended_at TIMESTAMP NULL,
+    end_reason VARCHAR(64),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_rs_user_session_owner (account_id, profile_user_id, last_active_at DESC),
+    INDEX idx_rs_user_session_status_activity (status, last_active_at),
+    CONSTRAINT fk_rs_user_session_account
+        FOREIGN KEY (account_id) REFERENCES rs_auth_account(account_id)
+);
+
+INSERT INTO rs_schema_version (component, version)
+VALUES ('rs-service-user', 'user_schema_v1')
+ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = CURRENT_TIMESTAMP(6);

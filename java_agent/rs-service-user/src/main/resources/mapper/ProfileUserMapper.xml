@@ -23,4 +23,9 @@
         LIMIT 1
     </select>
 
+    <select id="selectRecentPositiveItemIds" resultType="string">
+        SELECT parent_asin FROM amazon_reviews_base
+        WHERE user_id = #{profileUserId} AND rating &gt;= 4 AND parent_asin != ''
+        ORDER BY event_time DESC, review_key DESC LIMIT #{limit}
+    </select>
 </mapper>

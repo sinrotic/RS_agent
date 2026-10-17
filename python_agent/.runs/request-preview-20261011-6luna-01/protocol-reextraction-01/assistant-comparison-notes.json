@@ -1,0 +1,106 @@
+{
+  "schema_version": "rs-assistant-reextraction-comparison-notes/1",
+  "author": "codex_assistant_analysis_not_independent_human_review",
+  "human_reviewed": false,
+  "is_gold": false,
+  "auto_deploy": false,
+  "conclusion": "新版在近似需求和咨询意图上出现改善，但仍有非逐字引用、字段命名和存放位置不一致、具体兼容判断的澄清边界，以及同模型审核漏检；现阶段不宜扩量或据此批准正式评测标准。",
+  "global_disputes": [
+    "模型四维全pass、issues为空、提取程序校验通过是不同条件：本次分别为6、5、6条，同时满足当前预览门槛的只有4条；4条也只是待人审。",
+    "同模型审核漏过了耳机提取的两处拼接引用，以及接头兼容性暂缓动作的空缺；程序结构校验也尚不能全面检查动作与未知信息的语义一致性。",
+    "字段只约束snake_case，没有统一语义字段和单位：budget与price、cable_length与length、英尺与ft不能靠字符串完全一致来算语义错误或正确；应先明确映射规则。",
+    "Windows、长度、降温目标和使用用途有时进入context_facts、有时进入requirements；文字被保留不代表后续按requirements评分的程序会检查到。",
+    "当前原话明确条件应优先；纯比较、布线方法或兼容核查中不应要求使用历史。仅识别自用不代表画像一定适用。",
+    "Codex原草案不是标准答案。散热方案草案也未显式写出决策权衡需求；一副是否设严格购买数量、家用设备是否代表本人、咨询意图分类均仍需人审。"
+  ],
+  "entries": [
+    {
+      "candidate_id": "synth-000-00",
+      "original_summary": "原提取把三十左右写成price<=30；双频为偏好，币种和对象未知。",
+      "draft_summary": "price about30、币种null；USB Wi-Fi与Windows 11为严格条件；不强制追问。",
+      "new_summary": "改成budget about30、unit=null，双频仍为偏好；不追问，对象unknown；新审核四项pass且无issues。",
+      "improvements": ["近似预算不再变成硬上限，没有编造币种和容差。", "Windows 11和USB Wi-Fi要求保留，双频没有变成必须。"],
+      "remaining_disputes": [
+        {"kind": "scoring_integration_gap", "issue": "近似预算字段用budget而非草案price", "customer_quote": "预算三十左右", "evidence": "新requirements为field=budget、relation=about、value=30；草案为price。", "assessment": "不是语义必错，也未违反当前snake_case协议；但若下游评分只识别price，需先统一字段映射，不得直接套公式。"},
+        {"kind": "interpretation_dispute", "issue": "未知币种是否需要同时列入unknowns", "customer_quote": "预算三十左右", "evidence": "新unit=null，但unknowns=[]；草案另列currency。", "assessment": "unit=null已表达未确定，不能强制为每个可选缺口添加追问；需统一表示法，并禁止把null按默认币种满足处理。"}
+      ],
+      "assistant_recommended_disposition": "保留为待人审候选，先确认预算字段与币种未知表示法"
+    },
+    {
+      "candidate_id": "synth-000-01",
+      "original_summary": "原提取quantity=1，Windows作为硬条件；接口和兼容要求触发必要澄清。",
+      "draft_summary": "暂不严格化数量；保留Windows条件；先给方向，再合并可选追问；对象unknown。",
+      "new_summary": "不设数量；Windows只在context_facts；安装便利和可靠性为偏好；对象self，先答后可选追问。审核四项pass但issues有两条，因此新预览仍隔离。",
+      "improvements": ["添个没有被强制转换为数量或推荐件数。", "安装便利、可靠性以及先回答后追问的策略被保留。"],
+      "remaining_disputes": [
+        {"kind": "scoring_integration_gap", "issue": "Windows只作为背景，可能漏掉兼容要求核对", "customer_quote": "电脑是 Windows", "evidence": "新context_facts有Windows，requirements没有operating_system；原提取和草案都有。", "assessment": "信息没有被文字遗漏，但若评分只核对requirements，可能给不兼容产品漏判；应统一自述设备如何派生兼容要求。"},
+        {"kind": "interpretation_dispute", "issue": "家里的电脑是否足以认定购买对象self", "customer_quote": "家里有台台式机", "evidence": "新recipient=self引用该片段；草案unknown。", "assessment": "可理解为自用场景，但不证明购买者身份或稳定偏好；不宜单凭标签差异判错，也不应自动转移家庭成员画像。"},
+        {"kind": "model_audit_consistency", "issue": "四项pass但issues非空", "customer_quote": "具体接口和兼容要求我还得确认", "evidence": "审核列出usb_interface略过度具体化风险和目录供给边界提醒，四项仍pass。", "assessment": "当前门槛保守隔离；后续应区分阻塞缺陷和非阻塞提醒，不改本次原输出。"}
+      ],
+      "assistant_recommended_disposition": "维持隔离，先处理Windows约束归属与审核issues严重性"
+    },
+    {
+      "candidate_id": "synth-001-01",
+      "original_summary": "原提取头戴式、quantity=1与通勤舒适无线偏好；对象other。旧补充审核全pass，但引用格式无效。",
+      "draft_summary": "购买数量与推荐件数分开；送礼不迁移画像；明确解释续航和降噪，不造预算。",
+      "new_summary": "识别recommend+explain、对象other和画像不迁移，但两处quote拼接省略号，提取程序拒绝。新审核格式有效、四项pass且无issues；整条仍隔离。",
+      "improvements": ["明确识别赠送对象并禁止转移赠送者历史。", "加入解释续航与降噪的回答需求，未添加硬性数值门槛。"],
+      "remaining_disputes": [
+        {"kind": "structural_failure", "issue": "两处quote不是连续逐字原话", "customer_quote": "无线款优先，不过续航和降噪效果我不太会看", "evidence": "新answer_requirements[0].quote为“续航……我不太会看”；recipient.quote为“给朋友挑……当礼物”。", "assessment": "这两处原话不存在，不能自动补成真实片段或放宽引用校验；新提取无效且审核漏检。"},
+        {"kind": "interpretation_dispute", "issue": "一副是否应单独参与严格购买数量评分", "customer_quote": "一副头戴式耳机", "evidence": "新提取不设purchase_quantity；草案设1。", "assessment": "常见购物表达可只表示一件购买意图；不宜据此限定推荐款数。是否作为严格购买数量尚需人审，草案也不能当唯一答案。"},
+        {"kind": "scoring_integration_gap", "issue": "音乐和接电话只在背景，用途评分可能漏看", "customer_quote": "也会用来听音乐和接电话", "evidence": "新context_facts保留该用途，requirements未单独列出；草案有用途偏好。", "assessment": "评分需能消费用途背景或建立一致的需求映射，不能因字段位置不同就忽略电话场景。"}
+      ],
+      "assistant_recommended_disposition": "维持隔离，引用须重新由模型或人审修订；本次不自动修补"
+    },
+    {
+      "candidate_id": "synth-002-00",
+      "original_summary": "原提取强制商品类型为水冷安装架，并要求先问型号；旧审核判提取与澄清失败。",
+      "draft_summary": "以核查方法为当前动作，不设必购安装架；具体组合核查保留显卡、水冷本体、安装架和空间未知；画像不相关。",
+      "new_summary": "不设必购商品，记录guide_verification和verify_compatibility；显卡及冷排未知，可选追问，unresolved_actions空；画像weak_reference_if_self。新审核全pass，进入待人审。",
+      "improvements": ["不再把看到安装架升级为必须购买安装架。", "允许先解释核对方法，不因缺型号拒绝回答。"],
+      "remaining_disputes": [
+        {"kind": "interpretation_dispute", "issue": "是否真的请求当轮具体兼容结论", "customer_quote": "我该先核对哪些型号和尺寸？", "evidence": "新动作额外包含verify_compatibility，但暂缓动作空；草案只列guide_verification。", "assessment": "若当前只问核查步骤，草案动作更窄；若认定同时请求具体兼容结论，则应记录该结论暂缓。应由人审统一，而不是默认选一个标签即正确。"},
+        {"kind": "scoring_integration_gap", "issue": "型号核查槽位仍仅覆盖显卡和冷排", "customer_quote": "不确定它能不能配我手头的冷排和显卡", "evidence": "新未知未列水冷本体或安装架型号；旧审核提过水冷本体型号，草案有该槽位。", "assessment": "不是当前通用回答的必问门槛，但后续具体组合核对不能只依赖冷排尺寸；应补入核查方法或局部依赖，不假定目录型号就是顾客型号。"},
+        {"kind": "interpretation_dispute", "issue": "自用不等于画像对兼容核查有作用", "customer_quote": "我手头的冷排和显卡", "evidence": "新画像策略weak_reference_if_self；草案not_relevant。", "assessment": "历史不能证明接口、型号或温度事实；此类通用核查不应奖励强行使用画像。"}
+      ],
+      "assistant_recommended_disposition": "继续待人审，未解决动作范围和兼容依赖之前不批准为gold"
+    },
+    {
+      "candidate_id": "synth-002-01",
+      "original_summary": "原提取没有需求，只列型号未知和追问；旧审核认为漏比较维度和方法，且追问阻塞回答。",
+      "draft_summary": "明确安装难度、显卡与供电区域影响、核查方法；先答通用比较；画像不相关。",
+      "new_summary": "比较维度与方法均进入answer_requirements，不追问型号。审核认为尚未显式要求帮助权衡哪种更合适，extraction_fidelity=fail，整条隔离。",
+      "improvements": ["补回安装难度、显卡与供电区域散热影响。", "核查方法保留且不强迫先报型号。"],
+      "remaining_disputes": [
+        {"kind": "interpretation_dispute", "issue": "列出差异是否足以回答哪种更合适", "customer_quote": "不太确定哪种改动更合适", "evidence": "新提取将不确定性作为背景；审核建议另列决策支持需求。我的草案也未显式列出权衡条件。", "assessment": "建议新提取和我的草案一起补上按哪些条件选择的权衡指导；不要求给出没有设备信息支持的唯一方案。审核fail也是待核对模型判断，不是人工真值。"},
+        {"kind": "interpretation_dispute", "issue": "自用标签被连带赋予弱画像参与", "customer_quote": "我想给显卡改善散热", "evidence": "新recipient=self且profile_policy=weak_reference_if_self；草案unknown/not_relevant。", "assessment": "self在这里合理，但一般技术比较仍不需要历史；应单独判断画像相关性，不将self当作必用画像触发器。"}
+      ],
+      "assistant_recommended_disposition": "维持隔离；我与模型的版本共同补决策支持，并等待人审"
+    },
+    {
+      "candidate_id": "synth-003-00",
+      "original_summary": "原提取失败且原响应未保存，没有原审核；缺失不是空需求。",
+      "draft_summary": "近似50ft；先回答走线方法，verify_compatibility明确暂缓，接头标识与线端信息为局部必要追问；画像不相关。",
+      "new_summary": "成功得到结构化提取，50英尺为近似值，没有强制扁平线或购买两件；verify_compatibility存在，但unresolved_actions空、问题optional，且只问线没有接头身份。审核全pass，进入待人审。",
+      "improvements": ["原先缺失的提取本次确实取得，不冒充恢复原响应。", "没有把估算长度、扁平线疑问或现有两根线升级为精确购买约束。"],
+      "remaining_disputes": [
+        {"kind": "internal_contract_gap", "issue": "明确请求的接头兼容结论未记录暂缓", "customer_quote": "那个转接头能用吗？", "evidence": "新actions有verify_compatibility，unknown说无法确认，但unresolved_actions=[]，追问necessity=optional；程序结构通过，审核全pass。", "assessment": "先答走线是合理的，但确认该接头能用需要信息；应为局部动作标必要追问及暂缓结论。当前程序缺跨字段语义检查，同模型审核也漏过。"},
+        {"kind": "scoring_integration_gap", "issue": "那个接头的身份没有列为未知", "customer_quote": "那个转接头能用吗？", "evidence": "新仅询问网线端口、标识，未询问接头型号或接口；草案有connector_identity。", "assessment": "不能把目录里的RJ45接头当作顾客所指接头；需要接头证据才可能作具体判断。"},
+        {"kind": "scoring_integration_gap", "issue": "长度字段和单位需统一，画像不适合替代现场事实", "customer_quote": "大概50英尺够用", "evidence": "新cable_length/about50/英尺；草案length/about50/ft。新画像weak_reference_if_self。", "assessment": "长度表述语义相同，不按字符串差异判错；后续需统一单位和字段映射。这类现场咨询的画像使用应默认不相关。"}
+      ],
+      "assistant_recommended_disposition": "虽模型预览为待人审，我建议先保持人工复核暂停，优先处理局部澄清与接头指代"
+    },
+    {
+      "candidate_id": "synth-003-01",
+      "original_summary": "原提取length eq字符串大概50英尺，先追问线材和施工情况；原审核响应未保存。",
+      "draft_summary": "length about50ft，保留方案比较和核查步骤；先答分支，后可选追问；画像不相关。",
+      "new_summary": "识别information_consultation，成品/散装/延长的选择依据与核查均保留；50英尺只在背景字符串，requirements空；先答后可选追问，画像not_relevant；审核全pass。",
+      "improvements": ["不再精确等值过滤50英尺，也未强制先选定某类线。", "先理清选择与核查方法，具体设备追问只是后续细化；画像不相关处理与草案一致。"],
+      "remaining_disputes": [
+        {"kind": "scoring_integration_gap", "issue": "长度只在背景而非结构化近似条件", "customer_quote": "走线大概需要50英尺", "evidence": "新context_facts中为大约50英尺，requirements=[]；草案为数值about50/ft。", "assessment": "原意文字保留了，并非必须买精确长度；但用途规划评分若只消费requirements将漏掉线路尺度。需统一数量信息的归属，不把背景文字自动当成未约束。"},
+        {"kind": "interpretation_dispute", "issue": "information_consultation与mixed是否要严格一致", "customer_quote": "不太确定要买成品线还是散装线自己处理", "evidence": "新primary=information_consultation、actions=explain+guide_verification；草案mixed、compare+guide_verification。新answer_requirements实际包含选择依据。", "assessment": "这更像标签粒度差异；只要方案权衡和核查覆盖，不宜机械判为错误，草案并非唯一合法分类。"}
+      ],
+      "assistant_recommended_disposition": "保留为待人审候选，先统一近似长度结构和意图分类的评分粒度"
+    }
+  ]
+}

@@ -22,6 +22,20 @@ public class InternalCatalogContextController {
         this.catalogService = catalogService;
     }
 
+    @PostMapping("/discovery-embedding-texts")
+    public List<CatalogItemEmbeddingTextVO> discover(@RequestBody DiscoveryRequest request) {
+        return catalogService.discoverEmbeddingTexts(request.seed(), request.limit());
+    }
+
+    public record DiscoveryRequest(String seed, int limit) { }
+
+    @PostMapping("/category-embedding-texts")
+    public List<CatalogItemEmbeddingTextVO> categoryCandidates(@RequestBody CategoryRequest request) {
+        return catalogService.categoryEmbeddingTexts(request.category(), request.seed(), request.limit());
+    }
+
+    public record CategoryRequest(String category, String seed, int limit) { }
+
     @PostMapping("/item-texts")
     public List<CatalogItemTextVO> listItemTexts(@RequestBody BatchItemIdsRequestDTO request) {
         return catalogService.listItemTexts(request);

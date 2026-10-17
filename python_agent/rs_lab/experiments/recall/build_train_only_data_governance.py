@@ -449,7 +449,6 @@ def _resolve_canonical_items_path(manifest_path: Path, manifest: dict[str, Any])
 
 
 def _precheck_input_path(path: Path, *, expected_name: str) -> None:
-    lowered = str(path).replace("\\", "/").lower()
     if path.name != expected_name:
         raise ValueError(f"Expected {expected_name}, got {path.name}")
     if path.name in {"canonical_interactions.train.jsonl", "user_sequences.train.jsonl", "canonical_items.jsonl", "manifest.json"}:

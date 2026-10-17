@@ -1,6 +1,7 @@
 package com.sinrotic.rs.recommend.service;
 
 import com.sinrotic.rs.recommend.domain.dto.HomeRecommendRequestDTO;
+import com.sinrotic.rs.recommend.domain.delivery.RecommendationIdentity;
 import com.sinrotic.rs.recommend.domain.vo.HomeRecommendVO;
 
 /**
@@ -9,4 +10,8 @@ import com.sinrotic.rs.recommend.domain.vo.HomeRecommendVO;
 public interface HomeRecommendService {
 
     HomeRecommendVO recommendHome(HomeRecommendRequestDTO request);
+
+    default HomeRecommendVO recommendHome(RecommendationIdentity identity, HomeRecommendRequestDTO request) {
+        return recommendHome(request);
+    }
 }

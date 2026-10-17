@@ -1,0 +1,165 @@
+{
+  "phase": "synthesis",
+  "target_ms": 300.0,
+  "requests": [
+    {
+      "label": "llm-0",
+      "query": "推荐鼠标",
+      "complete_ms": 4603.09,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 2093.5792922973633,
+      "completion_tokens": 154,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        612.4460697174072
+      ]
+    },
+    {
+      "label": "llm-1",
+      "query": "推荐鼠标",
+      "complete_ms": 1959.67,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 1650.1257419586182,
+      "completion_tokens": 146,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        249.66669082641602
+      ]
+    },
+    {
+      "label": "llm-2",
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "complete_ms": 7630.29,
+      "failed": false,
+      "llm_calls": 4,
+      "llm_total_ms": 6785.2935791015625,
+      "completion_tokens": 496,
+      "tool_names": [
+        "load_skill",
+        "call_agent",
+        "render_product_cards",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "tool_calls"
+      ],
+      "first_delta_ms": [
+        1005.3300857543945,
+        339.7328853607178,
+        371.3076114654541,
+        295.4545021057129
+      ]
+    },
+    {
+      "label": "multi-0",
+      "query": "请帮我推荐鼠标",
+      "complete_ms": 2195.85,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 1632.85231590271,
+      "completion_tokens": 145,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        243.53814125061035
+      ]
+    },
+    {
+      "label": "multi-1",
+      "query": "换一批鼠标，适合办公使用",
+      "complete_ms": 3383.45,
+      "failed": false,
+      "llm_calls": 3,
+      "llm_total_ms": 2698.9521980285645,
+      "completion_tokens": 171,
+      "tool_names": [
+        "rag_evidence_search",
+        "call_agent",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        531.5587520599365,
+        305.7374954223633,
+        400.73394775390625
+      ]
+    },
+    {
+      "label": "multi-2",
+      "query": "再推荐五款鼠标，说明理由",
+      "complete_ms": 4098.65,
+      "failed": false,
+      "llm_calls": 3,
+      "llm_total_ms": 3399.733066558838,
+      "completion_tokens": 247,
+      "tool_names": [
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        503.856897354126,
+        325.91986656188965,
+        338.78231048583984
+      ]
+    },
+    {
+      "label": "llm-3",
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "complete_ms": null,
+      "failed": true,
+      "llm_calls": 4,
+      "llm_total_ms": 17149.249792099,
+      "completion_tokens": 1558,
+      "tool_names": [
+        "load_skill",
+        "call_agent",
+        "rag_evidence_search",
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "tool_calls",
+        "tool_calls",
+        "tool_calls",
+        "stop"
+      ],
+      "first_delta_ms": [
+        269.51050758361816,
+        279.4380187988281,
+        304.9912452697754,
+        468.46842765808105
+      ]
+    }
+  ],
+  "complete_median_ms": 3741.0499999999997,
+  "failed": 1,
+  "target_met": false
+}

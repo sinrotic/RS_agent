@@ -2,6 +2,16 @@ export interface StartSessionResponse {
   sessionId: string;
 }
 
+export interface UserSession {
+  sessionId: string;
+  accountId: string;
+  profileUserId: string;
+  entryScene: string;
+  status: string;
+  startedAt: string;
+  lastActiveAt: string;
+}
+
 export interface SummaryDocumentInfo {
   relativePath: string | null;
   created: boolean;

@@ -1,0 +1,58 @@
+{
+  "schema_version": "rs-natural-shopping-verification/1",
+  "date": "2026-10-11",
+  "benchmark_sha256": "a47262fc783c70fe09aede121313501c4ba86b3bdc9bacdbb0adefd6fdbb1d7a",
+  "scorer_sha256": "9459a2ae2cec8dd90c9637fe5fa8de1b8a88b342b760c05328dfae7a9da55f90",
+  "source_v5_sha256": "efea6b39ee27de18f2e10605e188205ce7840a82eea74b07a1c11e3a36549c02",
+  "source_v5_preserved": true,
+  "reproducible_from_frozen_v5": true,
+  "profile_snapshot_unchanged": true,
+  "artifact_bundle_hashes_match": true,
+  "tests": {
+    "command": "$env:RS_BENCHMARK_TEST_JAVA='C:/Users/luo/.jdks/corretto-21.0.5/bin/java.exe'; python -m pytest -q tests/test_natural_profile_skill_benchmark.py tests/test_profile_contrast_skill_benchmark.py tests/test_customer_skill_benchmark.py tests/test_skill_benchmark.py tests/test_personalized_skill_benchmark.py tests/test_skill_benchmark_population.py tests/test_skill_benchmark_readiness.py",
+    "working_directory": "python_agent",
+    "passed": 104,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 45.84,
+    "real_java_loop_with_controlled_external_model": true,
+    "actual_llm_capability_evaluation": false,
+    "scope": [
+      "自然表达和绑定画像权限",
+      "当前需求主分与历史证据分分离",
+      "单次历史不作为隐藏硬要求或强制提问依据",
+      "独立相关性分级与完整目录绑定",
+      "低风险直接参考与可选澄清的真实 HTTP 分支",
+      "Java Loop 的直接结束与提问后继续",
+      "关键兼容信息缺失时先确认或提供核实指导",
+      "价格、币种、历史断言和画像误迁移的有限事实检查",
+      "去画像请求与记忆工具同时隐藏历史",
+      "无独立标签时不输出个性化质量增益",
+      "独立标签允许画像匹配方案的质量更差",
+      "旧版评分、运行、校准、热度来源与画像对照回归"
+    ]
+  },
+  "lint": {
+    "command": "uvx ruff check rs_core/offline/evaluation/skill_benchmark scripts/evaluation/skill_benchmark.py tests/test_natural_profile_skill_benchmark.py",
+    "passed": true
+  },
+  "readiness": {
+    "formula_reference_path_failures": 0,
+    "ready_for_baseline_diagnostics": true,
+    "independent_relevance_review_tasks": 40,
+    "approved_independent_relevance_entries": 0,
+    "blind_review_pairs": 120,
+    "completed_human_review_pairs": 0,
+    "human_labels_not_fabricated": true,
+    "validated_personalization_quality": false,
+    "auto_deploy": false,
+    "blockers": [
+      "human_task_review_pending",
+      "scoring_calibration_pending",
+      "full_catalog_semantic_review_pending",
+      "independent_relevance_pending"
+    ]
+  },
+  "resource_scope": "仅冻结小目录、标准库及单进程受控 Java 测试；未加载训练模型或全量商品数据",
+  "production_catalog_profile_or_skill_modified": false
+}

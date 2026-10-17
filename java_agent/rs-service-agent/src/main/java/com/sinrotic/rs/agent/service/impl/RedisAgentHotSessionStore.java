@@ -7,6 +7,7 @@ import com.sinrotic.rs.agent.domain.session.AgentSessionEvent;
 import com.sinrotic.rs.agent.domain.session.AgentSessionSnapshot;
 import com.sinrotic.rs.agent.service.AgentHotSessionStore;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 
 import java.time.Duration;
 import java.util.List;
@@ -14,6 +15,14 @@ import java.util.Optional;
 
 /** Redis-backed hot-session store. Conversation content remains internal to the Agent runtime. */
 public class RedisAgentHotSessionStore implements AgentHotSessionStore {
+
+    private static final DefaultRedisScript<Long> APPEND_EVENT = new DefaultRedisScript<>("""
+            local count = redis.call('RPUSH', KEYS[1], ARGV[1])
+            if tonumber(ARGV[2]) > 0 then
+                redis.call('PEXPIRE', KEYS[1], ARGV[2])
+            end
+            return count
+            """, Long.class);
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
@@ -31,8 +40,9 @@ public class RedisAgentHotSessionStore implements AgentHotSessionStore {
 
     @Override
     public void append(AgentSessionEvent event) {
-        redisTemplate.opsForList().rightPush(eventsKey(event.sessionId()), write(event));
-        refreshTtl(event.sessionId());
+        Duration ttl = properties.getTtl();
+        long ttlMillis = hasTtl(ttl) ? Math.max(1, ttl.toMillis()) : 0;
+        redisTemplate.execute(APPEND_EVENT, List.of(eventsKey(event.sessionId())), write(event), Long.toString(ttlMillis));
     }
 
     @Override

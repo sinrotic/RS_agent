@@ -1,6 +1,7 @@
 package com.sinrotic.rs.agent.service;
 
 import com.sinrotic.rs.agent.config.AgentToolExecutionConfiguration;
+import com.sinrotic.rs.agent.config.AgentExecutionProperties;
 import com.sinrotic.rs.agent.service.impl.AgentCapabilityToolUseExecutor;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentCapabilityRegistry;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentRuntimeConfigurationService;
@@ -21,6 +22,7 @@ class AgentToolExecutionConfigurationTest {
             context.registerBean(AgentDelegateService.class, () -> (requestId, agentName, arguments) -> Map.of());
             context.registerBean(AgentToolResultStore.class, InMemoryAgentToolResultStore::new);
             context.registerBean(AgentCapabilityRegistry.class, () -> new InMemoryAgentCapabilityRegistry());
+            context.registerBean(AgentExecutionLimiter.class, () -> new AgentExecutionLimiter(new AgentExecutionProperties()));
             context.register(AgentToolExecutionConfiguration.class);
             context.refresh();
 

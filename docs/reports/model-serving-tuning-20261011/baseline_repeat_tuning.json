@@ -1,0 +1,98 @@
+{
+  "started_at": "2026-10-11T02:53:14.778129+00:00",
+  "variants": {
+    "baseline_repeat": {
+      "artifact": "baseline_repeat.json",
+      "extra_samples": 20,
+      "summaries": {
+        "decode_128": {
+          "samples": 4,
+          "first_content_median_ms": 51.46,
+          "e2e_median_ms": 1300.43,
+          "e2e_max_ms": 1303.4,
+          "completion_tokens_median": 128.0
+        },
+        "long_prefix_first_0": {
+          "samples": 1,
+          "first_content_median_ms": 193.68,
+          "e2e_median_ms": 787.33,
+          "e2e_max_ms": 787.33,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_first_1": {
+          "samples": 1,
+          "first_content_median_ms": 189.58,
+          "e2e_median_ms": 783.51,
+          "e2e_max_ms": 783.51,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_first_2": {
+          "samples": 1,
+          "first_content_median_ms": 189.15,
+          "e2e_median_ms": 783.04,
+          "e2e_max_ms": 783.04,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_repeat_0": {
+          "samples": 1,
+          "first_content_median_ms": 60.14,
+          "e2e_median_ms": 653.36,
+          "e2e_max_ms": 653.36,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_repeat_1": {
+          "samples": 1,
+          "first_content_median_ms": 60.95,
+          "e2e_median_ms": 654.55,
+          "e2e_max_ms": 654.55,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_repeat_2": {
+          "samples": 1,
+          "first_content_median_ms": 59.09,
+          "e2e_median_ms": 652.92,
+          "e2e_max_ms": 652.92,
+          "completion_tokens_median": 60
+        },
+        "named_tool": {
+          "samples": 6,
+          "first_content_median_ms": 203.56,
+          "e2e_median_ms": 767.75,
+          "e2e_max_ms": 768.77,
+          "completion_tokens_median": 73.0
+        },
+        "named_tool_concurrency4": {
+          "samples": 8,
+          "first_content_median_ms": 298.26,
+          "e2e_median_ms": 936.26,
+          "e2e_max_ms": 948.05,
+          "completion_tokens_median": 73.0
+        },
+        "named_tool_warmup": {
+          "samples": 1,
+          "first_content_median_ms": 305.78,
+          "e2e_median_ms": 869.72,
+          "e2e_max_ms": 869.72,
+          "completion_tokens_median": 73
+        },
+        "short_json": {
+          "samples": 6,
+          "first_content_median_ms": 54.55,
+          "e2e_median_ms": 616.27,
+          "e2e_max_ms": 616.73,
+          "completion_tokens_median": 58.0
+        },
+        "short_json_warmup": {
+          "samples": 1,
+          "first_content_median_ms": 127.19,
+          "e2e_median_ms": 690.12,
+          "e2e_max_ms": 690.12,
+          "completion_tokens_median": 58
+        }
+      },
+      "options": {},
+      "gpu_memory_mib": 18577
+    }
+  },
+  "finished_at": "2026-10-11T02:56:06.921734+00:00"
+}

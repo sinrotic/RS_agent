@@ -4,6 +4,7 @@ import ast
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -13,7 +14,8 @@ from rs_lab.experiments.recall.build_pool500_two_tower_method_dataset import bui
 
 pytestmark = pytest.mark.unit
 
-PYTHON = Path("D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe")
+ROOT = Path(__file__).resolve().parents[1]
+PYTHON = Path(sys.executable)
 OUTPUT_WHITELIST = {
     "two_tower_train_samples.jsonl",
     "negative_item_universe.jsonl",
@@ -22,8 +24,8 @@ OUTPUT_WHITELIST = {
     "method_dataset_manifest.json",
     "leakage_audit.json",
 }
-FORMAL_DATASET_DIR = Path("D:/sinrotic_code/python_project/summer/RS_agent/outputs/recall/pool500_method_datasets/two_tower/train_only_v1")
-DIAGNOSTIC_LOOP_DIR = Path("D:/sinrotic_code/python_project/summer/RS_agent/outputs/recall/pool500_two_tower_diagnostic_loop")
+FORMAL_DATASET_DIR = ROOT / "outputs/recall/pool500_method_datasets/two_tower/train_only_v1"
+DIAGNOSTIC_LOOP_DIR = ROOT / "outputs/recall/pool500_two_tower_diagnostic_loop"
 FORBIDDEN_FIELDS = {
     "source_index_manifest_path",
     "artifact_manifest_path",
@@ -757,7 +759,7 @@ def test_two_tower_method_dataset_blocks_missing_p1_profiles(tmp_path: Path) -> 
 
 
 def test_two_tower_method_dataset_has_no_forbidden_imports_or_fields() -> None:
-    source_path = Path("D:/sinrotic_code/python_project/summer/RS_agent/rs_lab/experiments/recall/build_pool500_two_tower_method_dataset.py")
+    source_path = ROOT / "rs_lab/experiments/recall/build_pool500_two_tower_method_dataset.py"
     tree = ast.parse(source_path.read_text(encoding="utf-8"))
     forbidden_import_fragments = (
         "pool500.methods.two_tower.builder",
@@ -909,7 +911,7 @@ def test_two_tower_method_dataset_cli(tmp_path: Path) -> None:
         check=True,
         capture_output=True,
         text=True,
-        cwd="D:/sinrotic_code/python_project/summer/RS_agent",
+        cwd=ROOT,
     )
 
     payload = json.loads(result.stdout)

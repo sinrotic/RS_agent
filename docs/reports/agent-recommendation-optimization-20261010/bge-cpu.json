@@ -1,0 +1,31 @@
+{
+  "device": "cpu",
+  "torch_threads": 4,
+  "load_seconds": 28.056662878021598,
+  "samples": [
+    {
+      "candidates": 8,
+      "embedding_ms": 659.170183353126,
+      "rerank_ms": 2459.544522687793,
+      "combined_ms": 3118.714706040919,
+      "scores": 8
+    },
+    {
+      "candidates": 32,
+      "embedding_ms": 133.26226267963648,
+      "rerank_ms": 2607.577685266733,
+      "combined_ms": 2740.8399479463696,
+      "scores": 32
+    },
+    {
+      "candidates": 96,
+      "embedding_ms": 133.9467028155923,
+      "rerank_ms": 7803.462671115994,
+      "combined_ms": 7937.409373931587,
+      "scores": 96
+    }
+  ],
+  "peak_rss_mib": 3811.82421875,
+  "scope": "真实本地权重的 CPU 分段推理，合成短商品文本，不含业务服务/数据库/网络",
+  "gpu_used": false
+}

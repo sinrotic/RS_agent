@@ -5,12 +5,16 @@ from pathlib import Path
 
 from typing import Any
 
+import pytest
+
 from rs_core.online.recall.online_retrieval.models import RetrievalRequest
 from rs_core.online.recall.online_retrieval.providers.pool500_fallback import Pool500FallbackProvider
 from rs_core.common.recsys_types import RecallCandidate
 from rs_core.online.recall.online_retrieval.providers.candidate_store_usercf import CandidateStoreUserCFProvider
 from rs_core.online.recall.online_retrieval.providers.semantic_token import SemanticTokenProvider
 from rs_core.online.recall.online_retrieval.providers.semantic_vector import SemanticVectorProvider
+
+pytestmark = pytest.mark.unit
 
 
 def test_pool500_fallback_reads_fallback_only_config(tmp_path: Path) -> None:

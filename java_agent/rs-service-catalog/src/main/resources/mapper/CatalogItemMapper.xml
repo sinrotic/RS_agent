@@ -88,4 +88,13 @@
         GROUP BY store_name
         ORDER BY store_name
     </select>
+    <select id="selectDiscoveryItems" resultMap="CatalogItemRowMap">
+        SELECT <include refid="CatalogItemColumns"/> FROM rs_catalog_item c
+        JOIN (
+            SELECT item_id AS selected_id FROM rs_catalog_item
+            WHERE status = 'active' AND category = #{category}
+            ORDER BY item_id LIMIT #{limit} OFFSET #{offset}
+        ) selected ON c.item_id = selected.selected_id
+        ORDER BY c.item_id
+    </select>
 </mapper>

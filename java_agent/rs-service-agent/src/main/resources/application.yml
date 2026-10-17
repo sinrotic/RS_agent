@@ -2,8 +2,15 @@ server:
   port: 18104
 
 spring:
+  mvc:
+    async:
+      # 完整模型回答可能超过容器默认 30 秒；保留有界超时与用户主动中断。
+      request-timeout: ${RS_AGENT_STREAM_REQUEST_TIMEOUT:120s}
   application:
     name: rs-service-agent
+  threads:
+    virtual:
+      enabled: true
   cloud:
     nacos:
       discovery:
@@ -11,6 +18,11 @@ spring:
   ai:
     model:
       chat: openai
+    chat:
+      client:
+        # AgentLoop owns tool execution; keep Spring AI from consuming tool calls internally.
+        tool-calling:
+          enabled: false
     openai:
       base-url: ${RS_AGENT_OPENAI_BASE_URL:https://cpa2api.sinrotic233.com/v1}
       api-key: ${RS_AGENT_API_KEY:${RS_agent:}}
@@ -19,11 +31,31 @@ spring:
           model: ${RS_AGENT_OPENAI_MODEL:gpt-5.3-codex-spark}
           temperature: ${RS_AGENT_OPENAI_TEMPERATURE:0.55}
           max-tokens: ${RS_AGENT_OPENAI_MAX_TOKENS:1200}
+          tool-choice: required
+          parallel-tool-calls: true
 
 rs:
+  recommend:
+    base-url: ${RS_RECOMMEND_BASE_URL:http://rs-service-recommend:18103}
   agent:
+    online-evaluation:
+      enabled: ${RS_AGENT_ONLINE_EVALUATION_ENABLED:false}
+      base-url: ${RS_EVAL_INGEST_BASE_URL:}
+      token: ${RS_EVAL_INGEST_TOKEN:}
+      outbox: ${RS_EVAL_JAVA_OUTBOX:}
+      skill-version: ${RS_EVAL_BASELINE_SKILL_VERSION:unknown}
+      model-version: ${RS_EVAL_RECOMMENDATION_MODEL_VERSION:unknown}
+    performance-observation-enabled: ${RS_AGENT_PERFORMANCE_OBSERVATION_ENABLED:false}
+    direct-recommendation:
+      enabled: ${RS_AGENT_DIRECT_RECOMMENDATION_ENABLED:false}
+      llm-synthesis-enabled: ${RS_AGENT_LLM_SYNTHESIS_ENABLED:false}
+      # 仅填写经目录数据来源核验的币种；为空时预算请求继续 Agent。
+      catalog-currency: ${RS_AGENT_CATALOG_CURRENCY:}
     templates:
       default-profile: shopping-assistant
+    delegate:
+      rag-agent:
+        base-url: ${RS_RECOMMEND_SERVICE_URL:http://rs-service-recommend:18103}
     recommendation:
       # memory 适合本地开发；部署时切换为 http 接入 rs-service-recommend。
       type: ${RS_AGENT_RECOMMENDATION_TYPE:memory}
@@ -36,7 +68,39 @@ rs:
       key-prefix: ${RS_AGENT_SESSION_STORE_KEY_PREFIX:agent:session:}
       ttl: ${RS_AGENT_SESSION_STORE_TTL:15m}
     model-provider:
+      final-answer-max-tokens: ${RS_AGENT_FINAL_ANSWER_MAX_TOKENS:0}
+      compact-tool-schemas-enabled: ${RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED:false}
       type: spring_ai
+      constrained-decoding-enabled: ${RS_AGENT_CONSTRAINED_DECODING_ENABLED:false}
+    session-lifecycle:
+      enabled: ${RS_AGENT_SESSION_LIFECYCLE_ENABLED:${RS_AGENT_SESSION_PERSISTENCE_ENABLED:false}}
+      user-base-url: ${RS_USER_SERVICE_URL:http://rs-service-user:18101}
+    session-persistence:
+      enabled: ${RS_AGENT_SESSION_PERSISTENCE_ENABLED:false}
+      schema-version: ${RS_AGENT_SESSION_SCHEMA_VERSION:agent_session_v1}
+      scylla:
+        host: ${RS_SCYLLA_HOST:127.0.0.1}
+        port: ${RS_SCYLLA_PORT:19042}
+        local-datacenter: ${RS_SCYLLA_LOCAL_DATACENTER:datacenter1}
+        keyspace: ${RS_SCYLLA_KEYSPACE:rs_agent}
+      mysql:
+        jdbc-url: ${RS_MYSQL_JDBC_URL:jdbc:mysql://127.0.0.1:13306/rs_agent?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
+        username: ${RS_MYSQL_USER:rs_agent}
+        password: ${RS_MYSQL_PASSWORD:rs_agent_dev_password}
+        maximum-pool-size: ${RS_AGENT_MYSQL_MAXIMUM_POOL_SIZE:8}
+        minimum-idle: ${RS_AGENT_MYSQL_MINIMUM_IDLE:2}
+        connection-timeout-ms: ${RS_AGENT_MYSQL_CONNECTION_TIMEOUT_MS:3000}
     trace:
       enabled: ${RS_AGENT_TRACE_ENABLED:false}
       platform-trace-base-url: ${RS_PLATFORM_TRACE_SERVICE_URL:http://rs-service-platform-trace:18108}
+    execution:
+      max-active-loops: ${RS_AGENT_MAX_ACTIVE_LOOPS:32}
+      active-loop-acquire-timeout-ms: ${RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS:300}
+      max-model-streams: ${RS_AGENT_MAX_MODEL_STREAMS:8}
+      model-stream-acquire-timeout-ms: ${RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS:200}
+      max-tool-calls: ${RS_AGENT_MAX_TOOL_CALLS:64}
+      tool-acquire-timeout-ms: ${RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS:300}
+      max-recommendation-calls: ${RS_AGENT_MAX_RECOMMENDATION_CALLS:8}
+      recommendation-acquire-timeout-ms: ${RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS:15000}
+      max-session-queue-size: ${RS_AGENT_MAX_SESSION_QUEUE_SIZE:2}
+      session-queue-timeout-ms: ${RS_AGENT_SESSION_QUEUE_TIMEOUT_MS:500}

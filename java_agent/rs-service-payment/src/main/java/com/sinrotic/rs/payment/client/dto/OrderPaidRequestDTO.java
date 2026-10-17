@@ -4,6 +4,7 @@ public record OrderPaidRequestDTO(
         String requestId,
         Long orderId,
         String provider,
-        String providerTransactionId
+        String providerTransactionId,
+        Long amount
 ) {
 }

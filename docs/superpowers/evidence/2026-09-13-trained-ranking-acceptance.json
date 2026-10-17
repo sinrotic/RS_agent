@@ -1,0 +1,2360 @@
+{
+  "checks": [
+    "首页真实 COLD/DeepFM 阶段、六路贡献、换批、冷启动通过",
+    "对话语义候选真实排序、已有候选重排不换池、交付反馈、先过滤价格约束通过",
+    "排序运行时故障：首页和对话均回退 BGE，实际标记降级且不伪造模型来源"
+  ],
+  "profiles": [
+    {
+      "profile_hash": "b683044d6e5cfb74b5d69ae83b1cc18c6c8100d903336961ba0b54e077a2f553",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 2,
+        "swing_recall": 2,
+        "category": 32,
+        "itemcf_weak": 0,
+        "two_tower": 35,
+        "catalog_exploration": 31,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 479,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 479,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 84,
+        "itemcf_strong": 84,
+        "swing_recall": 83,
+        "usercf_recall": 83,
+        "category": 83,
+        "popular": 83
+      },
+      "first_page": [
+        {
+          "item_id": "B083XTKV8V",
+          "rank": 1,
+          "score": 0.9886537984528412,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "profile_semantic",
+            "swing_recall",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Powered USB Hub, atolla 4-Port USB 3.0 Hub with 4 USB 3.0 Data Ports and 1 USB Smart Charging Port, USB Splitter with Individual On/Off Switches and 5V/3A Power Adapter",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00W9FLKTY",
+          "rank": 2,
+          "score": 0.923262669501371,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "USB 3.0 Hub, atolla 4 Ports Super Speed USB 3 Hub Splitter with On Off Switch with 1 USB Charging Port (Cable Length 2 Feet, No AC Adapter) (4-Port hub)",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07G8VZ51Z",
+          "rank": 3,
+          "score": 0.9015597666299078,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "USB 3.0 Hub Ethernet with USB C Adapter, 3 Port USB 3.0 Splitter Gigabit Ethernet Hub + USB C HUB Network RJ45 1000Mbps USB Extender",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07PWCN4LC",
+          "rank": 4,
+          "score": 0.625470912641302,
+          "reason": "根据你常关注的类目推荐",
+          "source_tags": [
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Syntech USB C to USB Adapter Pack of 2 USB C Male to USB3 Female Adapter Compatible with MacBook Pro 2021 iMac iPad Mini 6/Pro MacBook Air 2022 and Other Type C or Thunderbolt 4/3 Devices Midnight",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07KY91DGY",
+          "rank": 5,
+          "score": 0.1240415292604213,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Wasserstein Adjustable Metal Mount with Universal Screw Compatible with Ring Stick Up Cam Battery and Ring Stick Up Cam Wired - Extra Flexibility for Your Ring Camera (Black)",
+            "category": "Fire Phone",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00LORGAG6",
+          "rank": 6,
+          "score": 0.11610472105417649,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Replacement Remote for Amazon Fire TV Stick",
+            "category": "Amazon Fire TV",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3583.8
+    },
+    {
+      "profile_hash": "13f78a4a2362f489e09a64dd1e11c42dacf92e0da3f05d6ca976b3ba104c8ea7",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 27,
+        "itemcf_weak": 0,
+        "two_tower": 33,
+        "catalog_exploration": 32,
+        "popular": 49,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 77,
+        "itemcf_strong": 5,
+        "swing_recall": 8,
+        "usercf_recall": 0,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B08PFT63SD",
+          "rank": 1,
+          "score": 0.9446576890696798,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "RC802V Replaced Voice Remote Compatible with TCL Android TV 40S330 32S330 65Q637 55Q637 55S430 43S430 65Q637 55Q637 43S434 50S434 55S434 65S434 75S434 32P30S 49P30FS 40S334 32S334 70S430 32A325 32A323",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08LR5HD5F",
+          "rank": 2,
+          "score": 0.9320803698324263,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "BESIA New Remote RC802V FNR1 fit for TCL TV 40S334 50S434 55S434 75S434 40S330 70S430 32S334 55S435 50S435 43S43432S6500A 65P8S 65P8 55P8S 49S6800FS 49S6800 32S6500S 32S6800S 32S6510S 32A325 32A323",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08FFCW95X",
+          "rank": 3,
+          "score": 0.8302261989801993,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Remote Control Compatible with All TCL Roku Smart TV 50S421 55S421 55S425 70S42 32S321 55S421 43S421 65S421 32D2900 32S301 55D2900U 55S401 65D2930U 65S401 65S4 with Netflix VUDU HULU",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08R5VFPZN",
+          "rank": 4,
+          "score": 0.8066302176888311,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Riry The New RC802V Replacement TCL Smart TV Remote Control with Voice Key Commands Suitable for Android 4K UHD TCL Remote Control Replacement",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0BDSXM337",
+          "rank": 5,
+          "score": 0.1780780127329344,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "VTech RM5764-2HD 1080p Smart WiFi Remote Access 2 Camera BabyMonitor, 360° Pan & Tilt, 5\" 720p HD Display, Night Vision, Soothing Sounds, 2-Way Talk, Temperature & Motion Detection, iOS & Android",
+            "category": "Baby",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07KY91DGY",
+          "rank": 6,
+          "score": 0.12346763726541225,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Wasserstein Adjustable Metal Mount with Universal Screw Compatible with Ring Stick Up Cam Battery and Ring Stick Up Cam Wired - Extra Flexibility for Your Ring Camera (Black)",
+            "category": "Fire Phone",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3101.4
+    },
+    {
+      "profile_hash": "d3d802eb7393670289228a80d9264222edcaf026efba460f5d00f52154b4f33d",
+      "source_distribution": {
+        "usercf_recall": 2,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 6,
+        "itemcf_weak": 0,
+        "two_tower": 44,
+        "catalog_exploration": 32,
+        "popular": 40,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 474,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 474,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 116,
+        "itemcf_strong": 7,
+        "swing_recall": 0,
+        "usercf_recall": 100,
+        "category": 99,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B082QZG9Q4",
+          "rank": 1,
+          "score": 0.6882437140306041,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "The Leather Warehouse Zippered PadFolio/Portfolio for Men/Women with Document Resume Business Card Holder",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07NQ47DSR",
+          "rank": 2,
+          "score": 0.5716501386727574,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Professional Slim Padfolio for 9.7-inch iPad Pro or iPad Air, Full Grain Cow Leather Portfolio Case Organizer for Letter Size (A4) Notepad, Business Carrying Case",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B082F417S1",
+          "rank": 3,
+          "score": 0.5597857736466001,
+          "reason": "根据你常关注的类目推荐",
+          "source_tags": [
+            "category",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Leather Desk Pad Protector,Mouse Pad,Office Desk Mat, Non-Slip PU Leather Desk Blotter,Laptop Desk Pad,Waterproof Desk Writing Pad for Office and Home (Gray,31.5\" x 15.7\")",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07N8VFFNS",
+          "rank": 4,
+          "score": 0.3076666225023703,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Fire 7 tablet, 7\" display, 16 GB, (2019 release), Black",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0009GVYI2",
+          "rank": 5,
+          "score": 0.07874978135258835,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "GeneralAire 1099-20 Humidifier Water Filter,Gray",
+            "category": "Appliances",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00009XVPA",
+          "rank": 6,
+          "score": 0.07815989298795877,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Fujinon Mariner 7x50 WPC-XL Porro Prism Binocular",
+            "category": "Camera & Photo",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2534.0
+    },
+    {
+      "profile_hash": "892b31f33c3b94d499a815e57adc70f849127486afa37756f909c1e0c2ee9e6e",
+      "source_distribution": {
+        "usercf_recall": 5,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 34,
+        "itemcf_weak": 0,
+        "two_tower": 38,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 474,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 474,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 80,
+        "itemcf_strong": 26,
+        "swing_recall": 13,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B089NC6PTC",
+          "rank": 1,
+          "score": 0.690007284160038,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Frame Amo 11x14 Black Mat for Picture Frame, 7.5x9.5 Bevel Cut for 8x10 Picture, White Core (1)",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00HT14WOS",
+          "rank": 2,
+          "score": 0.6182148035769999,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "topseller100, Pack of 25 sets of 11x14 BLACK Picture Mats Mattes Matting for 8x10 Photo + Backing + Bags",
+            "category": "Arts, Crafts & Sewing",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0BW4PFM58",
+          "rank": 3,
+          "score": 0.30035664874704443,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "OontZ Angle 3 Bluetooth Speaker, Portable Wireless Bluetooth 5.0 Speaker, 10 Watts, Crystal Clear Stereo Sound, Rich Bass, IPX5 Water Resistant, Loud Portable Bluetooth Speaker (Black)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08YFJYD5Z",
+          "rank": 4,
+          "score": 0.3001724279022463,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "All-new Fire HD 10 tablet, 10.1\", 1080p Full HD, 32 GB, latest model (2021 release), Black, without lockscreen ads",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B002TLTIS8",
+          "rank": 5,
+          "score": 0.22751587078359442,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Apple 60W MagSafe Power Adapter for MacBook and 13-inch MacBook Pro",
+            "category": "Apple Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000RHFZ7E",
+          "rank": 6,
+          "score": 0.10767398401667917,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Mommys Helper Pack of 3 Soft Jamb Door Stops Blister, White",
+            "category": "Baby",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2906.5
+    },
+    {
+      "profile_hash": "636002623dbc9752abe298760a1807671a967322af03d3197e0a9f7b2ebc60e5",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 33,
+        "itemcf_weak": 2,
+        "two_tower": 33,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 79,
+        "itemcf_strong": 14,
+        "swing_recall": 14,
+        "usercf_recall": 0,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B087JDHWMD",
+          "rank": 1,
+          "score": 0.8155100521023596,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "ULBTER Screen Protector for Fujifilm X-T4 X100V Fuji XT4 X-100V Camera [3Pack] with Hot Shoe Cover, 0.3mm 9H Hardness Tempered Glass Cover Anti-Scrach Anti-Fingerprint Anti-Bubble",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07R6GGSJX",
+          "rank": 2,
+          "score": 0.814584492698623,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "ULBTER X-S10 Screen Protector for Fujifilm X-T30 X-T20 X-T10 X-E3 Fuji X-S10 X-T30 XF10 X-T100 X-A1 X-A2 Digital Camera, 0.3mm 9H Hardness Tempered Glass Flim Anti-Scrach Anti-Fingerprint -3 Pack",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08HKX82KC",
+          "rank": 3,
+          "score": 0.7883327653560174,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Z5 Screen Protector for Nikon Z 5 Z5 Mirrorless Digital Camera & Hot Shoe Cover,ULBTER 0.3mm 9H Hardness Tempered Glass Saver Anti-Scrach Anti-Fingerprint Anti-Bubble Anti-Dust [2+3Pack]",
+            "category": "Camera & Photo",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07DNPYW3H",
+          "rank": 4,
+          "score": 0.7273836032808265,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "profile_semantic",
+            "itemcf_weak",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "JJC Hot Shoe Cover Cap Protector for Fujifilm Fuji X-T4 X-T3 X-T30 X-T20 X-PRO3 X-PRO2 X100V X100S X100F X-T100 X-E3 X-E2 X10 X30 X70 X-S10 X-A10 X-A5 X-H1 GFX 50S etc. -2pack",
+            "category": "Camera & Photo",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07FKSJV22",
+          "rank": 5,
+          "score": 0.2695318498759987,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Chicwrap Marble Refillable Plastic Wrap Dispenser - Includes 12\" x 250' Roll Professional Grade Disposable Plastic Wrap - Reusable Dispenser w/ Slide Cutter - Ideal Dispenser & Saves Money",
+            "category": "Health & Personal Care",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000QGOPO0",
+          "rank": 6,
+          "score": 0.17832976279050475,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "ACDelco GM Genuine Parts 15038566 Front Door Radio Speaker",
+            "category": "Automotive",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3277.8
+    },
+    {
+      "profile_hash": "3ac4193e5e472245aeab27e3be803649f59d3bec12c42b207dad99f0e74e38a3",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 32,
+        "itemcf_weak": 0,
+        "two_tower": 36,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 474,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 474,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 120,
+        "itemcf_strong": 12,
+        "swing_recall": 10,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B084JD96TB",
+          "rank": 1,
+          "score": 0.9207273203690869,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Ergear Dual Monitor Stand Mount, Ultrawide 13-35 Inch Height Adjustable Computer Screen Gas Spring Monitor Arm Desk Mount Full Motion, Each Arm Holds up to 26.4lbs",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08H5GFFG2",
+          "rank": 2,
+          "score": 0.919717185512081,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Perlegear Dual Monitor Stand, Freestanding Desk Mount with Glass Base Fit 17-32 inch Flat Curved Screen with Swivel, Tilt, Height Adjustable, Rotation, Each Arm Holds up to 26 lbs",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08HD5Z86F",
+          "rank": 3,
+          "score": 0.9196663936006371,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "ErGear Dual Monitor Desk Mount Stand, 26.4lbs Heavy-Duty Adjustable Monitor Arms, 17-32\" Monitor Stand for 2 LCD Screens, 75mm/100mm VESA, Black - EGCM7",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08H599QGK",
+          "rank": 4,
+          "score": 0.8957848157542204,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Perlegear Dual Monitor Stand - Articulating Full Motion Arm Desk Mount, for 17 to 32 Inch Computer Screens, Vesa Mount with Desk C-clamp and Grommet Base, Loads up to 26lbs per arm",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "9973399986",
+          "rank": 5,
+          "score": 0.14753771955341743,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "SanDisk Professional Ultra 64GB MicroSDXC GoPro Hero 3 Card is Custom formatted for high Speed Lossless Recording! Includes Standard SD Adapter. (UHS-1 Class 10 Certified 80MB/sec)",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B071F2S6GX",
+          "rank": 6,
+          "score": 0.12125674949490584,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Envelopes Label Stickers Love Heart Shape Stickers 60 PCS Kraft Paper Thank You Stickers Retro Metallic DIY Decorative Adhesive Label for Packaging Bake Decoration Wedding Party Gift (Gold)",
+            "category": "Arts, Crafts & Sewing",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2903.7
+    },
+    {
+      "profile_hash": "d8b626efce99fb115b9bdbba33c89cdf029f10128c0ecbfbe35bcc980d0f4594",
+      "source_distribution": {
+        "usercf_recall": 4,
+        "itemcf_strong": 0,
+        "swing_recall": 1,
+        "category": 28,
+        "itemcf_weak": 3,
+        "two_tower": 39,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 79,
+        "itemcf_strong": 12,
+        "swing_recall": 11,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B07QR6QQJ4",
+          "rank": 1,
+          "score": 0.8770933019582079,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Drawing Tablet Case Carrying Bag with Artist Glove Graphics Tablet Sleeve Protective Bag for Huion H610 Pro, HS610, Xp-pen Deco 01, Star 06, Ugee M708 and Veikk A30, A50",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07WD43DF4",
+          "rank": 2,
+          "score": 0.8365109198090742,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Drawing Tablet Case Bag for Wacom Cintiq 16, Huion Kamvas Pro 16 and XP-Pen Artist15.6 Pro, Innovator 16 Waterproof Protective Graphics Tablet Shoulder Bag",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07QXT3H5D",
+          "rank": 3,
+          "score": 0.8335103755135196,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Drawing Monitor Carry Case Portable Travel Protective Bag Compatible for XP-Pen Artist12, Artist 13.3Pro, Wacom One DTC133, Huion KAMVAS 13, KAMVAS Pro 13, KAMVAS Pro 12, Q11K (Black with Strap)",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B086WF7QZ8",
+          "rank": 4,
+          "score": 0.7402339891851386,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Drawing Tablet Sleeve Case for HUION Kamvas 13, Huion KAMVAS Pro 13 GT-133, Huion KAMVAS Pro 12, HUION New 1060 Plus, XP-Pen Artist12 11.6 Inch, GAOMON PD1161, GAOMON M10K, XP-Pen Artist13.3 Pro",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08H4V4KL9",
+          "rank": 5,
+          "score": 0.2428332762320888,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Sound Addicted Subble 1.2 '' (8 Pack) Isolation Feet Suitable for 3'' - 5'' inch Speakers, The Hemisphere Bumper with Adhesive Will Prevent Vibrations and Improve The Sound of Your Monitors | Subble",
+            "category": "Portable Audio & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00LORGAG6",
+          "rank": 6,
+          "score": 0.11607574739351185,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Replacement Remote for Amazon Fire TV Stick",
+            "category": "Amazon Fire TV",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2984.7
+    },
+    {
+      "profile_hash": "9e821d4bf5fe371e7e797693cbe1cedd651f1a01f859856c7d9b6990faefec6e",
+      "source_distribution": {
+        "usercf_recall": 1,
+        "itemcf_strong": 0,
+        "swing_recall": 1,
+        "category": 29,
+        "itemcf_weak": 0,
+        "two_tower": 36,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 110,
+        "itemcf_strong": 30,
+        "swing_recall": 42,
+        "usercf_recall": 100,
+        "category": 109,
+        "popular": 109
+      },
+      "first_page": [
+        {
+          "item_id": "B08S6S4LPY",
+          "rank": 1,
+          "score": 0.9885505015261931,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "profile_semantic",
+            "swing_recall",
+            "category",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Dragon Touch Classic 15 Digital Picture Frame, 15.6” FHD Touch Screen WiFi Digital Photo Frame Instant Share Photos and Videos via App, Email, Cloud, Wall Mountable, Portrait and Landscape",
+            "category": "Camera & Photo",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08MQ5MZQ2",
+          "rank": 2,
+          "score": 0.8410341040763571,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Digital Photo Frame WiFi Digital Picture Frame kimire 1920x1080 Touch Screen, Support Thumb USB Drive and SD Slot, Music Player, Alarm Clock, Share Photo and Video via APP, Cloud, Email(10inch Black)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B087PV919P",
+          "rank": 3,
+          "score": 0.7058978764966927,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Digital Photo Frame 15 inch Electronic Picture Frame (10.1-Inch IPS)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07WV3XHKW",
+          "rank": 4,
+          "score": 0.5932929214244425,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Bewinner 15'' Digital Photo Frame Portable HD 1280 800 Digital Picture Frame with Remote Controller Desktop Display Support IPS Display Photo/Music/Video Player Calendar Alarm, Gift 100-240V (White)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07P8R4QBJ",
+          "rank": 5,
+          "score": 0.2654433983294891,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Apple iPhone X Silicone Case - Pink Sand",
+            "category": "Apple Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0C9M5ZG67",
+          "rank": 6,
+          "score": 0.1555385920977679,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "HYPERI 3D Wooden USA Map Wall Art, Large Wall Décor - US Travel Map with Push Pins - Housewarming Gifts New Home - Wall Art For Home & Kitchen or Office - Home Office Decor (50 US Flags Pins)",
+            "category": "Handmade",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2869.2
+    },
+    {
+      "profile_hash": "958022e512dca262d1bcd64e8aaa467407520499090845f264921280e13e01ae",
+      "source_distribution": {
+        "profile_category": 5,
+        "itemcf_strong": 0,
+        "two_tower": 37,
+        "swing_recall": 1,
+        "category": 11,
+        "profile_semantic": 16,
+        "popular": 29,
+        "catalog_exploration": 27,
+        "usercf_recall": 4,
+        "itemcf_weak": 1
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 466,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 466,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 110,
+        "itemcf_strong": 13,
+        "swing_recall": 11,
+        "usercf_recall": 100,
+        "category": 119,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B0B3MX7LVG",
+          "rank": 1,
+          "score": 0.3002377710324662,
+          "reason": "根据你常关注的类目推荐",
+          "source_tags": [
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "EZlifego Double Sided Tape Heavy Duty, Extra Large Nano Double Sided Adhesive tape, Clear Mounting Tape Picture Hanging Adhesive Strips,Removable Wall Tape Sticky Poster Tape Decor Carpet Tape(9.85FT)",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08F1P3BCC",
+          "rank": 2,
+          "score": 0.29997787457314695,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Echo Dot (4th Gen) | Smart speaker with Alexa | Twilight Blue",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08XPWDSWW",
+          "rank": 3,
+          "score": 0.2999679724710487,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "TOZO T10 Bluetooth 5.3 Wireless Earbuds with Wireless Charging Case IPX8 Waterproof Stereo Headphones in Ear Built in Mic Headset Premium Sound with Deep Bass for Sport White (2022 Upgraded)",
+            "category": "Home Audio & Theater",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B087S2JRXY",
+          "rank": 4,
+          "score": 0.2999217008887763,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Amazon Basics 15-Sheet Cross-Cut Paper, CD Credit Card Office Shredder",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000YCZRCK",
+          "rank": 5,
+          "score": 0.07997636810759381,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Fellowes 52371, Plastic Combs - Round Back, 3/8\", 100 pack, White",
+            "category": "Premium Beauty",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0009GVYI2",
+          "rank": 6,
+          "score": 0.07993387440728207,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "GeneralAire 1099-20 Humidifier Water Filter,Gray",
+            "category": "Appliances",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2637.9
+    },
+    {
+      "profile_hash": "e2c6066a33818105fb275ecbcf94ee3dafb6b9a9c9e90459c8cf63ea58f7d2d6",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 0,
+        "swing_recall": 1,
+        "category": 30,
+        "itemcf_weak": 11,
+        "two_tower": 32,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 85,
+        "itemcf_strong": 55,
+        "swing_recall": 8,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 119
+      },
+      "first_page": [
+        {
+          "item_id": "B088CYJ7FJ",
+          "rank": 1,
+          "score": 0.97375845532439,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "iPad Pro 11 Case 2020 with Pencil Holder (2nd Generation), ZryXal Premium Protective Case Cover with Soft TPU Back and Auto Sleep/Wake Feature for 2020/2018 iPad Pro 11 (Grey)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0821GPWCY",
+          "rank": 2,
+          "score": 0.8372190595073042,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Gexmil iPad air 10.5 Inch 2019 Case, with Built-in Apple Pencil Holder,applies Cowhide Folio Cover for iPad pro 10.5 Genuine Leather case (Pattern-Brown+Pencil Holder)",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0881W4FHC",
+          "rank": 3,
+          "score": 0.7824534009855926,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Gexmil for New iPad Pro 12.9 Case 4nd Generation 2020&2018, Made from Real Leather Cover Cowhide,Pattern-Brown",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B088DJRL3Z",
+          "rank": 4,
+          "score": 0.7096610634283028,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Case for New iPad Pro 11 Inch Case 2021 (3rd Gen) & 2020 [Support Apple Pencil Charging] ,Multi Angle Magnetic TPU Back Cover for iPad Pro 11\" 2021/2020/2018 Version with Pencil Holder,(Champagne)",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0BSR6B4CZ",
+          "rank": 5,
+          "score": 0.20459118049699454,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "52 PCS Cartoon Firefighter Stickers for Kids,Teens Fireman Waterproof Vinyl Decals Fire Engine Rescue Stickers for Laptops, Guitar, Laptop, Party DIY Decorate Sticker",
+            "category": "Handmade",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B075R4Q59Y",
+          "rank": 6,
+          "score": 0.20451211715022724,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "MoKo Case Fits All-New Fire HD 10 (7th Generation and 9th Generation, 2017 and 2019 Release), Smart Shell Stand Cover with Translucent Frosted Back for Fire HD 10.1 Inch - Flowers Blossom",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2706.3
+    },
+    {
+      "profile_hash": "54115f5724fa631046bdcaa52a31436437b247cd6e320dc326798610663e19a1",
+      "source_distribution": {
+        "usercf_recall": 1,
+        "itemcf_strong": 0,
+        "swing_recall": 1,
+        "category": 26,
+        "itemcf_weak": 0,
+        "two_tower": 34,
+        "catalog_exploration": 32,
+        "popular": 45,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 474,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 474,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 114,
+        "itemcf_strong": 14,
+        "swing_recall": 8,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B0B3MX7LVG",
+          "rank": 1,
+          "score": 0.30148831908488677,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "EZlifego Double Sided Tape Heavy Duty, Extra Large Nano Double Sided Adhesive tape, Clear Mounting Tape Picture Hanging Adhesive Strips,Removable Wall Tape Sticky Poster Tape Decor Carpet Tape(9.85FT)",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B087S2JRXY",
+          "rank": 2,
+          "score": 0.30062619127810586,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Amazon Basics 15-Sheet Cross-Cut Paper, CD Credit Card Office Shredder",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0C1ZHJRGB",
+          "rank": 3,
+          "score": 0.2999052523884827,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Wireless Earbuds Bluetooth Headphones 48hrs Play Back Sport Earphones with LED Display Over-Ear Buds with Earhooks Built-in Mic Headset for Workout Blue BMANI-VEAT00L",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0933BVK6T",
+          "rank": 4,
+          "score": 0.29984468507660933,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Apple AirTag",
+            "category": "Apple Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0B19KYV51",
+          "rank": 5,
+          "score": 0.28708417722689256,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "[3 Pack] Silicone Cover Case for stick/TV 4K (3rd Gen) Compatible with All-New 2nd Gen Remote Control (Black GlowBlue and Glowgreen)",
+            "category": "Amazon Fire TV",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01LY5X0MX",
+          "rank": 6,
+          "score": 0.22202817003447797,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Gravity SACC 35 B 35 mm Speaker Pole Cable Clips (GSACC35B)",
+            "category": "Musical Instruments",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2487.0
+    },
+    {
+      "profile_hash": "2ddef064bea3c1cff15247faf6b45d5b2164d67aa2bc7ffec91ba3569a1880dd",
+      "source_distribution": {
+        "usercf_recall": 3,
+        "itemcf_strong": 1,
+        "swing_recall": 0,
+        "category": 30,
+        "itemcf_weak": 5,
+        "two_tower": 37,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 85,
+        "itemcf_strong": 84,
+        "swing_recall": 79,
+        "usercf_recall": 84,
+        "category": 84,
+        "popular": 84
+      },
+      "first_page": [
+        {
+          "item_id": "B08LSTCPCD",
+          "rank": 1,
+          "score": 0.692775805620181,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "USB Flash Drives 256GB",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08YFJYD5Z",
+          "rank": 2,
+          "score": 0.30061641231405917,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "All-new Fire HD 10 tablet, 10.1\", 1080p Full HD, 32 GB, latest model (2021 release), Black, without lockscreen ads",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08F1P3BCC",
+          "rank": 3,
+          "score": 0.3000451839679892,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Echo Dot (4th Gen) | Smart speaker with Alexa | Twilight Blue",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08XNCHTCY",
+          "rank": 4,
+          "score": 0.29997195411190364,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "TOZO T6 True Wireless Earbuds Bluetooth 5.3 Headphones Touch Control with Wireless Charging Case IPX8 Waterproof Stereo Earphones in-Ear Built-in Mic Headset Premium Deep Bass White (2022 Upgraded)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B004I2EBXS",
+          "rank": 5,
+          "score": 0.24065982741119368,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Lorell File Caddy, Black",
+            "category": "Office_Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000RHFZ7E",
+          "rank": 6,
+          "score": 0.10105154612252179,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Mommys Helper Pack of 3 Soft Jamb Door Stops Blister, White",
+            "category": "Baby",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2395.9
+    },
+    {
+      "profile_hash": "b97ba8aadc97032e2c6266d7481ae7c6f88a2680529595e177130fb41acf8cff",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 34,
+        "itemcf_weak": 0,
+        "two_tower": 35,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 106,
+        "itemcf_strong": 9,
+        "swing_recall": 75,
+        "usercf_recall": 100,
+        "category": 105,
+        "popular": 105
+      },
+      "first_page": [
+        {
+          "item_id": "B08YFJYD5Z",
+          "rank": 1,
+          "score": 0.30012756388645606,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "All-new Fire HD 10 tablet, 10.1\", 1080p Full HD, 32 GB, latest model (2021 release), Black, without lockscreen ads",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08F1P3BCC",
+          "rank": 2,
+          "score": 0.30008798675821674,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Echo Dot (4th Gen) | Smart speaker with Alexa | Twilight Blue",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08XNCHTCY",
+          "rank": 3,
+          "score": 0.29998442259630037,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "TOZO T6 True Wireless Earbuds Bluetooth 5.3 Headphones Touch Control with Wireless Charging Case IPX8 Waterproof Stereo Earphones in-Ear Built-in Mic Headset Premium Deep Bass White (2022 Upgraded)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0B6D4W3R7",
+          "rank": 4,
+          "score": 0.2996033444551424,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Seagate Expansion 16TB External Hard Drive HDD - USB 3.0, with Rescue Data Recovery Services (STKP16000402)",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000233ZMU",
+          "rank": 5,
+          "score": 0.09919180487044663,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Vantec SP-FC70-BL Spectrum System Fan Card with Dual Adjustable 70mm UV LED Fans (Blue), 195x92x20mm",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0017TRUPG",
+          "rank": 6,
+          "score": 0.0703500082321613,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Scosche TA2089B Compatible with 2008-13 Toyota Highlander ISO Double DIN & DIN+Pocket Dash Kit, Black",
+            "category": "Car Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2614.3
+    },
+    {
+      "profile_hash": "cf4c122b2476ab34b9f8a556bba1898029f665b640c6550e5be74655e91eb820",
+      "source_distribution": {
+        "usercf_recall": 2,
+        "itemcf_strong": 0,
+        "swing_recall": 1,
+        "category": 36,
+        "itemcf_weak": 3,
+        "two_tower": 31,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 84,
+        "itemcf_strong": 84,
+        "swing_recall": 83,
+        "usercf_recall": 83,
+        "category": 83,
+        "popular": 83
+      },
+      "first_page": [
+        {
+          "item_id": "B08F7586NK",
+          "rank": 1,
+          "score": 0.7710772596784758,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Terasako Magnetic Charging Cable 6-Pack [1ft/3ft/3ft/6ft/6ft/10ft], 3 in 1 Nylon Braided Magnetic Phone Charger, Compatible with Micro USB, Type C, iProduct and Most Devices",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07VC9QGBZ",
+          "rank": 2,
+          "score": 0.7357749480513052,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "profile_semantic",
+            "itemcf_weak",
+            "swing_recall",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Terasako Magnetic Connector Tips Head for Micro USB Android Devices (5 Pack)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08JFXBCL8",
+          "rank": 3,
+          "score": 0.7250380200361951,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Magnetic Charging Cable 2.4A,【4Pack】1.64 ft x 1 + 3.3ft x 2+ 6.6ft x 1,3-in-1,540° Rotating Heads.Magnetic Charging Cable,Magnetic Phone Charger Cable.Micro USB,Type C Cable,i-Product compatible",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B083TXWKM1",
+          "rank": 4,
+          "score": 0.7056898039575474,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Terasako Magnetic Fast Charging Cable 4-Pack [3ft/3ft/6ft/6ft] - 3A Phone Charger Cable with Data Transfer and LED Light - 360¡ã & 180¡ã Rotating Cords ¡­",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07D4JSD7N",
+          "rank": 5,
+          "score": 0.11930819963486713,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Rolls Bellari VP549 Phono Preamplifier",
+            "category": "Musical Instruments",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0013TPVRO",
+          "rank": 6,
+          "score": 0.1051198925289069,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Cathedral of the Sea: A Novel",
+            "category": "Buy a Kindle",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2811.8
+    },
+    {
+      "profile_hash": "baca56107cb4c40cae45b0ed7444994fbd75d6c3ed61034454e15898dadf1a7f",
+      "source_distribution": {
+        "usercf_recall": 0,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 30,
+        "itemcf_weak": 0,
+        "two_tower": 34,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 79,
+        "itemcf_strong": 21,
+        "swing_recall": 2,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B08B153B46",
+          "rank": 1,
+          "score": 0.9427774699923048,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Rankie Mini HDMI to HDMI Cable, High Speed Supports Ethernet 3D and Audio Return (15 Feet)",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0045EOWS8",
+          "rank": 2,
+          "score": 0.7782721745831435,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Cables Unlimited 15-Feet HDMI Male to Male Cable",
+            "category": "Home Audio & Theater",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01HQ2H2S2",
+          "rank": 3,
+          "score": 0.717716132388777,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "CableCreation Mini HDMI to HDMI Cable, 0.5ft 90 Degree Left Angle Mini-HDMI Male to HDMI Female Adapter,Support 1080P Full HD,3D,for Camera,Camcorder,Graphics Card,Laptop,Tablet,HDTV,Projector,Black",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00IMMURXI",
+          "rank": 4,
+          "score": 0.7116577862106683,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Cmple - Mini HDMI to HDMI Cable 15ft, HDMI Mini to HDMI, 60Hz HDMI 2.0 Cable, Monitor to Digital Camera HDMI Cables, 4k HDMI Adapter Cord for Camcorder, Tablet, Ultrabook, Laptop, HDTV - Black",
+            "category": "Home Audio & Theater",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01HHUKMDA",
+          "rank": 5,
+          "score": 0.19459144464770708,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Fintie Folio Case for Fire HDX 7 - Slim Fit Leather Standing Protective Cover with Auto Sleep/Wake (Will only fit Kindle Fire HDX 7\" 2013), Purple",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07KY91DGY",
+          "rank": 6,
+          "score": 0.11703838586087656,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Wasserstein Adjustable Metal Mount with Universal Screw Compatible with Ring Stick Up Cam Battery and Ring Stick Up Cam Wired - Extra Flexibility for Your Ring Camera (Black)",
+            "category": "Fire Phone",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2435.4
+    },
+    {
+      "profile_hash": "6fbb480b565c88ab3a7cb8ecaf058eb4f7e369930e20dfd893071d5412ea979d",
+      "source_distribution": {
+        "usercf_recall": 1,
+        "itemcf_strong": 0,
+        "swing_recall": 0,
+        "category": 39,
+        "itemcf_weak": 0,
+        "two_tower": 23,
+        "catalog_exploration": 32,
+        "popular": 48,
+        "profile_semantic": 16
+      },
+      "stage_counts": {
+        "bge_reranked": 96,
+        "cold_scored": 480,
+        "fine_rank": 96,
+        "final": 6,
+        "recall": 480,
+        "coarse_rank": 200,
+        "deepfm_scored": 200
+      },
+      "diagnostic": {
+        "itemcf_weak": 113,
+        "itemcf_strong": 16,
+        "swing_recall": 46,
+        "usercf_recall": 100,
+        "category": 113,
+        "popular": 112
+      },
+      "first_page": [
+        {
+          "item_id": "B08L5M9BTJ",
+          "rank": 1,
+          "score": 0.9916064922054357,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Apple 20W USB-C Power Adapter - iPhone Charger with Fast Charging Capability, Type C Wall Charger",
+            "category": "Apple Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B071YYK9CB",
+          "rank": 2,
+          "score": 0.9679523619090843,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "TT&C Short iPhone Lightning Cable 6 inch Charger Sync and Charging Data Cord for iPhone 14/14 Pro/ 14 Pro Max/ 13/13 Pro / 12/11/ Xs/Xs Max/Xr/X/ 8 Plus/iPad - White 4Pack",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08RNJPVK7",
+          "rank": 3,
+          "score": 0.897651119167493,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "USB C to Lightning Cable 10ft, YEONPHOM MFi Certified Type C to Lightning Cable Extra Long iPhone Charger Cord Power Delivery Fast Charging for iPhone 14 13 12 Pro Max/Mini/11 Pro Max/XS MAX/XR/X/8/SE",
+            "category": "Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B09RZDNN93",
+          "rank": 4,
+          "score": 0.6706181660136563,
+          "reason": "根据你的历史行为推荐可能感兴趣的商品",
+          "source_tags": [
+            "two_tower",
+            "category",
+            "popular",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "AINOPE USB C Cable 10FT 3.1A Type C Charger Fast Charging, Right Angle USB Type C Cable, Nylon Braided USB C Charging Cable Compatible with Galaxy S10 S9 S8 Plus, A51 A11 A10 A20, LG V50 V40 G8 G7",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07J9X5NGP",
+          "rank": 5,
+          "score": 0.46113625212865983,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "Wasserstein Weatherproof Integrated Charger Compatible with Ring Stick Up Cam Battery & Ring Spotlight Cam Battery - Extra Long and Thin 21ft Cable to Continuously Operate Your Ring Camera (Black)",
+            "category": "Fire Phone",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08F4GF5WM",
+          "rank": 6,
+          "score": 0.14695634922399425,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker",
+            "cold_coarse",
+            "deepfm_fine"
+          ],
+          "display": {
+            "title": "EEweca Clip Holder for Fitbit Charge 3/4 Silicone Case Accessory, Sangria",
+            "category": "Video Games",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2813.1
+    }
+  ],
+  "cold_sources": {
+    "two_tower": 0,
+    "usercf_recall": 0,
+    "swing_recall": 0,
+    "itemcf_weak": 0,
+    "itemcf_strong": 0,
+    "category": 0,
+    "catalog_exploration": 32,
+    "popular": 64
+  },
+  "contributions": {
+    "itemcf_weak": 25,
+    "itemcf_strong": 3,
+    "swing_recall": 8,
+    "usercf_recall": 23,
+    "category": 457,
+    "popular": 739
+  },
+  "displayed": {
+    "itemcf_weak": 2,
+    "itemcf_strong": 0,
+    "swing_recall": 3,
+    "usercf_recall": 0,
+    "category": 13,
+    "popular": 21
+  },
+  "agent": {
+    "semantic_request_id": "rec_req_agent_rank_e4789cac-d506-4682-9d16-6e27beef9e85",
+    "stage_counts": {
+      "final": 6,
+      "bge_reranked": 96,
+      "fine_rank": 96,
+      "cold_scored": 100,
+      "recall": 100,
+      "coarse_rank": 100,
+      "deepfm_scored": 100
+    },
+    "candidate_count": 6,
+    "rerank_subset": true,
+    "delivery_feedback": "APPLIED"
+  },
+  "status": "PASS"
+}

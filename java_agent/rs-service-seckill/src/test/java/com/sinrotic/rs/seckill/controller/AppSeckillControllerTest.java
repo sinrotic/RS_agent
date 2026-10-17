@@ -21,7 +21,7 @@ class AppSeckillControllerTest {
         AppSeckillController controller = new AppSeckillController(seckillService);
         SeckillSubmitRequestDTO body = new SeckillSubmitRequestDTO(
                 "req-1",
-                100L,
+                "spoofed-account",
                 "body-act",
                 "item-1",
                 "sku-1",
@@ -30,12 +30,13 @@ class AppSeckillControllerTest {
         when(seckillService.submit(org.mockito.ArgumentMatchers.any()))
                 .thenReturn(new SeckillSubmitVO("req-1", "PROCESSING"));
 
-        SeckillSubmitVO response = controller.submit("path-act", body);
+        SeckillSubmitVO response = controller.submit("path-act", "acc_100", body);
 
         assertEquals("PROCESSING", response.status());
         ArgumentCaptor<SeckillSubmitRequestDTO> captor = ArgumentCaptor.forClass(SeckillSubmitRequestDTO.class);
         verify(seckillService).submit(captor.capture());
         assertEquals("path-act", captor.getValue().activityId());
+        assertEquals("acc_100", captor.getValue().accountId());
     }
 
     @Test
@@ -46,7 +47,7 @@ class AppSeckillControllerTest {
 
         IllegalArgumentException thrown = assertThrows(
                 IllegalArgumentException.class,
-                () -> controller.submit("path-act", null)
+                () -> controller.submit("path-act", "acc_100", null)
         );
 
         assertEquals("request is required", thrown.getMessage());

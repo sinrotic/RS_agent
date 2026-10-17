@@ -58,7 +58,7 @@ def test_config_contract_accepts_relative_project_paths(tmp_path: Path):
 def test_config_contract_reports_loader_errors(tmp_path: Path):
     config = tmp_path / "configs" / "phase_1_99_bad.yaml"
     config.parent.mkdir()
-    config.write_text("items:\n  - a\n", encoding="utf-8")
+    config.write_text("- a\n- b\n", encoding="utf-8")
 
     violations = validate_config_contracts(tmp_path, [config])
 

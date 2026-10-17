@@ -2,11 +2,14 @@ package com.sinrotic.rs.recommend.controller.app;
 
 import com.sinrotic.rs.recommend.domain.dto.HomeRecommendRequestDTO;
 import com.sinrotic.rs.recommend.domain.dto.HomeRecommendRefreshRequestDTO;
+import com.sinrotic.rs.recommend.domain.delivery.RecommendationIdentity;
 import com.sinrotic.rs.recommend.domain.vo.HomeRecommendVO;
 import com.sinrotic.rs.recommend.service.HomeRecommendService;
+import com.sinrotic.rs.recommend.service.RecommendationSessionValidator;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -17,18 +20,36 @@ import org.springframework.web.bind.annotation.RestController;
 public class HomeRecommendController {
 
     private final HomeRecommendService homeRecommendService;
+    private final RecommendationSessionValidator sessions;
 
-    public HomeRecommendController(HomeRecommendService homeRecommendService) {
+    public HomeRecommendController(HomeRecommendService homeRecommendService, RecommendationSessionValidator sessions) {
         this.homeRecommendService = homeRecommendService;
+        this.sessions = sessions;
     }
 
     @PostMapping("/home")
-    public HomeRecommendVO recommendHome(@RequestBody HomeRecommendRequestDTO request) {
-        return homeRecommendService.recommendHome(request.withDefaults());
+    public HomeRecommendVO recommendHome(
+            @RequestHeader("X-Account-Id") String accountId,
+            @RequestHeader("X-Profile-User-Id") String profileUserId,
+            @RequestBody HomeRecommendRequestDTO request
+    ) {
+        HomeRecommendRequestDTO normalized = request.withDefaults();
+        sessions.requireActive(accountId, profileUserId, normalized.sessionId());
+        return homeRecommendService.recommendHome(identity(accountId, profileUserId, normalized.sessionId()), normalized);
     }
 
     @PostMapping("/home/refresh")
-    public HomeRecommendVO refreshHome(@RequestBody HomeRecommendRefreshRequestDTO request) {
-        return homeRecommendService.recommendHome(request.toHomeRecommendRequest());
+    public HomeRecommendVO refreshHome(
+            @RequestHeader("X-Account-Id") String accountId,
+            @RequestHeader("X-Profile-User-Id") String profileUserId,
+            @RequestBody HomeRecommendRefreshRequestDTO request
+    ) {
+        HomeRecommendRequestDTO normalized = request.toHomeRecommendRequest();
+        sessions.requireActive(accountId, profileUserId, normalized.sessionId());
+        return homeRecommendService.recommendHome(identity(accountId, profileUserId, normalized.sessionId()), normalized);
+    }
+
+    private RecommendationIdentity identity(String accountId, String profileUserId, String sessionId) {
+        return new RecommendationIdentity(accountId, profileUserId, sessionId);
     }
 }

@@ -148,7 +148,16 @@ public class MilvusRagVectorRecallClient implements RagEvidenceRecallClient {
             request.header(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         }
         Map<String, Object> response = request.body(body).retrieve().body(Map.class);
-        return response == null ? Map.of() : response;
+        if (response == null) {
+            return Map.of();
+        }
+        Object code = response.get("code");
+        if (code instanceof Number number && number.intValue() != 0) {
+            throw new IllegalStateException(
+                    "Milvus search failed with code " + number.intValue() + ": " + text(response.get("message"))
+            );
+        }
+        return response;
     }
 
     private List<?> flattenRows(Object data) {

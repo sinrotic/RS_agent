@@ -1,0 +1,4388 @@
+{
+  "profiled": {
+    "failed_requests": 2,
+    "failures": [
+      {
+        "query": "帮我推荐鼠标",
+        "label": "cold-variants-8",
+        "elapsed_ms": 3657.21,
+        "error": {
+          "error_code": "AGENT_STREAM_FAILED",
+          "retryable": true,
+          "status": 500,
+          "message": "agent stream failed"
+        }
+      },
+      {
+        "query": "推荐几款鼠标",
+        "label": "cold-variants-8",
+        "elapsed_ms": 3697.02,
+        "error": {
+          "error_code": "AGENT_STREAM_FAILED",
+          "retryable": true,
+          "status": 500,
+          "message": "agent stream failed"
+        }
+      }
+    ],
+    "groups": {
+      "first": {
+        "complete_ms": {
+          "n": 1,
+          "min": 3136.6,
+          "median": 3136.6,
+          "mean": 3136.6,
+          "max": 3136.6
+        },
+        "sse_done_ms": {
+          "n": 1,
+          "min": 3116.19,
+          "median": 3116.19,
+          "mean": 3116.19,
+          "max": 3116.19
+        },
+        "catalog_ms": {
+          "n": 1,
+          "min": 20.37,
+          "median": 20.37,
+          "mean": 20.37,
+          "max": 20.37
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 1,
+            "min": 387.095,
+            "median": 387.095,
+            "mean": 387.095,
+            "max": 387.095
+          },
+          "agent_mysql_pool": {
+            "n": 1,
+            "min": 0.704,
+            "median": 0.704,
+            "mean": 0.704,
+            "max": 0.704
+          },
+          "agent_mysql_setup": {
+            "n": 1,
+            "min": 3.536,
+            "median": 3.536,
+            "mean": 3.536,
+            "max": 3.536
+          },
+          "recommend_http": {
+            "n": 1,
+            "min": 1790.444,
+            "median": 1790.444,
+            "mean": 1790.444,
+            "max": 1790.444
+          },
+          "redis": {
+            "n": 1,
+            "min": 435.645,
+            "median": 435.645,
+            "mean": 435.645,
+            "max": 435.645
+          },
+          "remaining_agent": {
+            "n": 1,
+            "min": 119.109,
+            "median": 119.109,
+            "mean": 119.109,
+            "max": 119.109
+          },
+          "scylla": {
+            "n": 1,
+            "min": 31.886,
+            "median": 31.886,
+            "mean": 31.886,
+            "max": 31.886
+          },
+          "session_http": {
+            "n": 1,
+            "min": 248.411,
+            "median": 248.411,
+            "mean": 248.411,
+            "max": 248.411
+          }
+        },
+        "agent_total_ms": {
+          "n": 1,
+          "min": 3016.831,
+          "median": 3016.831,
+          "mean": 3016.831,
+          "max": 3016.831
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 1,
+              "min": 387.095,
+              "median": 387.095,
+              "mean": 387.095,
+              "max": 387.095
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.704,
+              "median": 0.704,
+              "mean": 0.704,
+              "max": 0.704
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 3.536,
+              "median": 3.536,
+              "mean": 3.536,
+              "max": 3.536
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 4,
+              "median": 4,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 4,
+              "median": 4,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 1,
+              "min": 107.026,
+              "median": 107.026,
+              "mean": 107.026,
+              "max": 107.026
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.044,
+              "median": 0.044,
+              "mean": 0.044,
+              "max": 0.044
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 1.014,
+              "median": 1.014,
+              "mean": 1.014,
+              "max": 1.014
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 1,
+              "median": 1,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 1,
+              "median": 1,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.065,
+              "median": 0.065,
+              "mean": 0.065,
+              "max": 0.065
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 1,
+            "min": 126.955,
+            "median": 126.955,
+            "mean": 126.955,
+            "max": 126.955
+          },
+          "bge_score": {
+            "n": 1,
+            "min": 379.601,
+            "median": 379.601,
+            "mean": 379.601,
+            "max": 379.601
+          },
+          "deepfm_http": {
+            "n": 1,
+            "min": 44.352,
+            "median": 44.352,
+            "mean": 44.352,
+            "max": 44.352
+          },
+          "diversity_select": {
+            "n": 1,
+            "min": 98.067,
+            "median": 98.067,
+            "mean": 98.067,
+            "max": 98.067
+          }
+        }
+      },
+      "warmups": {
+        "complete_ms": {
+          "n": 8,
+          "min": 690.42,
+          "median": 839.975,
+          "mean": 848.93,
+          "max": 1022.76
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 680.09,
+          "median": 827.575,
+          "mean": 837.164,
+          "max": 1010.32
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 10.3,
+          "median": 12.0,
+          "mean": 11.736,
+          "max": 13.11
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 357.906,
+            "median": 433.213,
+            "mean": 449.006,
+            "max": 645.694
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.064,
+            "median": 0.105,
+            "mean": 0.251,
+            "max": 0.556
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 2.567,
+            "median": 2.704,
+            "mean": 2.752,
+            "max": 3.166
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 155.277,
+            "median": 211.986,
+            "mean": 225.954,
+            "max": 361.583
+          },
+          "redis": {
+            "n": 8,
+            "min": 8.154,
+            "median": 9.929,
+            "mean": 10.526,
+            "max": 13.52
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 15.223,
+            "median": 19.267,
+            "mean": 19.221,
+            "max": 25.721
+          },
+          "scylla": {
+            "n": 8,
+            "min": 9.181,
+            "median": 11.988,
+            "mean": 11.832,
+            "max": 14.495
+          },
+          "session_http": {
+            "n": 8,
+            "min": 91.82,
+            "median": 106.383,
+            "mean": 105.917,
+            "max": 120.72
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 667.106,
+          "median": 816.324,
+          "mean": 825.458,
+          "max": 995.977
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 357.906,
+              "median": 433.213,
+              "mean": 449.006,
+              "max": 645.694
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.064,
+              "median": 0.105,
+              "mean": 0.251,
+              "max": 0.556
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 2.567,
+              "median": 2.704,
+              "mean": 2.752,
+              "max": 3.166
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 74.71,
+              "median": 101.381,
+              "mean": 107.745,
+              "max": 158.299
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.026,
+              "median": 0.401,
+              "mean": 0.374,
+              "max": 0.53
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.567,
+              "median": 0.673,
+              "mean": 0.68,
+              "max": 0.826
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.041,
+              "median": 0.049,
+              "mean": 0.049,
+              "max": 0.059
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 79.117,
+            "median": 127.582,
+            "mean": 129.404,
+            "max": 184.754
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.366,
+            "median": 0.408,
+            "mean": 0.84,
+            "max": 2.236
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.739,
+            "median": 8.106,
+            "mean": 8.196,
+            "max": 9.19
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 32.179,
+            "median": 34.377,
+            "mean": 46.361,
+            "max": 128.537
+          }
+        }
+      },
+      "single": {
+        "complete_ms": {
+          "n": 8,
+          "min": 725.97,
+          "median": 790.665,
+          "mean": 797.826,
+          "max": 936.28
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 714.2,
+          "median": 780.005,
+          "mean": 787.097,
+          "max": 926.32
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 9.82,
+          "median": 10.755,
+          "mean": 10.704,
+          "max": 11.75
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 327.792,
+            "median": 387.6,
+            "mean": 391.895,
+            "max": 451.586
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.058,
+            "median": 0.073,
+            "mean": 0.21,
+            "max": 0.494
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 1.81,
+            "median": 2.368,
+            "mean": 2.894,
+            "max": 7.185
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 148.426,
+            "median": 214.261,
+            "mean": 233.614,
+            "max": 339.195
+          },
+          "redis": {
+            "n": 8,
+            "min": 7.315,
+            "median": 8.33,
+            "mean": 8.793,
+            "max": 12.173
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 12.58,
+            "median": 14.889,
+            "mean": 15.434,
+            "max": 20.987
+          },
+          "scylla": {
+            "n": 8,
+            "min": 7.455,
+            "median": 9.744,
+            "mean": 9.692,
+            "max": 11.707
+          },
+          "session_http": {
+            "n": 8,
+            "min": 87.869,
+            "median": 109.469,
+            "mean": 114.423,
+            "max": 154.781
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 703.741,
+          "median": 770.702,
+          "mean": 776.954,
+          "max": 914.58
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 327.792,
+              "median": 387.6,
+              "mean": 391.895,
+              "max": 451.586
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.058,
+              "median": 0.073,
+              "mean": 0.21,
+              "max": 0.494
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 1.81,
+              "median": 2.368,
+              "mean": 2.894,
+              "max": 7.185
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 66.125,
+              "median": 95.484,
+              "mean": 92.646,
+              "max": 127.556
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.019,
+              "median": 0.41,
+              "mean": 0.357,
+              "max": 0.418
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.611,
+              "median": 0.664,
+              "mean": 0.689,
+              "max": 0.819
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.038,
+              "median": 0.05,
+              "mean": 0.049,
+              "max": 0.062
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 71.623,
+            "median": 138.053,
+            "mean": 158.499,
+            "max": 267.325
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.325,
+            "median": 0.362,
+            "mean": 0.37,
+            "max": 0.423
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.433,
+            "median": 7.643,
+            "mean": 7.662,
+            "max": 7.884
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 31.745,
+            "median": 32.781,
+            "mean": 34.066,
+            "max": 37.127
+          }
+        },
+        "expanded_disjoint_ms": {
+          "agent_commit": {
+            "n": 8,
+            "min": 327.792,
+            "median": 387.6,
+            "mean": 391.895,
+            "max": 451.586
+          },
+          "user_sql_autocommit": {
+            "n": 8,
+            "min": 0,
+            "median": 0.0,
+            "mean": 0,
+            "max": 0
+          },
+          "user_http_other": {
+            "n": 8,
+            "min": 87.869,
+            "median": 109.469,
+            "mean": 114.423,
+            "max": 154.781
+          },
+          "delivery_persist": {
+            "n": 8,
+            "min": 71.623,
+            "median": 138.053,
+            "mean": 158.499,
+            "max": 267.325
+          },
+          "recommend_other_and_http": {
+            "n": 8,
+            "min": 69.218,
+            "median": 74.997,
+            "mean": 75.115,
+            "max": 80.619
+          },
+          "scylla": {
+            "n": 8,
+            "min": 7.455,
+            "median": 9.744,
+            "mean": 9.692,
+            "max": 11.707
+          },
+          "redis": {
+            "n": 8,
+            "min": 7.315,
+            "median": 8.33,
+            "mean": 8.793,
+            "max": 12.173
+          },
+          "other_agent": {
+            "n": 8,
+            "min": 14.872,
+            "median": 17.69,
+            "mean": 18.538,
+            "max": 25.618
+          },
+          "mysql_explicit_commits_and_user_sql_fraction": {
+            "n": 8,
+            "min": 0.516,
+            "median": 0.62,
+            "mean": 0.628,
+            "max": 0.723
+          }
+        }
+      },
+      "concurrent_8": {
+        "complete_ms": {
+          "n": 8,
+          "min": 1246.85,
+          "median": 1428.815,
+          "mean": 1397.28,
+          "max": 1574.01
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 1238.54,
+          "median": 1420.44,
+          "mean": 1388.166,
+          "max": 1563.75
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 8.29,
+          "median": 8.77,
+          "mean": 9.091,
+          "max": 10.35
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 596.351,
+            "median": 658.168,
+            "mean": 685.732,
+            "max": 845.447
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.439,
+            "median": 12.154,
+            "mean": 21.104,
+            "max": 65.664
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 2.001,
+            "median": 2.348,
+            "mean": 2.329,
+            "max": 2.567
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 212.405,
+            "median": 495.072,
+            "mean": 446.176,
+            "max": 568.423
+          },
+          "redis": {
+            "n": 8,
+            "min": 8.234,
+            "median": 8.804,
+            "mean": 8.757,
+            "max": 9.436
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 12.799,
+            "median": 15.131,
+            "mean": 15.337,
+            "max": 17.261
+          },
+          "scylla": {
+            "n": 8,
+            "min": 8.29,
+            "median": 10.846,
+            "mean": 10.9,
+            "max": 12.502
+          },
+          "session_http": {
+            "n": 8,
+            "min": 113.691,
+            "median": 202.791,
+            "mean": 183.069,
+            "max": 205.863
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 1225.514,
+          "median": 1404.163,
+          "mean": 1373.404,
+          "max": 1550.628
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 596.351,
+              "median": 658.168,
+              "mean": 685.732,
+              "max": 845.447
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.439,
+              "median": 12.154,
+              "mean": 21.104,
+              "max": 65.664
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 2.001,
+              "median": 2.348,
+              "mean": 2.329,
+              "max": 2.567
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 132.135,
+              "median": 216.755,
+              "mean": 222.787,
+              "max": 351.167
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.016,
+              "median": 18.076,
+              "mean": 24.732,
+              "max": 71.475
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.529,
+              "median": 0.661,
+              "mean": 0.653,
+              "max": 0.818
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.03,
+              "median": 0.036,
+              "mean": 0.086,
+              "max": 0.44
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 136.48,
+            "median": 378.177,
+            "mean": 337.078,
+            "max": 434.709
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.299,
+            "median": 0.352,
+            "mean": 0.446,
+            "max": 0.644
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.173,
+            "median": 12.969,
+            "mean": 13.996,
+            "max": 23.2
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 31.434,
+            "median": 36.955,
+            "mean": 35.058,
+            "max": 37.339
+          }
+        }
+      },
+      "cold_variants_8": {
+        "complete_ms": {
+          "n": 6,
+          "min": 2232.88,
+          "median": 3006.25,
+          "mean": 2897.162,
+          "max": 3448.97
+        },
+        "sse_done_ms": {
+          "n": 6,
+          "min": 2222.95,
+          "median": 2994.92,
+          "mean": 2886.91,
+          "max": 3440.24
+        },
+        "catalog_ms": {
+          "n": 6,
+          "min": 8.71,
+          "median": 10.42,
+          "mean": 10.225,
+          "max": 11.45
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 269.412,
+            "median": 833.075,
+            "mean": 744.203,
+            "max": 1110.981
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.032,
+            "median": 0.334,
+            "mean": 0.273,
+            "max": 0.59
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 1.32,
+            "median": 2.403,
+            "mean": 2.182,
+            "max": 2.574
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 1224.85,
+            "median": 1958.014,
+            "mean": 2032.203,
+            "max": 2828.963
+          },
+          "redis": {
+            "n": 8,
+            "min": 2.752,
+            "median": 7.381,
+            "mean": 7.137,
+            "max": 10.828
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 11.872,
+            "median": 14.506,
+            "mean": 156.219,
+            "max": 711.111
+          },
+          "scylla": {
+            "n": 8,
+            "min": 8.662,
+            "median": 9.443,
+            "mean": 9.72,
+            "max": 11.502
+          },
+          "session_http": {
+            "n": 8,
+            "min": 116.989,
+            "median": 119.445,
+            "mean": 120.176,
+            "max": 130.657
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 2213.405,
+          "median": 3068.595,
+          "mean": 3072.113,
+          "max": 3682.946
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 269.412,
+              "median": 833.075,
+              "mean": 744.203,
+              "max": 1110.981
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.032,
+              "median": 0.334,
+              "mean": 0.273,
+              "max": 0.59
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 1.32,
+              "median": 2.403,
+              "mean": 2.182,
+              "max": 2.574
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 2,
+              "median": 4.0,
+              "mean": 3.5,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 4.0,
+              "mean": 3.5,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 116.534,
+              "median": 230.303,
+              "mean": 220.541,
+              "max": 334.071
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.02,
+              "median": 0.198,
+              "mean": 0.218,
+              "max": 0.501
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.673,
+              "median": 0.812,
+              "mean": 0.842,
+              "max": 1.022
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.029,
+              "median": 0.038,
+              "mean": 0.04,
+              "max": 0.055
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 120.325,
+            "median": 269.62,
+            "mean": 265.906,
+            "max": 407.264
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 270.982,
+            "median": 745.872,
+            "mean": 720.045,
+            "max": 1183.66
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 9.599,
+            "median": 30.798,
+            "mean": 74.341,
+            "max": 304.712
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 31.464,
+            "median": 36.048,
+            "mean": 35.839,
+            "max": 39.666
+          }
+        }
+      }
+    }
+  },
+  "control": {
+    "failed_requests": 0,
+    "failures": [],
+    "groups": {
+      "first": {
+        "complete_ms": {
+          "n": 1,
+          "min": 2387.2,
+          "median": 2387.2,
+          "mean": 2387.2,
+          "max": 2387.2
+        },
+        "sse_done_ms": {
+          "n": 1,
+          "min": 2377.6,
+          "median": 2377.6,
+          "mean": 2377.6,
+          "max": 2377.6
+        },
+        "catalog_ms": {
+          "n": 1,
+          "min": 9.57,
+          "median": 9.57,
+          "mean": 9.57,
+          "max": 9.57
+        }
+      },
+      "warmups": {
+        "complete_ms": {
+          "n": 8,
+          "min": 664.49,
+          "median": 806.535,
+          "mean": 787.92,
+          "max": 865.7
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 656.52,
+          "median": 797.495,
+          "mean": 778.479,
+          "max": 857.16
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 7.94,
+          "median": 8.83,
+          "mean": 9.411,
+          "max": 14.26
+        }
+      },
+      "single": {
+        "complete_ms": {
+          "n": 8,
+          "min": 680.2,
+          "median": 789.83,
+          "mean": 790.874,
+          "max": 907.3
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 672.57,
+          "median": 781.585,
+          "mean": 782.835,
+          "max": 898.71
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 7.47,
+          "median": 7.93,
+          "mean": 8.011,
+          "max": 8.95
+        }
+      },
+      "concurrent_8": {
+        "complete_ms": {
+          "n": 8,
+          "min": 1226.94,
+          "median": 1402.455,
+          "mean": 1406.812,
+          "max": 1533.36
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 1211.04,
+          "median": 1393.34,
+          "mean": 1397.454,
+          "max": 1524.13
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 7.26,
+          "median": 8.145,
+          "mean": 9.331,
+          "max": 15.86
+        }
+      }
+    }
+  },
+  "detailed": {
+    "failed_requests": 2,
+    "failures": [
+      {
+        "query": "帮我推荐鼠标",
+        "label": "cold-variants-8",
+        "elapsed_ms": 2873.07,
+        "error": {
+          "message": "agent stream failed",
+          "error_code": "AGENT_STREAM_FAILED",
+          "retryable": true,
+          "status": 500
+        }
+      },
+      {
+        "query": "推荐几款鼠标",
+        "label": "cold-variants-8",
+        "elapsed_ms": 2947.75,
+        "error": {
+          "message": "agent stream failed",
+          "error_code": "AGENT_STREAM_FAILED",
+          "retryable": true,
+          "status": 500
+        }
+      }
+    ],
+    "groups": {
+      "first": {
+        "complete_ms": {
+          "n": 1,
+          "min": 2638.38,
+          "median": 2638.38,
+          "mean": 2638.38,
+          "max": 2638.38
+        },
+        "sse_done_ms": {
+          "n": 1,
+          "min": 2630.3,
+          "median": 2630.3,
+          "mean": 2630.3,
+          "max": 2630.3
+        },
+        "catalog_ms": {
+          "n": 1,
+          "min": 8.04,
+          "median": 8.04,
+          "mean": 8.04,
+          "max": 8.04
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 1,
+            "min": 530.138,
+            "median": 530.138,
+            "mean": 530.138,
+            "max": 530.138
+          },
+          "agent_mysql_pool": {
+            "n": 1,
+            "min": 0.735,
+            "median": 0.735,
+            "mean": 0.735,
+            "max": 0.735
+          },
+          "agent_mysql_setup": {
+            "n": 1,
+            "min": 3.633,
+            "median": 3.633,
+            "mean": 3.633,
+            "max": 3.633
+          },
+          "agent_mysql_sql": {
+            "n": 1,
+            "min": 12.133,
+            "median": 12.133,
+            "mean": 12.133,
+            "max": 12.133
+          },
+          "recommend_http": {
+            "n": 1,
+            "min": 1262.31,
+            "median": 1262.31,
+            "mean": 1262.31,
+            "max": 1262.31
+          },
+          "redis": {
+            "n": 1,
+            "min": 440.717,
+            "median": 440.717,
+            "mean": 440.717,
+            "max": 440.717
+          },
+          "remaining_agent": {
+            "n": 1,
+            "min": 98.269,
+            "median": 98.269,
+            "mean": 98.269,
+            "max": 98.269
+          },
+          "scylla": {
+            "n": 1,
+            "min": 31.552,
+            "median": 31.552,
+            "mean": 31.552,
+            "max": 31.552
+          },
+          "session_http": {
+            "n": 1,
+            "min": 164.158,
+            "median": 164.158,
+            "mean": 164.158,
+            "max": 164.158
+          }
+        },
+        "agent_total_ms": {
+          "n": 1,
+          "min": 2543.646,
+          "median": 2543.646,
+          "mean": 2543.646,
+          "max": 2543.646
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 1,
+              "min": 530.138,
+              "median": 530.138,
+              "mean": 530.138,
+              "max": 530.138
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 12.133,
+              "median": 12.133,
+              "mean": 12.133,
+              "max": 12.133
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.735,
+              "median": 0.735,
+              "mean": 0.735,
+              "max": 0.735
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 3.633,
+              "median": 3.633,
+              "mean": 3.633,
+              "max": 3.633
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 4,
+              "median": 4,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 8,
+              "median": 8,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 4,
+              "median": 4,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 1,
+              "min": 188.499,
+              "median": 188.499,
+              "mean": 188.499,
+              "max": 188.499
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 6.099,
+              "median": 6.099,
+              "mean": 6.099,
+              "max": 6.099
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.03,
+              "median": 0.03,
+              "mean": 0.03,
+              "max": 0.03
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 0.978,
+              "median": 0.978,
+              "mean": 0.978,
+              "max": 0.978
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 1,
+              "median": 1,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 1,
+              "median": 1,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 82.603,
+              "median": 82.603,
+              "mean": 82.603,
+              "max": 82.603
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.072,
+              "median": 0.072,
+              "mean": 0.072,
+              "max": 0.072
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 1,
+            "min": 205.58,
+            "median": 205.58,
+            "mean": 205.58,
+            "max": 205.58
+          },
+          "bge_score": {
+            "n": 1,
+            "min": 301.455,
+            "median": 301.455,
+            "mean": 301.455,
+            "max": 301.455
+          },
+          "deepfm_http": {
+            "n": 1,
+            "min": 42.328,
+            "median": 42.328,
+            "mean": 42.328,
+            "max": 42.328
+          },
+          "diversity_select": {
+            "n": 1,
+            "min": 93.471,
+            "median": 93.471,
+            "mean": 93.471,
+            "max": 93.471
+          }
+        }
+      },
+      "warmups": {
+        "complete_ms": {
+          "n": 8,
+          "min": 771.89,
+          "median": 815.62,
+          "mean": 854.965,
+          "max": 1021.14
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 764.39,
+          "median": 807.505,
+          "mean": 846.817,
+          "max": 1012.5
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 7.39,
+          "median": 8.19,
+          "mean": 8.117,
+          "max": 8.78
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 350.709,
+            "median": 384.518,
+            "mean": 396.383,
+            "max": 486.845
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.063,
+            "median": 0.072,
+            "mean": 0.232,
+            "max": 0.56
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 2.377,
+            "median": 2.87,
+            "mean": 2.851,
+            "max": 3.128
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 6.256,
+            "median": 7.022,
+            "mean": 23.565,
+            "max": 83.327
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 190.202,
+            "median": 248.952,
+            "mean": 271.057,
+            "max": 411.467
+          },
+          "redis": {
+            "n": 8,
+            "min": 9.077,
+            "median": 11.116,
+            "mean": 11.74,
+            "max": 17.217
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 9.097,
+            "median": 10.156,
+            "mean": 12.987,
+            "max": 24.449
+          },
+          "scylla": {
+            "n": 8,
+            "min": 11.126,
+            "median": 12.791,
+            "mean": 13.312,
+            "max": 16.15
+          },
+          "session_http": {
+            "n": 8,
+            "min": 89.395,
+            "median": 99.177,
+            "mean": 104.347,
+            "max": 136.918
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 754.671,
+          "median": 796.329,
+          "mean": 836.475,
+          "max": 1000.287
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 350.709,
+              "median": 384.518,
+              "mean": 396.383,
+              "max": 486.845
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 6.256,
+              "median": 7.022,
+              "mean": 23.565,
+              "max": 83.327
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.063,
+              "median": 0.072,
+              "mean": 0.232,
+              "max": 0.56
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 2.377,
+              "median": 2.87,
+              "mean": 2.851,
+              "max": 3.128
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 8,
+              "median": 8.0,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 97.008,
+              "median": 115.057,
+              "mean": 123.049,
+              "max": 156.227
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 2.034,
+              "median": 33.888,
+              "mean": 48.697,
+              "max": 162.44
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.382,
+              "median": 0.4,
+              "mean": 0.472,
+              "max": 0.935
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.599,
+              "median": 0.678,
+              "mean": 0.705,
+              "max": 0.858
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 82.784,
+              "median": 92.915,
+              "mean": 97.196,
+              "max": 129.112
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.041,
+              "median": 0.048,
+              "mean": 0.049,
+              "max": 0.067
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 114.524,
+            "median": 169.896,
+            "mean": 174.858,
+            "max": 262.584
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.342,
+            "median": 0.396,
+            "mean": 0.857,
+            "max": 2.321
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.643,
+            "median": 7.989,
+            "mean": 8.174,
+            "max": 8.945
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 33.199,
+            "median": 35.675,
+            "mean": 47.302,
+            "max": 129.863
+          }
+        }
+      },
+      "single": {
+        "complete_ms": {
+          "n": 8,
+          "min": 700.85,
+          "median": 813.66,
+          "mean": 802.134,
+          "max": 900.99
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 690.05,
+          "median": 806.495,
+          "mean": 794.523,
+          "max": 894.05
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 6.81,
+          "median": 6.965,
+          "mean": 7.584,
+          "max": 10.77
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 359.175,
+            "median": 417.88,
+            "mean": 420.531,
+            "max": 482.389
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.064,
+            "median": 0.07,
+            "mean": 0.223,
+            "max": 0.52
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 2.108,
+            "median": 2.607,
+            "mean": 2.685,
+            "max": 3.278
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 5.441,
+            "median": 6.047,
+            "mean": 5.976,
+            "max": 6.431
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 164.181,
+            "median": 213.751,
+            "mean": 219.865,
+            "max": 318.231
+          },
+          "redis": {
+            "n": 8,
+            "min": 8.597,
+            "median": 9.269,
+            "mean": 10.448,
+            "max": 18.47
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 7.921,
+            "median": 9.394,
+            "mean": 10.909,
+            "max": 17.134
+          },
+          "scylla": {
+            "n": 8,
+            "min": 10.067,
+            "median": 10.521,
+            "mean": 10.58,
+            "max": 11.298
+          },
+          "session_http": {
+            "n": 8,
+            "min": 90.168,
+            "median": 107.264,
+            "mean": 104.591,
+            "max": 113.708
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 681.783,
+          "median": 797.435,
+          "mean": 785.809,
+          "max": 885.727
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 359.175,
+              "median": 417.88,
+              "mean": 420.531,
+              "max": 482.389
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 5.441,
+              "median": 6.047,
+              "mean": 5.976,
+              "max": 6.431
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.064,
+              "median": 0.07,
+              "mean": 0.223,
+              "max": 0.52
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 2.108,
+              "median": 2.607,
+              "mean": 2.685,
+              "max": 3.278
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 8,
+              "median": 8.0,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 85.581,
+              "median": 98.524,
+              "mean": 98.014,
+              "max": 122.623
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 2.122,
+              "median": 24.055,
+              "mean": 38.843,
+              "max": 124.972
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.018,
+              "median": 0.4,
+              "mean": 0.389,
+              "max": 0.657
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.56,
+              "median": 0.679,
+              "mean": 0.684,
+              "max": 0.826
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 83.499,
+              "median": 100.117,
+              "mean": 97.998,
+              "max": 107.341
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.035,
+              "median": 0.044,
+              "mean": 0.055,
+              "max": 0.128
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 90.144,
+            "median": 137.054,
+            "mean": 139.255,
+            "max": 226.857
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.338,
+            "median": 0.377,
+            "mean": 0.373,
+            "max": 0.396
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.395,
+            "median": 7.631,
+            "mean": 7.682,
+            "max": 8.239
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 32.268,
+            "median": 35.004,
+            "mean": 38.404,
+            "max": 58.229
+          }
+        },
+        "expanded_disjoint_ms": {
+          "agent_commit": {
+            "n": 8,
+            "min": 359.175,
+            "median": 417.88,
+            "mean": 420.531,
+            "max": 482.389
+          },
+          "user_sql_autocommit": {
+            "n": 8,
+            "min": 83.499,
+            "median": 100.117,
+            "mean": 97.998,
+            "max": 107.341
+          },
+          "user_http_other": {
+            "n": 8,
+            "min": 5.875,
+            "median": 6.529,
+            "mean": 6.594,
+            "max": 7.275
+          },
+          "delivery_persist": {
+            "n": 8,
+            "min": 90.144,
+            "median": 137.054,
+            "mean": 139.255,
+            "max": 226.857
+          },
+          "recommend_other_and_http": {
+            "n": 8,
+            "min": 70.24,
+            "median": 74.787,
+            "mean": 80.61,
+            "max": 110.796
+          },
+          "scylla": {
+            "n": 8,
+            "min": 10.067,
+            "median": 10.521,
+            "mean": 10.58,
+            "max": 11.298
+          },
+          "redis": {
+            "n": 8,
+            "min": 8.597,
+            "median": 9.269,
+            "mean": 10.448,
+            "max": 18.47
+          },
+          "other_agent": {
+            "n": 8,
+            "min": 15.952,
+            "median": 18.726,
+            "mean": 19.793,
+            "max": 26.381
+          },
+          "mysql_explicit_commits_and_user_sql_fraction": {
+            "n": 8,
+            "min": 0.687,
+            "median": 0.78,
+            "mean": 0.787,
+            "max": 0.845
+          }
+        }
+      },
+      "concurrent_8": {
+        "complete_ms": {
+          "n": 8,
+          "min": 1233.19,
+          "median": 1595.44,
+          "mean": 1589.249,
+          "max": 1727.1
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 1225.32,
+          "median": 1589.28,
+          "mean": 1583.016,
+          "max": 1721.92
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 4.66,
+          "median": 5.945,
+          "mean": 6.213,
+          "max": 7.84
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 566.9,
+            "median": 631.374,
+            "mean": 635.992,
+            "max": 716.482
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 21.613,
+            "median": 44.44,
+            "mean": 40.349,
+            "max": 53.817
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 2.373,
+            "median": 2.43,
+            "mean": 2.508,
+            "max": 2.818
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 4.933,
+            "median": 5.175,
+            "mean": 5.15,
+            "max": 5.323
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 450.799,
+            "median": 737.46,
+            "mean": 707.929,
+            "max": 784.127
+          },
+          "redis": {
+            "n": 8,
+            "min": 7.613,
+            "median": 9.334,
+            "mean": 9.51,
+            "max": 11.04
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 7.488,
+            "median": 9.597,
+            "mean": 9.592,
+            "max": 11.145
+          },
+          "scylla": {
+            "n": 8,
+            "min": 9.806,
+            "median": 12.346,
+            "mean": 12.133,
+            "max": 13.216
+          },
+          "session_http": {
+            "n": 8,
+            "min": 132.377,
+            "median": 151.806,
+            "mean": 149.704,
+            "max": 152.985
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 1216.931,
+          "median": 1578.374,
+          "mean": 1572.866,
+          "max": 1711.623
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 566.9,
+              "median": 631.374,
+              "mean": 635.992,
+              "max": 716.482
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 4.933,
+              "median": 5.175,
+              "mean": 5.15,
+              "max": 5.323
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 21.613,
+              "median": 44.44,
+              "mean": 40.349,
+              "max": 53.817
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 2.373,
+              "median": 2.43,
+              "mean": 2.508,
+              "max": 2.818
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 8,
+              "median": 8.0,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 124.731,
+              "median": 124.841,
+              "mean": 141.289,
+              "max": 256.646
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 89.954,
+              "median": 365.32,
+              "mean": 342.041,
+              "max": 454.072
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.303,
+              "median": 50.531,
+              "mean": 60.566,
+              "max": 155.726
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.518,
+              "median": 0.629,
+              "mean": 0.679,
+              "max": 0.884
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 126.04,
+              "median": 144.852,
+              "mean": 142.525,
+              "max": 145.999
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.038,
+              "median": 0.045,
+              "mean": 0.077,
+              "max": 0.315
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 348.765,
+            "median": 573.223,
+            "mean": 545.802,
+            "max": 581.249
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.33,
+            "median": 0.375,
+            "mean": 0.39,
+            "max": 0.47
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.501,
+            "median": 28.182,
+            "mean": 27.903,
+            "max": 45.055
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 38.209,
+            "median": 44.576,
+            "mean": 44.983,
+            "max": 51.425
+          }
+        }
+      },
+      "cold_variants_8": {
+        "complete_ms": {
+          "n": 6,
+          "min": 1082.47,
+          "median": 2668.785,
+          "mean": 2336.085,
+          "max": 3058.72
+        },
+        "sse_done_ms": {
+          "n": 6,
+          "min": 1075.49,
+          "median": 2661.65,
+          "mean": 2329.178,
+          "max": 3052.04
+        },
+        "catalog_ms": {
+          "n": 6,
+          "min": 6.54,
+          "median": 6.89,
+          "mean": 6.883,
+          "max": 7.38
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 373.926,
+            "median": 587.076,
+            "mean": 566.467,
+            "max": 734.437
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.059,
+            "median": 0.368,
+            "mean": 0.358,
+            "max": 0.787
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 1.34,
+            "median": 2.344,
+            "mean": 2.164,
+            "max": 2.647
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 2.263,
+            "median": 4.697,
+            "mean": 12.019,
+            "max": 67.029
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 519.52,
+            "median": 1695.656,
+            "mean": 1551.572,
+            "max": 2283.934
+          },
+          "redis": {
+            "n": 8,
+            "min": 2.642,
+            "median": 8.458,
+            "mean": 7.342,
+            "max": 9.589
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 8.391,
+            "median": 10.216,
+            "mean": 169.94,
+            "max": 673.776
+          },
+          "scylla": {
+            "n": 8,
+            "min": 7.41,
+            "median": 11.201,
+            "mean": 10.864,
+            "max": 13.089
+          },
+          "session_http": {
+            "n": 8,
+            "min": 104.233,
+            "median": 156.089,
+            "mean": 144.927,
+            "max": 157.569
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 1067.534,
+          "median": 2800.625,
+          "mean": 2465.652,
+          "max": 3043.606
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 373.926,
+              "median": 587.076,
+              "mean": 566.467,
+              "max": 734.437
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 2.263,
+              "median": 4.697,
+              "mean": 12.019,
+              "max": 67.029
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.059,
+              "median": 0.368,
+              "mean": 0.358,
+              "max": 0.787
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 1.34,
+              "median": 2.344,
+              "mean": 2.164,
+              "max": 2.647
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 2,
+              "median": 4.0,
+              "mean": 3.5,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 4,
+              "median": 8.0,
+              "mean": 7,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 4.0,
+              "mean": 3.5,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 82.755,
+              "median": 170.475,
+              "mean": 147.916,
+              "max": 218.692
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 1.61,
+              "median": 2.347,
+              "mean": 145.621,
+              "max": 615.983
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.017,
+              "median": 0.363,
+              "mean": 0.313,
+              "max": 0.8
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.467,
+              "median": 0.772,
+              "mean": 0.748,
+              "max": 0.972
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 99.731,
+              "median": 149.456,
+              "mean": 138.774,
+              "max": 150.288
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.028,
+              "median": 0.035,
+              "mean": 0.036,
+              "max": 0.052
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 88.924,
+            "median": 203.931,
+            "mean": 295.842,
+            "max": 792.568
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 281.288,
+            "median": 866.629,
+            "mean": 918.197,
+            "max": 1652.41
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 6.949,
+            "median": 7.321,
+            "mean": 7.491,
+            "max": 8.636
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 45.663,
+            "median": 52.562,
+            "mean": 51.929,
+            "max": 56.893
+          }
+        }
+      }
+    }
+  },
+  "nvme": {
+    "failed_requests": 0,
+    "failures": [],
+    "groups": {
+      "first": {
+        "complete_ms": {
+          "n": 1,
+          "min": 2037.46,
+          "median": 2037.46,
+          "mean": 2037.46,
+          "max": 2037.46
+        },
+        "sse_done_ms": {
+          "n": 1,
+          "min": 2028.47,
+          "median": 2028.47,
+          "mean": 2028.47,
+          "max": 2028.47
+        },
+        "catalog_ms": {
+          "n": 1,
+          "min": 8.95,
+          "median": 8.95,
+          "mean": 8.95,
+          "max": 8.95
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 1,
+            "min": 43.998,
+            "median": 43.998,
+            "mean": 43.998,
+            "max": 43.998
+          },
+          "agent_mysql_pool": {
+            "n": 1,
+            "min": 0.61,
+            "median": 0.61,
+            "mean": 0.61,
+            "max": 0.61
+          },
+          "agent_mysql_setup": {
+            "n": 1,
+            "min": 2.466,
+            "median": 2.466,
+            "mean": 2.466,
+            "max": 2.466
+          },
+          "agent_mysql_sql": {
+            "n": 1,
+            "min": 12.529,
+            "median": 12.529,
+            "mean": 12.529,
+            "max": 12.529
+          },
+          "recommend_http": {
+            "n": 1,
+            "min": 1200.359,
+            "median": 1200.359,
+            "mean": 1200.359,
+            "max": 1200.359
+          },
+          "redis": {
+            "n": 1,
+            "min": 443.916,
+            "median": 443.916,
+            "mean": 443.916,
+            "max": 443.916
+          },
+          "remaining_agent": {
+            "n": 1,
+            "min": 93.495,
+            "median": 93.495,
+            "mean": 93.495,
+            "max": 93.495
+          },
+          "scylla": {
+            "n": 1,
+            "min": 31.633,
+            "median": 31.633,
+            "mean": 31.633,
+            "max": 31.633
+          },
+          "session_http": {
+            "n": 1,
+            "min": 111.463,
+            "median": 111.463,
+            "mean": 111.463,
+            "max": 111.463
+          }
+        },
+        "agent_total_ms": {
+          "n": 1,
+          "min": 1940.47,
+          "median": 1940.47,
+          "mean": 1940.47,
+          "max": 1940.47
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 1,
+              "min": 43.998,
+              "median": 43.998,
+              "mean": 43.998,
+              "max": 43.998
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 12.529,
+              "median": 12.529,
+              "mean": 12.529,
+              "max": 12.529
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.61,
+              "median": 0.61,
+              "mean": 0.61,
+              "max": 0.61
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 2.466,
+              "median": 2.466,
+              "mean": 2.466,
+              "max": 2.466
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 4,
+              "median": 4,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 8,
+              "median": 8,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 4,
+              "median": 4,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 1,
+              "min": 16.16,
+              "median": 16.16,
+              "mean": 16.16,
+              "max": 16.16
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 13.139,
+              "median": 13.139,
+              "mean": 13.139,
+              "max": 13.139
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.047,
+              "median": 0.047,
+              "mean": 0.047,
+              "max": 0.047
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 0.743,
+              "median": 0.743,
+              "mean": 0.743,
+              "max": 0.743
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 1,
+              "median": 1,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 1,
+              "median": 1,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 1,
+              "min": 25.355,
+              "median": 25.355,
+              "mean": 25.355,
+              "max": 25.355
+            },
+            "pool_ms": {
+              "n": 1,
+              "min": 0.077,
+              "median": 0.077,
+              "mean": 0.077,
+              "max": 0.077
+            },
+            "transaction_setup_ms": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 1,
+              "min": 0,
+              "median": 0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 1,
+              "min": 2,
+              "median": 2,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 1,
+            "min": 40.355,
+            "median": 40.355,
+            "mean": 40.355,
+            "max": 40.355
+          },
+          "bge_score": {
+            "n": 1,
+            "min": 303.372,
+            "median": 303.372,
+            "mean": 303.372,
+            "max": 303.372
+          },
+          "deepfm_http": {
+            "n": 1,
+            "min": 44.958,
+            "median": 44.958,
+            "mean": 44.958,
+            "max": 44.958
+          },
+          "diversity_select": {
+            "n": 1,
+            "min": 115.962,
+            "median": 115.962,
+            "mean": 115.962,
+            "max": 115.962
+          }
+        }
+      },
+      "warmups": {
+        "complete_ms": {
+          "n": 8,
+          "min": 206.34,
+          "median": 232.76,
+          "mean": 249.434,
+          "max": 355.8
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 199.9,
+          "median": 226.2,
+          "mean": 242.173,
+          "max": 346.26
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 6.4,
+          "median": 7.015,
+          "mean": 7.232,
+          "max": 9.5
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 47.388,
+            "median": 52.811,
+            "mean": 53.682,
+            "max": 63.068
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.053,
+            "median": 0.057,
+            "mean": 0.06,
+            "max": 0.084
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 1.63,
+            "median": 1.801,
+            "mean": 1.808,
+            "max": 2.105
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 4.802,
+            "median": 5.732,
+            "mean": 6.665,
+            "max": 14.841
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 95.096,
+            "median": 105.203,
+            "mean": 121.786,
+            "max": 220.464
+          },
+          "redis": {
+            "n": 8,
+            "min": 7.697,
+            "median": 8.631,
+            "mean": 10.031,
+            "max": 17.062
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 8.582,
+            "median": 9.154,
+            "mean": 10.681,
+            "max": 18.926
+          },
+          "scylla": {
+            "n": 8,
+            "min": 8.291,
+            "median": 9.525,
+            "mean": 10.267,
+            "max": 13.163
+          },
+          "session_http": {
+            "n": 8,
+            "min": 17.088,
+            "median": 18.376,
+            "mean": 19.237,
+            "max": 25.498
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 193.054,
+          "median": 218.599,
+          "mean": 234.217,
+          "max": 336.631
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 47.388,
+              "median": 52.811,
+              "mean": 53.682,
+              "max": 63.068
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 4.802,
+              "median": 5.732,
+              "mean": 6.665,
+              "max": 14.841
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.053,
+              "median": 0.057,
+              "mean": 0.06,
+              "max": 0.084
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 1.63,
+              "median": 1.801,
+              "mean": 1.808,
+              "max": 2.105
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 8,
+              "median": 8.0,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 10.823,
+              "median": 14.84,
+              "mean": 13.673,
+              "max": 15.644
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 2.244,
+              "median": 7.611,
+              "mean": 8.884,
+              "max": 22.027
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.02,
+              "median": 0.024,
+              "mean": 0.069,
+              "max": 0.39
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.498,
+              "median": 0.616,
+              "mean": 0.612,
+              "max": 0.673
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 11.56,
+              "median": 12.42,
+              "mean": 13.103,
+              "max": 19.313
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.034,
+              "median": 0.041,
+              "mean": 0.043,
+              "max": 0.067
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 15.711,
+            "median": 24.905,
+            "mean": 24.932,
+            "max": 35.37
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.333,
+            "median": 0.39,
+            "mean": 0.826,
+            "max": 2.042
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.986,
+            "median": 8.321,
+            "mean": 8.456,
+            "max": 9.316
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 34.271,
+            "median": 37.11,
+            "mean": 46.787,
+            "max": 116.705
+          }
+        }
+      },
+      "single": {
+        "complete_ms": {
+          "n": 8,
+          "min": 207.02,
+          "median": 215.365,
+          "mean": 224.324,
+          "max": 273.0
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 200.68,
+          "median": 208.685,
+          "mean": 217.846,
+          "max": 266.61
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 6.26,
+          "median": 6.405,
+          "mean": 6.454,
+          "max": 6.86
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 50.342,
+            "median": 51.773,
+            "mean": 52.712,
+            "max": 55.613
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 0.055,
+            "median": 0.06,
+            "mean": 0.06,
+            "max": 0.062
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 1.325,
+            "median": 1.653,
+            "mean": 1.811,
+            "max": 3.243
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 4.228,
+            "median": 4.621,
+            "mean": 6.348,
+            "max": 17.453
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 93.025,
+            "median": 100.242,
+            "mean": 107.551,
+            "max": 149.986
+          },
+          "redis": {
+            "n": 8,
+            "min": 7.049,
+            "median": 7.393,
+            "mean": 7.373,
+            "max": 7.789
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 7.435,
+            "median": 8.201,
+            "mean": 9.36,
+            "max": 18.91
+          },
+          "scylla": {
+            "n": 8,
+            "min": 7.784,
+            "median": 8.228,
+            "mean": 8.323,
+            "max": 9.33
+          },
+          "session_http": {
+            "n": 8,
+            "min": 16.478,
+            "median": 16.856,
+            "mean": 17.523,
+            "max": 21.199
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 194.132,
+          "median": 201.785,
+          "mean": 211.062,
+          "max": 260.127
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 50.342,
+              "median": 51.773,
+              "mean": 52.712,
+              "max": 55.613
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 4.228,
+              "median": 4.621,
+              "mean": 6.348,
+              "max": 17.453
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.055,
+              "median": 0.06,
+              "mean": 0.06,
+              "max": 0.062
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 1.325,
+              "median": 1.653,
+              "mean": 1.811,
+              "max": 3.243
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 8,
+              "median": 8.0,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 13.676,
+              "median": 15.027,
+              "mean": 14.874,
+              "max": 15.677
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 2.003,
+              "median": 2.296,
+              "mean": 12.634,
+              "max": 59.374
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.021,
+              "median": 0.025,
+              "mean": 0.026,
+              "max": 0.036
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.573,
+              "median": 0.612,
+              "mean": 0.639,
+              "max": 0.816
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 11.433,
+              "median": 11.728,
+              "mean": 12.247,
+              "max": 15.902
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.031,
+              "median": 0.035,
+              "mean": 0.037,
+              "max": 0.049
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 17.854,
+            "median": 19.711,
+            "mean": 29.505,
+            "max": 75.959
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.332,
+            "median": 0.399,
+            "mean": 0.39,
+            "max": 0.438
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.608,
+            "median": 7.945,
+            "mean": 8.723,
+            "max": 14.319
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 33.939,
+            "median": 35.253,
+            "mean": 35.809,
+            "max": 39.54
+          }
+        },
+        "expanded_disjoint_ms": {
+          "agent_commit": {
+            "n": 8,
+            "min": 50.342,
+            "median": 51.773,
+            "mean": 52.712,
+            "max": 55.613
+          },
+          "user_sql_autocommit": {
+            "n": 8,
+            "min": 11.433,
+            "median": 11.728,
+            "mean": 12.247,
+            "max": 15.902
+          },
+          "user_http_other": {
+            "n": 8,
+            "min": 4.747,
+            "median": 5.162,
+            "mean": 5.276,
+            "max": 6.253
+          },
+          "delivery_persist": {
+            "n": 8,
+            "min": 17.854,
+            "median": 19.711,
+            "mean": 29.505,
+            "max": 75.959
+          },
+          "recommend_other_and_http": {
+            "n": 8,
+            "min": 73.545,
+            "median": 78.713,
+            "mean": 78.046,
+            "max": 83.28
+          },
+          "scylla": {
+            "n": 8,
+            "min": 7.784,
+            "median": 8.228,
+            "mean": 8.323,
+            "max": 9.33
+          },
+          "redis": {
+            "n": 8,
+            "min": 7.049,
+            "median": 7.393,
+            "mean": 7.373,
+            "max": 7.789
+          },
+          "other_agent": {
+            "n": 8,
+            "min": 13.239,
+            "median": 15.294,
+            "mean": 17.579,
+            "max": 27.573
+          },
+          "mysql_explicit_commits_and_user_sql_fraction": {
+            "n": 8,
+            "min": 0.301,
+            "median": 0.4,
+            "mean": 0.382,
+            "max": 0.428
+          }
+        }
+      },
+      "concurrent_8": {
+        "complete_ms": {
+          "n": 8,
+          "min": 299.06,
+          "median": 346.735,
+          "mean": 341.587,
+          "max": 370.63
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 292.14,
+          "median": 342.055,
+          "mean": 336.569,
+          "max": 367.07
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 3.54,
+          "median": 5.21,
+          "mean": 4.999,
+          "max": 6.9
+        },
+        "agent_disjoint_ms": {
+          "agent_mysql_commit": {
+            "n": 8,
+            "min": 83.611,
+            "median": 98.332,
+            "mean": 97.38,
+            "max": 109.919
+          },
+          "agent_mysql_pool": {
+            "n": 8,
+            "min": 7.301,
+            "median": 26.417,
+            "mean": 25.122,
+            "max": 40.245
+          },
+          "agent_mysql_setup": {
+            "n": 8,
+            "min": 1.216,
+            "median": 1.373,
+            "mean": 1.429,
+            "max": 1.785
+          },
+          "agent_mysql_sql": {
+            "n": 8,
+            "min": 3.605,
+            "median": 4.325,
+            "mean": 16.409,
+            "max": 62.425
+          },
+          "recommend_http": {
+            "n": 8,
+            "min": 101.151,
+            "median": 134.188,
+            "mean": 136.915,
+            "max": 184.264
+          },
+          "redis": {
+            "n": 8,
+            "min": 5.533,
+            "median": 7.017,
+            "mean": 7.06,
+            "max": 8.576
+          },
+          "remaining_agent": {
+            "n": 8,
+            "min": 7.062,
+            "median": 7.305,
+            "mean": 9.448,
+            "max": 17.144
+          },
+          "scylla": {
+            "n": 8,
+            "min": 6.443,
+            "median": 7.278,
+            "mean": 7.196,
+            "max": 8.008
+          },
+          "session_http": {
+            "n": 8,
+            "min": 18.367,
+            "median": 28.739,
+            "mean": 27.822,
+            "max": 30.79
+          }
+        },
+        "agent_total_ms": {
+          "n": 8,
+          "min": 284.701,
+          "median": 334.411,
+          "mean": 328.78,
+          "max": 359.199
+        },
+        "jdbc": {
+          "agent-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 83.611,
+              "median": 98.332,
+              "mean": 97.38,
+              "max": 109.919
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 3.605,
+              "median": 4.325,
+              "mean": 16.409,
+              "max": 62.425
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 7.301,
+              "median": 26.417,
+              "mean": 25.122,
+              "max": 40.245
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 1.216,
+              "median": 1.373,
+              "mean": 1.429,
+              "max": 1.785
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 8,
+              "median": 8.0,
+              "mean": 8,
+              "max": 8
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 4,
+              "median": 4.0,
+              "mean": 4,
+              "max": 4
+            }
+          },
+          "recommend-fast": {
+            "commit_ms": {
+              "n": 8,
+              "min": 10.605,
+              "median": 20.428,
+              "mean": 23.166,
+              "max": 35.891
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 1.524,
+              "median": 2.022,
+              "mean": 6.605,
+              "max": 39.317
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.014,
+              "median": 1.295,
+              "mean": 2.715,
+              "max": 8.087
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0.414,
+              "median": 0.521,
+              "mean": 0.534,
+              "max": 0.655
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 1,
+              "median": 1.0,
+              "mean": 1,
+              "max": 1
+            }
+          },
+          "user": {
+            "commit_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_ms": {
+              "n": 8,
+              "min": 13.45,
+              "median": 23.921,
+              "mean": 22.704,
+              "max": 25.671
+            },
+            "pool_ms": {
+              "n": 8,
+              "min": 0.031,
+              "median": 0.043,
+              "mean": 0.055,
+              "max": 0.114
+            },
+            "transaction_setup_ms": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "commit_count": {
+              "n": 8,
+              "min": 0,
+              "median": 0.0,
+              "mean": 0,
+              "max": 0
+            },
+            "sql_execute_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            },
+            "pool_borrow_count": {
+              "n": 8,
+              "min": 2,
+              "median": 2.0,
+              "mean": 2,
+              "max": 2
+            }
+          }
+        },
+        "recommend_substages_ms": {
+          "delivery_persist": {
+            "n": 8,
+            "min": 14.548,
+            "median": 35.018,
+            "mean": 34.058,
+            "max": 65.622
+          },
+          "bge_score": {
+            "n": 8,
+            "min": 0.319,
+            "median": 0.517,
+            "mean": 0.506,
+            "max": 0.691
+          },
+          "deepfm_http": {
+            "n": 8,
+            "min": 7.44,
+            "median": 12.191,
+            "mean": 11.663,
+            "max": 16.668
+          },
+          "diversity_select": {
+            "n": 8,
+            "min": 38.708,
+            "median": 40.233,
+            "mean": 40.607,
+            "max": 43.608
+          }
+        }
+      }
+    }
+  },
+  "nvme-control": {
+    "failed_requests": 2,
+    "failures": [
+      {
+        "query": "帮我推荐鼠标",
+        "label": "cold-variants-8",
+        "elapsed_ms": 1257.3,
+        "error": {
+          "error_code": "AGENT_STREAM_FAILED",
+          "retryable": true,
+          "status": 500,
+          "message": "agent stream failed"
+        }
+      },
+      {
+        "query": "推荐几款鼠标",
+        "label": "cold-variants-8",
+        "elapsed_ms": 1272.07,
+        "error": {
+          "error_code": "AGENT_STREAM_FAILED",
+          "retryable": true,
+          "status": 500,
+          "message": "agent stream failed"
+        }
+      }
+    ],
+    "groups": {
+      "first": {
+        "complete_ms": {
+          "n": 1,
+          "min": 1866.59,
+          "median": 1866.59,
+          "mean": 1866.59,
+          "max": 1866.59
+        },
+        "sse_done_ms": {
+          "n": 1,
+          "min": 1859.39,
+          "median": 1859.39,
+          "mean": 1859.39,
+          "max": 1859.39
+        },
+        "catalog_ms": {
+          "n": 1,
+          "min": 7.17,
+          "median": 7.17,
+          "mean": 7.17,
+          "max": 7.17
+        }
+      },
+      "warmups": {
+        "complete_ms": {
+          "n": 8,
+          "min": 189.66,
+          "median": 215.155,
+          "mean": 225.8,
+          "max": 331.81
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 183.89,
+          "median": 208.8,
+          "mean": 219.643,
+          "max": 325.62
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 5.75,
+          "median": 6.075,
+          "mean": 6.133,
+          "max": 6.73
+        }
+      },
+      "single": {
+        "complete_ms": {
+          "n": 8,
+          "min": 188.41,
+          "median": 196.7,
+          "mean": 197.615,
+          "max": 210.32
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 182.92,
+          "median": 190.525,
+          "mean": 191.472,
+          "max": 204.24
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 5.47,
+          "median": 6.21,
+          "mean": 6.119,
+          "max": 6.65
+        }
+      },
+      "concurrent_8": {
+        "complete_ms": {
+          "n": 8,
+          "min": 288.35,
+          "median": 316.57,
+          "mean": 322.743,
+          "max": 354.49
+        },
+        "sse_done_ms": {
+          "n": 8,
+          "min": 282.68,
+          "median": 312.745,
+          "mean": 318.17,
+          "max": 350.68
+        },
+        "catalog_ms": {
+          "n": 8,
+          "min": 3.74,
+          "median": 4.545,
+          "mean": 4.555,
+          "max": 5.65
+        }
+      },
+      "cold_variants_8": {
+        "complete_ms": {
+          "n": 6,
+          "min": 838.27,
+          "median": 1632.4,
+          "mean": 1563.715,
+          "max": 2244.8
+        },
+        "sse_done_ms": {
+          "n": 6,
+          "min": 831.65,
+          "median": 1626.02,
+          "mean": 1557.088,
+          "max": 2238.78
+        },
+        "catalog_ms": {
+          "n": 6,
+          "min": 5.87,
+          "median": 6.325,
+          "mean": 6.6,
+          "max": 8.43
+        }
+      }
+    }
+  }
+}

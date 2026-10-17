@@ -1,0 +1,28 @@
+{
+  "state": "PASS",
+  "checks": {
+    "frozen_test_regression": true,
+    "ann": true,
+    "candidate_replay": true,
+    "semantic_type_smoke_vs_online": true,
+    "home_latency": true,
+    "sealed_snapshot_integrity": true,
+    "sealed_hit100": true,
+    "sealed_hit10": true,
+    "sealed_mrr": true,
+    "user_fault_fallback": true,
+    "query_fault_fallback": true,
+    "old_service_healthy": true,
+    "concurrency8": true,
+    "guard_ann": true,
+    "protected_teacher_fault": true,
+    "actual_java_route": true,
+    "artifact_integrity": true,
+    "java_tests": true,
+    "jar_matches_tested_candidate": true
+  },
+  "jar_sha256": "9365eee81054a8d2a5f8003fbfccb4eaab7fcf4e3467923d955e64e139c982a2",
+  "guarded_route_ann": "PASS",
+  "model_sha256": "654ef0e6dbf386297e0bce10ab54a58d35f73f2c73532ff10b9f58b8a5fe589a",
+  "timestamp": 1791741559.0467615
+}

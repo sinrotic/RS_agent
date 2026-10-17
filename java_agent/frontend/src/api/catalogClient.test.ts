@@ -64,12 +64,9 @@ describe('Catalog batch client contract', () => {
         category: 'Audio',
         brand: 'Acme',
         price: 248,
-        rating: null,
         store: 'Catalog Store',
-        features: [],
         description: 'Catalog summary',
         imageUrl: 'https://example.test/headphones.png',
-        badges: [],
         summary: 'Catalog summary',
       },
     ]);

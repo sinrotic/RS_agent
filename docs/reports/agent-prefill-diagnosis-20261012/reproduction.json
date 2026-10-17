@@ -1,0 +1,745 @@
+{
+  "started_at_utc": "2026-10-11T16:14:55.547091+00:00",
+  "cases": [
+    {
+      "cycle": 0,
+      "label": "uncached",
+      "started_at_utc": "2026-10-11T16:16:56.477714+00:00",
+      "finished_at_utc": "2026-10-11T16:16:59.346455+00:00",
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "ttft_ms": 2829.473,
+      "prefill_ms": 2810.066,
+      "queue_ms": 0.029,
+      "client_complete_ms": 2859.175,
+      "completion_tokens": 1,
+      "jit_events": [
+        "(EngineCore pid=2261595) WARNING 10-12 00:16:56 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel (key=[('*u64', 'D'), ('*i64', 'D'), ('i32', ''), ('constexpr', 8), ('constexpr', 540672), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2261595) WARNING 10-12 00:16:57 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel (key=[('i32', None), ('i32', None), ('*i32', 'D'), ('*i64', 'D'), ('*i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('*i64', 'D'), ('constexpr', 1), ('constexpr', 0), ('constexpr', 1), ('constexpr', -1), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2261595) WARNING 10-12 00:16:57 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _causal_conv1d_fwd_kernel (key=[('*bf16', 'D'), ('*bf16', 'D'), ('constexpr', None), ('*bf16', 'D'), ('*i32', 'D'), ('*u1', 'D'), ('*i32', 'D'), ('*i32', 'D'), ('*i32', 'D'), ('constexpr', None), ('constexpr', None), ('constexpr', None), ('constexpr', None), ('*bf16', 'D'), ('constexpr', 8192), ('constexpr', 264), ('constexpr', 1), ('i64', 'D'), ('constexpr', 4), ('constexpr', 1), ('constexpr', 1081344), ('constexpr', 1), ('constexpr', 8192), ('constexpr', 1), ('constexpr', 1), ('i64', 'D'), ('constexpr', 0), ('constexpr', -1), ('constexpr', 0), ('constexpr', False), ('constexpr', 4), ('constexpr', True), ('constexpr', False), ('constexpr', True), ('constexpr', 4), ('constexpr', 8), ('constexpr', 256)]{'num_stages': 2, 'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2261595) WARNING 10-12 00:16:58 [jit_monitor.py:98] Triton kernel JIT compilation during inference: batch_memcpy_kernel (key=[('*u64', 'D'), ('*u64', 'D'), ('*i32', 'D'), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2261595) WARNING 10-12 00:16:58 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel (key=[('*u64', 'D'), ('*i64', 'D'), ('constexpr', 1), ('constexpr', 8), ('constexpr', 540672), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''})."
+      ],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 3
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 10
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 0,
+      "label": "first-prefix-hit",
+      "started_at_utc": "2026-10-11T16:16:59.449695+00:00",
+      "finished_at_utc": "2026-10-11T16:16:59.910336+00:00",
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "ttft_ms": 442.087,
+      "prefill_ms": 439.428,
+      "queue_ms": 0.024,
+      "client_complete_ms": 451.233,
+      "completion_tokens": 1,
+      "jit_events": [
+        "(EngineCore pid=2261595) WARNING 10-12 00:16:59 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _fused_post_conv_kernel (key=[('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*fp32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', ''), ('constexpr', 16), ('constexpr', 32), ('constexpr', 128), ('constexpr', 128), ('constexpr', True), ('constexpr', 1e-06), ('constexpr', False), ('constexpr', 20.0), ('constexpr', 16), ('constexpr', 128), ('constexpr', 128)]{'num_warps': 4, 'num_stages': 2, 'debug': False, 'instrumentation_mode': ''})."
+      ],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 91
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 17
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 0,
+      "label": "second-prefix-hit",
+      "started_at_utc": "2026-10-11T16:17:00.018546+00:00",
+      "finished_at_utc": "2026-10-11T16:17:00.213966+00:00",
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 4752.0,
+      "ttft_ms": 177.151,
+      "prefill_ms": 174.748,
+      "queue_ms": 0.024,
+      "client_complete_ms": 186.067,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 91
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 17
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 1,
+      "label": "uncached",
+      "started_at_utc": "2026-10-11T16:17:00.561774+00:00",
+      "finished_at_utc": "2026-10-11T16:17:00.985488+00:00",
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "ttft_ms": 397.947,
+      "prefill_ms": 394.988,
+      "queue_ms": 0.025,
+      "client_complete_ms": 413.651,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 100
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 0
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 1,
+      "label": "first-prefix-hit",
+      "started_at_utc": "2026-10-11T16:17:01.092713+00:00",
+      "finished_at_utc": "2026-10-11T16:17:01.242207+00:00",
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "ttft_ms": 129.966,
+      "prefill_ms": 127.028,
+      "queue_ms": 0.025,
+      "client_complete_ms": 139.902,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 100
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 0
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 1,
+      "label": "second-prefix-hit",
+      "started_at_utc": "2026-10-11T16:17:01.351873+00:00",
+      "finished_at_utc": "2026-10-11T16:17:01.546396+00:00",
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 4752.0,
+      "ttft_ms": 176.191,
+      "prefill_ms": 173.76,
+      "queue_ms": 0.024,
+      "client_complete_ms": 185.232,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 99
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 85
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 2,
+      "label": "uncached",
+      "started_at_utc": "2026-10-11T16:17:01.869469+00:00",
+      "finished_at_utc": "2026-10-11T16:17:02.286063+00:00",
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "ttft_ms": 397.639,
+      "prefill_ms": 394.878,
+      "queue_ms": 0.02,
+      "client_complete_ms": 407.245,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 99
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 85
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 2,
+      "label": "first-prefix-hit",
+      "started_at_utc": "2026-10-11T16:17:02.395666+00:00",
+      "finished_at_utc": "2026-10-11T16:17:02.544158+00:00",
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "ttft_ms": 129.781,
+      "prefill_ms": 127.151,
+      "queue_ms": 0.023,
+      "client_complete_ms": 138.985,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 95
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 71
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    },
+    {
+      "cycle": 2,
+      "label": "second-prefix-hit",
+      "started_at_utc": "2026-10-11T16:17:02.655627+00:00",
+      "finished_at_utc": "2026-10-11T16:17:02.855409+00:00",
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 4752.0,
+      "ttft_ms": 177.548,
+      "prefill_ms": 175.051,
+      "queue_ms": 0.02,
+      "client_complete_ms": 186.519,
+      "completion_tokens": 1,
+      "jit_events": [],
+      "gpu_snapshot": {
+        "gpus": [
+          {
+            "index": 0,
+            "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 17793,
+            "utilization": 95
+          },
+          {
+            "index": 1,
+            "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 14333,
+            "utilization": 0
+          },
+          {
+            "index": 2,
+            "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "name": "NVIDIA GeForce RTX 4090",
+            "total_mib": 24564,
+            "used_mib": 11119,
+            "utilization": 71
+          }
+        ],
+        "processes": [
+          {
+            "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+            "pid": 3975157,
+            "used_mib": 17770,
+            "script": "train_highh_native_1m.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 3417056,
+            "used_mib": 3028,
+            "script": "bge_m3_embedding_server.py"
+          },
+          {
+            "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+            "pid": 1616131,
+            "used_mib": 11276,
+            "script": "(非脚本入口)"
+          },
+          {
+            "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+            "pid": 2261595,
+            "used_mib": 11096,
+            "script": "(非脚本入口)"
+          }
+        ]
+      }
+    }
+  ],
+  "shared_model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "scope": "合成 token 输入；长输入无缓存、首次部分命中、再次部分命中；同长度同缓存命中数量三轮，首token标记区分前缀，非业务质量评测",
+  "same_workload_valid": true,
+  "cold_prefix_prefill_ms": 439.428,
+  "hot_same_prefix_prefill_mean_ms": 127.0895,
+  "cold_prefix_jit_kernels": [
+    "(EngineCore pid=2261595) WARNING 10-12 00:16:59 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _fused_post_conv_kernel (key=[('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*fp32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', ''), ('constexpr', 16), ('constexpr', 32), ('constexpr', 128), ('constexpr', 128), ('constexpr', True), ('constexpr', 1e-06), ('constexpr', False), ('constexpr', 20.0), ('constexpr', 16), ('constexpr', 128), ('constexpr', 128)]{'num_warps': 4, 'num_stages': 2, 'debug': False, 'instrumentation_mode': ''})."
+  ],
+  "hot_prefix_jit_events": [],
+  "completed": true,
+  "shared_model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "gpu_after": {
+    "gpus": [
+      {
+        "index": 0,
+        "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 17793,
+        "utilization": 99
+      },
+      {
+        "index": 1,
+        "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 14333,
+        "utilization": 0
+      },
+      {
+        "index": 2,
+        "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 15,
+        "utilization": 76
+      }
+    ],
+    "processes": [
+      {
+        "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "pid": 3975157,
+        "used_mib": 17770,
+        "script": "train_highh_native_1m.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 3417056,
+        "used_mib": 3028,
+        "script": "bge_m3_embedding_server.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 1616131,
+        "used_mib": 11276,
+        "script": "(非脚本入口)"
+      }
+    ]
+  },
+  "finished_at_utc": "2026-10-11T16:17:04.522291+00:00",
+  "shared_model_unchanged": true,
+  "dependencies_unchanged": true,
+  "temporary_model_stopped": true
+}

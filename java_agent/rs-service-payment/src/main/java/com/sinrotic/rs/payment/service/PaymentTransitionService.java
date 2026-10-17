@@ -4,6 +4,7 @@ import com.sinrotic.rs.payment.domain.entity.PaymentCallback;
 import com.sinrotic.rs.payment.domain.entity.PaymentOrder;
 import com.sinrotic.rs.payment.mapper.PaymentCallbackMapper;
 import com.sinrotic.rs.payment.mapper.PaymentOrderMapper;
+import com.sinrotic.rs.payment.mapper.PaymentNotificationMapper;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,10 +16,13 @@ public class PaymentTransitionService {
 
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentCallbackMapper paymentCallbackMapper;
+    private final PaymentNotificationMapper notifications;
 
-    public PaymentTransitionService(PaymentOrderMapper paymentOrderMapper, PaymentCallbackMapper paymentCallbackMapper) {
+    public PaymentTransitionService(PaymentOrderMapper paymentOrderMapper, PaymentCallbackMapper paymentCallbackMapper,
+            PaymentNotificationMapper notifications) {
         this.paymentOrderMapper = paymentOrderMapper;
         this.paymentCallbackMapper = paymentCallbackMapper;
+        this.notifications = notifications;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -31,10 +35,11 @@ public class PaymentTransitionService {
     ) {
         insertOrValidateDuplicateCallback(provider, providerTransactionId, orderId, amount, payloadHash);
         int updated = paymentOrderMapper.markPaid(orderId, provider, amount, providerTransactionId);
-        if (updated == 0) {
-            return resolveUnchangedPaymentOrder(provider, providerTransactionId, orderId, amount);
-        }
-        return new OrderPaidMessage(orderId, provider, providerTransactionId);
+        OrderPaidMessage message = updated == 0
+                ? resolveUnchangedPaymentOrder(provider, providerTransactionId, orderId, amount)
+                : new OrderPaidMessage(orderId, provider, providerTransactionId);
+        notifications.enqueue(orderId, provider, providerTransactionId);
+        return message;
     }
 
     private OrderPaidMessage resolveUnchangedPaymentOrder(

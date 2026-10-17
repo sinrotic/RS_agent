@@ -1,0 +1,535 @@
+{
+  "source": "/tmp/rs-agent-quantization-20261009/capacity-fp8-mlp.json",
+  "requests": 24,
+  "trace_available": 24,
+  "requests_with_failed_tools": 9,
+  "failed_tools": 18,
+  "requests_detail": [
+    {
+      "concurrency": 8,
+      "number": 0,
+      "session_id": "capacity-80a189a6f7-8-0-9201755f",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 1,
+      "session_id": "capacity-80a189a6f7-8-1-3722d55f",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 1,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 2,
+      "session_id": "capacity-80a189a6f7-8-2-646f59fc",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 3,
+      "session_id": "capacity-80a189a6f7-8-3-7d365c2a",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 4,
+      "session_id": "capacity-80a189a6f7-8-4-83cdefe1",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 3,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 5,
+      "session_id": "capacity-80a189a6f7-8-5-6ba17580",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 6,
+      "session_id": "capacity-80a189a6f7-8-6-03eca06f",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 7,
+      "session_id": "capacity-80a189a6f7-8-7-6adf3868",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 1,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 8,
+      "session_id": "capacity-80a189a6f7-8-8-c10f4349",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 9,
+      "session_id": "capacity-80a189a6f7-8-9-ab4243be",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 10,
+      "session_id": "capacity-80a189a6f7-8-10-4eed7ab8",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 1,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 11,
+      "session_id": "capacity-80a189a6f7-8-11-37041eae",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 12,
+      "session_id": "capacity-80a189a6f7-8-12-a346e7eb",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 13,
+      "session_id": "capacity-80a189a6f7-8-13-340a2a4f",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 2,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 14,
+      "session_id": "capacity-80a189a6f7-8-14-01292da3",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 15,
+      "session_id": "capacity-80a189a6f7-8-15-b80871eb",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 16,
+      "session_id": "capacity-80a189a6f7-8-16-bb281832",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 1,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 17,
+      "session_id": "capacity-80a189a6f7-8-17-b85dc673",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 18,
+      "session_id": "capacity-80a189a6f7-8-18-da2c85fa",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 19,
+      "session_id": "capacity-80a189a6f7-8-19-e29a7a66",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 4,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 20,
+      "session_id": "capacity-80a189a6f7-8-20-8f3d1346",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 21,
+      "session_id": "capacity-80a189a6f7-8-21-b0fdd53c",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "unknown agent: unclear-need-clarification"
+        }
+      ],
+      "failed_tools": 1,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 22,
+      "session_id": "capacity-80a189a6f7-8-22-c980595f",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS",
+          "message": null
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED",
+          "message": "failed to call model provider"
+        }
+      ],
+      "failed_tools": 4,
+      "trace_available": true
+    },
+    {
+      "concurrency": 8,
+      "number": 23,
+      "session_id": "capacity-80a189a6f7-8-23-a219cfba",
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS",
+          "message": null
+        }
+      ],
+      "failed_tools": 0,
+      "trace_available": true
+    }
+  ]
+}

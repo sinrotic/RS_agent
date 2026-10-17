@@ -1,0 +1,120 @@
+{
+  "label": "fp8-w8a16-complete",
+  "passed": false,
+  "results": [
+    {
+      "number": 0,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-ef65715638-1-0-2a0ea833",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议考虑以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791538420.414271,
+      "http_status": 200,
+      "latency_s": 1.063,
+      "first_event_s": 1.061,
+      "first_answer_s": 1.061,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "answer_complete": false,
+      "passed": false
+    },
+    {
+      "number": 1,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-ef65715638-1-1-c09c7383",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议考虑以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791538421.4998384,
+      "http_status": 200,
+      "latency_s": 1.087,
+      "first_event_s": 1.085,
+      "first_answer_s": 1.085,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "answer_complete": false,
+      "passed": false
+    },
+    {
+      "number": 2,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-ef65715638-1-2-85305a5e",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议考虑以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791538422.6083405,
+      "http_status": 200,
+      "latency_s": 1.094,
+      "first_event_s": 1.092,
+      "first_answer_s": 1.092,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "answer_complete": false,
+      "passed": false
+    }
+  ]
+}

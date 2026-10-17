@@ -1,0 +1,153 @@
+{
+  "phase": "typed-concurrent",
+  "target_ms": 300.0,
+  "requests": [
+    {
+      "label": "concurrent-0",
+      "query": "推荐鼠标",
+      "complete_ms": 5835.91,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5473.0424880981445,
+      "completion_tokens": 163,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        984.2023849487305
+      ]
+    },
+    {
+      "label": "concurrent-1",
+      "query": "推荐鼠标",
+      "complete_ms": 5947.97,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5584.296703338623,
+      "completion_tokens": 171,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        1013.242244720459
+      ]
+    },
+    {
+      "label": "concurrent-2",
+      "query": "推荐鼠标",
+      "complete_ms": 5815.99,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5524.445056915283,
+      "completion_tokens": 166,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        961.2605571746826
+      ]
+    },
+    {
+      "label": "concurrent-3",
+      "query": "推荐鼠标",
+      "complete_ms": 5936.32,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5566.807746887207,
+      "completion_tokens": 169,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        955.4383754730225
+      ]
+    },
+    {
+      "label": "concurrent-4",
+      "query": "推荐鼠标",
+      "complete_ms": 5905.93,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5527.446269989014,
+      "completion_tokens": 166,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        986.5167140960693
+      ]
+    },
+    {
+      "label": "concurrent-5",
+      "query": "推荐鼠标",
+      "complete_ms": 5947.18,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5593.216896057129,
+      "completion_tokens": 171,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        962.4485969543457
+      ]
+    },
+    {
+      "label": "concurrent-6",
+      "query": "推荐鼠标",
+      "complete_ms": 5945.02,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5581.935882568359,
+      "completion_tokens": 169,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        953.4530639648438
+      ]
+    },
+    {
+      "label": "concurrent-7",
+      "query": "推荐鼠标",
+      "complete_ms": 5945.19,
+      "failed": false,
+      "llm_calls": 1,
+      "llm_total_ms": 5585.684776306152,
+      "completion_tokens": 170,
+      "tool_names": [
+        "emit_final_answer"
+      ],
+      "finish_reasons": [
+        "stop"
+      ],
+      "first_delta_ms": [
+        996.8233108520508
+      ]
+    }
+  ],
+  "complete_median_ms": 5940.67,
+  "failed": 0,
+  "target_met": false
+}

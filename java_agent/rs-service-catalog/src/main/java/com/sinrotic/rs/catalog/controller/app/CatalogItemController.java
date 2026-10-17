@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import java.util.List;
 
@@ -25,7 +27,11 @@ public class CatalogItemController {
 
     @GetMapping("/{itemId}")
     public CatalogItemDetailVO getItemDetail(@PathVariable String itemId) {
-        return catalogService.getItemDetail(itemId);
+        CatalogItemDetailVO detail = catalogService.getItemDetail(itemId);
+        if (detail == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "catalog item not found");
+        }
+        return detail;
     }
 
     @PostMapping("/batch")

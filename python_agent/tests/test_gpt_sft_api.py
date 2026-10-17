@@ -91,7 +91,7 @@ def test_gpt_sft_runner_resolves_default_config_outside_repo_cwd(monkeypatch: py
     result = run_gpt_sft("configs/training/gpt_sft_api_smoke.yaml", limit=1)
 
     assert result["sample_count"] == 1
-    assert result["output_path"].replace("\\", "/").endswith("RS_agent/outputs/training/gpt_sft_generation_smoke/sft_samples.jsonl")
+    assert result["output_path"].replace("\\", "/").endswith("python_agent/outputs/training/gpt_sft_generation_smoke/sft_samples.jsonl")
 
 
 def test_gpt_sft_runner_execute_requires_enabled_config() -> None:

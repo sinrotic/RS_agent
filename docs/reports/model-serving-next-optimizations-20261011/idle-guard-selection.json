@@ -1,0 +1,11 @@
+{
+  "candidate": "idle_guard",
+  "accepted": true,
+  "reason": "只优化后台预热与业务到达的竞争，关闭额外16路及扩展前缀；完整正式性能与功能验收是推广前置条件",
+  "single_call_speedup_verified": false,
+  "steady_throughput_speedup_verified": false,
+  "local_test_command": "python -m pytest tests/test_vllm_constrained_startup.py tests/test_vllm_structured_output_probe.py tests/test_vllm_prefix_warmup.py -q",
+  "local_tests_passed": 37,
+  "business_arrival_behavior_test": "test_keepalive_stops_remaining_prefixes_when_business_arrives",
+  "remaining_race": "已发出预热与新到达业务之间仍有竞态，不能保证零竞争"
+}

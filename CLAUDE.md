@@ -8,3 +8,17 @@
 
 本项目允许本机运行命令，但需预估内存占用：默认按 **12GB 可承受、14GB 为上限** 控制；预计超过 14GB 的测试、样本生成、评估、训练或大数据/模型加载任务应改为限流 smoke 或远程运行。
 
+## Agent skills
+
+### Issue tracker
+
+Issues are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The default five-role triage label vocabulary is used. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Domain documentation uses a single-context layout. See `docs/agents/domain.md`.
+

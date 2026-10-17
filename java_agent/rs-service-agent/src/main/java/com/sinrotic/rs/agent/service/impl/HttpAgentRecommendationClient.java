@@ -40,11 +40,18 @@ public class HttpAgentRecommendationClient implements AgentRecommendationClient 
 
     @Override
     public List<AgentRecommendedItemVO> recommend(AgentChatRequestDTO request) {
+        return recommendDelivery(request).items();
+    }
+
+    @Override
+    public com.sinrotic.rs.agent.service.AgentRecommendationDelivery recommendDelivery(AgentChatRequestDTO request) {
         boolean hasQuery = hasText(request.userMessage());
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("agent_id", "rs_agent");
         payload.put("task_id", request.sessionId());
         payload.put("profile_user_id", request.profileUserId());
+        payload.put("account_id", String.valueOf(request.resolvedContext()
+                .getOrDefault("authenticated_account_id", request.profileUserId())));
         if (hasQuery) {
             payload.put("session_id", request.sessionId());
             payload.put("query", request.userMessage());
@@ -63,10 +70,18 @@ public class HttpAgentRecommendationClient implements AgentRecommendationClient 
                     "application/json"
             );
             CandidatesResponse candidates = objectMapper.readValue(response, CandidatesResponse.class);
-            if (candidates.candidates() == null) {
-                return List.of();
+            List<AgentRecommendedItemVO> items = (candidates.candidates() == null ? List.<Candidate>of() : candidates.candidates()).stream()
+                    .map(candidate -> toAgentItem(candidate, candidates.requestId()))
+                    .toList();
+            List<String> reasons = candidates.degradationReasons();
+            Map<String, com.sinrotic.rs.agent.service.AgentRecommendationFact> facts = new LinkedHashMap<>();
+            if (candidates.candidates() != null) {
+                for (Candidate candidate : candidates.candidates()) {
+                    if (candidate.itemId() != null) facts.put(candidate.itemId(),
+                            new com.sinrotic.rs.agent.service.AgentRecommendationFact(candidate.price()));
+                }
             }
-            return candidates.candidates().stream().map(this::toAgentItem).toList();
+            return new com.sinrotic.rs.agent.service.AgentRecommendationDelivery(items, reasons, facts);
         } catch (JsonProcessingException ex) {
             throw new IllegalStateException("failed to decode recommendation response", ex);
         } catch (RuntimeException ex) {
@@ -74,14 +89,15 @@ public class HttpAgentRecommendationClient implements AgentRecommendationClient 
         }
     }
 
-    private AgentRecommendedItemVO toAgentItem(Candidate candidate) {
+    private AgentRecommendedItemVO toAgentItem(Candidate candidate, String cardSetId) {
         String reason = firstNonBlank(candidate.reasonHint(), candidate.shortText());
         return new AgentRecommendedItemVO(
                 candidate.itemId(),
                 candidate.title(),
                 candidate.categoryPath(),
                 0.0,
-                reason
+                reason,
+                cardSetId == null ? "" : cardSetId
         );
     }
 
@@ -106,13 +122,18 @@ public class HttpAgentRecommendationClient implements AgentRecommendationClient 
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private record CandidatesResponse(List<Candidate> candidates) {
+    private record CandidatesResponse(
+            @JsonProperty("request_id") String requestId,
+            List<Candidate> candidates,
+            @JsonProperty("degradation_reasons") List<String> degradationReasons
+    ) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record Candidate(
             @JsonProperty("item_id") String itemId,
             String title,
+            java.math.BigDecimal price,
             @JsonProperty("category_path") String categoryPath,
             @JsonProperty("reason_hint") String reasonHint,
             @JsonProperty("short_text") String shortText

@@ -28,6 +28,14 @@ class FakeEmbeddingBackend:
         return [float("sofa" in value), float("lamp" in value), float("camp" in value)]
 
 
+class ZeroEmbeddingBackend:
+    def encode(self, texts: list[str], *, normalize: bool = True, batch_size: int = 32) -> np.ndarray:
+        return np.zeros((len(texts), 1024), dtype=np.float32)
+
+    def encode_passages(self, passages: list[str], *, normalize: bool = True, batch_size: int = 32) -> np.ndarray:
+        return self.encode(passages, normalize=normalize, batch_size=batch_size)
+
+
 def test_build_milvus_rag_chunk_index_upserts_candidate_scoped_evidence(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
     install_fake_milvus(monkeypatch)
     store = MilvusVectorStore(build_milvus_client(uri="unit.db"))
@@ -61,6 +69,28 @@ def test_build_milvus_rag_chunk_index_upserts_candidate_scoped_evidence(monkeypa
     rows = store.client.collections["test_rag_build"]["rows"]
     assert {row["item_id"] for row in rows} == {"i1", "i2"}
     assert {row["schema_version"] for row in rows} == {"milvus_rag_chunk_v1"}
+
+
+def test_build_milvus_rag_chunk_index_rejects_zero_vectors_before_store(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:
+    items_path = tmp_path / "canonical_items.jsonl"
+    source_manifest_path = tmp_path / "dataset_manifest.json"
+    write_jsonl(items_path, [{"parent_asin": "i1", "title": "soft red sofa"}])
+    write_json(source_manifest_path, {"schema_version": "unit_dataset_manifest_v1", "train_only": True, "no_holdout": True})
+
+    def fail_build_store(_config):  # type: ignore[no-untyped-def]
+        raise AssertionError("invalid vectors must be rejected before Milvus is opened")
+
+    monkeypatch.setattr("rs_core.agent.rag.milvus_index.build_store", fail_build_store)
+
+    with pytest.raises(ValueError, match="zero-norm"):
+        build_milvus_rag_chunk_index(
+            items_path=items_path,
+            collection_name="test_zero_vectors",
+            milvus_config={"uri": "unit.db"},
+            source_manifest_path=source_manifest_path,
+            fields=["title"],
+            embedding_backend=ZeroEmbeddingBackend(),
+        )
 
 
 def test_build_milvus_rag_chunk_index_dry_run_does_not_touch_milvus(monkeypatch: pytest.MonkeyPatch, tmp_path) -> None:

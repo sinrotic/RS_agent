@@ -5,6 +5,7 @@ import com.sinrotic.rs.model.service.ModelTraceService;
 import org.springframework.stereotype.Service;
 
 @Service
+@org.springframework.context.annotation.Profile("mock-models")
 public class MockModelTraceService implements ModelTraceService {
 
     @Override

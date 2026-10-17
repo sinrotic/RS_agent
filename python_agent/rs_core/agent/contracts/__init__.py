@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from rs_core.agent.contracts.schema import AgentSession, AgentTurn, FeedbackConstraints, RecommendationTurnResult
-from rs_core.agent.tools import AgentToolCall, AgentToolExecutionReport, AgentToolResult, AgentToolSpec
+
+if TYPE_CHECKING:
+    from rs_core.agent.tools import AgentToolCall, AgentToolExecutionReport, AgentToolResult, AgentToolSpec
 
 
 @dataclass(frozen=True)
@@ -110,3 +112,11 @@ __all__ = [
     "ExplanationResult",
     "SessionMemoryRef",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    if name in {"AgentToolCall", "AgentToolExecutionReport", "AgentToolResult", "AgentToolSpec"}:
+        from rs_core.agent import tools
+
+        return getattr(tools, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

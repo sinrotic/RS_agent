@@ -21,13 +21,16 @@ public record RecallRequestDTO(
     private static final List<String> DEFAULT_SOURCES = List.of(
             "itemcf_strong",
             "itemcf_weak",
+            "swing_recall",
+            "usercf_recall",
+            "two_tower",
             "semantic",
             "category",
             "popular"
     );
 
     public RecallRequestDTO withDefaults() {
-        int normalizedLimit = limit == null ? DEFAULT_LIMIT : Math.min(limit, MAX_LIMIT);
+        int normalizedLimit = limit == null ? DEFAULT_LIMIT : Math.max(1, Math.min(limit, MAX_LIMIT));
         List<String> normalizedSources = sources == null || sources.isEmpty() ? DEFAULT_SOURCES : sources;
         return new RecallRequestDTO(profileUserId, sessionId, normalizedLimit, normalizedSources);
     }

@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 public class NoopAgentLoopHookDispatcher implements AgentLoopHookDispatcher {
 
     @Override
+    public boolean supportsDirectRecommendation() { return getClass() == NoopAgentLoopHookDispatcher.class; }
+
+    @Override
     public AgentLoopHookResult dispatch(AgentLoopHookContext context) {
         return AgentLoopHookResult.proceed();
     }

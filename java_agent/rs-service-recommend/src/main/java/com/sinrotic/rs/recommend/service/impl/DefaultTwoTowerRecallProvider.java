@@ -17,15 +17,17 @@ import java.util.Optional;
  */
 public class DefaultTwoTowerRecallProvider implements TwoTowerRecallProvider {
 
-    public static final String MODEL_NAME = "two_tower_youtube_dnn_epoch1";
-    public static final String ITEM_COLLECTION = "rs_agent_two_tower_items_v1";
-    private static final int DEFAULT_HISTORY_LIMIT = 100;
+    public static final String MODEL_NAME = "two_tower_sparse_aware_epoch5_queryv2";
+    public static final String ITEM_COLLECTION = "rs_agent_two_tower_epoch5_20260913";
+    private static final int DEFAULT_HISTORY_LIMIT = 80;
     private static final int MIN_HISTORY_ITEMS = 2;
 
     private final UserEmbeddingStore userEmbeddingStore;
     private final UserHistoryClient userHistoryClient;
     private final UserTowerModelClient userTowerModelClient;
     private final VectorRecallClient vectorRecallClient;
+    private final String modelName;
+    private final String collection;
 
     public DefaultTwoTowerRecallProvider(
             UserEmbeddingStore userEmbeddingStore,
@@ -33,10 +35,17 @@ public class DefaultTwoTowerRecallProvider implements TwoTowerRecallProvider {
             UserTowerModelClient userTowerModelClient,
             VectorRecallClient vectorRecallClient
     ) {
+        this(userEmbeddingStore, userHistoryClient, userTowerModelClient, vectorRecallClient, MODEL_NAME, ITEM_COLLECTION);
+    }
+
+    public DefaultTwoTowerRecallProvider(UserEmbeddingStore userEmbeddingStore, UserHistoryClient userHistoryClient,
+            UserTowerModelClient userTowerModelClient, VectorRecallClient vectorRecallClient, String modelName, String collection) {
         this.userEmbeddingStore = userEmbeddingStore;
         this.userHistoryClient = userHistoryClient;
         this.userTowerModelClient = userTowerModelClient;
         this.vectorRecallClient = vectorRecallClient;
+        this.modelName = modelName;
+        this.collection = collection;
     }
 
     @Override
@@ -48,23 +57,21 @@ public class DefaultTwoTowerRecallProvider implements TwoTowerRecallProvider {
         if (embedding.isEmpty()) {
             return List.of();
         }
-        return vectorRecallClient.searchSimilarItems(ITEM_COLLECTION, embedding.get().embedding(), limit).stream()
+        return vectorRecallClient.searchSimilarItems(collection, embedding.get().embedding(), Math.min(500, limit)).stream()
                 .map(this::toCandidate)
                 .toList();
     }
 
     private Optional<UserEmbedding> getOrBuildUserEmbedding(String userId, String requestId) {
-        Optional<UserEmbedding> cached = userEmbeddingStore.find(MODEL_NAME, userId);
+        List<String> historyItemIds = userHistoryClient.recentItemIds(userId, DEFAULT_HISTORY_LIMIT);
+        if (historyItemIds.size() < MIN_HISTORY_ITEMS) return Optional.empty();
+        Optional<UserEmbedding> cached = userEmbeddingStore.find(modelName, userId, historyItemIds);
         if (cached.isPresent() && !cached.get().embedding().isEmpty()) {
             return cached;
         }
 
-        List<String> historyItemIds = userHistoryClient.recentItemIds(userId, DEFAULT_HISTORY_LIMIT);
-        if (historyItemIds.size() < MIN_HISTORY_ITEMS) {
-            return Optional.empty();
-        }
-        Optional<UserEmbedding> inferred = userTowerModelClient.inferUserEmbedding(MODEL_NAME, requestId, userId, historyItemIds);
-        inferred.filter(value -> !value.embedding().isEmpty()).ifPresent(userEmbeddingStore::save);
+        Optional<UserEmbedding> inferred = userTowerModelClient.inferUserEmbedding(modelName, requestId, userId, historyItemIds);
+        inferred.filter(value -> !value.embedding().isEmpty()).ifPresent(value -> userEmbeddingStore.save(value, historyItemIds));
         return inferred.filter(value -> !value.embedding().isEmpty());
     }
 

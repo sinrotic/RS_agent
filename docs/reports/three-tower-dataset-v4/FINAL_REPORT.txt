@@ -1,0 +1,55 @@
+商品三塔完整对照与接入结果（2026-10-11）
+
+最终状态：DEPLOYED_VERIFIED。三类任务各 3 个种子（42/43/44）完成；已将完整语义数据训练的 joint_seed42 / step_6000 接入当前推荐服务。不是 quick_snapshot 模型。当前真实入口：网关 18288、前端 18289、推荐服务 18213。
+
+数据范围与训练口径
+本轮“完整数据”指已准备的 v4 实验集：100000 个训练用户、387951 条推荐训练样本、203887 个候选商品；不等于原始全库或全量用户。推荐开发集 1000 用户。
+1000 个商品生成语义查询，最终保留 3539 条：训练 2848、开发 347、留出测试 344。训练、开发、测试按商品组隔离；留出查询未参与训练编码或选模型。生成与复核均使用同一个 6-luna 服务，是机器复核的合成标签，不是独立人工金标。
+推荐任务每个种子 6000 步；语义单任务 400 步；三塔为 6000 推荐步加 400 语义步，每 15 步一次语义更新，语义权重 0.1。各组相同初始化，不从推荐 checkpoint 续训；匹配推荐更新数，不是等算力对照。
+BGE-M3 冻结，1024 维文本表示。Item/Query 为各自的 1024→256→1024 残差 MLP；用户聚合最近最多 50 个正向历史商品的已投影向量，再经过用户残差 MLP。无商品 ID 支路、无时间衰减。训练、导出和在线前向保持一致。
+
+开发集三种子结果
+推荐 Hit@100：推荐单任务 4.4%、4.1%、4.1%，平均 4.2%；语义单任务 3.2%、3.4%、3.3%，平均 3.3%；三塔 4.4%、4.1%、4.1%，平均 4.2%。原始 BGE 为 2.7%。
+合成语义 Hit@10：语义单任务 37.75%、38.33%、38.04%；三塔 37.75%、37.46%、35.73%。语义单任务在语义平均值上更好，但推荐任务更弱，因此没有选它作为主要推荐召回。
+三塔没有提高推荐 Hit@100，开发集 MRR 略低于推荐单任务。选定 seed42 的依据是推荐召回持平且兼顾语义能力，不是所有指标均最优，也未证明联合训练显著优于单任务。
+
+冻结模型之后的独立确认
+推荐官方 test 时间窗：1632 个未参与开发评估的用户，固定 train 截止之前的历史，固定 203887 候选库，目标覆盖 59.99%，库外目标计未命中。
+原始 BGE：Hit@100 2.9412%。推荐 seed42 与三塔 seed42 均为 3.7990%；MRR 分别为 0.00491459、0.00501963。
+旧在线 queryv2 在同一候选库/同一批用户上 Hit@100 2.2672%。旧模型只覆盖该候选库 85.65%，因此这不是纯架构公平比较，也不能把所有差值归因于三塔训练。
+合成语义测试 344 查询：BGE / 推荐单任务 / 三塔的 Hit@10 分别 38.9535% / 42.1512% / 42.4419%；MRR 分别 0.251597 / 0.248155 / 0.254864。三塔相对推荐单任务只多命中 1 条；Hit@100 分别 76.1628% / 77.0349% / 76.1628%，不是所有指标改善。
+没有真实购买转化标签，也没有在线 A/B 收益证据。未按测试结果继续调参。
+
+上线行为
+模型 key：product_three_tower_v4_seed42_step6000。
+独立 Milvus 集合：rs_agent_product_three_tower_v4_20261011，1024 维，203887 条；旧 64 维索引保留。
+用户塔 CPU 服务：172.21.0.1:18120；用户 systemd 单元 rs-product-recall-runtime.service，已启用，内存上限 2GB；在线不需要训练 GPU。
+首页与 Agent 画像推荐：新模型优先占兴趣候选预算的 65%（416 中至少 270，候选足够时），最多 480 候选进入既有 COLD/DeepFM/BGE 排序。最终每页不强制新模型占比；保留探索、偏好过滤、去重和其他来源。
+Agent 语义入口与首页语义补充：BGE 查询先过训练 Query 塔，在同一新 Item 索引召回约 65% 配额；原 BGE 索引补充其余及去重缺口。Query 服务故障自动回退原 BGE；BGE 补充故障时仍可返回新模型结果。补充原因是新索引未覆盖全库。
+修正当前部署缺少 RS_USER_BASE_URL 的问题，指向 http://127.0.0.1:18201，避免历史读取静默退化成非个性化候选。其他部署必须使用各自用户服务地址。
+与 ADR-0019 的旧 queryv2/64 维参与融合方案不同，本次经用户明确授权升级为新三塔优先配额；旧 ADR 的历史状态和旧服务保留作为回滚依据。
+
+验证证据
+推荐 Java 模块 179 项测试通过，失败/错误/跳过均为 0；覆盖维度隔离、主召回配额、100 条 Catalog 分批、历史过滤、模型故障回退和查询空间隔离。
+128 用户导出前后最大打分误差 1.19e-7；32 用户 NumPy 在线前向最大误差 9.69e-8。32 查询 CPU 投影对训练前向最大误差 1.19e-6。
+索引 32 用户抽样 Top100 对精确检索平均召回 98.78%，最低 83%，检查使用 ef=256；这是抽样 ANN 验证，不声称所有用户无损。
+候选服务：3 用户×2 页，完整历史排除/翻页去重通过；3 个中英文语义请求各返回 6 个相关真实商品；关闭新 Query 服务时仍可通过 BGE 返回 6 个结果。
+正式网关：6 个首页请求无降级，初始新模型候选分别 271/271/278/278/276/276，总候选 474–480；耗时 797–991ms。source_distribution 表示排序后来源数，不能与初始候选配额混淆；新增 stage_counts.primary_recall 记录排序前数量。
+真实 Agent 问答、商品详情、会话回放通过，总耗时约 19.76 秒，主要包括 LLM；不能与首页延迟混为一谈。以上为少量 smoke 样本，不是线上 p95 或负载测试。
+
+部署与回滚
+远程根目录：/mnt/data/luo/remote_runs/three_tower_dataset_v4。
+导出：export_joint_full_seed42/；正式状态：deployment_status.json；非敏感配置：deployment/product-recall.env。
+运行容器：rs-e2e-857e8b14-recommend-fast，restart=unless-stopped。
+旧容器：rs-e2e-857e8b14-recommend-fast-before-product-v4（停止并保留）。
+回滚命令：/home/luo/RS_agent_remote/.venv/bin/python /mnt/data/luo/remote_runs/three_tower_dataset_v4/deployment/rollback.py。
+当前开发区有大量其他任务改动。部署以原运行 jar 为基底，仅替换本任务的实现/配置 class 并添加 Query 客户端；原 jar 哈希、替换项和新 jar 哈希见 jar_patch_manifest.json。未把其他工作区代码变更一并部署。
+应用重启保留当前环境变量；若用旧部署脚本重建容器，必须合并 deployment/product-recall.env。仓库提供 product-three-tower-v4.env.example 及 CPU 服务单元。
+候选验证容器已停止。没有改动旧模型产物，没有覆盖旧索引。训练已完成，后续扩大全商品覆盖、真实查询评测及在线效果观测仍需另外实验。
+
+同目录机器可读证据
+comparison_results.json / comparison_status.json
+recommendation_final_test.json / semantic_final_test.json / old_route_test.json
+semantic_manifest.json / dataset_readiness.json
+export_joint_full_seed42_manifest.json / index_manifest.json
+serving_verification.json / query_serving_verification.json / deployment_status.json / jar_patch_manifest.json

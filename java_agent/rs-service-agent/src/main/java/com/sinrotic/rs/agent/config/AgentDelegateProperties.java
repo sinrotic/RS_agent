@@ -11,6 +11,11 @@ public class AgentDelegateProperties {
         return ragAgent;
     }
 
+    // Spring 配置绑定依赖标准 JavaBean getter；保留原访问方法供现有调用方使用。
+    public RagAgent getRagAgent() {
+        return ragAgent;
+    }
+
     public static class RagAgent {
 
         private String baseUrl = "http://rs-service-recommend:18103";

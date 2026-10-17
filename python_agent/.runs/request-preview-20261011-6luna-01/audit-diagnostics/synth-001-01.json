@@ -1,0 +1,37 @@
+{
+  "candidate_id": "synth-001-01",
+  "original_status": "quarantined",
+  "original_failed_stage": "audit",
+  "is_gold": false,
+  "raw_model_audit": {
+    "checks": {
+      "naturalness": "pass",
+      "extraction_fidelity": "pass",
+      "fact_boundary": "pass",
+      "clarification_policy": "pass"
+    },
+    "reason": {
+      "naturalness": "顾客表达自然，礼物用途、使用场景、佩戴舒适度和无线偏好衔接合理。",
+      "extraction_fidelity": "提取保留了头戴式、单副、通勤降噪、听音乐与接电话、佩戴舒适及无线优先等信息。将预算、续航和降噪的具体标准列为未知，没有把“预算不用卡得特别死”误写成明确价格上限，也没有把送礼对象的偏好归到顾客本人。",
+      "fact_boundary": "提取没有用历史评分替朋友推断偏好，也没有把目录标题中的性能宣传当作已验证事实。目录价格所用货币单位未确认，当前提取也未据此作价格结论。",
+      "clarification_policy": "顾客是在请求推荐，现有信息足以先按通勤、舒适、无线优先等方向筛选；未追问具体预算、续航或降噪数值并非明显缺漏，因为顾客没有给出这些硬性标准。"
+    },
+    "evidence": [
+      {
+        "source": "customer",
+        "quote": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？"
+      },
+      {
+        "source": "catalog",
+        "quote": "PurelySound E7 Pro Active Noise Cancelling Headphones, Over-Ear Bluetooth Headphones with Mic, Rich Deep Bass, Long Battery Life, Comfortable - Black"
+      },
+      {
+        "source": "profile",
+        "quote": "history_meaning: past_positive_reviews_not_purchases"
+      }
+    ],
+    "issues": []
+  },
+  "protocol_valid": false,
+  "protocol_error": "无效或过长的文本"
+}

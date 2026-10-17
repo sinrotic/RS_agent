@@ -1,0 +1,108 @@
+{
+  "status": "已执行部分方案；九轮隔离对照、三次正式切换均未满足全部推广门槛，已恢复原配置",
+  "baseline": "current-runtime.json",
+  "frozen_configuration": {
+    "precision": "MLP INT4；普通注意力、GDN 和 MTP BF16",
+    "gpu_memory_utilization": 0.5,
+    "max_model_len": 16384,
+    "served_model_name": "qwen35-4b",
+    "prefix_caching": true,
+    "strict_structured_outputs": true,
+    "json_compact_output": true
+  },
+  "phases": [
+    {
+      "name": "模型服务基线和真实缓存命中",
+      "actions": [
+        "统计真实模型调用的输入/输出长度、首 token、首可见内容、生成间隔、完整耗时、排队、缓存命中和抢占",
+        "独立标记预热、keepalive、探针与真实业务，不将实例累计计数当业务指标",
+        "核对完整渲染后的稳定前缀和 schema；按输入/输出长度分桶"
+      ],
+      "execution_status": "部分完成：模型基线、token用量和指标增量，未分离真实生产TTFT/ITL分布"
+    },
+    {
+      "name": "当前部分量化配置下单变量批次扫描",
+      "max_num_batched_tokens_candidates": [
+        2048,
+        4096,
+        8192
+      ],
+      "max_num_seqs": 128,
+      "concurrency_candidates": [
+        1,
+        4,
+        8,
+        16,
+        32
+      ],
+      "notes": [
+        "候选数值是试验起点，不是官方针对本机的推荐配置；先捕获隔离实例的实际解析参数",
+        "预热编译和并发形状，基线与候选交错重复；不在正式实例清空 prefix cache",
+        "分开测试冷前缀、共享热前缀、不同用户前缀及长短混合负载",
+        "保持模型、精度、上下文、温度、生成预算和真实工具协议一致",
+        "预算改变可能改变编译及 graph 占用，记录可用 KV / 状态空间"
+      ],
+      "execution_status": "完成：2048/4096/8192/2048前后基线，1/4/8/16路，32路未做，无推广候选"
+    },
+    {
+      "name": "选择批次预算后再单变量扫描序列上限",
+      "max_num_seqs_candidates": [
+        32,
+        64,
+        128
+      ],
+      "notes": [
+        "保持上一阶段选定 max_num_batched_tokens，不同时改变两种参数",
+        "用输入 tokens、预期输出和状态容量评估准入，不直接将 max_num_seqs 当承载能力"
+      ],
+      "execution_status": "未执行：保留128上限"
+    },
+    {
+      "name": "整体吞吐、入口排队和取消传播",
+      "arrival_rate_candidates_per_second": [
+        0.5,
+        1,
+        2,
+        4,
+        8
+      ],
+      "notes": [
+        "分级增加到达率，遇到资源或错误阈值立即停止升级；具体负载上限在执行前根据独立卡余量核验",
+        "同时测成功请求/秒、输出 tokens/秒、模型调用完整耗时 P50/P95、排队 P95、错误、取消、抢占和显存",
+        "记录 offered load 和 completed goodput，避免只用固定并发测试掩盖排队增长",
+        "测试客户端取消确实让未完成推理退出；先定义业务断连策略，短暂断连是否继续交付按产品契约判断",
+        "用有界队列、排队期限及明确过载响应控制尾延迟，记录被拒请求，不将拒绝流量隐藏为吞吐收益"
+      ],
+      "execution_status": "部分完成：24请求4rps开放到达；入口限流、取消传播和长期SLA未做"
+    },
+    {
+      "name": "后续低并发 MTP-1 对照",
+      "num_speculative_tokens": 1,
+      "concurrency_candidates": [
+        1,
+        4,
+        8,
+        16
+      ],
+      "notes": [
+        "当前权重索引保留 MTP 资产，但本混合 INC / BF16 / strict 配置尚未做 MTP 验收",
+        "同时验证 strict 工具、流式输出、正常结束、真实业务和草稿接受长度",
+        "若低并发有收益而高并发回退，考虑独立服务档位；不按全局可变开关动态切换在线实例"
+      ],
+      "execution_status": "完成：当前部分量化MTP-1，功能与容量未通过，未推广"
+    }
+  ],
+  "adoption_criteria": [
+    "结构化、工具参数、结束状态及真实业务验收通过，保持原有质量门槛",
+    "同等负载和质量下可重复改善相应目标；单次延迟与吞吐分别评价",
+    "P95 和可接受拒绝率目标需要结合实际服务要求设定；本方案不虚构 SLA",
+    "当前 50% 显存预算和其他服务资源边界保持明确，正式推广前备份并核验恢复入口"
+  ],
+  "execution_report": "execution.md",
+  "final_runtime": "production-original-live-state.json",
+  "additional_experiments": [
+    "扩大真实前缀及16路预热：隔离部分收益，正式性能未通过并回滚",
+    "逐条保温检查：两次正式规划2到3，原版同顺序控制仍为2，全部回滚",
+    "最终本地逐条保温实验开关默认关闭，39项本地测试通过；当前服务器仍用原代码"
+  ]
+}

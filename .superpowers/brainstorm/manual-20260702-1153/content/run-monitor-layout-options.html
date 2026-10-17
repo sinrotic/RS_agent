@@ -1,0 +1,115 @@
+<h2>Agent 运行监控第一版布局</h2>
+<p class="subtitle">目标：先支持事后复盘，实时监控做轻量刷新；摘要覆盖链路耗时、成本上下文、错误质量信号。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A. Session Overview + Timeline</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px">
+            <div class="placeholder">耗时</div>
+            <div class="placeholder">Token</div>
+            <div class="placeholder">工具</div>
+            <div class="placeholder">错误</div>
+          </div>
+          <div style="display:grid;grid-template-columns:280px 1fr;gap:12px">
+            <div class="mock-sidebar">
+              <div class="placeholder">会话摘要</div>
+              <div class="placeholder">模型/Provider</div>
+              <div class="placeholder">质量信号</div>
+            </div>
+            <div class="mock-content">
+              <div class="placeholder">按时间排序的模型调用、工具调用、RAG/推荐事件</div>
+              <div class="placeholder">点击事件展开输入、输出、耗时、token、错误</div>
+              <div class="placeholder">最终答案结构和商品卡/证据状态</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. 复盘时间线</h3>
+      <p>最贴合当前 ObserveConsole。先把单个 session/request 看清楚，风险低，能最快落地。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B. Live Run Board</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+            <div class="placeholder">Running</div>
+            <div class="placeholder">Slow</div>
+            <div class="placeholder">Failed</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="mock-content">
+              <div class="placeholder">请求列表，自动刷新</div>
+              <div class="placeholder">状态、耗时、模型、token</div>
+            </div>
+            <div class="mock-content">
+              <div class="placeholder">选中请求的实时事件流</div>
+              <div class="placeholder">模型 chunk / tool start / tool end / error</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. 实时运行看板</h3>
+      <p>适合开发时盯正在跑的请求，但需要新增运行状态索引和刷新/流式接口，第一版成本更高。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C. Debug Notebook</div>
+        <div class="mockup-body">
+          <div style="display:grid;grid-template-columns:220px 1fr 260px;gap:12px">
+            <div class="mock-sidebar">
+              <div class="placeholder">问题标签</div>
+              <div class="placeholder">失败原因</div>
+              <div class="placeholder">调优建议</div>
+            </div>
+            <div class="mock-content">
+              <div class="placeholder">轨迹详情</div>
+              <div class="placeholder">prompt / tool input / tool output</div>
+              <div class="placeholder">最终答案对照</div>
+            </div>
+            <div class="mock-sidebar">
+              <div class="placeholder">编辑 prompt</div>
+              <div class="placeholder">开关 skill/tool</div>
+              <div class="placeholder">保存实验</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. 调试工作台</h3>
+      <p>闭环最强，但会提前进入调优和实验管理。建议作为第二阶段，不作为运行监控第一版主路径。</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>推荐：A 作为第一版主布局</h4>
+    <ul>
+      <li>复用现有 platform trace、timeline、TracePanel。</li>
+      <li>能容纳 A+B+C 三组指标摘要。</li>
+      <li>后续可以自然加实时刷新和调优入口。</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>暂缓内容</h4>
+    <ul>
+      <li>不先做复杂实时流式看板。</li>
+      <li>不先做批量评估和实验对比。</li>
+      <li>调优按钮先预留入口，不直接改 prompt/skill。</li>
+    </ul>
+  </div>
+</div>

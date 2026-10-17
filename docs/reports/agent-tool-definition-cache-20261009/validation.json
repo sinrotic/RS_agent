@@ -1,0 +1,41 @@
+{
+  "date": "2026-10-09",
+  "description": "工具回调和严格模式定义的有界缓存；逐请求核对权限、启用状态和 schema；不缓存用户数据或执行结果。",
+  "performance_scope": "本机 Java 离线工具准备路径，每轮 15 个工具；不包含 HTTP 序列化、模型推理或 Agent 端到端吞吐。",
+  "baseline_us_per_request": 99.2689,
+  "optimized_us_per_request": 45.5149,
+  "reduction_percent": 54.15,
+  "checksums_equal": true,
+  "validation": {
+    "rs-service-agent": {
+      "totals": {
+        "tests": 160,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1,
+        "suites": 41,
+        "passed": 159
+      },
+      "skipped_cases": [
+        "existingAgentClientReceivesConstrainedToolArgumentsFromLocalQwen(boolean)"
+      ],
+      "excluded_prior_run_reports": [
+        "TEST-com.sinrotic.rs.agent.service.MultiInstanceSessionTurnDiagnosticTest.xml",
+        "TEST-com.sinrotic.rs.agent.service.NonStreamingChatPersistenceDiagnosticTest.xml"
+      ]
+    }
+  },
+  "regression_coverage": [
+    "首次和重复请求的实际 HTTP JSON 内容与流事件一致：普通工具模式、严格模式、仅最终回答模式",
+    "工具禁用及描述修改、嵌套 schema 修改、权限变化均在下一次请求生效",
+    "32 个虚拟线程、共 1280 次工具准备：最终回答工具集合与全量集合互不干扰；并发回调各自保留请求参数",
+    "超过缓存容量后的旧请求仍保留原定义快照；共享严格定义不可修改",
+    "整个 Agent 模块现有测试：编排、工具、会话、权限、流事件和持久化等"
+  ],
+  "limitations": [
+    "没有重启或部署线上服务",
+    "没有重测 GPU 1 最大 Agent 并发；真实模型和外部服务质量未在本次离线回归中验证",
+    "耗时采样为本机短时测量，不是端到端收益保证"
+  ],
+  "validation_command": "mvn -pl rs-service-agent -am test -DargLine=-Xmx1024m"
+}

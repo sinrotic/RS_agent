@@ -1,0 +1,18 @@
+{
+  "products": 1000,
+  "slots_per_product": 4,
+  "split_products": {
+    "train": 800,
+    "valid": 100,
+    "test": 100
+  },
+  "categories": {
+    "Office_Products": 500,
+    "Electronics": 500
+  },
+  "excluded_historical_pilot_items": 20,
+  "near_duplicate_skips": 4,
+  "split_policy": "before generation; one product per heuristic title family; exact 800/100/100",
+  "limitation": "title token Jaccard >= .65 rejection does not guarantee all family duplicates removed",
+  "input_sha256": "18c2369f030b60e1c5433320b0e8643f52b59ce8f7a11c220d9c12d1996f3046"
+}

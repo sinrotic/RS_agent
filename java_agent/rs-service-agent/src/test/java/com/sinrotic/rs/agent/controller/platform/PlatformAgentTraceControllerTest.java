@@ -60,7 +60,8 @@ class PlatformAgentTraceControllerTest {
         );
         when(traceService.platformSessionTrace("sess_001")).thenReturn(response);
 
-        mockMvc.perform(get("/api/platform/agent/sess_001/turns"))
+        mockMvc.perform(get("/api/platform/agent/sess_001/turns")
+                        .header("X-User-Roles", "OBSERVER"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.session_id").value("sess_001"))
                 .andExpect(jsonPath("$.turns[0].request_id").value("agent_req_001"))
@@ -69,5 +70,12 @@ class PlatformAgentTraceControllerTest {
                 .andExpect(jsonPath("$.turns[0].tool_calls[1].metadata.model_key").value("agent_4b"));
 
         verify(traceService).platformSessionTrace("sess_001");
+    }
+
+    @Test
+    void ordinaryUserCannotReadPlatformTrace() throws Exception {
+        mockMvc.perform(get("/api/platform/agent/sess_001/turns")
+                        .header("X-User-Roles", "USER"))
+                .andExpect(status().isForbidden());
     }
 }

@@ -1,0 +1,9 @@
+{
+  "action": "fp8",
+  "pid": 293368,
+  "gpu": 1,
+  "max_model_len": "16384",
+  "quantization": "fp8_per_channel",
+  "quantization_config": "{\"ignore\":[\"lm_head\",\"re:.*visual.*\",\"re:.*linear_attn.*\",\"re:.*self_attn.*\"]}",
+  "log": "/tmp/rs-agent-quantization-20261009/model-fp8.log"
+}

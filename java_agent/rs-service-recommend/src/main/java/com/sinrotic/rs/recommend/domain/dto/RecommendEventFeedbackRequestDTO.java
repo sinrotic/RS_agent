@@ -23,6 +23,11 @@ public record RecommendEventFeedbackRequestDTO(
     private static final String DEFAULT_EVENT_TYPE = "click";
 
     public RecommendEventFeedbackRequestDTO withDefaults() {
+        FeedbackRequestValidation.text(requestId, "request_id");
+        FeedbackRequestValidation.text(sessionId, "session_id");
+        FeedbackRequestValidation.text(itemId, "item_id");
+        FeedbackRequestValidation.timestamp(occurredAt, "occurred_at");
+        if (eventValue != null && !Double.isFinite(eventValue)) FeedbackRequestValidation.fail("event_value必须是有限数值");
         return new RecommendEventFeedbackRequestDTO(
                 requestId,
                 sessionId,

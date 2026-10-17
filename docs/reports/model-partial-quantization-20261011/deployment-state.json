@@ -1,0 +1,87 @@
+{
+  "authorization": "用户明确要求正式部署 MLP INT4、注意力和 GDN BF16、40% 显存预算",
+  "model": "Qwen3.5-4B",
+  "precision": "MLP INT4 / attention and GDN BF16",
+  "updates": {
+    "MODEL_PATH": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "0",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.40",
+    "VLLM_MAX_NUM_SEQS": "64",
+    "VLLM_MAX_MODEL_LEN": "16384",
+    "VLLM_CACHE_ROOT": "/home/luo/RS_agent_java/model_deploy/quantization-cache/20261011-mlp-int4-bf16-memory40"
+  },
+  "previous_model_path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-AutoRound-0a857215-rs-runtime",
+  "previous_api_pid": 3845227,
+  "previous_launcher_pid": 3845219,
+  "baseline_sha256": {
+    ".env": "ca0a1fbeba27c862b6a7f22b57ac40d7017fa76652bfd0380f6ddff097874330",
+    "start_qwen35_4b_vllm.sh": "f68e91475b1a2fd5c17af8800547773363cf4377b792147eb9122d5c5b342432",
+    "run_qwen35_4b_vllm.sh": "a0e401fae45e0fb2fe3af50e34229e4fec2400556ff9099d1a4de9e4f82f7921",
+    "vllm_prefix_warmup.py": "ebcf099f6a9762def0f813726932f7625dde7193983cf8662fbe99e392c206a5",
+    "vllm_structured_output_probe.py": "2f977d93707585c5a3c68be4249823a34c2bc01e392370bb78f5adf18bc52b45"
+  },
+  "backup": "/home/luo/RS_agent_java/model_deploy/backup-partial-quantization-20261011-171451",
+  "gpu_before": {
+    "used_mib": 14871,
+    "free_mib": 9211,
+    "processes": [
+      {
+        "pid": 3417056,
+        "memory_mib": 3082
+      },
+      {
+        "pid": 3847460,
+        "memory_mib": 11760
+      }
+    ]
+  },
+  "promoted": true,
+  "rollback": false,
+  "restore_script": "/home/luo/RS_agent_java/model_deploy/restore_qwen35_4b_partial_memory40.py",
+  "known_limitations": [
+    "隔离固定规划回放 4/16 未完整结束，尚未证明工具可靠性修复",
+    "40% 缓存容量较小，未做持续高并发长上下文负载测试"
+  ],
+  "launcher_pid": 625625,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T09:16:55.136761+00:00",
+    "elapsed_seconds": 5.05
+  },
+  "api_pid": 625633,
+  "deployed_env_sha256": "7031bff4741223eaf71f5c3c8c0868c4ea79b1587e88779a72b2d98cb5f3e3b1",
+  "model_regression_passed": true,
+  "own_clone_id": "9db6cfb9248cd495b2346dd148dc963207d5c279966d8f7fc5d20e1021198b8d",
+  "business_passed": 8,
+  "business_total": 8,
+  "health": true,
+  "gpu_after": {
+    "used_mib": 11841,
+    "free_mib": 12241,
+    "processes": [
+      {
+        "pid": 3417056,
+        "memory_mib": 3078
+      },
+      {
+        "pid": 627341,
+        "memory_mib": 8734
+      }
+    ]
+  },
+  "released_gpu_memory_mib": 3030,
+  "own_validation_cleanup_passed": true
+}

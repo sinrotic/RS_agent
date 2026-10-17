@@ -1,0 +1,54 @@
+{
+  "health": 200,
+  "precision": "MLP INT4 / attention and GDN BF16",
+  "model_root": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+  "served_model": "qwen35-4b",
+  "gpu": 1,
+  "gpu_memory_utilization": 0.5,
+  "max_num_seqs": 128,
+  "max_model_len": 16384,
+  "model_loading_gib": 5.52,
+  "kv_cache_gib": 3.99,
+  "kv_cache_tokens": 106496,
+  "estimated_full_context_concurrency": 6.5,
+  "api_pid": 806733,
+  "launcher_pid": 806724,
+  "gpu_memory": {
+    "used_mib": 14383,
+    "free_mib": 9699,
+    "processes": [
+      {
+        "pid": 3417056,
+        "memory_mib": 3078
+      },
+      {
+        "pid": 809000,
+        "memory_mib": 11276
+      }
+    ]
+  },
+  "structured_probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T10:09:42.649891+00:00",
+    "elapsed_seconds": 6.791
+  },
+  "runtime_env_sha256": "e81fbfbbcf30b95ef5bde02f95ec75f78a48f04ae420edb06e6753bf3ffdbb9c",
+  "startup_scripts_unchanged": true,
+  "prefix_caching_enabled": true,
+  "prefix_keepalive_enabled": true,
+  "warmup_only_when_idle": true,
+  "shared_agent_running": true,
+  "bge_pid_unchanged": 3417056,
+  "own_validation_cleaned": true
+}

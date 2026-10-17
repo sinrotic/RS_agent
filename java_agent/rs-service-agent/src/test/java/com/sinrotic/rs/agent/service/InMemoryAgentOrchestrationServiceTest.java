@@ -2,12 +2,15 @@ package com.sinrotic.rs.agent.service;
 
 import com.sinrotic.rs.agent.domain.dto.AgentChatRequestDTO;
 import com.sinrotic.rs.agent.domain.dto.AgentRuntimeSystemPromptUpdateDTO;
+import com.sinrotic.rs.agent.domain.session.AgentSessionEvent;
 import com.sinrotic.rs.agent.domain.vo.AgentChatVO;
+import com.sinrotic.rs.agent.domain.vo.AgentRecommendedItemVO;
 import com.sinrotic.rs.agent.domain.vo.AgentSessionTraceVO;
 import com.sinrotic.rs.agent.domain.vo.AgentStreamEventVO;
 import com.sinrotic.rs.agent.domain.vo.AgentTraceEventVO;
 import com.sinrotic.rs.agent.service.impl.AgentLoopResult;
 import com.sinrotic.rs.agent.service.impl.AgentModelStreamEvent;
+import com.sinrotic.rs.agent.service.impl.InMemoryAgentHotSessionStore;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentOrchestrationService;
 import com.sinrotic.rs.agent.service.impl.RsAgentLoop;
@@ -26,8 +29,61 @@ import static org.assertj.core.api.Assertions.assertThat;
 class InMemoryAgentOrchestrationServiceTest {
 
     @Test
+    void repeatedToolRequestsReachABoundedFinalAnswerInsteadOfFailingTheTurn() {
+        var service = new InMemoryAgentOrchestrationService((requestId, request, consumer) -> {
+            if (Boolean.TRUE.equals(request.resolvedContext().get("final_answer_only"))) {
+                consumer.accept(AgentModelStreamEvent.toolUse("emit_final_answer", Map.of("blocks",
+                        List.of(Map.of("type", "text", "content", "根据现有商品证据，这些候选尚不能确认满足全部要求。")))));
+            } else {
+                consumer.accept(AgentModelStreamEvent.toolUse("load_skill", Map.of("skill_name", "explicit-need-recommendation")));
+                consumer.accept(AgentModelStreamEvent.done());
+            }
+        }, new VirtualThreadAgentToolUseExecutor(event -> Map.of("status", "SUCCESS", "loaded", true)));
+        assertThat(service.chat(new AgentChatRequestDTO("bounded-loop", "profile", "耳机", 3, Map.of())).assistantMessage())
+                .contains("根据现有商品证据");
+    }
+
+    @Test
+    void ordinaryChatUsesTheSameModelLoopAndPersistsItsAnswer() {
+        AtomicInteger calls = new AtomicInteger();
+        var service = new InMemoryAgentOrchestrationService((requestId, request, consumer) -> {
+            calls.incrementAndGet();
+            consumer.accept(AgentModelStreamEvent.token("这是一段模型回答"));
+            consumer.accept(AgentModelStreamEvent.done());
+        }, new VirtualThreadAgentToolUseExecutor());
+        var response = service.chat(new AgentChatRequestDTO("sync-loop", "profile", "帮我选商品", 6, Map.of()));
+        assertThat(calls.get()).isEqualTo(1);
+        assertThat(response.assistantMessage()).isEqualTo("这是一段模型回答");
+        assertThat(service.sessionTurns("sync-loop").turns().getFirst().assistantMessage()).isEqualTo(response.assistantMessage());
+    }
+
+    @Test
+    void chatUsesConfiguredRecommendationService() {
+        InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService();
+        AgentRecommendationService configuredService = request -> List.of(
+                new AgentRecommendedItemVO("REAL-HTTP-001", "Noise Cancelling Headphones", "Audio", 0.95, "Matches commute")
+        );
+        service.setRecommendationService(configuredService);
+
+        AgentChatVO chat = service.chat(new AgentChatRequestDTO(
+                "sess_configured_recommendation",
+                "A1XYZ",
+                "Find commute headphones",
+                6,
+                Map.of("scene", "agent_chat")
+        ));
+
+        assertThat(chat.recommendedItems()).extracting(AgentRecommendedItemVO::itemId)
+                .containsExactly("REAL-HTTP-001");
+    }
+
+    @Test
     void chatStoresTurnForSessionTrace() {
         InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService();
+        service.setRecommendationService(request -> List.of(
+                new AgentRecommendedItemVO("REAL-001", "Backpack", "Bags", 0.9, "Matched request"),
+                new AgentRecommendedItemVO("REAL-002", "Organizer", "Storage", 0.8, "Matched request")
+        ));
 
         AgentChatVO chat = service.chat(new AgentChatRequestDTO(
                 "sess_001",
@@ -42,10 +98,10 @@ class InMemoryAgentOrchestrationServiceTest {
         assertThat(chat.sessionId()).isEqualTo("sess_001");
         assertThat(chat.recommendedItems()).hasSize(2);
         assertThat(chat.toolCalls()).extracting("toolName")
-                .containsExactly("recommend_candidates", "rag_support", "model_chat");
+                .containsExactly("recommend_candidates");
         assertThat(trace.turns()).hasSize(1);
         assertThat(trace.turns().getFirst().requestId()).isEqualTo(chat.requestId());
-        assertThat(trace.turns().getFirst().recommendedItemIds()).containsExactly("B001", "B002");
+        assertThat(trace.turns().getFirst().recommendedItemIds()).containsExactly("REAL-001", "REAL-002");
     }
 
     @Test
@@ -252,7 +308,8 @@ class InMemoryAgentOrchestrationServiceTest {
                         }
                 ) {
                     @Override
-                    public AgentLoopResult run(AgentChatRequestDTO request, java.util.function.Consumer<AgentStreamEventVO> consumer) {
+                    public AgentLoopResult run(AgentChatRequestDTO request, java.util.function.Consumer<AgentStreamEventVO> consumer, Runnable onReady) {
+                        onReady.run();
                         String requestId = "agent_req_normalized";
                         consumer.accept(new AgentStreamEventVO("tool_result", requestId, Map.of(
                                 "tool_call_id", "call_query",
@@ -308,9 +365,8 @@ class InMemoryAgentOrchestrationServiceTest {
             assertThat(event.eventType()).isEqualTo("tool_result");
             assertThat(event.toolCallId()).isEqualTo("call_query");
             assertThat(event.latencyMs()).isEqualTo(42L);
-            assertThat(event.inputSummary()).isEmpty();
-            assertThat(event.outputSummary()).isEqualTo("status=SUCCESS");
-            assertThat(event.data()).doesNotContainKeys("query", "output_summary");
+            assertThat(event.inputSummary()).isEqualTo("query=wireless headphones");
+            assertThat(event.outputSummary()).isEqualTo("ranked 2 candidates");
             assertThat(event.errorCode()).isEmpty();
             assertThat(event.errorMessage()).isEmpty();
             assertThat(event.status()).isEqualTo("success");
@@ -318,9 +374,8 @@ class InMemoryAgentOrchestrationServiceTest {
         assertThat(reportedEvents).anySatisfy(event -> {
             assertThat(event.eventType()).isEqualTo("tool_result");
             assertThat(event.toolCallId()).isEqualTo("call_arguments");
-            assertThat(event.inputSummary()).isEmpty();
-            assertThat(event.outputSummary()).isEqualTo("status=SUCCESS");
-            assertThat(event.data()).doesNotContainKeys("tool_arguments", "output_summary");
+            assertThat(event.inputSummary()).isEqualTo(longArguments.substring(0, 240));
+            assertThat(event.outputSummary()).isEqualTo(longOutput.substring(0, 240));
         });
         assertThat(reportedEvents).anySatisfy(event -> {
             assertThat(event.eventType()).isEqualTo("tool_result");
@@ -389,6 +444,102 @@ class InMemoryAgentOrchestrationServiceTest {
     }
 
     @Test
+    void streamChatCheckpointsTurnEventsIntoHotSessionStore() {
+        InMemoryAgentHotSessionStore hotSessionStore = new InMemoryAgentHotSessionStore();
+        InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService(
+                new RsAgentLoop(
+                        new InMemoryAgentRuntimeConfigurationService(),
+                        new VirtualThreadAgentToolUseExecutor(event -> Map.of("status", "SUCCESS")),
+                        (requestId, request, consumer) -> {
+                            consumer.accept(AgentModelStreamEvent.token("hot answer"));
+                            consumer.accept(AgentModelStreamEvent.done());
+                        }
+                ),
+                event -> {
+                },
+                hotSessionStore
+        );
+
+        service.streamChat(new AgentChatRequestDTO(
+                "sess_hot_context",
+                "A1XYZ",
+                "Find wireless headphones",
+                2,
+                Map.of("scene", "chat")
+        ), ignored -> {
+        });
+
+        assertThat(hotSessionStore.events("sess_hot_context"))
+                .extracting(AgentSessionEvent::eventType)
+                .containsExactly("USER_MESSAGE", "ASSISTANT_FINAL");
+        assertThat(hotSessionStore.events("sess_hot_context"))
+                .anySatisfy(event -> {
+                    assertThat(event.eventType()).isEqualTo("USER_MESSAGE");
+                    assertThat(event.payload()).containsEntry("content", "Find wireless headphones");
+                })
+                .anySatisfy(event -> {
+                    assertThat(event.eventType()).isEqualTo("ASSISTANT_FINAL");
+                    assertThat(event.payload()).containsEntry("assistant_message", "hot answer");
+                });
+        assertThat(hotSessionStore.latestSnapshot("sess_hot_context"))
+                .hasValueSatisfying(snapshot -> {
+                    assertThat(snapshot.summaryPayload()).containsEntry("last_user_message", "Find wireless headphones");
+                    assertThat(snapshot.summaryPayload()).containsEntry("last_assistant_message", "hot answer");
+                    assertThat(snapshot.sourceEventCount()).isEqualTo(hotSessionStore.events("sess_hot_context").size());
+                });
+    }
+
+    @Test
+    void streamChatInjectsLatestHotSessionSnapshotIntoNextTurnContext() {
+        InMemoryAgentHotSessionStore hotSessionStore = new InMemoryAgentHotSessionStore();
+        AtomicInteger modelCalls = new AtomicInteger();
+        AtomicReference<Map<String, Object>> secondTurnContext = new AtomicReference<>();
+        InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService(
+                new RsAgentLoop(
+                        new InMemoryAgentRuntimeConfigurationService(),
+                        new VirtualThreadAgentToolUseExecutor(event -> Map.of("status", "SUCCESS")),
+                        (requestId, request, consumer) -> {
+                            if (modelCalls.incrementAndGet() == 2) {
+                                secondTurnContext.set(request.resolvedContext());
+                            }
+                            consumer.accept(AgentModelStreamEvent.token("answer-" + modelCalls.get()));
+                            consumer.accept(AgentModelStreamEvent.done());
+                        }
+                ),
+                event -> {
+                },
+                hotSessionStore
+        );
+
+        AgentChatRequestDTO firstTurn = new AgentChatRequestDTO(
+                "sess_hot_resume",
+                "A1XYZ",
+                "I want wireless headphones",
+                2,
+                Map.of("scene", "chat")
+        );
+        AgentChatRequestDTO secondTurn = new AgentChatRequestDTO(
+                "sess_hot_resume",
+                "A1XYZ",
+                "Anything with noise cancelling?",
+                2,
+                Map.of("scene", "chat")
+        );
+
+        service.streamChat(firstTurn, ignored -> {
+        });
+        service.streamChat(secondTurn, ignored -> {
+        });
+
+        assertThat(secondTurnContext.get()).containsKey("session_hot_context");
+        @SuppressWarnings("unchecked")
+        Map<String, Object> hotContext = (Map<String, Object>) secondTurnContext.get().get("session_hot_context");
+        assertThat(hotContext)
+                .containsEntry("last_user_message", "I want wireless headphones")
+                .containsEntry("last_assistant_message", "answer-1");
+    }
+
+    @Test
     void traceKeepsProfileAndProjectionMetadataWithoutAnswerPayload() {
         List<AgentTraceEventVO> reportedEvents = new ArrayList<>();
         InMemoryAgentOrchestrationService service = new InMemoryAgentOrchestrationService(
@@ -417,4 +568,5 @@ class InMemoryAgentOrchestrationServiceTest {
                 .containsEntry("projection_result", "allowed")
                 .doesNotContainKeys("content", "diagnostics", "raw_path");
     }
+
 }

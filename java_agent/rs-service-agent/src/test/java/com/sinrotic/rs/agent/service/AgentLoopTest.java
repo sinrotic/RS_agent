@@ -2,6 +2,7 @@ package com.sinrotic.rs.agent.service;
 
 import com.sinrotic.rs.agent.domain.dto.AgentChatRequestDTO;
 import com.sinrotic.rs.agent.domain.vo.AgentStreamEventVO;
+import com.sinrotic.rs.agent.domain.vo.AgentToolCallVO;
 import com.sinrotic.rs.agent.service.impl.AgentFinishReason;
 import com.sinrotic.rs.agent.service.impl.AgentLoop;
 import com.sinrotic.rs.agent.service.impl.AgentLoopHookContext;
@@ -18,6 +19,7 @@ import com.sinrotic.rs.agent.service.impl.VirtualThreadAgentToolUseExecutor;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -28,6 +30,76 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class AgentLoopTest {
+
+    @Test
+    void interruptWhileWaitingForModelCapacityReleasesTurnWithoutCallingModel() throws Exception {
+        var properties = new com.sinrotic.rs.agent.config.AgentExecutionProperties();
+        properties.setMaxModelStreams(1);
+        properties.setModelStreamAcquireTimeoutMs(5000);
+        var limiter = new AgentExecutionLimiter(properties);
+        var interrupter = new InMemoryAgentInterrupter();
+        var occupied = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var beforeModel = new CountDownLatch(1);
+        var requestId = new java.util.concurrent.atomic.AtomicReference<String>();
+        var modelCalls = new AtomicInteger();
+        try (var workers = java.util.concurrent.Executors.newVirtualThreadPerTaskExecutor();
+             var tools = new VirtualThreadAgentToolUseExecutor()) {
+            var holder = workers.submit(() -> limiter.runWithModelStream(() -> {
+                occupied.countDown();
+                release.await();
+            }));
+            assertThat(occupied.await(2, TimeUnit.SECONDS)).isTrue();
+            var loop = new RsAgentLoop(new InMemoryAgentRuntimeConfigurationService(), tools,
+                    (id, request, consumer) -> {
+                        modelCalls.incrementAndGet();
+                        consumer.accept(AgentModelStreamEvent.token("完成"));
+                        consumer.accept(AgentModelStreamEvent.done());
+                    }, context -> {
+                        if (AgentLoopHookEvent.BEFORE_MODEL_CALL.equals(context.eventName())) {
+                            requestId.set(context.requestId());
+                            beforeModel.countDown();
+                        }
+                        return AgentLoopHookResult.proceed();
+                    }, interrupter, limiter);
+            var turn = workers.submit(() -> loop.run(new AgentChatRequestDTO(
+                    "queued-model-session", "profile", "推荐鼠标", 5, Map.of()), event -> {}));
+            try {
+                assertThat(beforeModel.await(2, TimeUnit.SECONDS)).isTrue();
+                assertThat(interrupter.interrupt(requestId.get(), "user_stop")).isTrue();
+                assertThat(turn.get(1, TimeUnit.SECONDS).finishReason()).isEqualTo(AgentFinishReason.INTERRUPTED);
+                assertThat(modelCalls).hasValue(0);
+            } finally {
+                release.countDown();
+                holder.get(2, TimeUnit.SECONDS);
+                turn.get(2, TimeUnit.SECONDS);
+            }
+            assertThat(limiter.callWithModelStream(() -> "available")).isEqualTo("available");
+        }
+    }
+
+    @Test
+    void repeatedDependencyFailuresForceFinalAnswerBeforeExhaustingModelLoops() {
+        AtomicInteger calls = new AtomicInteger();
+        AgentModelStreamClient model = (requestId, request, consumer) -> {
+            calls.incrementAndGet();
+            if (Boolean.TRUE.equals(request.resolvedContext().get("final_answer_only"))) {
+                consumer.accept(AgentModelStreamEvent.toolUse("emit_final_answer", Map.of(
+                        "blocks", List.of(Map.of("type", "text", "content", "检索暂时不可用，请稍后重试。")))));
+            } else {
+                consumer.accept(AgentModelStreamEvent.toolUse("rag_support", Map.of("query", "背包")));
+            }
+        };
+        try (var executor = new VirtualThreadAgentToolUseExecutor(event -> {
+            throw new IllegalStateException("dependency unavailable");
+        })) {
+            var loop = new RsAgentLoop(new InMemoryAgentRuntimeConfigurationService(), executor, model);
+            var result = loop.run(new AgentChatRequestDTO("failure-session", "profile", "推荐背包", 1, Map.of()), event -> {});
+            assertThat(calls).hasValue(3);
+            assertThat(result.finishReason()).isEqualTo(AgentFinishReason.FINAL_ANSWER);
+            assertThat(result.toolCalls()).filteredOn(tool -> "FAILED".equals(tool.status())).hasSize(2);
+        }
+    }
 
     @Test
     void subclassCanProvideAgentProfileAndCustomToolServices() {
@@ -67,9 +139,9 @@ class AgentLoopTest {
                 (requestId, request, consumer) -> consumer.accept(AgentModelStreamEvent.toolUse(
                         "emit_final_answer",
                         Map.of("blocks", List.of(
-                                Map.of("type", "text", "content", "我建议先看这两款。"),
-                                Map.of("type", "product_cards", "card_set_id", "cards_001"),
-                                Map.of("type", "text", "content", "第一款更适合通勤，第二款更适合防水。")
+                                finalAnswerBlock("text", "我建议先看这两款。", null, null, null),
+                                finalAnswerBlock("product_cards", null, "cards_001", null, "grid"),
+                                finalAnswerBlock("text", "第一款更适合通勤，第二款更适合防水。", null, null, null)
                         ))
                 ))
         ) {
@@ -208,6 +280,67 @@ class AgentLoopTest {
                 AgentLoopHookEvent.PRE_TOOL_USE,
                 AgentLoopHookEvent.POST_TOOL_USE
         );
+    }
+
+    @Test
+    void sameModelTurnConcurrentSafeToolsAreDispatchedWithoutStoppingTheStream() {
+        AtomicInteger modelCalls = new AtomicInteger();
+        AtomicInteger runningTools = new AtomicInteger();
+        AtomicInteger maxRunningTools = new AtomicInteger();
+        AgentLoop loop = new AgentLoop(
+                new AgentProfile("test_agent", "Concurrent tool test agent.", Map.of(
+                        "load_skill", "rs-service-agent",
+                        "rag_support", "rs-service-recommend"
+                )),
+                new InMemoryAgentRuntimeConfigurationService(),
+                new VirtualThreadAgentToolUseExecutor(event -> {
+                    int running = runningTools.incrementAndGet();
+                    maxRunningTools.accumulateAndGet(running, Math::max);
+                    try {
+                        Thread.sleep(150);
+                    } catch (InterruptedException error) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException(error);
+                    } finally {
+                        runningTools.decrementAndGet();
+                    }
+                    return Map.of("status", "SUCCESS", "tool_name", event.toolName());
+                }),
+                (requestId, request, consumer) -> {
+                    if (modelCalls.incrementAndGet() == 1) {
+                        consumer.accept(AgentModelStreamEvent.toolUse(
+                                "toolu_skill",
+                                "load_skill",
+                                Map.of("skill_name", "explicit-need-recommendation")
+                        ));
+                        consumer.accept(AgentModelStreamEvent.toolUse(
+                                "toolu_rag",
+                                "rag_support",
+                                Map.of("query", "bluetooth earbuds")
+                        ));
+                        consumer.accept(AgentModelStreamEvent.done());
+                        return;
+                    }
+                    consumer.accept(AgentModelStreamEvent.token("done"));
+                    consumer.accept(AgentModelStreamEvent.done());
+                }
+        ) {
+        };
+        List<AgentStreamEventVO> events = new ArrayList<>();
+
+        AgentLoopResult result = loop.run(new AgentChatRequestDTO(
+                "sess_concurrent_tools",
+                "A1XYZ",
+                "recommend earbuds",
+                1,
+                Map.of()
+        ), events::add);
+
+        assertThat(maxRunningTools.get()).isGreaterThanOrEqualTo(2);
+        assertThat(result.toolCalls()).extracting(AgentToolCallVO::toolCallId)
+                .containsExactly("toolu_skill", "toolu_rag");
+        assertThat(events).extracting(AgentStreamEventVO::event)
+                .containsSubsequence("tool_use", "tool_use", "tool_result", "tool_result", "token", "done");
     }
 
     @Test
@@ -382,6 +515,22 @@ class AgentLoopTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(toolResult.data()).containsEntry("status", "INTERRUPTED");
+    }
+
+    private static Map<String, Object> finalAnswerBlock(
+            String type,
+            String content,
+            String cardSetId,
+            List<String> itemIds,
+            String layout
+    ) {
+        Map<String, Object> block = new LinkedHashMap<>();
+        block.put("type", type);
+        block.put("content", content);
+        block.put("card_set_id", cardSetId);
+        block.put("item_ids", itemIds);
+        block.put("layout", layout);
+        return block;
     }
 
     private static class TestAgentLoop extends AgentLoop {

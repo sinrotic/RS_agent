@@ -14,16 +14,30 @@ import java.util.Map;
 public class RestModelTextEmbeddingClient implements TextEmbeddingClient {
 
     private final RestClient restClient;
+    private final RecommendationInferenceCache cache;
 
     public RestModelTextEmbeddingClient(
             RestClient.Builder restClientBuilder,
             @Value("${rs.model.base-url:http://rs-service-model}") String modelBaseUrl
     ) {
+        this(restClientBuilder, modelBaseUrl, RecommendationInferenceCache.disabled());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public RestModelTextEmbeddingClient(RestClient.Builder restClientBuilder,
+            @Value("${rs.model.base-url:http://rs-service-model}") String modelBaseUrl,
+            RecommendationInferenceCache cache) {
         this.restClient = restClientBuilder.baseUrl(modelBaseUrl).build();
+        this.cache = cache;
     }
 
     @Override
     public List<List<Float>> embedTexts(String modelKey, String requestId, List<String> texts) {
+        var inputs = List.copyOf(texts);
+        return cache.embeddings(modelKey, inputs, () -> compute(modelKey, requestId, inputs));
+    }
+
+    private List<List<Float>> compute(String modelKey, String requestId, List<String> texts) {
         ModelEmbedResponse response = restClient.post()
                 .uri("/internal/model/embed")
                 .body(Map.of(

@@ -1,9 +1,9 @@
 package com.sinrotic.rs.gateway.filter;
 
-import java.util.Optional;
+import reactor.core.publisher.Mono;
 
 @FunctionalInterface
 public interface GatewayTokenValidator {
 
-    Optional<GatewayUserContext> validate(String accessToken);
+    Mono<GatewayUserContext> validate(String accessToken);
 }

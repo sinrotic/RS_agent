@@ -5,7 +5,6 @@ import hashlib
 import json
 import shutil
 import sys
-from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any

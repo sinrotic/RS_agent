@@ -6,4 +6,6 @@ import com.sinrotic.rs.agent.service.impl.AgentLoopHookResult;
 public interface AgentLoopHookDispatcher {
 
     AgentLoopHookResult dispatch(AgentLoopHookContext context);
+
+    default boolean supportsDirectRecommendation() { return false; }
 }

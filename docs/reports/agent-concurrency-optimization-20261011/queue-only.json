@@ -1,0 +1,244 @@
+{
+  "name": "queue-only",
+  "model_before": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "model_slots": 8,
+  "model_wait_ms": 15000,
+  "scope": "真实 Agent、LLM、推荐、目录与持久历史；8 个真实账号的独立 Session",
+  "stages": [
+    {
+      "concurrent_requests": 16,
+      "distinct_accounts": 8,
+      "distinct_sessions": 16,
+      "passed": 16,
+      "failed": 0,
+      "batch_wall_ms": 16938.51,
+      "completed_requests_per_second": 0.945,
+      "median_ms": 12675.63,
+      "maximum_ms": 16913.07,
+      "peak_model_running": 8.0,
+      "peak_model_waiting": 4.0,
+      "model_preemptions_delta": 0.0,
+      "cases": [
+        {
+          "index": 0,
+          "complete_ms": 8793.78,
+          "agent_ms": 8787.79,
+          "items": 5,
+          "answer_chars": 145,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 1,
+          "complete_ms": 9514.44,
+          "agent_ms": 9508.17,
+          "items": 5,
+          "answer_chars": 182,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 2,
+          "complete_ms": 16187.41,
+          "agent_ms": 16181.65,
+          "items": 5,
+          "answer_chars": 90,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 3,
+          "complete_ms": 16780.05,
+          "agent_ms": 16774.85,
+          "items": 5,
+          "answer_chars": 160,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 4,
+          "complete_ms": 16864.19,
+          "agent_ms": 16858.99,
+          "items": 5,
+          "answer_chars": 173,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 5,
+          "complete_ms": 16913.07,
+          "agent_ms": 16906.36,
+          "items": 5,
+          "answer_chars": 194,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 6,
+          "complete_ms": 7041.33,
+          "agent_ms": 7034.43,
+          "items": 5,
+          "answer_chars": 97,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 7,
+          "complete_ms": 16898.77,
+          "agent_ms": 16893.52,
+          "items": 5,
+          "answer_chars": 164,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 8,
+          "complete_ms": 9609.31,
+          "agent_ms": 9604.17,
+          "items": 5,
+          "answer_chars": 174,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 9,
+          "complete_ms": 8794.07,
+          "agent_ms": 8788.17,
+          "items": 5,
+          "answer_chars": 174,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 10,
+          "complete_ms": 8909.0,
+          "agent_ms": 8903.03,
+          "items": 5,
+          "answer_chars": 186,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 11,
+          "complete_ms": 9258.27,
+          "agent_ms": 9250.43,
+          "items": 5,
+          "answer_chars": 176,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 12,
+          "complete_ms": 15741.95,
+          "agent_ms": 15736.42,
+          "items": 5,
+          "answer_chars": 163,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 13,
+          "complete_ms": 16352.61,
+          "agent_ms": 16346.6,
+          "items": 5,
+          "answer_chars": 135,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 14,
+          "complete_ms": 8381.69,
+          "agent_ms": 8374.14,
+          "items": 5,
+          "answer_chars": 157,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        },
+        {
+          "index": 15,
+          "complete_ms": 16724.79,
+          "agent_ms": 16719.02,
+          "items": 5,
+          "answer_chars": 137,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "no_degradation": true,
+          "deepfm_bge": true,
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "metric_limit": "模型全局指标可能包含其他共享请求；本实验未测持续最大容量或生产 P95",
+  "source_limits": {
+    "RS_AGENT_MAX_ACTIVE_LOOPS": "(使用配置默认值)",
+    "RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS": "(使用配置默认值)",
+    "RS_AGENT_MAX_MODEL_STREAMS": "(使用配置默认值)",
+    "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS": "(使用配置默认值)",
+    "RS_AGENT_MAX_TOOL_CALLS": "(使用配置默认值)",
+    "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "(使用配置默认值)"
+  },
+  "warmup": {
+    "index": 0,
+    "complete_ms": 3977.04,
+    "agent_ms": 3970.43,
+    "items": 5,
+    "answer_chars": 162,
+    "finish_reason": "FINAL_ANSWER",
+    "error_code": null,
+    "no_degradation": true,
+    "deepfm_bge": true,
+    "passed": true
+  },
+  "model_after": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "model_process_unchanged": true
+}

@@ -1,0 +1,28 @@
+{
+  "config": {
+    "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "false",
+    "RS_RECOMMEND_SERVICE_URL": "http://127.0.0.1:18213",
+    "RS_AGENT_OPENAI_TEMPERATURE": "0.1",
+    "RS_AGENT_OPENAI_MAX_TOKENS": "1200"
+  },
+  "failure_lines": [
+    "2026-10-11T01:47:35.380Z  WARN 1 --- [rs-e2e-857e8b14-agent-fast] [omcat-handler-7] .w.s.m.s.DefaultHandlerExceptionResolver : Ignoring exception, response committed already: org.springframework.web.context.request.async.AsyncRequestTimeoutException",
+    "2026-10-11T01:47:35.381Z  WARN 1 --- [rs-e2e-857e8b14-agent-fast] [omcat-handler-7] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.context.request.async.AsyncRequestTimeoutException]",
+    "2026-10-11T01:48:31.358Z  WARN 1 --- [rs-e2e-857e8b14-agent-fast] [mcat-handler-15] .w.s.m.s.DefaultHandlerExceptionResolver : Ignoring exception, response committed already: org.springframework.web.context.request.async.AsyncRequestTimeoutException",
+    "2026-10-11T01:48:31.359Z  WARN 1 --- [rs-e2e-857e8b14-agent-fast] [mcat-handler-15] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.context.request.async.AsyncRequestTimeoutException]"
+  ],
+  "failed_sse_authoritative_history": [
+    {
+      "session_id": "sess_0fae598e40f846dd8958f623b80bcf76",
+      "finish_reasons": [
+        "MODEL_ERROR"
+      ]
+    },
+    {
+      "session_id": "sess_84cb0ca98d3445e696a6eaf1b7115de4",
+      "finish_reasons": [
+        "MODEL_ERROR"
+      ]
+    }
+  ]
+}

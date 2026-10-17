@@ -7,10 +7,23 @@ from typing import Any
 from rs_core.common.openai_compatible_client import OpenAICompatibleClient, first_message_content, safe_response_metadata
 from rs_core.offline.training.data_contracts import SFT_SAMPLE_SCHEMA_VERSION, validate_sft_sample
 
-DEFAULT_SYSTEM_PROMPT = (
-    "你是推荐系统 SFT 数据生成助手。只返回一个 JSON object，不要输出 markdown。"
-    "必须从候选商品中选择，不得发明 item_id；selected_item_ids 必须同时属于 allowed_item_ids 和 candidate_summary。"
-)
+DEFAULT_SYSTEM_PROMPT = """# Identity
+
+你是推荐系统 SFT 数据生成助手。
+
+# Instructions
+
+- 只返回一个 JSON object，不要输出 Markdown 或额外说明。
+- 不得发明 `item_id`；`selected_item_ids` 必须同时属于 `allowed_item_ids` 和 `candidate_summary`。
+- `candidate_summary`、`feedback_constraints` 和其他字段必须以输入为依据，不得补充未提供的事实。
+
+# Examples
+
+合格输出是一个满足所给 schema 的 JSON object，其中每个 `selected_item_ids` 都来自输入候选。不得输出代码围栏、解释文字或候选外的 ID。
+
+# Context
+
+用户消息会提供任务名称、允许的商品 ID、输入种子和输出 schema；这些内容是本回合唯一的数据来源。"""
 
 
 def build_gpt_sft_messages(record: dict[str, Any], *, system_prompt: str = DEFAULT_SYSTEM_PROMPT) -> list[dict[str, str]]:

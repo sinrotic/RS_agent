@@ -1,0 +1,46 @@
+{
+  "priority": "free_gpu_memory",
+  "authorization": "用户明确要求部署量化，以腾出显存供其他任务使用",
+  "candidate": "int4_autoround_original_tokenizer_memory50",
+  "updates": {
+    "MODEL_PATH": "/mnt/data/luo/models/Qwen3.5-4B-INT4-AutoRound-0a857215-rs-runtime",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "0",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.50",
+    "VLLM_CACHE_ROOT": "/home/luo/RS_agent_java/model_deploy/quantization-cache/20261011-int4-memory50"
+  },
+  "known_limitations": [
+    "先前同一 INT4 资产出现一次 rag_support 工具失败",
+    "BF16 和量化都观察到更多规划轮次，不保证业务更快"
+  ],
+  "backup": "/home/luo/RS_agent_java/model_deploy/backup-quantization-memory-20261011-122908",
+  "baseline_sha256": {
+    ".env": "002b85d2aea882f8e95fbe640cb9e43358931c1105da48e60e01bb412f4d510c",
+    "start_qwen35_4b_vllm.sh": "f68e91475b1a2fd5c17af8800547773363cf4377b792147eb9122d5c5b342432",
+    "run_qwen35_4b_vllm.sh": "a0e401fae45e0fb2fe3af50e34229e4fec2400556ff9099d1a4de9e4f82f7921",
+    "vllm_prefix_warmup.py": "ebcf099f6a9762def0f813726932f7625dde7193983cf8662fbe99e392c206a5",
+    "vllm_structured_output_probe.py": "2f977d93707585c5a3c68be4249823a34c2bc01e392370bb78f5adf18bc52b45"
+  },
+  "gpu_before": {
+    "total_mib": 24564,
+    "used_mib": 21661,
+    "free_mib": 2421
+  },
+  "promoted": true,
+  "rollback": false,
+  "restore_script": "/home/luo/RS_agent_java/model_deploy/restore_qwen35_4b_memory50.py",
+  "launcher_pid": 3845219,
+  "api_pid": 3845227,
+  "deployed_env_sha256": "ca0a1fbeba27c862b6a7f22b57ac40d7017fa76652bfd0380f6ddff097874330",
+  "model_regression_passed": true,
+  "business_passed": 4,
+  "business_total": 5,
+  "health": true,
+  "gpu_after": {
+    "total_mib": 24564,
+    "used_mib": 14867,
+    "free_mib": 9215
+  },
+  "released_gpu_memory_mib": 6794
+}

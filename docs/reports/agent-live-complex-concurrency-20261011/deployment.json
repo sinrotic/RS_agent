@@ -1,0 +1,47 @@
+{
+  "old_container_id": "b51f95f7fa6e19148ed889deda40d963cc8965cbc69f6f3c73cf470e5f385a98",
+  "old_agent_sha256": "8a8385f3ee802ed38333ffc49bd43a6306b97b5d829e013b433ce75a9179fa03",
+  "new_agent_sha256": "4bc94fc6894a65fb933071ac91c2506c5964542c68d464f59155967c027c1c76",
+  "parameters": {
+    "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+    "RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS": "300",
+    "RS_AGENT_MAX_MODEL_STREAMS": "16",
+    "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS": "15000",
+    "RS_AGENT_MAX_RECOMMENDATION_CALLS": "4",
+    "RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS": "15000",
+    "RS_AGENT_MAX_TOOL_CALLS": "64",
+    "RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS": "300",
+    "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2",
+    "RS_AGENT_SESSION_QUEUE_TIMEOUT_MS": "500"
+  },
+  "model_before": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml",
+    "1197995 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18092 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "active_turns_before_stop": 0,
+  "backup_container": "rs-e2e-857e8b14-agent-fast-rollback-20261011",
+  "deployed": true,
+  "rolled_back": false,
+  "new_container_id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+  "health_up": true,
+  "model_after": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml",
+    "1197995 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18092 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "model_process_unchanged": true,
+  "changed_environment_keys": [
+    "RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS",
+    "RS_AGENT_MAX_ACTIVE_LOOPS",
+    "RS_AGENT_MAX_MODEL_STREAMS",
+    "RS_AGENT_MAX_RECOMMENDATION_CALLS",
+    "RS_AGENT_MAX_SESSION_QUEUE_SIZE",
+    "RS_AGENT_MAX_TOOL_CALLS",
+    "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS",
+    "RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS",
+    "RS_AGENT_SESSION_QUEUE_TIMEOUT_MS",
+    "RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS",
+    "SERVER_SHUTDOWN",
+    "SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE"
+  ],
+  "switched_at_epoch": 1791719451.619253
+}

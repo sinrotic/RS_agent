@@ -1,0 +1,1996 @@
+{
+  "checks": [
+    "六路真实检索、实际统计、多画像首页、协同来源展示、换批去重、冷启动热门兜底",
+    "新增召回故障不阻断原首页，响应明确降级"
+  ],
+  "profiles": [
+    {
+      "profile_hash": "b683044d6e5cfb74b5d69ae83b1cc18c6c8100d903336961ba0b54e077a2f553",
+      "source_distribution": {
+        "swing_recall": 10,
+        "two_tower": 14,
+        "itemcf_strong": 9,
+        "profile_category": 14,
+        "itemcf_weak": 9,
+        "usercf_recall": 9,
+        "catalog_exploration": 24,
+        "popular": 15,
+        "profile_semantic": 14,
+        "category": 10
+      },
+      "diagnostic": {
+        "itemcf_weak": 84,
+        "itemcf_strong": 84,
+        "swing_recall": 83,
+        "usercf_recall": 83,
+        "category": 83,
+        "popular": 83
+      },
+      "first_page": [
+        {
+          "item_id": "B08N6WT6H3",
+          "rank": 1,
+          "score": 0.9873003363609314,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Powered USB Hub, atolla Aluminum 5-Port USB 3.0 Hub with 4 USB 3.0 Data Ports and 1 USB Smart Charging Port, USB Splitter with 5V/3A Power Adapter and Individual Switches (Renewed)",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B06Y44T38D",
+          "rank": 2,
+          "score": 0.9840026497840881,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Powered USB Hub Port Splitter - (2017 Version) atolla CH207U3 7 Port USB 3 Hub with Fast Charging Port for Mac Apple Macbook Surface Pro Multi Port Extender with Power Supply, On/off switch, 60cm Cord",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0895NXDZC",
+          "rank": 3,
+          "score": 0.9827592372894287,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "atolla USB 3.0 Hub Splitter, 4-Port USB Extender with Individual LED Power Switches, Ultra Slim USB Splitter for PC, Mac Pro/Mini, iMac, MacBook Air, Surface Pro, USB Flash Drives",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0C1BKFZ5P",
+          "rank": 4,
+          "score": 0.13575898110866547,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "swing_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "AINOPE 2 Pack USB 3.0 Extension Cable Type A Male to Female Extension Cord 3.3FT Durable Braided Material Fast Data Transfer Compatible with USB Keyboard,Mouse,Flash Drive, Hard Drive,Printer-Black",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B004L6MLPQ",
+          "rank": 5,
+          "score": 0.1306791603565216,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Apple 85W MagSafe Power Adapter for 15- and 17-inch MacBook Pro",
+            "category": "Apple Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B001BYN0P6",
+          "rank": 6,
+          "score": 0.051515158265829086,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Aftermarket High-Speed USB 4-Port Hub with Splitter Cable",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 5166.4
+    },
+    {
+      "profile_hash": "13f78a4a2362f489e09a64dd1e11c42dacf92e0da3f05d6ca976b3ba104c8ea7",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 17,
+        "itemcf_strong": 5,
+        "profile_category": 16,
+        "itemcf_weak": 11,
+        "usercf_recall": 0,
+        "catalog_exploration": 24,
+        "popular": 19,
+        "profile_semantic": 16,
+        "category": 11
+      },
+      "diagnostic": {
+        "itemcf_weak": 77,
+        "itemcf_strong": 5,
+        "swing_recall": 8,
+        "usercf_recall": 0,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B07PPYX3ZX",
+          "rank": 1,
+          "score": 0.9973445534706116,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "RC802V Replaced Voice Remote fit for TCL Android TV 40S330 32S330 43S434 50S434 55S434 65S434 75S434 32S6500A 65P8S 65P8 55P8S 55P8 55EP680 50P8S 50P8 40A325 49S6800 32S6510S 32A325 32A323",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08PZ5GDKJ",
+          "rank": 2,
+          "score": 0.9770327806472778,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "HCDZ Replacement Remote Control for TCL RC802V FMR1 06-BTZNYY-QRC802V FUR7 FUR4 FUR5 FMR2 FLR1 4K UHD AI Android Smart HDTV TV",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B09LT9474S",
+          "rank": 3,
+          "score": 0.9656575322151184,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "swing_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "[2 Pack] WQNIDE Case for TCL RC802V FMR1 FNR1 Smart Voice Remote Control, Silicone Protective Cover Shockproof Anti Slip Anti-Lost Glowing(Black and Glowgreen)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08FFCW95X",
+          "rank": 4,
+          "score": 0.8903805613517761,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Remote Control Compatible with All TCL Roku Smart TV 50S421 55S421 55S425 70S42 32S321 55S421 43S421 65S421 32D2900 32S301 55D2900U 55S401 65D2930U 65S401 65S4 with Netflix VUDU HULU",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "2911928083",
+          "rank": 5,
+          "score": 0.004353795666247606,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "AFRICAN PHILOSOPHY The Pharaonic Period: 2780-330 BC",
+            "category": "Video Games",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "1772761486",
+          "rank": 6,
+          "score": 0.004207155201584101,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "CHASING NEWFOUNDLAND",
+            "category": "Video Games",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3297.0
+    },
+    {
+      "profile_hash": "d3d802eb7393670289228a80d9264222edcaf026efba460f5d00f52154b4f33d",
+      "source_distribution": {
+        "swing_recall": 0,
+        "two_tower": 12,
+        "itemcf_strong": 7,
+        "profile_category": 10,
+        "itemcf_weak": 14,
+        "usercf_recall": 13,
+        "catalog_exploration": 24,
+        "popular": 12,
+        "profile_semantic": 20,
+        "category": 11
+      },
+      "diagnostic": {
+        "itemcf_weak": 116,
+        "itemcf_strong": 7,
+        "swing_recall": 0,
+        "usercf_recall": 100,
+        "category": 99,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B082QZG9Q4",
+          "rank": 1,
+          "score": 0.9018369913101196,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "The Leather Warehouse Zippered PadFolio/Portfolio for Men/Women with Document Resume Business Card Holder",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07NQ47DSR",
+          "rank": 2,
+          "score": 0.7821905612945557,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Professional Slim Padfolio for 9.7-inch iPad Pro or iPad Air, Full Grain Cow Leather Portfolio Case Organizer for Letter Size (A4) Notepad, Business Carrying Case",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07RRPN274",
+          "rank": 3,
+          "score": 0.6137602925300598,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Professional Portfolio Business Organizer, Leather Padfolio Case with Folding Center Panel, for 10.2-inch iPad 2019",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B082F417S1",
+          "rank": 4,
+          "score": 0.37200164794921875,
+          "reason": "根据你常关注的类目推荐",
+          "source_tags": [
+            "category",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Leather Desk Pad Protector,Mouse Pad,Office Desk Mat, Non-Slip PU Leather Desk Blotter,Laptop Desk Pad,Waterproof Desk Writing Pad for Office and Home (Gray,31.5\" x 15.7\")",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00006IAOB",
+          "rank": 5,
+          "score": 0.2740810811519623,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Artistic Perforated Paper Desk Pad, Draw, Write Notes and Ideas, Protects Desks from Scratches and Spills, Plain White Paper, 50 Sheets, 17\" x 22\"",
+            "category": "Pet Supplies",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B005I6EU48",
+          "rank": 6,
+          "score": 0.005127347074449062,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Verso Prologue Case Cover for Kindle Fire, Red (does not fit Kindle Fire HD)",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3536.5
+    },
+    {
+      "profile_hash": "892b31f33c3b94d499a815e57adc70f849127486afa37756f909c1e0c2ee9e6e",
+      "source_distribution": {
+        "swing_recall": 9,
+        "two_tower": 14,
+        "itemcf_strong": 8,
+        "profile_category": 15,
+        "itemcf_weak": 9,
+        "usercf_recall": 10,
+        "catalog_exploration": 24,
+        "popular": 14,
+        "profile_semantic": 15,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 80,
+        "itemcf_strong": 26,
+        "swing_recall": 13,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B089NC6PTC",
+          "rank": 1,
+          "score": 0.9690843224525452,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Frame Amo 11x14 Black Mat for Picture Frame, 7.5x9.5 Bevel Cut for 8x10 Picture, White Core (1)",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00HT14WOS",
+          "rank": 2,
+          "score": 0.8653339743614197,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "topseller100, Pack of 25 sets of 11x14 BLACK Picture Mats Mattes Matting for 8x10 Photo + Backing + Bags",
+            "category": "Arts, Crafts & Sewing",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B089NL8RV2",
+          "rank": 3,
+          "score": 0.5477371215820312,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Frame Amo 16x20 Black Mat for Picture Frame, 9.5x12.5 Bevel Cut for 10x13 Picture, White Core (1)",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00MV5AGFG",
+          "rank": 4,
+          "score": 0.44496333599090576,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Pack of 10 12x12 Square Black Picture Mats with White Core Bevel Cut for 8x8 Pictures",
+            "category": "Arts, Crafts & Sewing",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01FQET5LO",
+          "rank": 5,
+          "score": 0.0010518558556213975,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Voking VK-Q5 Camera Universal Shoulder Neck Strap Belt Adjustable Comfortable Quick Release Safety Tether for DSLR Camera",
+            "category": "AMAZON FASHION",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B001AXRBYE",
+          "rank": 6,
+          "score": 0.0010022670030593872,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Lynch 12 Christmas cards: Pembroke Welsh Corgi family on Christmas eve folk art",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3566.2
+    },
+    {
+      "profile_hash": "636002623dbc9752abe298760a1807671a967322af03d3197e0a9f7b2ebc60e5",
+      "source_distribution": {
+        "swing_recall": 9,
+        "two_tower": 15,
+        "itemcf_strong": 9,
+        "profile_category": 16,
+        "itemcf_weak": 13,
+        "usercf_recall": 0,
+        "catalog_exploration": 24,
+        "popular": 14,
+        "profile_semantic": 15,
+        "category": 10
+      },
+      "diagnostic": {
+        "itemcf_weak": 79,
+        "itemcf_strong": 14,
+        "swing_recall": 14,
+        "usercf_recall": 0,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B087JDHWMD",
+          "rank": 1,
+          "score": 0.9996657371520996,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "ULBTER Screen Protector for Fujifilm X-T4 X100V Fuji XT4 X-100V Camera [3Pack] with Hot Shoe Cover, 0.3mm 9H Hardness Tempered Glass Cover Anti-Scrach Anti-Fingerprint Anti-Bubble",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07R6GGSJX",
+          "rank": 2,
+          "score": 0.987470805644989,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "ULBTER X-S10 Screen Protector for Fujifilm X-T30 X-T20 X-T10 X-E3 Fuji X-S10 X-T30 XF10 X-T100 X-A1 X-A2 Digital Camera, 0.3mm 9H Hardness Tempered Glass Flim Anti-Scrach Anti-Fingerprint -3 Pack",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07DNPYW3H",
+          "rank": 3,
+          "score": 0.9558004140853882,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "profile_semantic",
+            "itemcf_weak",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "JJC Hot Shoe Cover Cap Protector for Fujifilm Fuji X-T4 X-T3 X-T30 X-T20 X-PRO3 X-PRO2 X100V X100S X100F X-T100 X-E3 X-E2 X10 X30 X70 X-S10 X-A10 X-A5 X-H1 GFX 50S etc. -2pack",
+            "category": "Camera & Photo",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08DD6VFTS",
+          "rank": 4,
+          "score": 0.8740059733390808,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Real Leather Case for FUJIFILM Fuji XT4 X-T4 Bottom Opening Version Protective Half Camera Case Bag with Tripod Design with Hand Strap Dark Brown",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0013TPVRO",
+          "rank": 5,
+          "score": 0.00574860256165266,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Cathedral of the Sea: A Novel",
+            "category": "Buy a Kindle",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01BH922CQ",
+          "rank": 6,
+          "score": 0.001868725405074656,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "BCW Comic Topload Holder",
+            "category": "Toys & Games",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3405.8
+    },
+    {
+      "profile_hash": "3ac4193e5e472245aeab27e3be803649f59d3bec12c42b207dad99f0e74e38a3",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 12,
+        "itemcf_strong": 8,
+        "profile_category": 16,
+        "itemcf_weak": 13,
+        "usercf_recall": 12,
+        "catalog_exploration": 24,
+        "popular": 10,
+        "profile_semantic": 12,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 120,
+        "itemcf_strong": 12,
+        "swing_recall": 10,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B08H5GFFG2",
+          "rank": 1,
+          "score": 0.9994732737541199,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Perlegear Dual Monitor Stand, Freestanding Desk Mount with Glass Base Fit 17-32 inch Flat Curved Screen with Swivel, Tilt, Height Adjustable, Rotation, Each Arm Holds up to 26 lbs",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08H599QGK",
+          "rank": 2,
+          "score": 0.9990819692611694,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Perlegear Dual Monitor Stand - Articulating Full Motion Arm Desk Mount, for 17 to 32 Inch Computer Screens, Vesa Mount with Desk C-clamp and Grommet Base, Loads up to 26lbs per arm",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B088359R3H",
+          "rank": 3,
+          "score": 0.9954259991645813,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Dual Monitor Desk Mount, Cast Aluminum, Height Adjustable Monitor Stand, Articulating Gas Spring Monitor Arm - Fits 2 Computer Screens up to 32 Inch, 17.6lbs Each, Removable VESA 75 100",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08HD5Z86F",
+          "rank": 4,
+          "score": 0.9601653814315796,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "ErGear Dual Monitor Desk Mount Stand, 26.4lbs Heavy-Duty Adjustable Monitor Arms, 17-32\" Monitor Stand for 2 LCD Screens, 75mm/100mm VESA, Black - EGCM7",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01BMWBTYU",
+          "rank": 5,
+          "score": 0.004737857263535261,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "ChargerCity Flexible Neck Car Vehicle Drinks Cup Holder Mount for All Garmin Nuvi Drive Smart GPS All 5X 6X 2XX 7XX 1xxx 2XXX 3XXX Models, 17mm Ball is Compatible for Nuvi Brackets That Came w/GPS",
+            "category": "GPS & Navigation",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B001F4PUA0",
+          "rank": 6,
+          "score": 0.003939703106880188,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Dacasso Leather Desk pad, 34 x 20, Rustic Black",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3505.4
+    },
+    {
+      "profile_hash": "d8b626efce99fb115b9bdbba33c89cdf029f10128c0ecbfbe35bcc980d0f4594",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 15,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 17,
+        "usercf_recall": 15,
+        "catalog_exploration": 24,
+        "popular": 14,
+        "profile_semantic": 14,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 79,
+        "itemcf_strong": 12,
+        "swing_recall": 11,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B07QR6QQJ4",
+          "rank": 1,
+          "score": 0.9984686970710754,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Drawing Tablet Case Carrying Bag with Artist Glove Graphics Tablet Sleeve Protective Bag for Huion H610 Pro, HS610, Xp-pen Deco 01, Star 06, Ugee M708 and Veikk A30, A50",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07K68WL4P",
+          "rank": 2,
+          "score": 0.9978006482124329,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "XP-Pen Carry Protective Portable Case Bag Cover for XP-Pen Artist12, Artist12 Pro，Deco 01V2, Deco 02, Deco 03, Star 03, Star 05, Star 06 Drawing Pen Tablet",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08BXPX6BD",
+          "rank": 3,
+          "score": 0.9961458444595337,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Drawing Tablet Sleeve Case for XP-Pen Deco 01 V2 10x6.25 Inch, Huion H610 Pro, Xp-pen Deco 01/XP-Pen Star03 V2 12\", UGEE M708, GAOMON M10K2018, VEIKK A30 A50, Simbans PicassoTab 10 Inch Drawing Tablet",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08699QSLH",
+          "rank": 4,
+          "score": 0.9904199242591858,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Portable Drawing Tablet Sleeve for XP-Pen Artist12 /Artist 13.3 Pro 13.3 Inch, Huion Inspiroy Q11K /KAMVAS Pro 13 GT-133/H1161,Wacom Cintiq 13HD,VEIKK A15 Case Bag, Navy Blue",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B007ZCEFOI",
+          "rank": 5,
+          "score": 0.009335617534816265,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "HG Concepts Art Photo Storage Box Eternity Archival Clamshell Box For Storing Artwork, Photos & Documents Deluxe Acid-Free Sturdy & Lined With Archival Paper - [Black - 11\" x 14\"]",
+            "category": "Tools & Home Improvement",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00178QR74",
+          "rank": 6,
+          "score": 0.006612040568143129,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Loctite 233841 Instant Glass Glue, 0.07 Oz, No Size",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3375.6
+    },
+    {
+      "profile_hash": "9e821d4bf5fe371e7e797693cbe1cedd651f1a01f859856c7d9b6990faefec6e",
+      "source_distribution": {
+        "swing_recall": 9,
+        "two_tower": 14,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 10,
+        "usercf_recall": 8,
+        "catalog_exploration": 24,
+        "popular": 16,
+        "profile_semantic": 14,
+        "category": 10
+      },
+      "diagnostic": {
+        "itemcf_weak": 110,
+        "itemcf_strong": 30,
+        "swing_recall": 42,
+        "usercf_recall": 100,
+        "category": 109,
+        "popular": 109
+      },
+      "first_page": [
+        {
+          "item_id": "B087PV919P",
+          "rank": 1,
+          "score": 0.9917851686477661,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Digital Photo Frame 15 inch Electronic Picture Frame (10.1-Inch IPS)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08S6S4LPY",
+          "rank": 2,
+          "score": 0.9857034087181091,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "profile_semantic",
+            "swing_recall",
+            "category",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Dragon Touch Classic 15 Digital Picture Frame, 15.6” FHD Touch Screen WiFi Digital Photo Frame Instant Share Photos and Videos via App, Email, Cloud, Wall Mountable, Portrait and Landscape",
+            "category": "Camera & Photo",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07WZWBJ9Y",
+          "rank": 3,
+          "score": 0.7562320232391357,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Digital Picture Frame WiFi Cloud Digital Photo Frame 10 Inch WiFi Picture Frame IPS Screen with Touch 16GB Storage Auto Rotate Share Photos Visa APP Email Facebook Twitter",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08G8GT1FP",
+          "rank": 4,
+          "score": 0.6190913319587708,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Digital Picture Frame 10.1 Inch WiFi Digital Photo Frame with IPS Touch Screen Built-in 16GB Storage Photo Share Easy Setup to Share Photos via Free App Frameo-Ideal Gift Choice",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "9800359850",
+          "rank": 5,
+          "score": 0.007890722714364529,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Tp-Link TL-WN722N IEEE 802.11n (Draft) USB - Wi-Fi Adapter. Wireless LITE N Adapter 150M USB HIGH GAIN 1DETACHABLE Antenna WL-AP. 150 Mbps - External",
+            "category": "Tools & Home Improvement",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000000W5N",
+          "rank": 6,
+          "score": 0.0013191384496167302,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Sticky Fingers",
+            "category": "Digital Music",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3387.3
+    },
+    {
+      "profile_hash": "958022e512dca262d1bcd64e8aaa467407520499090845f264921280e13e01ae",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 12,
+        "itemcf_strong": 8,
+        "profile_category": 16,
+        "itemcf_weak": 11,
+        "usercf_recall": 9,
+        "catalog_exploration": 24,
+        "popular": 7,
+        "profile_semantic": 15,
+        "category": 8
+      },
+      "diagnostic": {
+        "itemcf_weak": 110,
+        "itemcf_strong": 13,
+        "swing_recall": 11,
+        "usercf_recall": 100,
+        "category": 119,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B077Z9H5QS",
+          "rank": 1,
+          "score": 0.1445634514093399,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Hidden Hollow Beads Shapes Women's Fashion Lanyard 34\" long, Made in USA, Chain Lanyard, Super strong for Keys, Badge holder. (Celtic - Breakaway)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0711RXRBM",
+          "rank": 2,
+          "score": 0.09957277774810791,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "usercf_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Specialist ID Premium Breakaway Lanyards for ID Badges -3/8” Wide - 36 Inch Length - Flat Woven with Metal Swivel Hook",
+            "category": "AMAZON FASHION",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07R2B3TRD",
+          "rank": 3,
+          "score": 0.04361042380332947,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "12 Pack Detachable Neck Lanyard for Mobile phone USB Flash Driver ID Card iPod,Universal Removable Electronic Devices Hanging Rope (12 Pcs)",
+            "category": "AMAZON FASHION",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07D5Z9YPY",
+          "rank": 4,
+          "score": 0.0006776012596674263,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_strong",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Alapmk Protective Case Cover for 13.3\" Dell Inspiron 13 2-in-1 7375 7378 7368 i7375 i7378 i7368 & Dell Latitude 13 3310 2-in-1 Series Laptop(Note:Not fit Dell Latitude 3310),Black",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07LG52H5N",
+          "rank": 5,
+          "score": 0.0004229263577144593,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "HUANUO Footrest Under Desk - Adjustable Foot Rest with Massage Texture and Roller, Ergonomic Foot Rest with 3 Height Position, 30 Degree Tilt Angle Adjustment for Home, Office",
+            "category": "Health & Personal Care",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B078PBWS8V",
+          "rank": 6,
+          "score": 0.00039616163121536374,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "ZOYA Nailpolish, Haruko",
+            "category": "Premium Beauty",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2942.5
+    },
+    {
+      "profile_hash": "e2c6066a33818105fb275ecbcf94ee3dafb6b9a9c9e90459c8cf63ea58f7d2d6",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 11,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 14,
+        "usercf_recall": 10,
+        "catalog_exploration": 24,
+        "popular": 13,
+        "profile_semantic": 14,
+        "category": 10
+      },
+      "diagnostic": {
+        "itemcf_weak": 85,
+        "itemcf_strong": 55,
+        "swing_recall": 8,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 119
+      },
+      "first_page": [
+        {
+          "item_id": "B0881V73DZ",
+          "rank": 1,
+          "score": 0.9995583891868591,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Gexmil for New iPad Pro 11 Case 2nd Generation 2020&2018,with Pencil Holder, Made from Real Lather Cowhide,Pattern-Brown+Pencil Holder。",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B088CYJ7FJ",
+          "rank": 2,
+          "score": 0.9921389222145081,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "iPad Pro 11 Case 2020 with Pencil Holder (2nd Generation), ZryXal Premium Protective Case Cover with Soft TPU Back and Auto Sleep/Wake Feature for 2020/2018 iPad Pro 11 (Grey)",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08XZG4L2B",
+          "rank": 3,
+          "score": 0.9838646650314331,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Ztotop for iPad Pro 11-inch Case 3rd Generation, iPad Pro 11 Case 2021, Premium Leather Folio Stand Case Cover with Auto Wake/Sleep, Pencil Holder, Multiple Viewing Angles, Black",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08FWH2HC2",
+          "rank": 4,
+          "score": 0.9823607206344604,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "iPad Pro 11 2020 Case - Genuine Leather Secure Any-Angle Cover with Apple Pencil Holder for 2nd Generation iPad Pro 11 inch (Oxblood) - CUVR",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00XVMT6LS",
+          "rank": 5,
+          "score": 0.006346600595861673,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Ronts Vintage Faux Leather Briefcase for Men PU Business Tote Messenger Satchel Laptop Bag Orgainzer",
+            "category": "AMAZON FASHION",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "1883903033",
+          "rank": 6,
+          "score": 0.00310499407351017,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Fonts 4 Teachers",
+            "category": "Software",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3289.5
+    },
+    {
+      "profile_hash": "54115f5724fa631046bdcaa52a31436437b247cd6e320dc326798610663e19a1",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 11,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 18,
+        "usercf_recall": 13,
+        "catalog_exploration": 24,
+        "popular": 9,
+        "profile_semantic": 15,
+        "category": 7
+      },
+      "diagnostic": {
+        "itemcf_weak": 114,
+        "itemcf_strong": 14,
+        "swing_recall": 8,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B0B8ZRZH9X",
+          "rank": 1,
+          "score": 0.015025371685624123,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "usercf_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "BBTO Sunflower Cute Tape Dispenser with 2 Rolls Tapes Set Exquisite Flower Tape Dispenser, Funny Desk Tape Dispenser for Office Home School Girls Women Desk Supplies",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08M9FCR3V",
+          "rank": 2,
+          "score": 0.0018048089696094394,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Disco Ope Sticker - Sticker Graphic - Auto, Wall, Laptop, Cell, Truck Sticker for Windows, Cars, Trucks",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000000W5N",
+          "rank": 3,
+          "score": 0.001276808325201273,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Sticky Fingers",
+            "category": "Digital Music",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000090W5V",
+          "rank": 4,
+          "score": 0.0010145956184715033,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Patriotic and Morning Time Songs",
+            "category": "Digital Music",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07TXMB8PS",
+          "rank": 5,
+          "score": 0.0007764602196402848,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "usercf_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Money Bands Currency Sleeves Straps – Made in USA (Pack of 330) Self-Adhesive Assorted Money Wrappers for Bills Color Coded Wraps Meets ABA Standards, 7.5 x 1.25 inches – Counter Recyclable Kraft Pape",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "1469424916",
+          "rank": 6,
+          "score": 0.0005999862914904952,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_category",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Wells Street by LANG, Flora and Fauna 2023 File It Planner",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3060.3
+    },
+    {
+      "profile_hash": "2ddef064bea3c1cff15247faf6b45d5b2164d67aa2bc7ffec91ba3569a1880dd",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 15,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 15,
+        "usercf_recall": 11,
+        "catalog_exploration": 24,
+        "popular": 13,
+        "profile_semantic": 16,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 85,
+        "itemcf_strong": 84,
+        "swing_recall": 79,
+        "usercf_recall": 84,
+        "category": 84,
+        "popular": 84
+      },
+      "first_page": [
+        {
+          "item_id": "B08LL2P18T",
+          "rank": 1,
+          "score": 0.7165834307670593,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "USB Flash Drive 256GB",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07BF92T8Z",
+          "rank": 2,
+          "score": 0.006464754696935415,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "usercf_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Binoculars Case Compatible with 15x25, 12x25, 10x25, 16x21 Binoculars Like Occer, Hontry, Gskyer, SkyGenius, Aurosports, Pentax, Beenate, L-Byakov, Mahauk, Leupold",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B077TQ6WYD",
+          "rank": 3,
+          "score": 0.001368786906823516,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_weak",
+            "usercf_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Tatkraft Joy Portable Laptop Desk with Mouse Pad, Rolling Computer Stand with Adjustable Height, Sturdy and Ergonomic, Black",
+            "category": "Office Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07Q1NBCVB",
+          "rank": 4,
+          "score": 0.0008725292282178998,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Apple iMac (27-inch, 8GB RAM, 1TB Storage) Previous Model",
+            "category": "Apple Products",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B002R96LDC",
+          "rank": 5,
+          "score": 0.0008130469359457493,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_category",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Replacement Battery for MX-3000 - Version 3 for remotes built after 9/2003 mx3000i Powercard pc046067-h 046067",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00004R6BW",
+          "rank": 6,
+          "score": 0.0007851678528822958,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Super Callanetics - Das Intensiv Programm [VHS]",
+            "category": "Movies & TV",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3344.7
+    },
+    {
+      "profile_hash": "b97ba8aadc97032e2c6266d7481ae7c6f88a2680529595e177130fb41acf8cff",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 12,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 11,
+        "usercf_recall": 8,
+        "catalog_exploration": 24,
+        "popular": 11,
+        "profile_semantic": 14,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 106,
+        "itemcf_strong": 9,
+        "swing_recall": 75,
+        "usercf_recall": 100,
+        "category": 105,
+        "popular": 105
+      },
+      "first_page": [
+        {
+          "item_id": "B08DJYP54W",
+          "rank": 1,
+          "score": 0.07851260155439377,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Language Translator Device - Portable Two Way Instant Voice Interpreter - 82 Languages Translations for Travelling Abroad Learning Shopping Business Chat Shopping, Black",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0B8H5Y196",
+          "rank": 2,
+          "score": 0.0011168108321726322,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_strong",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Lenovo M73 SFF Desktop Computers Refurbished i7 PC with Windows 10 Pro 64bit, 16GB RAM, 512GB SSD, DVDRW, Built-in WiFi, Wireless Keyboard and Mouse (Renewed)",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B09ZKGG93Y",
+          "rank": 3,
+          "score": 0.001113708596676588,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "usercf_recall",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Mobile Standing Desk Height Adjustable Sit to Stand Table, 28 x 20'' Pneumatic Laptop Desk with Gas Spring Riser, Overbed Table with Lockable Wheels for Offices, Home, Medical (White)",
+            "category": "Amazon Home",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00KX1ZNF8",
+          "rank": 4,
+          "score": 0.0007387125515379012,
+          "reason": "根据相似兴趣和商品关联为你推荐",
+          "source_tags": [
+            "itemcf_strong",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Kingston HyperX 3K 240 GB SATA III 2.5-Inch 6.0 Gb/s Solid State Drive SH103S3/240G",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B0B191K291",
+          "rank": 5,
+          "score": 0.0006840298301540315,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Dog and Cat Monthly 2023 Hangable Wall Calendar with Four Bonus Months from 2022 16-Month Large Wall Calendar September 2022-2023 12\" x 24\" When Open Thick Sturdy Paper Giftable Puppies and Kittens",
+            "category": "Pet Supplies",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B008MVYN02",
+          "rank": 6,
+          "score": 0.0006551672122441232,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Dixon 00079 China Markers, Red, 12-Pack, 7 x 2.2 x 0.8 inches",
+            "category": "Tools & Home Improvement",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2942.6
+    },
+    {
+      "profile_hash": "cf4c122b2476ab34b9f8a556bba1898029f665b640c6550e5be74655e91eb820",
+      "source_distribution": {
+        "swing_recall": 9,
+        "two_tower": 13,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 9,
+        "usercf_recall": 11,
+        "catalog_exploration": 24,
+        "popular": 12,
+        "profile_semantic": 13,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 84,
+        "itemcf_strong": 84,
+        "swing_recall": 83,
+        "usercf_recall": 83,
+        "category": 83,
+        "popular": 83
+      },
+      "first_page": [
+        {
+          "item_id": "B083TXWKM1",
+          "rank": 1,
+          "score": 0.9945863485336304,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Terasako Magnetic Fast Charging Cable 4-Pack [3ft/3ft/6ft/6ft] - 3A Phone Charger Cable with Data Transfer and LED Light - 360¡ã & 180¡ã Rotating Cords ¡­",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08JFXBCL8",
+          "rank": 2,
+          "score": 0.9862633943557739,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Magnetic Charging Cable 2.4A,【4Pack】1.64 ft x 1 + 3.3ft x 2+ 6.6ft x 1,3-in-1,540° Rotating Heads.Magnetic Charging Cable,Magnetic Phone Charger Cable.Micro USB,Type C Cable,i-Product compatible",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07PVRCBX7",
+          "rank": 3,
+          "score": 0.9763000011444092,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Magnetic Charging Cable,360° Rotating Magnetic Phone Charger Cable with LED Light, 90° Angle Connector, Nylon-Braided Cords (5 Pack, Silver)",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08F7586NK",
+          "rank": 4,
+          "score": 0.9740498661994934,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Terasako Magnetic Charging Cable 6-Pack [1ft/3ft/3ft/6ft/6ft/10ft], 3 in 1 Nylon Braided Magnetic Phone Charger, Compatible with Micro USB, Type C, iProduct and Most Devices",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B00X85S7EA",
+          "rank": 5,
+          "score": 0.0031326059252023697,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Movo PM10EC6 3.5mm Mic Extension Cord 20 Ft - Male to Female 3.5mm TRRS Microphone Extension Cable - Aux Cord for iPhone, Android Mic Cord TRRS Extension Cable for Lav Mics",
+            "category": "Musical Instruments",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07TXZWWTY",
+          "rank": 6,
+          "score": 0.0014368239790201187,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Wasserstein Ring Floodlight & Solar Panel Charger, Motion-Activated, Compatible with Ring Stick Up Cam & Ring Spotlight Cam Only (1-Pack, White)",
+            "category": "Amazon Devices",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 3051.2
+    },
+    {
+      "profile_hash": "baca56107cb4c40cae45b0ed7444994fbd75d6c3ed61034454e15898dadf1a7f",
+      "source_distribution": {
+        "swing_recall": 2,
+        "two_tower": 13,
+        "itemcf_strong": 9,
+        "profile_category": 15,
+        "itemcf_weak": 12,
+        "usercf_recall": 13,
+        "catalog_exploration": 24,
+        "popular": 13,
+        "profile_semantic": 15,
+        "category": 12
+      },
+      "diagnostic": {
+        "itemcf_weak": 79,
+        "itemcf_strong": 21,
+        "swing_recall": 2,
+        "usercf_recall": 100,
+        "category": 120,
+        "popular": 120
+      },
+      "first_page": [
+        {
+          "item_id": "B00IMMURXI",
+          "rank": 1,
+          "score": 0.985076367855072,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Cmple - Mini HDMI to HDMI Cable 15ft, HDMI Mini to HDMI, 60Hz HDMI 2.0 Cable, Monitor to Digital Camera HDMI Cables, 4k HDMI Adapter Cord for Camcorder, Tablet, Ultrabook, Laptop, HDTV - Black",
+            "category": "Home Audio & Theater",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08B153B46",
+          "rank": 2,
+          "score": 0.9790855050086975,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Rankie Mini HDMI to HDMI Cable, High Speed Supports Ethernet 3D and Audio Return (15 Feet)",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B000HDJY7K",
+          "rank": 3,
+          "score": 0.9381205439567566,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "HDMI to DVI Cable, HDMI Male to DVI Male, CL2 rated, 15 foot",
+            "category": "Computers",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07GLLB4J4",
+          "rank": 4,
+          "score": 0.9150412678718567,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "DVI to HDMI Cable 15Feet,SHD HDMI to DVI Cable Cord DVI D to HDMI Adapter Bi-Directional Monitor Cable for PC Laptop HDTV Projector",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07J9X5NGP",
+          "rank": 5,
+          "score": 0.003859883639961481,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Wasserstein Weatherproof Integrated Charger Compatible with Ring Stick Up Cam Battery & Ring Spotlight Cam Battery - Extra Long and Thin 21ft Cable to Continuously Operate Your Ring Camera (Black)",
+            "category": "Fire Phone",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B001DEFX6I",
+          "rank": 6,
+          "score": 0.0018108211224898696,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Sharp SHAR930AK Wave Guide Cover",
+            "category": "Appliances",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2397.4
+    },
+    {
+      "profile_hash": "6fbb480b565c88ab3a7cb8ecaf058eb4f7e369930e20dfd893071d5412ea979d",
+      "source_distribution": {
+        "swing_recall": 8,
+        "two_tower": 11,
+        "itemcf_strong": 8,
+        "profile_category": 14,
+        "itemcf_weak": 8,
+        "usercf_recall": 8,
+        "catalog_exploration": 24,
+        "popular": 8,
+        "profile_semantic": 14,
+        "category": 9
+      },
+      "diagnostic": {
+        "itemcf_weak": 113,
+        "itemcf_strong": 16,
+        "swing_recall": 46,
+        "usercf_recall": 100,
+        "category": 113,
+        "popular": 112
+      },
+      "first_page": [
+        {
+          "item_id": "B07M5JT8H7",
+          "rank": 1,
+          "score": 0.9975107908248901,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "USB C to Lightning Cable, [Apple Mfi Certified] 3Pack 3FT iPhone 12 Lightning to USB-C Fast Charging Cable for iPhone 13/13 Pro/13Mini/12/12Pro/11/11Pro/11Pro MAX/XS/XS MAX/XR/X/8/8Plus",
+            "category": "All Electronics",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B08LPLN1FY",
+          "rank": 2,
+          "score": 0.9936776757240295,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "USB C to Lightning Cable, MFi Certified iPhone Cable 2Pack 3ft Type C to Lightning Cable for Charging and Syncing Compatible with iphone11/11PRO/XS/Max/XR/X/8/8Plus/7/7Plus/6S/Plus/SE/Ipad and More",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B082XV15QH",
+          "rank": 3,
+          "score": 0.9930365681648254,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "USB C to Lightning Cable 6ft, [Apple MFi Certified] 6ft Long iPhone PD Fast Charger Compatible with iPhone 13/13 Pro Max/12/11/X/XS/XR/XS/8 Plus, iPad Air/Air Pods, Supports Power Delivery",
+            "category": "Industrial & Scientific",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B071YYK9CB",
+          "rank": 4,
+          "score": 0.9922232031822205,
+          "reason": "根据你的历史兴趣推荐",
+          "source_tags": [
+            "profile_semantic",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "TT&C Short iPhone Lightning Cable 6 inch Charger Sync and Charging Data Cord for iPhone 14/14 Pro/ 14 Pro Max/ 13/13 Pro / 12/11/ Xs/Xs Max/Xr/X/ 8 Plus/iPad - White 4Pack",
+            "category": "Cell Phones & Accessories",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B07J9X5NGP",
+          "rank": 5,
+          "score": 0.5652681589126587,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "Wasserstein Weatherproof Integrated Charger Compatible with Ring Stick Up Cam Battery & Ring Spotlight Cam Battery - Extra Long and Thin 21ft Cable to Continuously Operate Your Ring Camera (Black)",
+            "category": "Fire Phone",
+            "store": "",
+            "image_url": ""
+          }
+        },
+        {
+          "item_id": "B01C7RVVUG",
+          "rank": 6,
+          "score": 0.40126216411590576,
+          "reason": "为你探索其他品类的商品",
+          "source_tags": [
+            "catalog_exploration",
+            "bge_reranker"
+          ],
+          "display": {
+            "title": "B01C7RVVUG",
+            "category": "Collectible Coins",
+            "store": "",
+            "image_url": ""
+          }
+        }
+      ],
+      "two_pages_and_diagnostic_ms": 2878.3
+    }
+  ],
+  "cold_sources": {
+    "usercf_recall": 0,
+    "two_tower": 0,
+    "popular": 72,
+    "catalog_exploration": 24,
+    "category": 0,
+    "itemcf_strong": 0,
+    "itemcf_weak": 0,
+    "swing_recall": 0
+  },
+  "contributions": {
+    "itemcf_weak": 194,
+    "itemcf_strong": 127,
+    "swing_recall": 120,
+    "usercf_recall": 150,
+    "category": 152,
+    "popular": 200
+  },
+  "displayed": {
+    "itemcf_weak": 9,
+    "itemcf_strong": 3,
+    "swing_recall": 3,
+    "usercf_recall": 6,
+    "category": 2,
+    "popular": 0
+  },
+  "status": "PASS"
+}

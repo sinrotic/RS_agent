@@ -1,0 +1,2561 @@
+{
+  "checked_at": "2026-10-11T03:39:27.664997+00:00",
+  "model_info": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791689950,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 16384,
+        "permission": [
+          {
+            "id": "modelperm-9214b196caea3f81",
+            "object": "model_permission",
+            "created": 1791689950,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "scope": "主机 loopback 上的小样本模型直连测试；非完整Agent、非生产P95、非持续容量。first_content是首个文本/工具参数片段，mean_token_time_proxy是估算值而非逐token ITL。",
+  "structured_samples": 28,
+  "fixed_decode_samples": 4,
+  "request_templates": {
+    "short_json": {
+      "model": "qwen35-4b",
+      "temperature": 0,
+      "max_tokens": 256,
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "你是购物需求提取助手。只提取用户明确提供的信息，不编造商品。category为中文类目，budget_max为人民币预算上限，features只包含已提供的条件。"
+        },
+        {
+          "role": "user",
+          "content": "我想买一个500元以内的通勤背包，能装14英寸电脑，防泼水，不要皮质。"
+        }
+      ],
+      "response_format": {
+        "type": "json_schema",
+        "json_schema": {
+          "name": "shopping_intent",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "category": {
+                "type": "string"
+              },
+              "budget_max": {
+                "type": "number"
+              },
+              "features": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "category",
+              "budget_max",
+              "features"
+            ]
+          }
+        }
+      }
+    },
+    "named_tool": {
+      "model": "qwen35-4b",
+      "temperature": 0,
+      "max_tokens": 256,
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "你是购物需求提取助手。只提取用户明确提供的信息，不编造商品。category为中文类目，budget_max为人民币预算上限，features只包含已提供的条件。"
+        },
+        {
+          "role": "user",
+          "content": "我想买一个500元以内的通勤背包，能装14英寸电脑，防泼水，不要皮质。"
+        }
+      ],
+      "tools": [
+        {
+          "type": "function",
+          "function": {
+            "name": "extract_shopping_intent",
+            "description": "提取购物需求",
+            "strict": true,
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "category": {
+                  "type": "string"
+                },
+                "budget_max": {
+                  "type": "number"
+                },
+                "features": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "required": [
+                "category",
+                "budget_max",
+                "features"
+              ]
+            }
+          }
+        }
+      ],
+      "tool_choice": {
+        "type": "function",
+        "function": {
+          "name": "extract_shopping_intent"
+        }
+      },
+      "parallel_tool_calls": false
+    },
+    "decode_128": {
+      "model": "qwen35-4b",
+      "temperature": 0,
+      "max_tokens": 128,
+      "stream": true,
+      "stream_options": {
+        "include_usage": true
+      },
+      "chat_template_kwargs": {
+        "enable_thinking": false
+      },
+      "messages": [
+        {
+          "role": "system",
+          "content": "你是中文购物助手。"
+        },
+        {
+          "role": "user",
+          "content": "详细介绍挑选通勤背包的注意事项，至少写600字。"
+        }
+      ],
+      "ignore_eos": true
+    }
+  },
+  "gpu_before": "index, name, memory.used [MiB], utilization.gpu [%], pstate, clocks.current.sm [MHz]\n0, NVIDIA GeForce RTX 4090, 17793 MiB, 95 %, P2, 2745 MHz\n1, NVIDIA GeForce RTX 4090, 21661 MiB, 0 %, P8, 210 MHz\n2, NVIDIA GeForce RTX 4090, 17669 MiB, 0 %, P2, 2760 MHz\n",
+  "initial_metrics": {
+    "num_requests_running": 0.0,
+    "num_requests_waiting": 0.0,
+    "prefix_cache_queries_total": 19598.0,
+    "prefix_cache_hits_total": 3168.0,
+    "num_preemptions_total": 0.0,
+    "kv_cache_usage_perc": 0.0,
+    "request_prompt_tokens_sum": 19598.0,
+    "request_generation_tokens_sum": 896.0
+  },
+  "final_metrics": {
+    "num_requests_running": 0.0,
+    "num_requests_waiting": 0.0,
+    "prefix_cache_queries_total": 42225.0,
+    "prefix_cache_hits_total": 11088.0,
+    "num_preemptions_total": 0.0,
+    "kv_cache_usage_perc": 0.0,
+    "request_prompt_tokens_sum": 42225.0,
+    "request_generation_tokens_sum": 3037.0
+  },
+  "concurrency4_batch_seconds": 1.6698,
+  "summaries": {
+    "decode_128": {
+      "samples": 4,
+      "first_content_median_ms": 50.16,
+      "e2e_median_ms": 1164.77,
+      "e2e_max_ms": 1165.51,
+      "completion_tokens_median": 128.0
+    },
+    "long_prefix_first_0": {
+      "samples": 1,
+      "first_content_median_ms": 186.84,
+      "e2e_median_ms": 531.81,
+      "e2e_max_ms": 531.81,
+      "completion_tokens_median": 40
+    },
+    "long_prefix_first_1": {
+      "samples": 1,
+      "first_content_median_ms": 187.16,
+      "e2e_median_ms": 531.83,
+      "e2e_max_ms": 531.83,
+      "completion_tokens_median": 40
+    },
+    "long_prefix_first_2": {
+      "samples": 1,
+      "first_content_median_ms": 186.87,
+      "e2e_median_ms": 531.85,
+      "e2e_max_ms": 531.85,
+      "completion_tokens_median": 40
+    },
+    "long_prefix_repeat_0": {
+      "samples": 1,
+      "first_content_median_ms": 58.16,
+      "e2e_median_ms": 402.64,
+      "e2e_max_ms": 402.64,
+      "completion_tokens_median": 40
+    },
+    "long_prefix_repeat_1": {
+      "samples": 1,
+      "first_content_median_ms": 58.54,
+      "e2e_median_ms": 402.85,
+      "e2e_max_ms": 402.85,
+      "completion_tokens_median": 40
+    },
+    "long_prefix_repeat_2": {
+      "samples": 1,
+      "first_content_median_ms": 57.88,
+      "e2e_median_ms": 402.39,
+      "e2e_max_ms": 402.39,
+      "completion_tokens_median": 40
+    },
+    "named_tool": {
+      "samples": 6,
+      "first_content_median_ms": 183.89,
+      "e2e_median_ms": 685.48,
+      "e2e_max_ms": 686.75,
+      "completion_tokens_median": 73.0
+    },
+    "named_tool_concurrency4": {
+      "samples": 8,
+      "first_content_median_ms": 265.55,
+      "e2e_median_ms": 829.15,
+      "e2e_max_ms": 841.64,
+      "completion_tokens_median": 73.0
+    },
+    "named_tool_warmup": {
+      "samples": 1,
+      "first_content_median_ms": 283.55,
+      "e2e_median_ms": 785.76,
+      "e2e_max_ms": 785.76,
+      "completion_tokens_median": 73
+    },
+    "short_json": {
+      "samples": 6,
+      "first_content_median_ms": 51.99,
+      "e2e_median_ms": 411.93,
+      "e2e_max_ms": 412.69,
+      "completion_tokens_median": 42.0
+    },
+    "short_json_warmup": {
+      "samples": 1,
+      "first_content_median_ms": 56.8,
+      "e2e_median_ms": 416.58,
+      "e2e_max_ms": 416.58,
+      "completion_tokens_median": 42
+    }
+  },
+  "records": [
+    {
+      "scenario": "short_json_warmup",
+      "first_content_seconds": 0.056801,
+      "e2e_seconds": 0.416584,
+      "mean_token_time_proxy_seconds": 0.008775,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "short_json",
+      "first_content_seconds": 0.051621,
+      "e2e_seconds": 0.411657,
+      "mean_token_time_proxy_seconds": 0.008781,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "short_json",
+      "first_content_seconds": 0.052584,
+      "e2e_seconds": 0.412686,
+      "mean_token_time_proxy_seconds": 0.008783,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "short_json",
+      "first_content_seconds": 0.051934,
+      "e2e_seconds": 0.411959,
+      "mean_token_time_proxy_seconds": 0.008781,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "short_json",
+      "first_content_seconds": 0.052029,
+      "e2e_seconds": 0.411401,
+      "mean_token_time_proxy_seconds": 0.008765,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "short_json",
+      "first_content_seconds": 0.052041,
+      "e2e_seconds": 0.411898,
+      "mean_token_time_proxy_seconds": 0.008777,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "short_json",
+      "first_content_seconds": 0.051943,
+      "e2e_seconds": 0.411987,
+      "mean_token_time_proxy_seconds": 0.008782,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 79,
+        "total_tokens": 121,
+        "completion_tokens": 42
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装 14 英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装 14 英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "long_prefix_first_0",
+      "first_content_seconds": 0.186842,
+      "e2e_seconds": 0.531808,
+      "mean_token_time_proxy_seconds": 0.008845,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2710,
+        "total_tokens": 2750,
+        "completion_tokens": 40
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装14英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装14英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "long_prefix_repeat_0",
+      "first_content_seconds": 0.058158,
+      "e2e_seconds": 0.402637,
+      "mean_token_time_proxy_seconds": 0.008833,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2710,
+        "total_tokens": 2750,
+        "completion_tokens": 40
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装14英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装14英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "long_prefix_first_1",
+      "first_content_seconds": 0.187159,
+      "e2e_seconds": 0.531832,
+      "mean_token_time_proxy_seconds": 0.008838,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2714,
+        "total_tokens": 2754,
+        "completion_tokens": 40
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装14英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装14英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "long_prefix_repeat_1",
+      "first_content_seconds": 0.058541,
+      "e2e_seconds": 0.402854,
+      "mean_token_time_proxy_seconds": 0.008829,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2714,
+        "total_tokens": 2754,
+        "completion_tokens": 40
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装14英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装14英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "long_prefix_first_2",
+      "first_content_seconds": 0.18687,
+      "e2e_seconds": 0.531845,
+      "mean_token_time_proxy_seconds": 0.008846,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2708,
+        "total_tokens": 2748,
+        "completion_tokens": 40
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装14英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装14英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "long_prefix_repeat_2",
+      "first_content_seconds": 0.057878,
+      "e2e_seconds": 0.402394,
+      "mean_token_time_proxy_seconds": 0.008834,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2708,
+        "total_tokens": 2748,
+        "completion_tokens": 40
+      },
+      "parsed_output": {
+        "category": "背包",
+        "budget_max": 500,
+        "features": [
+          "通勤",
+          "能装14英寸电脑",
+          "防泼水",
+          "非皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"背包\", \"budget_max\": 500, \"features\": [\"通勤\", \"能装14英寸电脑\", \"防泼水\", \"非皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_warmup",
+      "first_content_seconds": 0.283554,
+      "e2e_seconds": 0.785763,
+      "mean_token_time_proxy_seconds": 0.006975,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool",
+      "first_content_seconds": 0.1838,
+      "e2e_seconds": 0.685213,
+      "mean_token_time_proxy_seconds": 0.006964,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool",
+      "first_content_seconds": 0.183857,
+      "e2e_seconds": 0.685396,
+      "mean_token_time_proxy_seconds": 0.006966,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool",
+      "first_content_seconds": 0.18408,
+      "e2e_seconds": 0.685708,
+      "mean_token_time_proxy_seconds": 0.006967,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool",
+      "first_content_seconds": 0.183929,
+      "e2e_seconds": 0.685562,
+      "mean_token_time_proxy_seconds": 0.006967,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool",
+      "first_content_seconds": 0.183775,
+      "e2e_seconds": 0.685263,
+      "mean_token_time_proxy_seconds": 0.006965,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool",
+      "first_content_seconds": 0.18423,
+      "e2e_seconds": 0.686749,
+      "mean_token_time_proxy_seconds": 0.006979,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "decode_128",
+      "first_content_seconds": 0.052185,
+      "e2e_seconds": 1.165505,
+      "mean_token_time_proxy_seconds": 0.008766,
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 163,
+        "completion_tokens": 128
+      },
+      "parsed_output": null,
+      "raw_output": "挑选一款合适的通勤背包，不仅是为了解决“背什么”的问题，更是为了提升整日的办公效率与个人形象。通勤场景复杂多变，既要承载笔记本电脑、文件等重物，又要兼顾日常饮水、雨伞等随身物品，因此在选择时需从以下五个核心维度进行细致考量。\n\n首先，**背负系统的舒适度**是通勤背包的灵魂。由于通勤途中往往需要长时间背负，背包的肩带设计至关重要。建议选择带有加厚海绵垫、可调节宽度的肩带，以分散肩部压力，避免勒痕。同时，若背包具备可拆卸的胸带或腰带，能进一步将"
+    },
+    {
+      "scenario": "decode_128",
+      "first_content_seconds": 0.050245,
+      "e2e_seconds": 1.164249,
+      "mean_token_time_proxy_seconds": 0.008772,
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 163,
+        "completion_tokens": 128
+      },
+      "parsed_output": null,
+      "raw_output": "挑选一款合适的通勤背包，不仅是为了解决“背什么”的问题，更是为了提升整日的办公效率与个人形象。通勤场景复杂多变，既要承载笔记本电脑、文件等重物，又要兼顾日常饮水、雨伞等随身物品，因此在选择时需从以下五个核心维度进行细致考量。\n\n首先，**背负系统的舒适度**是通勤背包的灵魂。由于通勤途中往往需要长时间背负，背包的肩带设计至关重要。建议选择带有加厚海绵垫、可调节宽度的肩带，以分散肩部压力，避免勒痕。同时，若背包具备可拆卸的胸带或腰带，能进一步将"
+    },
+    {
+      "scenario": "decode_128",
+      "first_content_seconds": 0.050067,
+      "e2e_seconds": 1.165286,
+      "mean_token_time_proxy_seconds": 0.008781,
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 163,
+        "completion_tokens": 128
+      },
+      "parsed_output": null,
+      "raw_output": "挑选一款合适的通勤背包，不仅是为了解决“背什么”的问题，更是为了提升整日的办公效率与个人形象。通勤场景复杂多变，既要承载笔记本电脑、文件等重物，又要兼顾日常饮水、雨伞等随身物品，因此在选择时需从以下五个核心维度进行细致考量。\n\n首先，**背负系统的舒适度**是通勤背包的灵魂。由于通勤途中往往需要长时间背负，背包的肩带设计至关重要。建议选择带有加厚海绵垫、可调节宽度的肩带，以分散肩部压力，避免勒痕。同时，若背包具备可拆卸的胸带或腰带，能进一步将"
+    },
+    {
+      "scenario": "decode_128",
+      "first_content_seconds": 0.049209,
+      "e2e_seconds": 1.163705,
+      "mean_token_time_proxy_seconds": 0.008776,
+      "finish_reason": "length",
+      "usage": {
+        "prompt_tokens": 35,
+        "total_tokens": 163,
+        "completion_tokens": 128
+      },
+      "parsed_output": null,
+      "raw_output": "挑选一款合适的通勤背包，不仅是为了解决“背什么”的问题，更是为了提升整日的办公效率与个人形象。通勤场景复杂多变，既要承载笔记本电脑、文件等重物，又要兼顾日常饮水、雨伞等随身物品，因此在选择时需从以下五个核心维度进行细致考量。\n\n首先，**背负系统的舒适度**是通勤背包的灵魂。由于通勤途中往往需要长时间背负，背包的肩带设计至关重要。建议选择带有加厚海绵垫、可调节宽度的肩带，以分散肩部压力，避免勒痕。同时，若背包具备可拆卸的胸带或腰带，能进一步将"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.267938,
+      "e2e_seconds": 0.831214,
+      "mean_token_time_proxy_seconds": 0.007823,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.277469,
+      "e2e_seconds": 0.841642,
+      "mean_token_time_proxy_seconds": 0.007836,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.276954,
+      "e2e_seconds": 0.840685,
+      "mean_token_time_proxy_seconds": 0.00783,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.276705,
+      "e2e_seconds": 0.840526,
+      "mean_token_time_proxy_seconds": 0.007831,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.263169,
+      "e2e_seconds": 0.827086,
+      "mean_token_time_proxy_seconds": 0.007832,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.262971,
+      "e2e_seconds": 0.826553,
+      "mean_token_time_proxy_seconds": 0.007828,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.262801,
+      "e2e_seconds": 0.826371,
+      "mean_token_time_proxy_seconds": 0.007827,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    },
+    {
+      "scenario": "named_tool_concurrency4",
+      "first_content_seconds": 0.262347,
+      "e2e_seconds": 0.825951,
+      "mean_token_time_proxy_seconds": 0.007828,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 378,
+        "total_tokens": 451,
+        "completion_tokens": 73
+      },
+      "parsed_output": {
+        "category": "通勤背包",
+        "budget_max": 500,
+        "features": [
+          "能装14英寸电脑",
+          "防泼水",
+          "不要皮质"
+        ]
+      },
+      "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+    }
+  ],
+  "real_request_replay": [
+    {
+      "profile": "shopping_final_0",
+      "repeat": 0,
+      "elapsed_ms": 1825.526,
+      "usage": {
+        "prompt_tokens": 6494,
+        "total_tokens": 6668,
+        "completion_tokens": 174,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "argument_sha256": "ec8e29378882a00a143165ebfee3e6103eece3d7e7835fb120cb595277e81527"
+    },
+    {
+      "profile": "shopping_final_0",
+      "repeat": 1,
+      "elapsed_ms": 1667.01,
+      "usage": {
+        "prompt_tokens": 6494,
+        "total_tokens": 6668,
+        "completion_tokens": 174,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "argument_sha256": "ec8e29378882a00a143165ebfee3e6103eece3d7e7835fb120cb595277e81527"
+    },
+    {
+      "profile": "shopping_final_0",
+      "repeat": 2,
+      "elapsed_ms": 1658.639,
+      "usage": {
+        "prompt_tokens": 6494,
+        "total_tokens": 6668,
+        "completion_tokens": 174,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "argument_sha256": "ec8e29378882a00a143165ebfee3e6103eece3d7e7835fb120cb595277e81527"
+    },
+    {
+      "profile": "shopping_final_1",
+      "repeat": 0,
+      "elapsed_ms": 717.418,
+      "usage": {
+        "prompt_tokens": 6109,
+        "total_tokens": 6179,
+        "completion_tokens": 70,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "argument_sha256": "96c370e7a23dc0364a2c2928a08d5716d3229f81a3de6cb967e6ac0adcc2a5df"
+    },
+    {
+      "profile": "shopping_final_1",
+      "repeat": 1,
+      "elapsed_ms": 717.777,
+      "usage": {
+        "prompt_tokens": 6109,
+        "total_tokens": 6179,
+        "completion_tokens": 70,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "argument_sha256": "96c370e7a23dc0364a2c2928a08d5716d3229f81a3de6cb967e6ac0adcc2a5df"
+    },
+    {
+      "profile": "shopping_final_1",
+      "repeat": 2,
+      "elapsed_ms": 717.101,
+      "usage": {
+        "prompt_tokens": 6109,
+        "total_tokens": 6179,
+        "completion_tokens": 70,
+        "prompt_tokens_details": null
+      },
+      "finish_reason": "stop",
+      "argument_sha256": "96c370e7a23dc0364a2c2928a08d5716d3229f81a3de6cb967e6ac0adcc2a5df"
+    }
+  ],
+  "steady_tool_rounds": {
+    "1": [
+      {
+        "repeat": 0,
+        "warmup": true,
+        "batch_seconds": 0.688775,
+        "records": [
+          {
+            "scenario": "steady_tool_c1",
+            "first_content_seconds": 0.185886,
+            "e2e_seconds": 0.688055,
+            "mean_token_time_proxy_seconds": 0.006975,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 1,
+        "warmup": false,
+        "batch_seconds": 0.687209,
+        "records": [
+          {
+            "scenario": "steady_tool_c1",
+            "first_content_seconds": 0.184552,
+            "e2e_seconds": 0.686631,
+            "mean_token_time_proxy_seconds": 0.006973,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "warmup": false,
+        "batch_seconds": 0.686944,
+        "records": [
+          {
+            "scenario": "steady_tool_c1",
+            "first_content_seconds": 0.184497,
+            "e2e_seconds": 0.686388,
+            "mean_token_time_proxy_seconds": 0.006971,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "warmup": false,
+        "batch_seconds": 0.688691,
+        "records": [
+          {
+            "scenario": "steady_tool_c1",
+            "first_content_seconds": 0.18601,
+            "e2e_seconds": 0.687968,
+            "mean_token_time_proxy_seconds": 0.006972,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      }
+    ],
+    "4": [
+      {
+        "repeat": 0,
+        "warmup": true,
+        "batch_seconds": 0.84717,
+        "records": [
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.282534,
+            "e2e_seconds": 0.846356,
+            "mean_token_time_proxy_seconds": 0.007831,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.271578,
+            "e2e_seconds": 0.835497,
+            "mean_token_time_proxy_seconds": 0.007832,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.281288,
+            "e2e_seconds": 0.845387,
+            "mean_token_time_proxy_seconds": 0.007835,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.281295,
+            "e2e_seconds": 0.844961,
+            "mean_token_time_proxy_seconds": 0.007829,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 1,
+        "warmup": false,
+        "batch_seconds": 0.846148,
+        "records": [
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.271797,
+            "e2e_seconds": 0.835113,
+            "mean_token_time_proxy_seconds": 0.007824,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.281408,
+            "e2e_seconds": 0.844901,
+            "mean_token_time_proxy_seconds": 0.007826,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.28071,
+            "e2e_seconds": 0.843811,
+            "mean_token_time_proxy_seconds": 0.007821,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.2802,
+            "e2e_seconds": 0.84328,
+            "mean_token_time_proxy_seconds": 0.007821,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "warmup": false,
+        "batch_seconds": 0.842073,
+        "records": [
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.27819,
+            "e2e_seconds": 0.841305,
+            "mean_token_time_proxy_seconds": 0.007821,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.267261,
+            "e2e_seconds": 0.830773,
+            "mean_token_time_proxy_seconds": 0.007827,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.277019,
+            "e2e_seconds": 0.840212,
+            "mean_token_time_proxy_seconds": 0.007822,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.276832,
+            "e2e_seconds": 0.839913,
+            "mean_token_time_proxy_seconds": 0.007821,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "warmup": false,
+        "batch_seconds": 0.847143,
+        "records": [
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.282553,
+            "e2e_seconds": 0.846101,
+            "mean_token_time_proxy_seconds": 0.007827,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.282134,
+            "e2e_seconds": 0.84567,
+            "mean_token_time_proxy_seconds": 0.007827,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.271539,
+            "e2e_seconds": 0.83542,
+            "mean_token_time_proxy_seconds": 0.007832,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c4",
+            "first_content_seconds": 0.281311,
+            "e2e_seconds": 0.84484,
+            "mean_token_time_proxy_seconds": 0.007827,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      }
+    ],
+    "8": [
+      {
+        "repeat": 0,
+        "warmup": true,
+        "batch_seconds": 1.976776,
+        "records": [
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.647142,
+            "e2e_seconds": 1.971688,
+            "mean_token_time_proxy_seconds": 0.018396,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.631064,
+            "e2e_seconds": 1.943828,
+            "mean_token_time_proxy_seconds": 0.018233,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.645895,
+            "e2e_seconds": 1.971163,
+            "mean_token_time_proxy_seconds": 0.018406,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.645835,
+            "e2e_seconds": 1.970304,
+            "mean_token_time_proxy_seconds": 0.018395,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.64542,
+            "e2e_seconds": 1.970095,
+            "mean_token_time_proxy_seconds": 0.018398,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.644819,
+            "e2e_seconds": 1.96964,
+            "mean_token_time_proxy_seconds": 0.0184,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.661996,
+            "e2e_seconds": 1.972957,
+            "mean_token_time_proxy_seconds": 0.018208,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.661671,
+            "e2e_seconds": 1.972537,
+            "mean_token_time_proxy_seconds": 0.018206,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 1,
+        "warmup": false,
+        "batch_seconds": 1.813203,
+        "records": [
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.560202,
+            "e2e_seconds": 1.782172,
+            "mean_token_time_proxy_seconds": 0.016972,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.579945,
+            "e2e_seconds": 1.806234,
+            "mean_token_time_proxy_seconds": 0.017032,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.579493,
+            "e2e_seconds": 1.80562,
+            "mean_token_time_proxy_seconds": 0.01703,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.578921,
+            "e2e_seconds": 1.805363,
+            "mean_token_time_proxy_seconds": 0.017034,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.578824,
+            "e2e_seconds": 1.805267,
+            "mean_token_time_proxy_seconds": 0.017034,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.57973,
+            "e2e_seconds": 1.80437,
+            "mean_token_time_proxy_seconds": 0.017009,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.608111,
+            "e2e_seconds": 1.809315,
+            "mean_token_time_proxy_seconds": 0.016683,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.607366,
+            "e2e_seconds": 1.808714,
+            "mean_token_time_proxy_seconds": 0.016685,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 2,
+        "warmup": false,
+        "batch_seconds": 1.746662,
+        "records": [
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.546951,
+            "e2e_seconds": 1.712018,
+            "mean_token_time_proxy_seconds": 0.016181,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.568572,
+            "e2e_seconds": 1.743038,
+            "mean_token_time_proxy_seconds": 0.016312,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.568123,
+            "e2e_seconds": 1.742492,
+            "mean_token_time_proxy_seconds": 0.016311,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.566695,
+            "e2e_seconds": 1.741341,
+            "mean_token_time_proxy_seconds": 0.016315,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.561439,
+            "e2e_seconds": 1.740216,
+            "mean_token_time_proxy_seconds": 0.016372,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.565282,
+            "e2e_seconds": 1.739532,
+            "mean_token_time_proxy_seconds": 0.016309,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.583237,
+            "e2e_seconds": 1.741319,
+            "mean_token_time_proxy_seconds": 0.016084,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.582752,
+            "e2e_seconds": 1.740816,
+            "mean_token_time_proxy_seconds": 0.016084,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      },
+      {
+        "repeat": 3,
+        "warmup": false,
+        "batch_seconds": 1.741404,
+        "records": [
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.613116,
+            "e2e_seconds": 1.707353,
+            "mean_token_time_proxy_seconds": 0.015198,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.6368,
+            "e2e_seconds": 1.738234,
+            "mean_token_time_proxy_seconds": 0.015298,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.636477,
+            "e2e_seconds": 1.737677,
+            "mean_token_time_proxy_seconds": 0.015294,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.635922,
+            "e2e_seconds": 1.736866,
+            "mean_token_time_proxy_seconds": 0.015291,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.636356,
+            "e2e_seconds": 1.73664,
+            "mean_token_time_proxy_seconds": 0.015282,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.632649,
+            "e2e_seconds": 1.736435,
+            "mean_token_time_proxy_seconds": 0.01533,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.655164,
+            "e2e_seconds": 1.737275,
+            "mean_token_time_proxy_seconds": 0.015029,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          },
+          {
+            "scenario": "steady_tool_c8",
+            "first_content_seconds": 0.652543,
+            "e2e_seconds": 1.736662,
+            "mean_token_time_proxy_seconds": 0.015057,
+            "finish_reason": "stop",
+            "usage": {
+              "prompt_tokens": 378,
+              "total_tokens": 451,
+              "completion_tokens": 73
+            },
+            "parsed_output": {
+              "category": "通勤背包",
+              "budget_max": 500,
+              "features": [
+                "能装14英寸电脑",
+                "防泼水",
+                "不要皮质"
+              ]
+            },
+            "raw_output": "{\"category\": \"通勤背包\", \"budget_max\": 500, \"features\": [\"能装14英寸电脑\", \"防泼水\", \"不要皮质\"]}"
+          }
+        ]
+      }
+    ]
+  },
+  "model_base": "http://127.0.0.1:18092/v1",
+  "fixed_quality": [
+    {
+      "case": "advice_0",
+      "passed": true,
+      "elapsed_ms": 996.41,
+      "usage": {
+        "prompt_tokens": 344,
+        "total_tokens": 424,
+        "completion_tokens": 80,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "suggestions": [
+          "选择容量适中，能容纳日常电脑和文件，但不宜过重。",
+          "背包材质应耐磨且防水，以应对通勤途中的各种天气。",
+          "肩带设计需舒适，最好有加厚或可调节功能，减轻肩部负担。"
+        ]
+      }
+    },
+    {
+      "case": "advice_1",
+      "passed": true,
+      "elapsed_ms": 748.81,
+      "usage": {
+        "prompt_tokens": 344,
+        "total_tokens": 424,
+        "completion_tokens": 80,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "suggestions": [
+          "选择容量适中，能容纳日常电脑和文件，但不宜过重。",
+          "背包材质应耐磨且防水，以应对通勤途中的各种天气。",
+          "肩带设计需舒适，最好有加厚或可调节功能，减轻肩部负担。"
+        ]
+      }
+    },
+    {
+      "case": "advice_2",
+      "passed": true,
+      "elapsed_ms": 748.09,
+      "usage": {
+        "prompt_tokens": 344,
+        "total_tokens": 424,
+        "completion_tokens": 80,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "suggestions": [
+          "选择容量适中，能容纳日常电脑和文件，但不宜过重。",
+          "背包材质应耐磨且防水，以应对通勤途中的各种天气。",
+          "肩带设计需舒适，最好有加厚或可调节功能，减轻肩部负担。"
+        ]
+      }
+    },
+    {
+      "case": "budget_math",
+      "passed": true,
+      "elapsed_ms": 419.89,
+      "usage": {
+        "prompt_tokens": 329,
+        "total_tokens": 371,
+        "completion_tokens": 42,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "total": 278,
+        "remaining": 22
+      }
+    },
+    {
+      "case": "clarify_budget",
+      "passed": true,
+      "elapsed_ms": 576.65,
+      "usage": {
+        "prompt_tokens": 312,
+        "total_tokens": 356,
+        "completion_tokens": 44,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "question": "我想买日常通勤背包，还没确定预算。只问我预算，不检索商品。"
+      }
+    },
+    {
+      "case": "clarify_size",
+      "passed": true,
+      "elapsed_ms": 317.09,
+      "usage": {
+        "prompt_tokens": 315,
+        "total_tokens": 346,
+        "completion_tokens": 31,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "question": "我的电脑尺寸是多少？"
+      }
+    }
+  ],
+  "business_regression": [
+    {
+      "query": "推荐鼠标",
+      "elapsed_ms": 5755.33,
+      "complete_with_catalog_ms": 5763.6,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 235,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "b8748a654dfc5675fa383f4529ca3b161d25a9489ff0c52c36cf39e890fa3d3b",
+      "passed": true
+    },
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 4086.11,
+      "complete_with_catalog_ms": 4093.36,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 176,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "89f274dbf16b7fa7d25d28609553d549ace8c4d293f321bdd07dc4ff3b02b488",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 12652.48,
+      "complete_with_catalog_ms": 12660.21,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 72,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 5,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "call_agent",
+        "load_skill",
+        "load_skill",
+        "rag_support"
+      ],
+      "answer_sha256": "d0ff537c0c8900d8c25f88fe15219b08b3c87e8727f7e2d51afdb6a6372f10a3",
+      "passed": true
+    },
+    {
+      "query": "请帮我推荐鼠标",
+      "elapsed_ms": 3466.37,
+      "complete_with_catalog_ms": 3475.29,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 216,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "cb7cd38e49b674b8796d3c1940978763a8c2e3432802da27659c4b7dde3af604",
+      "passed": true
+    },
+    {
+      "query": "换一批鼠标，适合办公使用",
+      "elapsed_ms": 20698.78,
+      "complete_with_catalog_ms": 20709.05,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 232,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "load_skill"
+      ],
+      "answer_sha256": "37c784765211d5ccaf2c394a1b02ab49f2641cac3e2d95736712d82cb25a47bb",
+      "passed": true
+    }
+  ],
+  "advice_diagnostic": [
+    {
+      "query": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "elapsed_ms": 2312.46,
+      "complete_with_catalog_ms": null,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 162,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "02f221b711f82129eb59309402d98c8f8baa240a93f2ab1e87680dda97cc1903",
+      "passed": false,
+      "advice_complete": true,
+      "advice_respects_no_products": false
+    },
+    {
+      "query": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "elapsed_ms": 1635.55,
+      "complete_with_catalog_ms": null,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 161,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "9c76896b7f811ac45bc8cdde67e82bcb0e4acdb301266e9906c68851190f2a18",
+      "passed": false,
+      "advice_complete": true,
+      "advice_respects_no_products": false
+    },
+    {
+      "query": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "elapsed_ms": 1531.49,
+      "complete_with_catalog_ms": null,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 140,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "9af5420f7a08540fccb07c0e1e7fcf4b13c71c8883098e80253681fa8986ab71",
+      "passed": false,
+      "advice_complete": true,
+      "advice_respects_no_products": false
+    }
+  ]
+}

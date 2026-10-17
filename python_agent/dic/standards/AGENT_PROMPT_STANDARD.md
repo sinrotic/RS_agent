@@ -4,86 +4,74 @@
 
 ## 1. 总体形式
 
-Agent 系统提示词默认采用 XML-like 标签块组织。最外层不再包 `<Agent_Prompt>`，每个标签块内部用一整段连续描述表达，不写成过细的项目符号列表。标签名使用英文，内容默认中文；工具名、字段名、模型名和代码标识符保留英文。
+Agent 系统提示词默认采用 OpenAI 推荐的 Markdown 四段式组织：`Identity`、`Instructions`、`Examples`、`Context`。内容默认中文；工具名、字段名、模型名和代码标识符保留英文。XML 仅在需要包裹多份输入资料、嵌套示例或附加元数据时使用，不能作为默认的行为分段格式。
 
 示例结构：
 
 ```text
-<Role_And_Duty>
-这里写 Agent 的人设、职责、服务对象和核心目标。
-</Role_And_Duty>
+# Identity
 
-<Why_This_Matters>
-这里写为什么需要这个 Agent，它在系统中解决什么问题，不只是重复功能说明。
-</Why_This_Matters>
+这里写 Agent 的人设、职责、服务对象和核心目标。
+
+# Instructions
+
+这里写规则、工作流、工具使用边界和禁止事项。
+
+# Examples
+
+这里放少量能说明关键判断的正反例。
+
+# Context
+
+这里说明本回合运行时会传入哪些上下文，以及哪些边界由运行时强制执行。
 ```
 
 ## 2. 标准标签
 
-通用 Agent prompt 建议至少包含以下标签：
+通用 Agent prompt 应包含以下四个一级标题；复杂规则用二级标题和项目符号表达，不需要为每一类规则新造 XML 标签。
 
 ```text
-<Role_And_Duty>
-描述这个 Agent 是谁、服务谁、负责什么、最终目标是什么。这里要避免空泛角色词，要说明它在本项目中的工程职责，例如推荐、首页导购、RAG 证据整理、用户模拟、质量检查等。
-</Role_And_Duty>
+# Identity
 
-<Why_This_Matters>
-描述为什么需要这个 Agent，以及它弥补底层模型、工具、检索、排序或前端展示的哪类不足。这里用于让模型理解自己的存在价值，而不是只按模板执行。
-</Why_This_Matters>
+描述 Agent 是谁、服务谁、负责什么及最终目标。说明在本项目中的工程职责，例如推荐、首页导购、RAG 证据整理、用户模拟或质量检查。
 
-<Success_Standard>
-描述什么叫一次成功运行。成功标准必须面向最终业务结果和用户体验，而不是只写“调用了工具”或“输出了 JSON”。例如推荐 Agent 的成功是顾客更接近满意选择，RagAgent 的成功是证据支持更准确且不越过候选边界，首页 Agent 的成功是把用户有效引导到合适入口或场景。
-</Success_Standard>
+# Instructions
 
-<Context_Use>
-描述 Agent 可以使用哪些上下文，以及如何权衡上下文。凡是涉及用户历史、商品历史、页面行为、RAG evidence、session memory 或多轮对话，都要说明哪些信息是强信号、哪些只是辅助证据，哪些情况需要降权或忽略。
-</Context_Use>
+用二级标题分别写成功标准、上下文取舍、工具工作流、运行时边界和输出风格。工具描述只说明何时使用及结果能否影响候选或公开输出，不重复 schema。禁止事项应覆盖数据、工具、分数、候选池、raw evidence、labels、oracle、diagnostics 和 trace 泄露。
 
-<Tool_Workflow>
-描述工具在工作流程中的位置，而不是重复工具 schema。工具本身已有 description，这里只说明什么时候先理解输入、什么时候读取上下文、什么时候检索、什么时候排序、什么时候取证据、什么时候生成展示，以及哪些工具结果不能改变候选或公开输出。
-</Tool_Workflow>
+# Examples
 
-<Runtime_Boundary>
-描述运行过程中允许和禁止的事情。边界要覆盖数据泄漏、工具泄漏、候选集合外推荐、编造属性、越权使用上下文、把内部诊断公开、把 shadow 结果当最终结果等问题。
-</Runtime_Boundary>
+提供一个好例与一个坏例。好例体现成功标准和边界；坏例覆盖项目最容易犯的错误，例如暴露工具名、用分数解释、候选弱还硬夸，或 RAG 越过候选边界。
 
-<Response_Style>
-描述输出语气、长度、结构和面向用户的表达方式。这里要区分 public response、internal summary、SFT supervision、debug diagnostics，不同 Agent 可以有不同输出风格。
-</Response_Style>
+# Context
 
-<Good_Output_Example>
-给一个符合该 Agent 职责的好输出范例。范例要体现成功标准和边界，例如不泄露工具、不夸大证据、不机械复述历史、不把内部字段暴露给用户。
-</Good_Output_Example>
-
-<Bad_Output_Example>
-给一个坏输出范例，并通过内容本身体现它为什么坏。坏例子应覆盖项目最容易犯的错误，例如暴露工具名、用分数解释、候选弱还硬夸、RAG 越过候选边界、首页强行推荐、模拟用户知道 hidden catalog 等。
-</Bad_Output_Example>
+说明运行时将提供的用户历史、商品历史、页面行为、RAG evidence、session memory 或多轮对话，并说明强弱信号与降权条件。明确候选集合、工具 schema、输出投影和安全拦截由运行时强制执行，prompt 不得替代或绕过它们。
 ```
 
 ## 3. 可选标签
 
-不同 Agent 可以按职责增加专用标签：
+不同 Agent 可在 `# Instructions` 下增加专用二级标题：
 
 ```text
-<Clarification_Policy>
-用于需要多轮对话的 Agent，说明什么时候应该追问，什么时候应该先执行工具或先给出可用结果。
-</Clarification_Policy>
+## Clarification policy
 
-<User_History_Use>
+用于需要多轮对话的 Agent，说明什么时候应该追问，什么时候应先执行工具或给出可用结果。
+
+## User history use
+
 用于推荐、首页导购、个性化解释等 Agent，说明用户历史不是静态标签，而是带有时间、行为强度、商品生命周期和当前相关性的证据。
-</User_History_Use>
 
-<Evidence_Boundary>
+## Evidence boundary
+
 用于 RagAgent 或解释 Agent，说明 evidence 只能支持已候选/已展示对象，不能新增候选、替代排序、暴露 raw evidence 或泄露 source diagnostics。
-</Evidence_Boundary>
 
-<Page_Context_Use>
+## Page context use
+
 用于首页 Agent，说明如何使用入口页面、当前展示模块、用户点击/停留/搜索等上下文，以及不能让首页 Agent 越权替代推荐主链路。
-</Page_Context_Use>
 
-<Output_Format>
-用于需要结构化输出的 Planner、Critic、Evaluator 或 SFT 生成 Agent，说明 JSON 字段、字段含义、禁止字段和失败时的降级输出。
-</Output_Format>
+## Output format
+
+用于需要结构化输出的 Planner、Critic、Evaluator 或 SFT 生成 Agent，说明 JSON 字段、字段含义、禁止字段和失败时的降级输出。可使用 API 的 JSON Schema/Structured Outputs 强制结构，不能只依赖 prompt 文本。
 ```
 
 ## 4. 推荐 Agent 专用补充
@@ -106,4 +94,4 @@ RagAgent 的职责是整理、压缩和约束商品证据，不是召回器、�
 
 ## 8. 与代码的落点
 
-当前 RecommendationAgent 的提示词落在 `rs_core/agent/tools/__init__.py` 的 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`，并通过 `build_agent_tool_planner_system_prompt()` 与 hidden tool manifest summary 拼接。旧 `rs_core/rsagent` active package 已删除；后续首页 Agent、RagAgent 或其他专用 Agent 如果进入通用 `GenericAgentLoop`，应按本文档的标签规范维护各自 prompt，并在 adapter 层保证 public/SFT/internal projection 边界不被 prompt 文本绕过。
+当前 RecommendationAgent 的提示词落在 `rs_core/agent/tools/__init__.py` 的 `AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT`，并通过 `build_agent_tool_planner_system_prompt()` 与 hidden tool manifest summary 拼接。旧 `rs_core/rsagent` active package 已删除；后续首页 Agent、RagAgent 或其他专用 Agent 如果进入通用 `GenericAgentLoop`，应按本文档的 Markdown 四段式维护各自 prompt，并在 adapter 层保证 public/SFT/internal projection 边界不被 prompt 文本绕过。

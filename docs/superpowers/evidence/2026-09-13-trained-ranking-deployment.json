@@ -1,0 +1,26 @@
+{
+  "status": "PASS",
+  "recommend_sha256": "55adc7c54b1513232985783a50afb638866ce67955d5dac571b79343961f2b87",
+  "runtime": {
+    "status": "UP",
+    "version": "cold_deepfm_20260914",
+    "models": {
+      "cold_model.json": {
+        "sha256": "27239f7bbbf121ce025606e9c792141a4df40c425c834e00f6e40484ca181e3a",
+        "source": "/home/luo/RS_agent_remote/outputs/ranking/cold_full_formal_20260620_existing_deepfm/cold_model.json"
+      },
+      "deepfm_model.json": {
+        "sha256": "8260e6ca51d3b80990f9a1842c36c863ae5f2716f2ea4bac46423cedea51029f",
+        "source": "/home/luo/RS_agent_remote/outputs/ranking/cold_full_formal_20260620_existing_deepfm/deepfm_model.json"
+      }
+    },
+    "feature_users": 5375378,
+    "feature_items": 762622
+  },
+  "settings": {
+    "RS_RECOMMEND_TRAINED_RANKING_ENABLED": "true",
+    "RS_RECOMMEND_TRAINED_RANKING_BASE_URL": "http://172.21.0.1:18119",
+    "RS_RECOMMEND_TRAINED_RANKING_VERSION": "cold_deepfm_20260914"
+  },
+  "backup": "/home/luo/RS_agent_java/backups/20260914-ranking-final"
+}

@@ -1,0 +1,117 @@
+{
+  "label": "fp8-w8a16",
+  "passed": true,
+  "results": [
+    {
+      "number": 0,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-ed4fe78c05-1-0-a3f1367f",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议考虑以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791538246.7773123,
+      "http_status": 200,
+      "latency_s": 3.182,
+      "first_event_s": 3.175,
+      "first_answer_s": 3.175,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "passed": true
+    },
+    {
+      "number": 1,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-ed4fe78c05-1-1-d09afae8",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议考虑以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791538249.9974034,
+      "http_status": 200,
+      "latency_s": 1.248,
+      "first_event_s": 1.246,
+      "first_answer_s": 1.246,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "passed": true
+    },
+    {
+      "number": 2,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-ed4fe78c05-1-2-788b7047",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议考虑以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791538251.268394,
+      "http_status": 200,
+      "latency_s": 1.168,
+      "first_event_s": 1.166,
+      "first_answer_s": 1.166,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "passed": true
+    }
+  ]
+}

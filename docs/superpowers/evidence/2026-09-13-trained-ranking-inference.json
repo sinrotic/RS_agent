@@ -1,0 +1,11 @@
+{
+  "feature_count_samples": 25,
+  "pairs": 126,
+  "max_cold_error": 0.0,
+  "max_deepfm_error": 0.0,
+  "checks": [
+    "特征计数与原始 train 正向事件独立扫描一致",
+    "原 COLD/DeepFM 函数与运行时分数一致，包含冷用户/冷商品/高频特征缩放"
+  ],
+  "status": "PASS"
+}

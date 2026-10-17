@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,8 @@ from scripts.recall.build_two_tower_source_index import build_two_tower_source_i
 
 pytestmark = pytest.mark.unit
 
-PYTHON = Path("D:/sinrotic_code/python_project/summer/RS_agent/.venv/Scripts/python.exe")
+ROOT = Path(__file__).resolve().parents[1]
+PYTHON = Path(sys.executable)
 
 REQUIRED_OUTPUTS = {
     "method_dataset_manifest.json",
@@ -293,7 +295,7 @@ def test_two_tower_method_source_cli_and_runner_compatibility(tmp_path: Path) ->
         check=True,
         capture_output=True,
         text=True,
-        cwd="D:/sinrotic_code/python_project/summer/RS_agent",
+        cwd=ROOT,
     )
     payload = json.loads(result.stdout)
     manifest_path = Path(payload["method_dataset_manifest"])

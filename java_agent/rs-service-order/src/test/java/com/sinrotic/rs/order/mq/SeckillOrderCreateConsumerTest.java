@@ -29,7 +29,7 @@ class SeckillOrderCreateConsumerTest {
         consumer.consume("""
                 {
                   "requestId": "sec-req-1",
-                  "accountId": 1,
+                  "accountId": "acc_1",
                   "activityId": "activity-1",
                   "itemId": "item-9",
                   "skuId": "sku-9",
@@ -39,7 +39,7 @@ class SeckillOrderCreateConsumerTest {
 
         verify(orderService).createSeckillOrder(new SeckillOrderCreateMessageDTO(
                 "sec-req-1",
-                1L,
+                "acc_1",
                 "activity-1",
                 "item-9",
                 "sku-9",

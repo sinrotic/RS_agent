@@ -15,6 +15,7 @@ from rs_lab.experiments.recall.run_full_data_pool500_recall_only import (
 )
 
 pytestmark = pytest.mark.unit
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def _write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
@@ -74,7 +75,7 @@ def test_read_priority_user_allowlist_supports_text_and_jsonl(tmp_path: Path) ->
 
 
 def test_recall_runner_has_no_profile_or_target_user_runtime_overrides() -> None:
-    source_path = Path("D:/sinrotic_code/python_project/summer/RS_agent/rs_lab/experiments/recall/run_full_data_pool500_recall_only.py")
+    source_path = ROOT / "rs_lab/experiments/recall/run_full_data_pool500_recall_only.py"
     source = source_path.read_text(encoding="utf-8")
 
     assert "--recall-profile" not in source

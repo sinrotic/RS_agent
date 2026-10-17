@@ -1,0 +1,41 @@
+{
+  "backup": "/home/luo/RS_agent_java/model_deploy/backup-serving-tuning-20261011-110211",
+  "previous_api_pid": 3408427,
+  "previous_launcher_pid": 3408421,
+  "configuration": {
+    "VLLM_JSON_COMPACT_OUTPUT": "true",
+    "VLLM_WARMUP_CONCURRENCY": "8",
+    "VLLM_WARMUP_ONLY_WHEN_IDLE": "true",
+    "VLLM_WARMUP_PAYLOAD_FILE": "/home/luo/RS_agent_java/model_deploy/model_warmup_payloads.private.json",
+    "VLLM_WARMUP_MAX_TOKENS": "1",
+    "VLLM_READY_TIMEOUT_SEC": "600"
+  },
+  "original_sha256": {
+    ".env": "b728be18ddd34e23a07a6687e01c09994f3f849f2fcff51a380019fe1ad9dc73",
+    "start_qwen35_4b_vllm.sh": "2b0171472af7a7f6a418431be26acca7907745056131c4c84682eab12e3ba73f",
+    "run_qwen35_4b_vllm.sh": "a0e401fae45e0fb2fe3af50e34229e4fec2400556ff9099d1a4de9e4f82f7921",
+    "vllm_prefix_warmup.py": "bdf3a8ff800f91c5ac61257abcb74af45c88cdb28c2ace508ac1d76148603d1a",
+    "vllm_structured_output_probe.py": "88d89cd88d53bfdebf2a7149125c86ed54a1d81b178b3122b2592501298cacd7"
+  },
+  "promoted": false,
+  "structured_output_report": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T03:04:21.528730+00:00",
+    "elapsed_seconds": 6.265
+  },
+  "failure": "Command '['/mnt/data/luo/venvs/rsagent-vllm/bin/python', '/tmp/rs-serving-tuning-20261011/benchmark.py', '--base-url', 'http://127.0.0.1:18082/v1', '--output', '/tmp/rs-serving-tuning-20261011/production-after.json']' returned non-zero exit status 1.",
+  "rollback": true,
+  "restored_launcher_pid": 3509916,
+  "health": true
+}

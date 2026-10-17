@@ -1,0 +1,70 @@
+{
+  "checks": {
+    "successful_complete_requests": 40,
+    "failed_requests": [
+      {
+        "source": "baseline-concurrent",
+        "session_id": "sess_5a2952ab50ee433892bd5e11cc1bcae0",
+        "error": null,
+        "elapsed_ms": 30885.69
+      },
+      {
+        "source": "baseline-concurrent",
+        "session_id": "sess_de81e5ca74514fa6a2a849f3a936c0ca",
+        "error": null,
+        "elapsed_ms": 30882.9
+      },
+      {
+        "source": "baseline-concurrent",
+        "session_id": "sess_d7d215ae664a46b1b3f4d8446b58b941",
+        "error": null,
+        "elapsed_ms": 30883.65
+      },
+      {
+        "source": "baseline-concurrent",
+        "session_id": "sess_a93a00fb6369479ba495d1f3e62f1122",
+        "error": null,
+        "elapsed_ms": 30941.73
+      },
+      {
+        "source": "baseline-concurrent",
+        "session_id": "sess_3553e6d0aae546ebab4facfb49a99689",
+        "error": null,
+        "elapsed_ms": 30885.05
+      }
+    ],
+    "five_real_items_each": true,
+    "separate_deliveries": true,
+    "real_deepfm_and_96_bge": true,
+    "final_history_each": true,
+    "scylla_transcript": "\n seq | entry_type\n-----+-------------------\n   1 |      USER_MESSAGE\n   2 | ASSISTANT_MESSAGE\n   3 | ASSISTANT_MESSAGE\n   4 |   ASSISTANT_FINAL\n\n(4 rows)\n",
+    "feedback_delivery_attribution_and_idempotency": true,
+    "history_recovered_without_redis_hot_state_or_process_cache": true
+  },
+  "metrics": {
+    "recommend_query_embedding_hit": [
+      {
+        "statistic": "COUNT",
+        "value": 7.0
+      }
+    ],
+    "recommend_query_embedding_miss": [
+      {
+        "statistic": "COUNT",
+        "value": 1.0
+      }
+    ],
+    "recommend_bge_scores_hit": [
+      {
+        "statistic": "COUNT",
+        "value": 7.0
+      }
+    ],
+    "recommend_bge_scores_miss": [
+      {
+        "statistic": "COUNT",
+        "value": 1.0
+      }
+    ]
+  }
+}

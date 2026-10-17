@@ -7,6 +7,8 @@ import pytest
 from rs_core.common.io import read_json, write_json
 from rs_lab.experiments.recall.two_tower_stage_gate import build_two_tower_stage_gate_manifest, ensure_stage_not_blocked
 
+pytestmark = pytest.mark.experiment
+
 
 def test_two_tower_stage_gate_1k_pass_manifest(tmp_path: Path):
     training_dir = tmp_path / "run_1k"

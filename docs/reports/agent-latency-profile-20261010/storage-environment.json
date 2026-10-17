@@ -1,0 +1,15 @@
+{
+  "mysql_data_mount": [
+    {
+      "Type": "bind",
+      "Source": "/home/luo/RS_agent_java/db/mysql",
+      "Destination": "/var/lib/mysql",
+      "RW": true
+    }
+  ],
+  "mysql_durability_variables": "1\t1\t1\tfsync\t/var/lib/mysql/",
+  "filesystems": [
+    "/dev/sdb ext4   /mnt/data2 rw,relatime"
+  ],
+  "block_devices": "NAME        TYPE FSTYPE   MOUNTPOINTS                         MODEL\nloop0       loop squashfs /snap/bare/5                        \nloop1       loop squashfs /snap/gnome-46-2404/164             \nloop2       loop squashfs /snap/core22/2955                   \nloop3       loop squashfs /snap/snap-store/1447               \nloop4       loop squashfs /snap/core24/1643                   \nloop5       loop squashfs /snap/snapd/28254                   \nloop6       loop squashfs /snap/snap-store/1427               \nloop7       loop squashfs /snap/gnome-42-2204/247             \nloop8       loop squashfs /snap/firmware-updater/226          \nloop9       loop squashfs /snap/core24/2124                   \nloop10      loop squashfs /snap/gnome-42-2204/263             \nloop11      loop squashfs                                     \nloop12      loop squashfs /snap/mesa-2404/1165                \nloop13      loop squashfs /snap/gtk-common-themes/1535        \nloop15      loop squashfs /snap/firmware-updater/258          \nloop16      loop squashfs /snap/mesa-2404/1839                \nloop17      loop squashfs                                     \nloop18      loop squashfs /snap/snapd-desktop-integration/387 \nloop19      loop squashfs /snap/firefox/9036                  \nloop20      loop squashfs /snap/snapd-desktop-integration/391 \nloop21      loop squashfs /snap/core22/2437                   \nloop22      loop squashfs /snap/snapd/27738                   \nloop23      loop squashfs /snap/gnome-46-2404/168             \nloop24      loop squashfs /snap/firefox/8995                  \nsda         disk ext4     /mnt/data                           ST16000NM000J-2TW103\nsdb         disk ext4     /mnt/data2                          ST16000NM000J-2TW103\nnvme1n1     disk                                              Samsung SSD 990 PRO 2TB\n\u251c\u2500nvme1n1p1 part vfat                                         \n\u251c\u2500nvme1n1p2 part swap                                         \n\u251c\u2500nvme1n1p3 part ext4                                         \n\u2514\u2500nvme1n1p4 part ext4                                         \nnvme0n1     disk                                              Samsung SSD 990 PRO 2TB\n\u251c\u2500nvme0n1p1 part vfat     /boot/efi                           \n\u251c\u2500nvme0n1p2 part ext4     /home                               \n\u251c\u2500nvme0n1p3 part ext4     /boot                               \n\u251c\u2500nvme0n1p4 part ext4     /tmp                                \n\u251c\u2500nvme0n1p5 part ext4                                         \n\u2514\u2500nvme0n1p6 part ext4     /home/chr/root_data                 \n                          /                                   \n"
+}

@@ -7,6 +7,31 @@ public class AgentModelProviderProperties {
 
     private ProviderType type = ProviderType.PYTHON_API;
 
+    private boolean constrainedDecodingEnabled;
+
+    private int finalAnswerMaxTokens;
+
+    private boolean compactToolSchemasEnabled;
+
+    public boolean isCompactToolSchemasEnabled() { return compactToolSchemasEnabled; }
+
+    public void setCompactToolSchemasEnabled(boolean enabled) { this.compactToolSchemasEnabled = enabled; }
+
+    public int getFinalAnswerMaxTokens() { return finalAnswerMaxTokens; }
+
+    public void setFinalAnswerMaxTokens(int finalAnswerMaxTokens) {
+        if (finalAnswerMaxTokens < 0) throw new IllegalArgumentException("finalAnswerMaxTokens must not be negative");
+        this.finalAnswerMaxTokens = finalAnswerMaxTokens;
+    }
+
+    public boolean isConstrainedDecodingEnabled() {
+        return constrainedDecodingEnabled;
+    }
+
+    public void setConstrainedDecodingEnabled(boolean constrainedDecodingEnabled) {
+        this.constrainedDecodingEnabled = constrainedDecodingEnabled;
+    }
+
     private final PythonApi pythonApi = new PythonApi();
 
     private final SelfHosted selfHosted = new SelfHosted();

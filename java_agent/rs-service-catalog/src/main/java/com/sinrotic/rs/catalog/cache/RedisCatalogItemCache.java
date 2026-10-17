@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Component
 @ConditionalOnProperty(name = "rs.catalog.cache.enabled", havingValue = "true")
@@ -29,15 +30,18 @@ public class RedisCatalogItemCache implements CatalogItemCache {
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
     private final Duration itemTtl;
+    private final long itemTtlJitterSeconds;
 
     public RedisCatalogItemCache(
             StringRedisTemplate redisTemplate,
             ObjectMapper objectMapper,
-            @Value("${rs.catalog.cache.item-ttl-seconds:86400}") long itemTtlSeconds
+            @Value("${rs.catalog.cache.item-ttl-seconds:86400}") long itemTtlSeconds,
+            @Value("${rs.catalog.cache.item-ttl-jitter-seconds:3600}") long itemTtlJitterSeconds
     ) {
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
         this.itemTtl = Duration.ofSeconds(Math.max(1, itemTtlSeconds));
+        this.itemTtlJitterSeconds = Math.max(0, itemTtlJitterSeconds);
     }
 
     @Override
@@ -90,12 +94,20 @@ public class RedisCatalogItemCache implements CatalogItemCache {
                 redisTemplate.opsForValue().set(
                         key(item.itemId()),
                         objectMapper.writeValueAsString(item),
-                        itemTtl
+                        ttlWithJitter()
                 );
             } catch (JsonProcessingException | RuntimeException cacheFailure) {
                 log.warn("Catalog Redis write failed for item {}: {}", item.itemId(), cacheFailure.getMessage());
             }
         }
+    }
+
+    private Duration ttlWithJitter() {
+        if (itemTtlJitterSeconds == 0) {
+            return itemTtl;
+        }
+        long jitter = ThreadLocalRandom.current().nextLong(itemTtlJitterSeconds + 1);
+        return itemTtl.plusSeconds(jitter);
     }
 
     private List<String> normalizeIds(List<String> itemIds) {

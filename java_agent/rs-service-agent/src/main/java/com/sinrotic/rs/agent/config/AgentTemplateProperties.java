@@ -64,7 +64,8 @@ public class AgentTemplateProperties {
                     AgentPublicOutputBlock.TEXT,
                     AgentPublicOutputBlock.PRODUCT_CARDS,
                     AgentPublicOutputBlock.COMPARISON_TABLE,
-                    AgentPublicOutputBlock.FOLLOWUP_QUESTION
+                    AgentPublicOutputBlock.FOLLOWUP_QUESTION,
+                    AgentPublicOutputBlock.A2UI
             ));
             profile.maxLoops = 8;
             profile.failurePolicy = AgentProfileFailurePolicy.FAIL_TURN;

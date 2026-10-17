@@ -31,10 +31,14 @@ export interface HomeRecommendVO {
   has_more: boolean;
   next_cursor: string;
   config?: HomeRecommendConfigVO;
+  preference_version: number;
+  applied_feedback_event_ids: string[];
+  recommendation_mode?: 'personalized' | 'discovery' | 'degraded' | 'catalog_cold_start';
+  degradation_reasons?: string[];
 }
 
 export interface HomeRecommendRequest {
-  profileUserId: string;
+  sessionId: string;
   scene?: string;
   limit?: number;
   cursor?: string;
@@ -43,7 +47,6 @@ export interface HomeRecommendRequest {
 
 export interface HomeRecommendRefreshRequest {
   sessionId: string;
-  profileUserId: string;
   scene?: string;
   limit?: number;
   cursor?: string;

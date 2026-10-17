@@ -4,6 +4,8 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from scripts.data.import_recent2y_to_mysql import (
     _insert_sql,
     import_recent2y_to_mysql,
@@ -12,6 +14,8 @@ from scripts.data.import_recent2y_to_mysql import (
     product_row,
     sequence_row,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_recent2y_row_transforms_use_mysql_shape() -> None:

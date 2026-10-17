@@ -1,0 +1,5332 @@
+[
+  {
+    "variant": "bf16-production-business",
+    "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "elapsed_ms": 7534.52,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9725,
+        "completion_tokens": 222,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9725,
+          "completion_tokens": 222,
+          "native_usage": {
+            "completion_tokens": 222,
+            "prompt_tokens": 9725,
+            "total_tokens": 9947,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9947
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "bf16-production-business",
+    "query": "推荐适合编程使用的键盘，说明各自的区别",
+    "elapsed_ms": 9815.06,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9686,
+        "completion_tokens": 66,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9686,
+          "completion_tokens": 66,
+          "native_usage": {
+            "completion_tokens": 66,
+            "prompt_tokens": 9686,
+            "total_tokens": 9752,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9752
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10584,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10584,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 10584,
+            "total_tokens": 10617,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10617
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11408,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11408,
+          "completion_tokens": 34,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11408,
+            "total_tokens": 11442,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11442
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12082,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12082,
+          "completion_tokens": 31,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 12082,
+            "total_tokens": 12113,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12113
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12917,
+        "completion_tokens": 115,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12917,
+          "completion_tokens": 115,
+          "native_usage": {
+            "completion_tokens": 115,
+            "prompt_tokens": 12917,
+            "total_tokens": 13032,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13032
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "production-after",
+    "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "elapsed_ms": 21821.77,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9687,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9687,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9687,
+            "total_tokens": 9720,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9720
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10615,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10615,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 10615,
+            "total_tokens": 10648,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10648
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11460,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11460,
+          "completion_tokens": 31,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 11460,
+            "total_tokens": 11491,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11491
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "3da456b1c52e0aedd254a7baaa050ad916d45613e732321c36d7179d7d66862a",
+        "skill_arguments": {
+          "skill_name": "a2ui-interface"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12294,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12294,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 12294,
+            "total_tokens": 13494,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13494
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 13828,
+        "completion_tokens": 114,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 13828,
+          "completion_tokens": 114,
+          "native_usage": {
+            "completion_tokens": 114,
+            "prompt_tokens": 13828,
+            "total_tokens": 13942,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13942
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "production-after",
+    "query": "推荐适合编程使用的键盘，说明各自的区别",
+    "elapsed_ms": 36522.66,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9667,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9667,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9667,
+            "total_tokens": 9700,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9700
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10589,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10589,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 10589,
+            "total_tokens": 10622,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10622
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11436,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11436,
+          "completion_tokens": 34,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11436,
+            "total_tokens": 11470,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11470
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12112,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12112,
+          "completion_tokens": 31,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 12112,
+            "total_tokens": 12143,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12143
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12943,
+        "completion_tokens": 126,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12943,
+          "completion_tokens": 126,
+          "native_usage": {
+            "completion_tokens": 126,
+            "prompt_tokens": 12943,
+            "total_tokens": 13069,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13069
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "2290ad0ef1bf666a16f570d8aaec79878cbf47f8eabe51b3cdbb9102aa05b6bb",
+        "skill_arguments": {
+          "skill_name": "cold-user-onboarding"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 13446,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 13446,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 13446,
+            "total_tokens": 14646,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 14646
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "3da456b1c52e0aedd254a7baaa050ad916d45613e732321c36d7179d7d66862a",
+        "skill_arguments": {
+          "skill_name": "a2ui-interface"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 14295,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 14295,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 14295,
+            "total_tokens": 15495,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 15495
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "middle16_warm",
+    "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "elapsed_ms": 22948.54,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9703,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9703,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9703,
+            "total_tokens": 9736,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9736
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10631,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10631,
+          "completion_tokens": 33,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 10631,
+            "total_tokens": 10664,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10664
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11482,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11482,
+          "completion_tokens": 34,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11482,
+            "total_tokens": 11516,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11516
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12158,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12158,
+          "completion_tokens": 31,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 12158,
+            "total_tokens": 12189,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12189
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "3da456b1c52e0aedd254a7baaa050ad916d45613e732321c36d7179d7d66862a",
+        "skill_arguments": {
+          "skill_name": "a2ui-interface"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 13697,
+        "completion_tokens": 117,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 13697,
+          "completion_tokens": 117,
+          "native_usage": {
+            "completion_tokens": 117,
+            "prompt_tokens": 13697,
+            "total_tokens": 13814,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13814
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "2290ad0ef1bf666a16f570d8aaec79878cbf47f8eabe51b3cdbb9102aa05b6bb",
+        "skill_arguments": {
+          "skill_name": "cold-user-onboarding"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 14206,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 14206,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 14206,
+            "total_tokens": 15406,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 15406
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 15055,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 15055,
+          "completion_tokens": 31,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 15055,
+            "total_tokens": 15086,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 15086
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "middle16_warm",
+    "query": "推荐适合编程使用的键盘，说明各自的区别",
+    "elapsed_ms": 43477.88,
+    "finish_reason": "MODEL_ERROR",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9657,
+        "completion_tokens": 288,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9657,
+          "completion_tokens": 288,
+          "native_usage": {
+            "completion_tokens": 288,
+            "prompt_tokens": 9657,
+            "total_tokens": 9945,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9945
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10577,
+        "completion_tokens": 70,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10577,
+          "completion_tokens": 70,
+          "native_usage": {
+            "completion_tokens": 70,
+            "prompt_tokens": 10577,
+            "total_tokens": 10647,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10647
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11438,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11438,
+          "completion_tokens": 34,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11438,
+            "total_tokens": 11472,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11472
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12110,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12110,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 12110,
+            "total_tokens": 13310,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13310
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "2290ad0ef1bf666a16f570d8aaec79878cbf47f8eabe51b3cdbb9102aa05b6bb",
+        "skill_arguments": {
+          "skill_name": "cold-user-onboarding"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12943,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12943,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 12943,
+            "total_tokens": 14143,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 14143
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "3da456b1c52e0aedd254a7baaa050ad916d45613e732321c36d7179d7d66862a",
+        "skill_arguments": {
+          "skill_name": "a2ui-interface"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 13793,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 13793,
+          "completion_tokens": 1200,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 13793,
+            "total_tokens": 14993,
+            "valid": true
+          },
+          "cache_write_input_tokens": 0,
+          "total_tokens": 14993
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "agent_failed",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "error",
+        "error_code": "TURN_FAILED",
+        "error_message": "",
+        "data_fields": [
+          "error_code",
+          "status"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "middle8_formal",
+    "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "elapsed_ms": 17338.51,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9659,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9659,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9659,
+            "total_tokens": 9692,
+            "valid": true
+          },
+          "completion_tokens": 33,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9692
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10441,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10441,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 10441,
+            "total_tokens": 10474,
+            "valid": true
+          },
+          "completion_tokens": 33,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10474
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11141,
+        "completion_tokens": 232,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11141,
+          "native_usage": {
+            "completion_tokens": 232,
+            "prompt_tokens": 11141,
+            "total_tokens": 11373,
+            "valid": true
+          },
+          "completion_tokens": 232,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11373
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11303,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11303,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11303,
+            "total_tokens": 11337,
+            "valid": true
+          },
+          "completion_tokens": 34,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11337
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12012,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12012,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 12012,
+            "total_tokens": 12043,
+            "valid": true
+          },
+          "completion_tokens": 31,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12043
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12729,
+        "completion_tokens": 232,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12729,
+          "native_usage": {
+            "completion_tokens": 232,
+            "prompt_tokens": 12729,
+            "total_tokens": 12961,
+            "valid": true
+          },
+          "completion_tokens": 232,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12961
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12885,
+        "completion_tokens": 232,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12885,
+          "native_usage": {
+            "completion_tokens": 232,
+            "prompt_tokens": 12885,
+            "total_tokens": 13117,
+            "valid": true
+          },
+          "completion_tokens": 232,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13117
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "middle8_formal",
+    "query": "推荐适合编程使用的键盘，说明各自的区别",
+    "elapsed_ms": 47143.22,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9648,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9648,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9648,
+            "total_tokens": 9681,
+            "valid": true
+          },
+          "completion_tokens": 33,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9681
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10421,
+        "completion_tokens": 35,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10421,
+          "native_usage": {
+            "completion_tokens": 35,
+            "prompt_tokens": 10421,
+            "total_tokens": 10456,
+            "valid": true
+          },
+          "completion_tokens": 35,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10456
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11142,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11142,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11142,
+            "total_tokens": 11176,
+            "valid": true
+          },
+          "completion_tokens": 34,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11176
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11816,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11816,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 11816,
+            "total_tokens": 13016,
+            "valid": true
+          },
+          "completion_tokens": 1200,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13016
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12533,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12533,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 12533,
+            "total_tokens": 13733,
+            "valid": true
+          },
+          "completion_tokens": 1200,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13733
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12718,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12718,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 12718,
+            "total_tokens": 13918,
+            "valid": true
+          },
+          "completion_tokens": 1200,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13918
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12871,
+        "completion_tokens": 252,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12871,
+          "native_usage": {
+            "completion_tokens": 252,
+            "prompt_tokens": 12871,
+            "total_tokens": 13123,
+            "valid": true
+          },
+          "completion_tokens": 252,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13123
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "bf16_restart",
+    "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "elapsed_ms": 26070.07,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9672,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9672,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9672,
+            "total_tokens": 9705,
+            "valid": true
+          },
+          "completion_tokens": 33,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9705
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10454,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10454,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 10454,
+            "total_tokens": 10487,
+            "valid": true
+          },
+          "completion_tokens": 33,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10487
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "60ee2675b95581251fb2c20fee680f19c96525fe791cc7f92030a1c4d4f6c1e2",
+        "skill_arguments": {
+          "skill_name": "unclear-need-clarification"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11152,
+        "completion_tokens": 34,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11152,
+          "native_usage": {
+            "completion_tokens": 34,
+            "prompt_tokens": 11152,
+            "total_tokens": 11186,
+            "valid": true
+          },
+          "completion_tokens": 34,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11186
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "f5a60edae400b89745e7b425dfd1a29703cf1e517a7296d1f05e48d840250256",
+        "skill_arguments": {
+          "skill_name": "feedback-adaptation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11826,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11826,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 11826,
+            "total_tokens": 11857,
+            "valid": true
+          },
+          "completion_tokens": 31,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11857
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12541,
+        "completion_tokens": 211,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12541,
+          "native_usage": {
+            "completion_tokens": 211,
+            "prompt_tokens": 12541,
+            "total_tokens": 12752,
+            "valid": true
+          },
+          "completion_tokens": 211,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12752
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12734,
+        "completion_tokens": 1200,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12734,
+          "native_usage": {
+            "completion_tokens": 1200,
+            "prompt_tokens": 12734,
+            "total_tokens": 13934,
+            "valid": true
+          },
+          "completion_tokens": 1200,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 13934
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "call_agent",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "3da456b1c52e0aedd254a7baaa050ad916d45613e732321c36d7179d7d66862a",
+        "skill_arguments": {
+          "skill_name": "a2ui-interface"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 12891,
+        "completion_tokens": 31,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 12891,
+          "native_usage": {
+            "completion_tokens": 31,
+            "prompt_tokens": 12891,
+            "total_tokens": 12922,
+            "valid": true
+          },
+          "completion_tokens": 31,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 12922
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  },
+  {
+    "variant": "bf16_restart",
+    "query": "推荐适合编程使用的键盘，说明各自的区别",
+    "elapsed_ms": 20231.54,
+    "finish_reason": "FINAL_ANSWER",
+    "events": [
+      {
+        "event_type": "agent_started",
+        "tool_name": null,
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": []
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "aa3c720894668835983a29be9c4dcd9fddfda05f73c0ec278d62234a8e88f1c9",
+        "skill_arguments": {
+          "skill_name": "evidence-grounded-explanation"
+        }
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 9652,
+        "completion_tokens": 33,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 9652,
+          "native_usage": {
+            "completion_tokens": 33,
+            "prompt_tokens": 9652,
+            "total_tokens": 9685,
+            "valid": true
+          },
+          "completion_tokens": 33,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 9685
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10419,
+        "completion_tokens": 126,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10419,
+          "native_usage": {
+            "completion_tokens": 126,
+            "prompt_tokens": 10419,
+            "total_tokens": 10545,
+            "valid": true
+          },
+          "completion_tokens": 126,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10545
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_support",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 10581,
+        "completion_tokens": 35,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 10581,
+          "native_usage": {
+            "completion_tokens": 35,
+            "prompt_tokens": 10581,
+            "total_tokens": 10616,
+            "valid": true
+          },
+          "completion_tokens": 35,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 10616
+        }
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": "",
+        "arguments_hash": "ade9fab7f53e400cb21768db601b015d43f96b2d4016dbf7aa1004d2d8dcf09f",
+        "skill_arguments": {
+          "skill_name": "explicit-need-recommendation"
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "load_skill",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "tool_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ],
+        "skill_details": {},
+        "input_summary": ""
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11300,
+        "completion_tokens": 238,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11300,
+          "native_usage": {
+            "completion_tokens": 238,
+            "prompt_tokens": 11300,
+            "total_tokens": 11538,
+            "valid": true
+          },
+          "completion_tokens": 238,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11538
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11459,
+        "completion_tokens": 238,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11459,
+          "native_usage": {
+            "completion_tokens": 238,
+            "prompt_tokens": 11459,
+            "total_tokens": 11697,
+            "valid": true
+          },
+          "completion_tokens": 238,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11697
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11620,
+        "completion_tokens": 104,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11620,
+          "native_usage": {
+            "completion_tokens": 104,
+            "prompt_tokens": 11620,
+            "total_tokens": 11724,
+            "valid": true
+          },
+          "completion_tokens": 104,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11724
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "tool_use",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "arguments",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "model_usage",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": 11781,
+        "completion_tokens": 104,
+        "phase": "model_call",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "cache_read_input_tokens",
+          "cache_write_input_tokens",
+          "completion_tokens",
+          "native_usage",
+          "prompt_tokens",
+          "total_tokens"
+        ],
+        "usage": {
+          "cache_read_input_tokens": 0,
+          "prompt_tokens": 11781,
+          "native_usage": {
+            "completion_tokens": 104,
+            "prompt_tokens": 11781,
+            "total_tokens": 11885,
+            "valid": true
+          },
+          "completion_tokens": 104,
+          "cache_write_input_tokens": 0,
+          "total_tokens": 11885
+        }
+      },
+      {
+        "event_type": "tool_result",
+        "tool_name": "rag_evidence_search",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "rag",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "metadata",
+          "service",
+          "status",
+          "tool_call_id",
+          "tool_name"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "answer_block",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "agent",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "output_block_type",
+          "profile_id",
+          "projection_result"
+        ]
+      },
+      {
+        "event_type": "agent_done",
+        "tool_name": "",
+        "agent_name": "rs_agent",
+        "latency_ms": null,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "phase": "final_answer",
+        "status": "success",
+        "error_code": "",
+        "error_message": "",
+        "data_fields": [
+          "done",
+          "finish_reason"
+        ]
+      }
+    ]
+  }
+]

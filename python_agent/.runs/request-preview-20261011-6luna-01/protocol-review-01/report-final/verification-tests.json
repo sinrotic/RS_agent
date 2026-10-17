@@ -1,0 +1,30 @@
+{
+  "verification_kind": "offline_engineering_tests_not_model_quality_or_score_calibration",
+  "new_model_calls": 0,
+  "candidate_request_count": 7,
+  "added_requests": 0,
+  "formal_task_count_unchanged": 2899,
+  "source_pack_file_sha256": "0d8e63e79058740ff29bd26f279efe1a7695f284c968858defa396eb6afc7c8c",
+  "diagnostics_file_sha256": "c551e7570cfcb327e4a7503c45ec22cca0a8db012666ae0e716c864a15aaa3bf",
+  "formal_benchmark_file_sha256": "11cb37bb28bb01a817c0451452b3a6c6101b70d1e222ada8faf82ddd0e2afe351",
+  "focused_tests": {
+    "command": "python -X utf8 -m pytest tests/test_request_synthesis.py tests/test_request_contract.py tests/test_request_candidate_review.py tests/test_openai_compatible_client.py -q",
+    "passed": 69,
+    "failed": 0
+  },
+  "regression_tests": {
+    "command": "python -X utf8 -m pytest tests/test_request_synthesis.py tests/test_request_contract.py tests/test_request_candidate_review.py tests/test_openai_compatible_client.py tests/test_skill_benchmark.py tests/test_skill_benchmark_population.py tests/test_customer_skill_benchmark.py tests/test_personalized_skill_benchmark.py tests/test_natural_profile_skill_benchmark.py tests/test_profile_contrast_skill_benchmark.py tests/test_skill_benchmark_readiness.py tests/test_skill_quality_evolution.py tests/test_online_evaluation.py -q",
+    "passed": 224,
+    "skipped": 7,
+    "failed": 0,
+    "duration_seconds": 95.11,
+    "skip_scope": "Java integration prerequisites not configured; not evidence that those integration paths passed"
+  },
+  "syntax_compilation": "passed",
+  "original_texts_and_saved_extractions_unchanged": true,
+  "original_statuses_unchanged": true,
+  "human_reviewed": false,
+  "is_gold": false,
+  "auto_deploy": false,
+  "interpretation": "夹具测试仅验证工程行为；没有新的6-luna运行、真人标注、推荐执行或评分校准"
+}

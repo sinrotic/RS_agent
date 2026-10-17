@@ -1,0 +1,378 @@
+{
+  "started_at_utc": "2026-10-11T16:31:39.160302+00:00",
+  "model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "scope": "GPU2 相同 INT4 权重/.50 显存/16K，32 sequences，空 Triton 缓存；合成输入，不代表业务延迟",
+  "warmup": [
+    {
+      "label": "full-6608",
+      "model_calls": 1.0,
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 3022.12,
+      "mean_prefill_ms": 3002.79,
+      "mean_queue_ms": 0.034,
+      "client_complete_ms": 3052.022,
+      "completion_tokens": 1,
+      "jit_events": [
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:30 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel (key=[('*u64', 'D'), ('*i64', 'D'), ('i32', ''), ('constexpr', 8), ('constexpr', 540672), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:30 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _compute_slot_mapping_kernel (key=[('i32', None), ('i32', None), ('*i32', 'D'), ('*i64', 'D'), ('*i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('*i64', 'D'), ('constexpr', 1), ('constexpr', 0), ('constexpr', 1), ('constexpr', -1), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:31 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _causal_conv1d_fwd_kernel (key=[('*bf16', 'D'), ('*bf16', 'D'), ('constexpr', None), ('*bf16', 'D'), ('*i32', 'D'), ('*u1', 'D'), ('*i32', 'D'), ('*i32', 'D'), ('*i32', 'D'), ('constexpr', None), ('constexpr', None), ('constexpr', None), ('constexpr', None), ('*bf16', 'D'), ('constexpr', 8192), ('constexpr', 264), ('constexpr', 1), ('i64', 'D'), ('constexpr', 4), ('constexpr', 1), ('constexpr', 1081344), ('constexpr', 1), ('constexpr', 8192), ('constexpr', 1), ('constexpr', 1), ('i64', 'D'), ('constexpr', 0), ('constexpr', -1), ('constexpr', 0), ('constexpr', False), ('constexpr', 4), ('constexpr', True), ('constexpr', False), ('constexpr', True), ('constexpr', 4), ('constexpr', 8), ('constexpr', 256)]{'num_stages': 2, 'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:32 [jit_monitor.py:98] Triton kernel JIT compilation during inference: batch_memcpy_kernel (key=[('*u64', 'D'), ('*u64', 'D'), ('*i32', 'D'), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''}).",
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:33 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _zero_kv_blocks_kernel (key=[('*u64', 'D'), ('*i64', 'D'), ('constexpr', 1), ('constexpr', 8), ('constexpr', 540672), ('constexpr', 1024)]{'debug': False, 'instrumentation_mode': ''})."
+      ]
+    },
+    {
+      "label": "partial-6608",
+      "model_calls": 1.0,
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 133.561,
+      "mean_prefill_ms": 130.734,
+      "mean_queue_ms": 0.022,
+      "client_complete_ms": 152.327,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "partial-6609",
+      "model_calls": 1.0,
+      "input_tokens": 6609.0,
+      "cache_queries": 6609.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 482.368,
+      "mean_prefill_ms": 479.725,
+      "mean_queue_ms": 0.042,
+      "client_complete_ms": 500.674,
+      "completion_tokens": 1,
+      "jit_events": [
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:34 [jit_monitor.py:98] Triton kernel JIT compilation during inference: _fused_post_conv_kernel (key=[('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*fp32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', 'D'), ('i32', ''), ('constexpr', 16), ('constexpr', 32), ('constexpr', 128), ('constexpr', 128), ('constexpr', True), ('constexpr', 1e-06), ('constexpr', False), ('constexpr', 20.0), ('constexpr', 16), ('constexpr', 128), ('constexpr', 128)]{'num_warps': 4, 'num_stages': 2, 'debug': False, 'instrumentation_mode': ''})."
+      ]
+    },
+    {
+      "label": "partial-6610",
+      "model_calls": 1.0,
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 134.528,
+      "mean_prefill_ms": 130.613,
+      "mean_queue_ms": 0.021,
+      "client_complete_ms": 152.73,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "partial-6612",
+      "model_calls": 1.0,
+      "input_tokens": 6612.0,
+      "cache_queries": 6612.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 135.816,
+      "mean_prefill_ms": 133.182,
+      "mean_queue_ms": 0.022,
+      "client_complete_ms": 153.879,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "partial-6616",
+      "model_calls": 1.0,
+      "input_tokens": 6616.0,
+      "cache_queries": 6616.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 134.052,
+      "mean_prefill_ms": 131.536,
+      "mean_queue_ms": 0.021,
+      "client_complete_ms": 152.237,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "decode-1",
+      "model_calls": 1.0,
+      "input_tokens": 256.0,
+      "cache_queries": 256.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 67.045,
+      "mean_prefill_ms": 64.945,
+      "mean_queue_ms": 0.019,
+      "client_complete_ms": 84.786,
+      "completion_tokens": 2,
+      "jit_events": []
+    },
+    {
+      "label": "decode-4",
+      "model_calls": 4.0,
+      "input_tokens": 1024.0,
+      "cache_queries": 1024.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 69.677,
+      "mean_prefill_ms": 65.901,
+      "mean_queue_ms": 0.023,
+      "client_complete_ms": 90.549,
+      "completion_tokens": 8,
+      "jit_events": []
+    },
+    {
+      "label": "decode-8",
+      "model_calls": 8.0,
+      "input_tokens": 2048.0,
+      "cache_queries": 2048.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 1143.82,
+      "mean_prefill_ms": 1103.141,
+      "mean_queue_ms": 0.021,
+      "client_complete_ms": 1172.498,
+      "completion_tokens": 16,
+      "jit_events": [
+        "(EngineCore pid=2321068) WARNING 10-12 00:35:37 [jit_monitor.py:98] Triton kernel JIT compilation during inference: fused_sigmoid_gating_delta_rule_update_kernel (key=[('*fp32', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('fp32', None), ('fp32', None), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*bf16', 'D'), ('*fp32', 'D'), ('*fp32', 'D'), ('*i32', 'D'), ('*i32', 'D'), ('constexpr', None), ('fp32', None), ('i64', None), ('i64', None), ('constexpr', 1), ('constexpr', 16), ('constexpr', 32), ('constexpr', 128), ('constexpr', 128), ('constexpr', 128), ('constexpr', 32), ('constexpr', 540672), ('constexpr', 540672), ('constexpr', 1), ('constexpr', 1), ('constexpr', True), ('constexpr', True), ('constexpr', True), ('constexpr', True), ('constexpr', True), ('constexpr', False), ('constexpr', False)]{'num_warps': 4, 'num_stages': 3, 'debug': False, 'instrumentation_mode': ''})."
+      ]
+    },
+    {
+      "label": "decode-16",
+      "model_calls": 16.0,
+      "input_tokens": 4096.0,
+      "cache_queries": 4096.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 199.685,
+      "mean_prefill_ms": 147.405,
+      "mean_queue_ms": 9.082,
+      "client_complete_ms": 276.38,
+      "completion_tokens": 32,
+      "jit_events": []
+    }
+  ],
+  "formal": [
+    {
+      "label": "0-uncached",
+      "model_calls": 1.0,
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 414.906,
+      "mean_prefill_ms": 412.338,
+      "mean_queue_ms": 0.022,
+      "client_complete_ms": 434.138,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "0-first-prefix-hit",
+      "model_calls": 1.0,
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 134.346,
+      "mean_prefill_ms": 131.65,
+      "mean_queue_ms": 0.021,
+      "client_complete_ms": 153.815,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "1-uncached",
+      "model_calls": 1.0,
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 416.566,
+      "mean_prefill_ms": 413.761,
+      "mean_queue_ms": 0.023,
+      "client_complete_ms": 437.365,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "1-first-prefix-hit",
+      "model_calls": 1.0,
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 134.451,
+      "mean_prefill_ms": 131.844,
+      "mean_queue_ms": 0.02,
+      "client_complete_ms": 152.96,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "2-uncached",
+      "model_calls": 1.0,
+      "input_tokens": 6608.0,
+      "cache_queries": 6608.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 415.896,
+      "mean_prefill_ms": 412.744,
+      "mean_queue_ms": 0.023,
+      "client_complete_ms": 437.435,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "2-first-prefix-hit",
+      "model_calls": 1.0,
+      "input_tokens": 6610.0,
+      "cache_queries": 6610.0,
+      "cached_tokens": 4752.0,
+      "mean_ttft_ms": 134.218,
+      "mean_prefill_ms": 131.638,
+      "mean_queue_ms": 0.02,
+      "client_complete_ms": 152.653,
+      "completion_tokens": 1,
+      "jit_events": []
+    },
+    {
+      "label": "batch-decode-4",
+      "model_calls": 4.0,
+      "input_tokens": 1024.0,
+      "cache_queries": 1024.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 133.129,
+      "mean_prefill_ms": 85.206,
+      "mean_queue_ms": 0.021,
+      "client_complete_ms": 152.523,
+      "completion_tokens": 8,
+      "jit_events": []
+    },
+    {
+      "label": "batch-decode-8",
+      "model_calls": 8.0,
+      "input_tokens": 2048.0,
+      "cache_queries": 2048.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 169.919,
+      "mean_prefill_ms": 114.363,
+      "mean_queue_ms": 0.028,
+      "client_complete_ms": 197.336,
+      "completion_tokens": 16,
+      "jit_events": []
+    },
+    {
+      "label": "batch-decode-16",
+      "model_calls": 16.0,
+      "input_tokens": 4096.0,
+      "cache_queries": 4096.0,
+      "cached_tokens": 0.0,
+      "mean_ttft_ms": 247.992,
+      "mean_prefill_ms": 153.712,
+      "mean_queue_ms": 29.731,
+      "client_complete_ms": 320.707,
+      "completion_tokens": 32,
+      "jit_events": []
+    }
+  ],
+  "completed": true,
+  "same_partial_workload": true,
+  "formal_jit_events": [],
+  "first_partial_ttft_ms": 134.346,
+  "partial_mean_ttft_ms": 134.33833333333334,
+  "passed": true,
+  "model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "gpu_after": {
+    "gpus": [
+      {
+        "index": 0,
+        "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 17793,
+        "utilization": 95
+      },
+      {
+        "index": 1,
+        "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 14425,
+        "utilization": 0
+      },
+      {
+        "index": 2,
+        "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 3759,
+        "utilization": 2
+      }
+    ],
+    "processes": [
+      {
+        "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "pid": 3975157,
+        "used_mib": 17770,
+        "script": "train_highh_native_1m.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 3417056,
+        "used_mib": 3120,
+        "script": "bge_m3_embedding_server.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 1616131,
+        "used_mib": 11276,
+        "script": "(非脚本入口)"
+      },
+      {
+        "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+        "pid": 2293691,
+        "used_mib": 3736,
+        "script": "(非脚本入口)"
+      }
+    ]
+  },
+  "model_unchanged": true,
+  "dependencies_unchanged": true,
+  "temporary_stopped": true
+}

@@ -1,0 +1,33 @@
+{
+  "candidate": "prefix_refilled",
+  "accepted": true,
+  "prefix_response_median_ratio": 0.49288300711578886,
+  "minimum_prefix_improvement": 0.05,
+  "steady_median_ratios": {
+    "warm_tool_c1": 1.0051451476125746,
+    "warm_tool_c4": 1.0058518498537947,
+    "warm_tool_c8": 1.0326426724166407,
+    "warm_tool_c16": 1.1430117312280719,
+    "mixed_c4": 0.9970679592503343,
+    "mixed_c8": 0.9683744447328244,
+    "mixed_c16": 1.0009194442408915,
+    "decode128": 1.0030496803875693
+  },
+  "planning_no_regression": true,
+  "kv_cache_tokens": [
+    106496,
+    106496
+  ],
+  "scope": "规划前缀 1 token 冷启动响应，不代表完整生成提速或持续吞吐 SLA",
+  "mtp_rejected": {
+    "reason": "固定规划未完成数增加及 RAG query 缺失；另有容量下降",
+    "baseline": {
+      "incomplete_generations": 2,
+      "rag_missing_query": 0
+    },
+    "candidate": {
+      "incomplete_generations": 3,
+      "rag_missing_query": 1
+    }
+  }
+}

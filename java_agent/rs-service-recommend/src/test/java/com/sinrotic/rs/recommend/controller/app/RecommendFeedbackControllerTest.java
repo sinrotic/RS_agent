@@ -3,6 +3,7 @@ package com.sinrotic.rs.recommend.controller.app;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sinrotic.rs.recommend.domain.vo.RecommendFeedbackAckVO;
 import com.sinrotic.rs.recommend.service.RecommendFeedbackService;
+import com.sinrotic.rs.recommend.service.RecommendationSessionValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -32,21 +33,24 @@ class RecommendFeedbackControllerTest {
     void setUp() {
         recommendFeedbackService = mock(RecommendFeedbackService.class);
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new RecommendFeedbackController(recommendFeedbackService))
+                .standaloneSetup(new RecommendFeedbackController(recommendFeedbackService, mock(RecommendationSessionValidator.class)))
                 .build();
     }
 
     @Test
     void exposureFeedbackAcknowledgesExposedItems() throws Exception {
         RecommendFeedbackAckVO response = new RecommendFeedbackAckVO("fb_exp_001", true, "exposure", 2);
-        when(recommendFeedbackService.recordExposure(argThat(request ->
-                "rec_req_001".equals(request.requestId())
+        when(recommendFeedbackService.recordExposure(argThat(identity ->
+                "account_001".equals(identity.accountId()) && "A1XYZ".equals(identity.profileUserId())
+        ), argThat(request -> "rec_req_001".equals(request.requestId())
                         && "sess_001".equals(request.sessionId())
                         && request.itemIds().contains("B001")
                         && request.itemIds().contains("B002")
         ))).thenReturn(response);
 
         mockMvc.perform(post("/api/recommend/feedback/exposure")
+                        .header("X-Account-Id", "account_001")
+                        .header("X-Profile-User-Id", "A1XYZ")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "request_id", "rec_req_001",
@@ -60,8 +64,9 @@ class RecommendFeedbackControllerTest {
                 .andExpect(jsonPath("$.feedback_type").value("exposure"))
                 .andExpect(jsonPath("$.accepted_count").value(2));
 
-        verify(recommendFeedbackService).recordExposure(argThat(request ->
-                "rec_req_001".equals(request.requestId())
+        verify(recommendFeedbackService).recordExposure(argThat(identity ->
+                "account_001".equals(identity.accountId()) && "A1XYZ".equals(identity.profileUserId())
+        ), argThat(request -> "rec_req_001".equals(request.requestId())
                         && request.itemIds().size() == 2
         ));
     }
@@ -69,13 +74,16 @@ class RecommendFeedbackControllerTest {
     @Test
     void eventFeedbackAcknowledgesSingleUserEvent() throws Exception {
         RecommendFeedbackAckVO response = new RecommendFeedbackAckVO("fb_evt_001", true, "click", 1);
-        when(recommendFeedbackService.recordEvent(argThat(request ->
-                "rec_req_001".equals(request.requestId())
+        when(recommendFeedbackService.recordEvent(argThat(identity ->
+                "account_001".equals(identity.accountId()) && "A1XYZ".equals(identity.profileUserId())
+        ), argThat(request -> "rec_req_001".equals(request.requestId())
                         && "B001".equals(request.itemId())
                         && "click".equals(request.eventType())
         ))).thenReturn(response);
 
         mockMvc.perform(post("/api/recommend/feedback/event")
+                        .header("X-Account-Id", "account_001")
+                        .header("X-Profile-User-Id", "A1XYZ")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "request_id", "rec_req_001",
@@ -91,8 +99,9 @@ class RecommendFeedbackControllerTest {
                 .andExpect(jsonPath("$.feedback_type").value("click"))
                 .andExpect(jsonPath("$.accepted_count").value(1));
 
-        verify(recommendFeedbackService).recordEvent(argThat(request ->
-                "rec_req_001".equals(request.requestId())
+        verify(recommendFeedbackService).recordEvent(argThat(identity ->
+                "account_001".equals(identity.accountId()) && "A1XYZ".equals(identity.profileUserId())
+        ), argThat(request -> "rec_req_001".equals(request.requestId())
                         && "B001".equals(request.itemId())
                         && "click".equals(request.eventType())
         ));

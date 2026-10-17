@@ -2,6 +2,8 @@ import { RecommendItemVO, HomeRecommendVO } from '../types/recommend';
 import { CatalogItem } from '../types/catalog';
 
 export interface DisplayProduct {
+  sessionId?: string;
+  recommendRequestId?: string;
   itemId: string;
   title: string;
   category: string;
@@ -59,25 +61,29 @@ const BADGE_LABELS: Record<string, string> = {
 
 export function mergeRecommendAndCatalog(
   items: RecommendItemVO[],
-  catalog: CatalogItem[] = []
+  catalog: CatalogItem[] = [],
+  catalogAuthoritative = false,
 ): DisplayProduct[] {
-  return items.map(item => {
+  return items.flatMap(item => {
     const detail = catalog.find(c => c.itemId === item.item_id);
-    return {
+    if (catalogAuthoritative && !detail) {
+      return [];
+    }
+    return [{
       itemId: item.item_id,
-      title: detail?.title || item.display?.title || `商品 ${item.item_id}`,
-      category: detail?.category || item.display?.category || '数码配件',
-      store: detail?.store || item.display?.store || '智能商城自营',
+      title: detail?.title || item.display?.title || item.item_id,
+      category: detail?.category || item.display?.category || '',
+      store: detail?.store || item.display?.store || '',
       imageUrl: detail?.imageUrl || item.display?.image_url || null,
       price: detail?.price ?? null,
-      rating: detail?.rating ?? null,
-      features: detail?.features || [],
-      description: detail?.description || detail?.summary || null,
-      badges: item.source_tags || detail?.badges || [],
+      rating: null,
+      features: [],
+      description: detail?.description || null,
+      badges: item.source_tags || [],
       reason: item.reason || '契合您的个性化诉求',
       score: item.score,
       rank: item.rank
-    };
+    }];
   });
 }
 

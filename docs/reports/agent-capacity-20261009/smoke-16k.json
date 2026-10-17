@@ -1,0 +1,315 @@
+{
+  "config": {
+    "base": "http://127.0.0.1:18204",
+    "model_base": "http://127.0.0.1:18082",
+    "gpu": 1,
+    "pid": 3502054,
+    "levels": "1",
+    "rounds": 3,
+    "timeout": 90,
+    "p95_budget": 30,
+    "output": "/tmp/rs-agent-capacity-20261009/smoke-16k.json",
+    "label": "default",
+    "prompt": "mixed",
+    "stop_after_failed_levels": 2,
+    "run_id": "617f34e763"
+  },
+  "model": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791516266,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 16384,
+        "permission": [
+          {
+            "id": "modelperm-8aaf9a59cafafdec",
+            "object": "model_permission",
+            "created": 1791516266,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "started_at": 1791516266.9215777,
+  "scope": "真实 Java Agent/模型；内存会话和固定候选；不包含网关、数据库与在线推荐",
+  "phases": [
+    {
+      "concurrency": 1,
+      "requests": 3,
+      "successful": 3,
+      "success_rate": 1.0,
+      "elapsed_s": 8.507,
+      "successful_turns_per_s": 0.353,
+      "p50_s": 3.04,
+      "p95_s": 4.459,
+      "p99_s": 4.459,
+      "first_answer_p95_s": 4.457,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 3224.0,
+        "vllm:generation_tokens_total": 448.0,
+        "vllm:request_success_total": 9.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 6216.0,
+        "vllm:iteration_tokens_total_count": 448.0,
+        "vllm:iteration_tokens_total_sum": 3672.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 29501.0,
+        "vllm:generation_tokens_total": 984.0,
+        "vllm:request_success_total": 14.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 13671.0,
+        "vllm:iteration_tokens_total_count": 984.0,
+        "vllm:iteration_tokens_total_sum": 17285.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-617f34e763-1-0-c0bcffa5",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是更高？",
+              "type": "followup_question"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "http_status": 200,
+          "latency_s": 3.04,
+          "first_event_s": 3.033,
+          "first_answer_s": 3.033
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-617f34e763-1-1-82d3b7f6",
+          "success": true,
+          "events": {
+            "answer_block": 4,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "选购通勤双肩包时，建议考虑以下三个方面：",
+              "type": "text"
+            },
+            {
+              "content": "1. **容量与分区**：通勤包需要能装下笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率并保护设备安全。",
+              "type": "text"
+            },
+            {
+              "content": "2. **背负舒适度**：通勤通常涉及长时间行走或乘坐公共交通。选择带有加厚肩垫、可调节肩带和良好透气背板的设计，能有效减轻肩部压力，提升长时间背负的舒适度。",
+              "type": "text"
+            },
+            {
+              "content": "3. **材质与耐用性**：通勤场景可能面临雨天、碰撞等意外情况。建议选择耐磨面料（如尼龙、聚酯纤维）和防水涂层，同时检查拉链、扣件等五金件的耐用性，确保日常使用的可靠性。",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "http_status": 200,
+          "latency_s": 4.459,
+          "first_event_s": 4.457,
+          "first_answer_s": 4.457
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-617f34e763-1-2-d0bc3450",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "content": "请问您的电脑大概是什么尺寸？（例如：13英寸、15英寸、16英寸或更大）",
+              "type": "text"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "http_status": 200,
+          "latency_s": 1.006,
+          "first_event_s": 1.004,
+          "first_answer_s": 1.004
+        }
+      ],
+      "passes": true
+    }
+  ],
+  "samples": [
+    {
+      "time": 1791516266.9218009,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 52,
+      "agent_rss_mib": 515.92,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 3224.0,
+        "vllm:generation_tokens_total": 448.0,
+        "vllm:request_success_total": 9.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 6216.0,
+        "vllm:iteration_tokens_total_count": 448.0,
+        "vllm:iteration_tokens_total_sum": 3672.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516268.9809937,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 51,
+      "agent_rss_mib": 538.46,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 8048.0,
+        "vllm:generation_tokens_total": 453.0,
+        "vllm:request_success_total": 9.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 6275.0,
+        "vllm:iteration_tokens_total_count": 453.0,
+        "vllm:iteration_tokens_total_sum": 8501.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516271.0466557,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 7,
+      "temperature_c": 55,
+      "agent_rss_mib": 541.79,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 18420.0,
+        "vllm:generation_tokens_total": 604.0,
+        "vllm:request_success_total": 11.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 8370.0,
+        "vllm:iteration_tokens_total_count": 604.0,
+        "vllm:iteration_tokens_total_sum": 12688.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516273.103817,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 60,
+      "agent_rss_mib": 542.0,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 24673.0,
+        "vllm:generation_tokens_total": 778.0,
+        "vllm:request_success_total": 12.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 10796.0,
+        "vllm:iteration_tokens_total_count": 778.0,
+        "vllm:iteration_tokens_total_sum": 15947.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516275.1634045,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 100,
+      "temperature_c": 61,
+      "agent_rss_mib": 542.18,
+      "model_metrics": {
+        "vllm:num_requests_running": 1.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 29501.0,
+        "vllm:generation_tokens_total": 962.0,
+        "vllm:request_success_total": 13.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 13363.0,
+        "vllm:iteration_tokens_total_count": 962.0,
+        "vllm:iteration_tokens_total_sum": 17263.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    },
+    {
+      "time": 1791516277.2266178,
+      "gpu_index": 1,
+      "memory_mib": 20259,
+      "utilization_pct": 0,
+      "temperature_c": 56,
+      "agent_rss_mib": 542.21,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791516222.9148245,
+        "vllm:prompt_tokens_total": 29501.0,
+        "vllm:generation_tokens_total": 984.0,
+        "vllm:request_success_total": 14.0,
+        "vllm:request_success_created": 8957581114.574917,
+        "vllm:iteration_tokens_total_bucket": 13671.0,
+        "vllm:iteration_tokens_total_count": 984.0,
+        "vllm:iteration_tokens_total_sum": 17285.0,
+        "vllm:iteration_tokens_total_created": 1791516222.915209
+      }
+    }
+  ],
+  "finished_at": 1791516277.450114
+}

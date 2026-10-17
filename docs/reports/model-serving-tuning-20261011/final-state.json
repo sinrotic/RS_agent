@@ -1,0 +1,44 @@
+{
+  "checked_at": "2026-10-11T03:12:29.918106+00:00",
+  "health_http_status": 200,
+  "promoted": true,
+  "api_pid": 3530958,
+  "launcher_pid": 3530950,
+  "persistent_configuration": {
+    "CUDA_VISIBLE_DEVICES": "1",
+    "VLLM_MAX_MODEL_LEN": "16384",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_PREFIX_KEEPALIVE": "true",
+    "VLLM_JSON_COMPACT_OUTPUT": "true",
+    "VLLM_WARMUP_CONCURRENCY": "8",
+    "VLLM_WARMUP_ONLY_WHEN_IDLE": "true",
+    "VLLM_WARMUP_PAYLOAD_FILE": "/home/luo/RS_agent_java/model_deploy/model_warmup_payloads.private.json",
+    "VLLM_WARMUP_MAX_TOKENS": "1",
+    "VLLM_READY_TIMEOUT_SEC": "600"
+  },
+  "structured_outputs_config": {
+    "backend": "xgrammar",
+    "disable_any_whitespace": true
+  },
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T03:11:19.794939+00:00",
+    "elapsed_seconds": 6.295
+  },
+  "private_warmup_payload_count": 2,
+  "private_warmup_file_mode": "0o600",
+  "post_restart_requests": 90,
+  "isolated_test_port_open": false,
+  "gpu_snapshot": "0, 17793 MiB, 99 %\n1, 21655 MiB, 0 %\n2, 15 MiB, 0 %\n"
+}

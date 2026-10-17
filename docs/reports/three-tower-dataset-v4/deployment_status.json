@@ -1,0 +1,34 @@
+{
+  "status": "DEPLOYED_VERIFIED",
+  "model_key": "product_three_tower_v4_seed42_step6000",
+  "collection": "rs_agent_product_three_tower_v4_20261011",
+  "dimension": 1024,
+  "user_primary_share": 0.65,
+  "query_tower_enabled": true,
+  "container": "rs-e2e-857e8b14-recommend-fast",
+  "backup_container": "rs-e2e-857e8b14-recommend-fast-before-product-v4",
+  "service_port": 18213,
+  "gateway_port": 18288,
+  "frontend_port": 18289,
+  "timestamp_utc": "2026-10-11T12:02:57Z",
+  "gateway_home_requests": 6,
+  "primary_recall_counts": [
+    271,
+    271,
+    278,
+    278,
+    276,
+    276
+  ],
+  "home_latency_ms": [
+    991,
+    819,
+    907,
+    879,
+    864,
+    797
+  ],
+  "live_agent_complete_ms": 19757.05,
+  "java_recommend_tests": 179,
+  "rollback_script": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/deployment/rollback.py"
+}

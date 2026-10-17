@@ -1,0 +1,16 @@
+{
+  "qa_containers_removed": true,
+  "qa_credentials_removed": true,
+  "bge_stopped": true,
+  "original_infra_running": {
+    "rs-agent-java-mysql": false,
+    "rs-agent-java-scylla": false,
+    "rs-agent-java-milvus-etcd": false,
+    "rs-agent-java-milvus-minio": false,
+    "rs-agent-java-elasticsearch": false,
+    "rs-agent-java-milvus-standalone": false
+  },
+  "vllm_health": 200,
+  "vllm_configuration_unchanged": true,
+  "gpu_after": "0, NVIDIA GeForce RTX 4090, 17793 MiB, 95 %\n1, NVIDIA GeForce RTX 4090, 20257 MiB, 0 %\n2, NVIDIA GeForce RTX 4090, 17793 MiB, 94 %\n"
+}

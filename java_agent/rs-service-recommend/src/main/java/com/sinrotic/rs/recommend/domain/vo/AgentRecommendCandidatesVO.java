@@ -16,6 +16,10 @@ public record AgentRecommendCandidatesVO(
         String taskId,
         @JsonProperty("profile_user_id")
         String profileUserId,
-        List<AgentRecommendCandidateItemVO> candidates
+        List<AgentRecommendCandidateItemVO> candidates,
+        @JsonProperty("degradation_reasons") List<String> degradationReasons
 ) {
+    public AgentRecommendCandidatesVO(String requestId,String agentId,String taskId,String profileUserId,List<AgentRecommendCandidateItemVO> candidates) {
+        this(requestId,agentId,taskId,profileUserId,candidates,List.of());
+    }
 }

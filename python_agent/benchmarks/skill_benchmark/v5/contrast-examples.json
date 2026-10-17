@@ -1,0 +1,2254 @@
+{
+  "schema_version": "rs-profile-contrast-examples/1",
+  "benchmark_sha256": "efea6b39ee27de18f2e10605e188205ce7840a82eea74b07a1c11e3a36549c02",
+  "scorer_sha256": "1050f8ba9b66a3e8877073e81f405ea5f9e2a48730aa36c5c2d938475fad81ac",
+  "origin": "deterministic_formula_references_and_controls; not_actual_agent_or_human_satisfaction",
+  "test_gold_not_exported": true,
+  "examples": [
+    {
+      "group_id": "profile-pair-000-authorized",
+      "split": "train",
+      "spec": {
+        "category": "Gel Ink Rollerball Pens",
+        "field": "tip_mm",
+        "budget": 20,
+        "path": [
+          "Office Products",
+          "Office & School Supplies",
+          "Writing & Correction Supplies",
+          "Pens & Refills",
+          "Rollerball Pens",
+          "Gel Ink Rollerball Pens"
+        ]
+      },
+      "members": [
+        {
+          "task_id": "profile-family-012-profile-pair-000-authorized",
+          "family_id": "profile-family-012",
+          "profile_user_id": "AEKGIF3CMPEPSRNQ7DBVJHJYORLA",
+          "customer_message": "想买中性笔，预算20以内，照我以前的习惯先给我选1款参考，不确定的地方说明就好。",
+          "profile_evidence": {
+            "version": "category-scoped-positive-history/1",
+            "category": "Gel Ink Rollerball Pens",
+            "category_path": [
+              "Office Products",
+              "Office & School Supplies",
+              "Writing & Correction Supplies",
+              "Pens & Refills",
+              "Rollerball Pens",
+              "Gel Ink Rollerball Pens"
+            ],
+            "field": "tip_mm",
+            "counts": {
+              "0.7": 3
+            },
+            "distribution": {
+              "0.7": 1.0
+            },
+            "known_items": 3,
+            "relevant_items": 3,
+            "coverage": 1.0,
+            "confidence": 0.6,
+            "evidence": [
+              {
+                "item_id": "B0861YJHGQ",
+                "timestamp": 1660411156162,
+                "value": "0.7"
+              },
+              {
+                "item_id": "B0925BPMF8",
+                "timestamp": 1660411677649,
+                "value": "0.7"
+              },
+              {
+                "item_id": "B09JQ46FHD",
+                "timestamp": 1656692516947,
+                "value": "0.7"
+              }
+            ],
+            "interpretation": "positive_interaction_proxy; not_observed_customer_satisfaction"
+          },
+          "reference_products": [
+            {
+              "item_id": "B0BK6MRTTR",
+              "title": "Pentel® EnerGel™ NV Liquid Gel Pens, Medium Point, 0.7 mm, 54% Recycled, Black Ink, Pack Of 12 Pens",
+              "category": "Gel Ink Rollerball Pens",
+              "category_path": [
+                "Office Products",
+                "Office & School Supplies",
+                "Writing & Correction Supplies",
+                "Pens & Refills",
+                "Rollerball Pens",
+                "Gel Ink Rollerball Pens"
+              ],
+              "store": "Pentel",
+              "price": 15.99,
+              "currency": "SOURCE_UNIT",
+              "source": {
+                "file": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Office_Products\\metadata.base.jsonl",
+                "row": 254566,
+                "parent_asin": "B0BK6MRTTR"
+              },
+              "historical_interaction_count": 29,
+              "tip_mm": "0.7",
+              "trait_evidence": {
+                "version": "title-grounded-category-and-traits/1",
+                "source": "explicit_title_text; not_verified_manufacturer_specification",
+                "title": "Pentel® EnerGel™ NV Liquid Gel Pens, Medium Point, 0.7 mm, 54% Recycled, Black Ink, Pack Of 12 Pens",
+                "fields": [
+                  "tip_mm"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "task_id": "profile-family-032-profile-pair-000-authorized",
+          "family_id": "profile-family-032",
+          "profile_user_id": "AGS4E6LFQHLAJNEP3GKMZPN6S5BQ",
+          "customer_message": "想买中性笔，预算20以内，照我以前的习惯先给我选1款参考，不确定的地方说明就好。",
+          "profile_evidence": {
+            "version": "category-scoped-positive-history/1",
+            "category": "Gel Ink Rollerball Pens",
+            "category_path": [
+              "Office Products",
+              "Office & School Supplies",
+              "Writing & Correction Supplies",
+              "Pens & Refills",
+              "Rollerball Pens",
+              "Gel Ink Rollerball Pens"
+            ],
+            "field": "tip_mm",
+            "counts": {
+              "0.5": 1
+            },
+            "distribution": {
+              "0.5": 1.0
+            },
+            "known_items": 1,
+            "relevant_items": 1,
+            "coverage": 1.0,
+            "confidence": 0.3333333333333333,
+            "evidence": [
+              {
+                "item_id": "B0BRC59XHW",
+                "timestamp": 1683698512184,
+                "value": "0.5"
+              }
+            ],
+            "interpretation": "positive_interaction_proxy; not_observed_customer_satisfaction"
+          },
+          "reference_products": [
+            {
+              "item_id": "B07S5YQ16N",
+              "title": "Zebra Sarasa Clip 0.5 Retractable Gel Ink Pen, Rubber Grip, 0.5mm, Green Black Ink, Value Set of 10",
+              "category": "Gel Ink Rollerball Pens",
+              "category_path": [
+                "Office Products",
+                "Office & School Supplies",
+                "Writing & Correction Supplies",
+                "Pens & Refills",
+                "Rollerball Pens",
+                "Gel Ink Rollerball Pens"
+              ],
+              "store": "ZEBRA",
+              "price": 12.0,
+              "currency": "SOURCE_UNIT",
+              "source": {
+                "file": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Office_Products\\metadata.base.jsonl",
+                "row": 180077,
+                "parent_asin": "B07S5YQ16N"
+              },
+              "historical_interaction_count": 28,
+              "tip_mm": "0.5",
+              "trait_evidence": {
+                "version": "title-grounded-category-and-traits/1",
+                "source": "explicit_title_text; not_verified_manufacturer_specification",
+                "title": "Zebra Sarasa Clip 0.5 Retractable Gel Ink Pen, Rubber Grip, 0.5mm, Green Black Ink, Value Set of 10",
+                "fields": [
+                  "tip_mm"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "score_matrix_rows_users_columns_products": [
+        [
+          100.0,
+          62.5
+        ],
+        [
+          75.0,
+          100.0
+        ]
+      ],
+      "matched_pair_quality": 100.0,
+      "swapped_pair_quality": 62.5,
+      "same_product_a_pair_quality": 75.0,
+      "same_product_b_pair_quality": 62.5,
+      "related_scenarios": [
+        {
+          "kind": "uncertain",
+          "relation": "adapt_to_evidence_strength; confirm_when_sparse_or_unknown",
+          "members": [
+            {
+              "task_id": "profile-family-012-profile-pair-000-uncertain",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内，帮我挑1款，照我以前的习惯来；要是拿不准，先问我。",
+                  "reference": {
+                    "item_ids": [
+                      "B0BK6MRTTR"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.6,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 3,
+                    "potentially_feasible_count": 3,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B0BK6MRTTR",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.6,
+                        "relevance": 1.6,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": 1.0
+                      }
+                    ],
+                    "history_alignment": {
+                      "role": "weak_reference",
+                      "used_for_primary_score": false,
+                      "category_mean": null,
+                      "store_mean": null
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-032-profile-pair-000-uncertain",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内，帮我挑1款，照我以前的习惯来；要是拿不准，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想用什么粗细的笔尖？",
+                    "questions": [
+                      "这次想用什么粗细的笔尖？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要0.5mm笔尖，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "override",
+          "relation": "current_requirement_invariance",
+          "members": [
+            {
+              "task_id": "profile-family-012-profile-pair-000-override",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内。这次只要0.5mm笔尖，不要照以前的来，帮我选1款。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-032-profile-pair-000-override",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内。这次只要0.5mm笔尖，不要照以前的来，帮我选1款。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "gift",
+          "relation": "recipient_requirement_invariance",
+          "members": [
+            {
+              "task_id": "profile-family-012-profile-pair-000-gift",
+              "turns": [
+                {
+                  "customer_message": "想给家人买中性笔，预算20以内，不过还不知道对方想要哪种，帮我挑1款。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "送给谁，对方想要什么类型的东西？",
+                    "questions": [
+                      "送给谁，对方想要什么类型的东西？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "recipient_need"
+                    ],
+                    "question_count": 2
+                  }
+                },
+                {
+                  "customer_message": "是给家人的，对方明确要0.5mm笔尖，就选这种，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-032-profile-pair-000-gift",
+              "turns": [
+                {
+                  "customer_message": "想给家人买中性笔，预算20以内，不过还不知道对方想要哪种，帮我挑1款。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "送给谁，对方想要什么类型的东西？",
+                    "questions": [
+                      "送给谁，对方想要什么类型的东西？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "recipient_need"
+                    ],
+                    "question_count": 2
+                  }
+                },
+                {
+                  "customer_message": "是给家人的，对方明确要0.5mm笔尖，就选这种，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "cross_category",
+          "relation": "do_not_transfer_unrelated_category_history",
+          "members": [
+            {
+              "task_id": "profile-family-012-profile-pair-000-cross_category",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内，按我以前的习惯帮我选1款；要是不了解我买这种东西的习惯，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想要有线还是无线款呢？",
+                    "questions": [
+                      "这次想要有线还是无线款呢？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要有线款。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-032-profile-pair-000-cross_category",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内，按我以前的习惯帮我选1款；要是不了解我买这种东西的习惯，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想要有线还是无线款呢？",
+                    "questions": [
+                      "这次想要有线还是无线款呢？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要有线款。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_id": "profile-pair-001-authorized",
+      "split": "train",
+      "spec": {
+        "category": "Earbud Headphones",
+        "field": "connection_type",
+        "budget": 80,
+        "path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ]
+      },
+      "members": [
+        {
+          "task_id": "profile-family-067-profile-pair-001-authorized",
+          "family_id": "profile-family-067",
+          "profile_user_id": "AENBDMIDE7HQMU4ZELKAFIBJO4EQ",
+          "customer_message": "想买入耳式耳机，预算80以内，照我以前的习惯先给我选1款参考，不确定的地方说明就好。",
+          "profile_evidence": {
+            "version": "category-scoped-positive-history/1",
+            "category": "Earbud Headphones",
+            "category_path": [
+              "Electronics",
+              "Headphones, Earbuds & Accessories",
+              "Headphones & Earbuds",
+              "Earbud Headphones"
+            ],
+            "field": "connection_type",
+            "counts": {
+              "wireless": 3
+            },
+            "distribution": {
+              "wireless": 1.0
+            },
+            "known_items": 3,
+            "relevant_items": 3,
+            "coverage": 1.0,
+            "confidence": 0.6,
+            "evidence": [
+              {
+                "item_id": "B0B2VPLGR1",
+                "timestamp": 1679915359475,
+                "value": "wireless"
+              },
+              {
+                "item_id": "B0BYVWKD2T",
+                "timestamp": 1682211249656,
+                "value": "wireless"
+              },
+              {
+                "item_id": "B0CB3VSWWB",
+                "timestamp": 1683848121806,
+                "value": "wireless"
+              }
+            ],
+            "interpretation": "positive_interaction_proxy; not_observed_customer_satisfaction"
+          },
+          "reference_products": [
+            {
+              "item_id": "B0CDLM2MJB",
+              "title": "Wireless Bluetooth Earbuds, True Stereo Headsets in-Ear, 30H Playtime & Charging Case, Built-in Mic Earphones Premium Sound, Touch Control, IPX5 Waterproof Sport Headphones, black-B10",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "store": "Generic",
+              "price": 9.99,
+              "currency": "SOURCE_UNIT",
+              "source": {
+                "file": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Electronics\\metadata.base.jsonl",
+                "row": 878937,
+                "parent_asin": "B0CDLM2MJB"
+              },
+              "historical_interaction_count": 26,
+              "connection_type": "wireless",
+              "trait_evidence": {
+                "version": "title-grounded-category-and-traits/1",
+                "source": "explicit_title_text; not_verified_manufacturer_specification",
+                "title": "Wireless Bluetooth Earbuds, True Stereo Headsets in-Ear, 30H Playtime & Charging Case, Built-in Mic Earphones Premium Sound, Touch Control, IPX5 Waterproof Sport Headphones, black-B10",
+                "fields": [
+                  "connection_type"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "task_id": "profile-family-001-profile-pair-001-authorized",
+          "family_id": "profile-family-001",
+          "profile_user_id": "AEQHD5CXUGKMXYLHJBJNDXNMWABA",
+          "customer_message": "想买入耳式耳机，预算80以内，照我以前的习惯先给我选1款参考，不确定的地方说明就好。",
+          "profile_evidence": {
+            "version": "category-scoped-positive-history/1",
+            "category": "Earbud Headphones",
+            "category_path": [
+              "Electronics",
+              "Headphones, Earbuds & Accessories",
+              "Headphones & Earbuds",
+              "Earbud Headphones"
+            ],
+            "field": "connection_type",
+            "counts": {
+              "wired": 1
+            },
+            "distribution": {
+              "wired": 1.0
+            },
+            "known_items": 1,
+            "relevant_items": 1,
+            "coverage": 1.0,
+            "confidence": 0.3333333333333333,
+            "evidence": [
+              {
+                "item_id": "B0C23BP9FB",
+                "timestamp": 1680832929393,
+                "value": "wired"
+              }
+            ],
+            "interpretation": "positive_interaction_proxy; not_observed_customer_satisfaction"
+          },
+          "reference_products": [
+            {
+              "item_id": "B09138X65M",
+              "title": "OEM UrbanX 2021 Stereo Headphones for Samsung Galaxy S20 5G UW Braided Cable with Microphone (Black) USB-C Connector (US Version with Warranty)",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "store": "UrbanX",
+              "price": 17.88,
+              "currency": "SOURCE_UNIT",
+              "source": {
+                "file": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Electronics\\metadata.base.jsonl",
+                "row": 128126,
+                "parent_asin": "B09138X65M"
+              },
+              "historical_interaction_count": 36,
+              "connection_type": "wired",
+              "trait_evidence": {
+                "version": "title-grounded-category-and-traits/1",
+                "source": "explicit_title_text; not_verified_manufacturer_specification",
+                "title": "OEM UrbanX 2021 Stereo Headphones for Samsung Galaxy S20 5G UW Braided Cable with Microphone (Black) USB-C Connector (US Version with Warranty)",
+                "fields": [
+                  "connection_type"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "score_matrix_rows_users_columns_products": [
+        [
+          100.0,
+          62.5
+        ],
+        [
+          75.0,
+          100.0
+        ]
+      ],
+      "matched_pair_quality": 100.0,
+      "swapped_pair_quality": 62.5,
+      "same_product_a_pair_quality": 75.0,
+      "same_product_b_pair_quality": 62.5,
+      "related_scenarios": [
+        {
+          "kind": "uncertain",
+          "relation": "adapt_to_evidence_strength; confirm_when_sparse_or_unknown",
+          "members": [
+            {
+              "task_id": "profile-family-067-profile-pair-001-uncertain",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内，帮我挑1款，照我以前的习惯来；要是拿不准，先问我。",
+                  "reference": {
+                    "item_ids": [
+                      "B0CDLM2MJB"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.6,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 20,
+                    "potentially_feasible_count": 20,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B0CDLM2MJB",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.6,
+                        "relevance": 1.6,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": 1.0
+                      }
+                    ],
+                    "history_alignment": {
+                      "role": "weak_reference",
+                      "used_for_primary_score": false,
+                      "category_mean": null,
+                      "store_mean": null
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-001-profile-pair-001-uncertain",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内，帮我挑1款，照我以前的习惯来；要是拿不准，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想要有线还是无线款呢？",
+                    "questions": [
+                      "这次想要有线还是无线款呢？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要有线款，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "override",
+          "relation": "current_requirement_invariance",
+          "members": [
+            {
+              "task_id": "profile-family-067-profile-pair-001-override",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内。这次只要有线款，不要照以前的来，帮我选1款。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-001-profile-pair-001-override",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内。这次只要有线款，不要照以前的来，帮我选1款。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "gift",
+          "relation": "recipient_requirement_invariance",
+          "members": [
+            {
+              "task_id": "profile-family-067-profile-pair-001-gift",
+              "turns": [
+                {
+                  "customer_message": "想给家人买入耳式耳机，预算80以内，不过还不知道对方想要哪种，帮我挑1款。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "送给谁，对方想要什么类型的东西？",
+                    "questions": [
+                      "送给谁，对方想要什么类型的东西？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "recipient_need"
+                    ],
+                    "question_count": 2
+                  }
+                },
+                {
+                  "customer_message": "是给家人的，对方明确要有线款，就选这种，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-001-profile-pair-001-gift",
+              "turns": [
+                {
+                  "customer_message": "想给家人买入耳式耳机，预算80以内，不过还不知道对方想要哪种，帮我挑1款。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "送给谁，对方想要什么类型的东西？",
+                    "questions": [
+                      "送给谁，对方想要什么类型的东西？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "recipient_need"
+                    ],
+                    "question_count": 2
+                  }
+                },
+                {
+                  "customer_message": "是给家人的，对方明确要有线款，就选这种，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B09138X65M"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 5,
+                    "potentially_feasible_count": 6,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09138X65M",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "cross_category",
+          "relation": "do_not_transfer_unrelated_category_history",
+          "members": [
+            {
+              "task_id": "profile-family-067-profile-pair-001-cross_category",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内，按我以前的习惯帮我选1款；要是不了解我买这种东西的习惯，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想用什么粗细的笔尖？",
+                    "questions": [
+                      "这次想用什么粗细的笔尖？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要0.5mm笔尖。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-001-profile-pair-001-cross_category",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内，按我以前的习惯帮我选1款；要是不了解我买这种东西的习惯，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想用什么粗细的笔尖？",
+                    "questions": [
+                      "这次想用什么粗细的笔尖？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要0.5mm笔尖。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "group_id": "profile-pair-007-authorized",
+      "split": "train",
+      "spec": {
+        "category": "Earbud Headphones",
+        "field": "store",
+        "budget": 80,
+        "path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ]
+      },
+      "members": [
+        {
+          "task_id": "profile-family-002-profile-pair-007-authorized",
+          "family_id": "profile-family-002",
+          "profile_user_id": "AEEVPWZM5OL5E5BTLI7JEHNGHWHA",
+          "customer_message": "想买入耳式耳机，预算80以内，照我以前的习惯先给我选1款参考，不确定的地方说明就好。",
+          "profile_evidence": {
+            "version": "category-scoped-positive-history/1",
+            "category": "Earbud Headphones",
+            "category_path": [
+              "Electronics",
+              "Headphones, Earbuds & Accessories",
+              "Headphones & Earbuds",
+              "Earbud Headphones"
+            ],
+            "field": "store",
+            "counts": {
+              "Soundcore": 1
+            },
+            "distribution": {
+              "Soundcore": 1.0
+            },
+            "known_items": 1,
+            "relevant_items": 1,
+            "coverage": 1.0,
+            "confidence": 0.3333333333333333,
+            "evidence": [
+              {
+                "item_id": "B09Y8V5QRF",
+                "timestamp": 1678284038722,
+                "value": "Soundcore"
+              }
+            ],
+            "interpretation": "positive_interaction_proxy; not_observed_customer_satisfaction"
+          },
+          "reference_products": [
+            {
+              "item_id": "B07Q7GG2CP",
+              "title": "Soundcore Liberty True Wireless Earbuds, 100 Hour Playtime, Graphene Sound, Fast Charging, Secure Fit, Bluetooth 5, Easy Pairing, Sweatproof True Wireless Earbuds with Smart AI, Stereo Handsfree Calls",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "store": "Soundcore",
+              "price": 64.95,
+              "currency": "SOURCE_UNIT",
+              "source": {
+                "file": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Electronics\\metadata.base.jsonl",
+                "row": 1302285,
+                "parent_asin": "B07Q7GG2CP"
+              },
+              "historical_interaction_count": 19,
+              "connection_type": "wireless",
+              "trait_evidence": {
+                "version": "title-grounded-category-and-traits/1",
+                "source": "explicit_title_text; not_verified_manufacturer_specification",
+                "title": "Soundcore Liberty True Wireless Earbuds, 100 Hour Playtime, Graphene Sound, Fast Charging, Secure Fit, Bluetooth 5, Easy Pairing, Sweatproof True Wireless Earbuds with Smart AI, Stereo Handsfree Calls",
+                "fields": [
+                  "connection_type"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "task_id": "profile-family-006-profile-pair-007-authorized",
+          "family_id": "profile-family-006",
+          "profile_user_id": "AFF2ZQX5LIWP3ILJPRVL3XURKRQA",
+          "customer_message": "想买入耳式耳机，预算80以内，照我以前的习惯先给我选1款参考，不确定的地方说明就好。",
+          "profile_evidence": {
+            "version": "category-scoped-positive-history/1",
+            "category": "Earbud Headphones",
+            "category_path": [
+              "Electronics",
+              "Headphones, Earbuds & Accessories",
+              "Headphones & Earbuds",
+              "Earbud Headphones"
+            ],
+            "field": "store",
+            "counts": {
+              "cozoo": 1
+            },
+            "distribution": {
+              "cozoo": 1.0
+            },
+            "known_items": 1,
+            "relevant_items": 1,
+            "coverage": 1.0,
+            "confidence": 0.3333333333333333,
+            "evidence": [
+              {
+                "item_id": "B0B7WHLVT1",
+                "timestamp": 1666660901132,
+                "value": "cozoo"
+              }
+            ],
+            "interpretation": "positive_interaction_proxy; not_observed_customer_satisfaction"
+          },
+          "reference_products": [
+            {
+              "item_id": "B09NND688N",
+              "title": "RGB Sport Bluetooth Earbuds,E-Sports Wireless Headset Neckband V5.1 Bluetooth Earphones in-Ear with Waterproof Built-in Dual Mic EQ,20 Hours of Listen Time,Sweat Resistant,Acc/ENC Dual Audio Decoding",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "store": "cozoo",
+              "price": 19.99,
+              "currency": "SOURCE_UNIT",
+              "source": {
+                "file": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Electronics\\metadata.base.jsonl",
+                "row": 631783,
+                "parent_asin": "B09NND688N"
+              },
+              "historical_interaction_count": 22,
+              "connection_type": "wireless",
+              "trait_evidence": {
+                "version": "title-grounded-category-and-traits/1",
+                "source": "explicit_title_text; not_verified_manufacturer_specification",
+                "title": "RGB Sport Bluetooth Earbuds,E-Sports Wireless Headset Neckband V5.1 Bluetooth Earphones in-Ear with Waterproof Built-in Dual Mic EQ,20 Hours of Listen Time,Sweat Resistant,Acc/ENC Dual Audio Decoding",
+                "fields": [
+                  "connection_type"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "score_matrix_rows_users_columns_products": [
+        [
+          100.0,
+          75.0
+        ],
+        [
+          75.0,
+          100.0
+        ]
+      ],
+      "matched_pair_quality": 100.0,
+      "swapped_pair_quality": 75.0,
+      "same_product_a_pair_quality": 75.0,
+      "same_product_b_pair_quality": 75.0,
+      "related_scenarios": [
+        {
+          "kind": "uncertain",
+          "relation": "adapt_to_evidence_strength; confirm_when_sparse_or_unknown",
+          "members": [
+            {
+              "task_id": "profile-family-002-profile-pair-007-uncertain",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内，帮我挑1款，照我以前的习惯来；要是拿不准，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想从哪家店铺选？",
+                    "questions": [
+                      "这次想从哪家店铺选？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要“Soundcore”家的，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B07Q7GG2CP"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 1,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07Q7GG2CP",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-006-profile-pair-007-uncertain",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内，帮我挑1款，照我以前的习惯来；要是拿不准，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想从哪家店铺选？",
+                    "questions": [
+                      "这次想从哪家店铺选？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要“cozoo”家的，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B09NND688N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 1,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09NND688N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "override",
+          "relation": "current_requirement_invariance",
+          "members": [
+            {
+              "task_id": "profile-family-002-profile-pair-007-override",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内。这次只要“cozoo”家的，不要照以前的来，帮我选1款。",
+                  "reference": {
+                    "item_ids": [
+                      "B09NND688N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 1,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09NND688N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-006-profile-pair-007-override",
+              "turns": [
+                {
+                  "customer_message": "想买入耳式耳机，预算80以内。这次只要“cozoo”家的，不要照以前的来，帮我选1款。",
+                  "reference": {
+                    "item_ids": [
+                      "B09NND688N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 1,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09NND688N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "gift",
+          "relation": "recipient_requirement_invariance",
+          "members": [
+            {
+              "task_id": "profile-family-002-profile-pair-007-gift",
+              "turns": [
+                {
+                  "customer_message": "想给家人买入耳式耳机，预算80以内，不过还不知道对方想要哪种，帮我挑1款。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "送给谁，对方想要什么类型的东西？",
+                    "questions": [
+                      "送给谁，对方想要什么类型的东西？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "recipient_need"
+                    ],
+                    "question_count": 2
+                  }
+                },
+                {
+                  "customer_message": "是给家人的，对方明确要“cozoo”家的，就选这种，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B09NND688N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 1,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09NND688N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-006-profile-pair-007-gift",
+              "turns": [
+                {
+                  "customer_message": "想给家人买入耳式耳机，预算80以内，不过还不知道对方想要哪种，帮我挑1款。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "送给谁，对方想要什么类型的东西？",
+                    "questions": [
+                      "送给谁，对方想要什么类型的东西？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "recipient_need"
+                    ],
+                    "question_count": 2
+                  }
+                },
+                {
+                  "customer_message": "是给家人的，对方明确要“cozoo”家的，就选这种，预算不变。",
+                  "reference": {
+                    "item_ids": [
+                      "B09NND688N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 1,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B09NND688N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "cross_category",
+          "relation": "do_not_transfer_unrelated_category_history",
+          "members": [
+            {
+              "task_id": "profile-family-002-profile-pair-007-cross_category",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内，按我以前的习惯帮我选1款；要是不了解我买这种东西的习惯，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想用什么粗细的笔尖？",
+                    "questions": [
+                      "这次想用什么粗细的笔尖？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要0.5mm笔尖。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            },
+            {
+              "task_id": "profile-family-006-profile-pair-007-cross_category",
+              "turns": [
+                {
+                  "customer_message": "想买中性笔，预算20以内，按我以前的习惯帮我选1款；要是不了解我买这种东西的习惯，先问我。",
+                  "reference": {
+                    "item_ids": [],
+                    "outcome": "uncertain_match",
+                    "message": "这次想用什么粗细的笔尖？",
+                    "questions": [
+                      "这次想用什么粗细的笔尖？"
+                    ],
+                    "limitations": [
+                      "unknown_attributes"
+                    ]
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 0.0,
+                    "interaction_score": 100.0,
+                    "ndcg": null,
+                    "idcg": 0.0,
+                    "ranking_applicable": false,
+                    "expected_outcome": "clarify",
+                    "required_count": 0,
+                    "feasible_count": null,
+                    "potentially_feasible_count": null,
+                    "violations": [],
+                    "items": [],
+                    "asked_slots": [
+                      "profile_preference"
+                    ],
+                    "question_count": 1
+                  }
+                },
+                {
+                  "customer_message": "这次就要0.5mm笔尖。",
+                  "reference": {
+                    "item_ids": [
+                      "B07S5YQ16N"
+                    ],
+                    "outcome": "recommend",
+                    "message": "公式参考：符合当前条件。",
+                    "limitations": []
+                  },
+                  "grade": {
+                    "success": true,
+                    "task_score": 100.0,
+                    "ndcg": 1.0,
+                    "idcg": 1.0,
+                    "ranking_applicable": true,
+                    "expected_outcome": "recommend",
+                    "required_count": 1,
+                    "feasible_count": 1,
+                    "potentially_feasible_count": 2,
+                    "violations": [],
+                    "items": [
+                      {
+                        "item_id": "B07S5YQ16N",
+                        "hard_checks": [
+                          true,
+                          true,
+                          true,
+                          true,
+                          true
+                        ],
+                        "hard_pass": true,
+                        "potentially_feasible": true,
+                        "utility": 1.0,
+                        "relevance": 1.0,
+                        "soft_coverage": 1.0,
+                        "profile_satisfaction": null
+                      }
+                    ],
+                    "history_alignment": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

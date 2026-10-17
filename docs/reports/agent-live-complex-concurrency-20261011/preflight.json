@@ -1,0 +1,41 @@
+{
+  "running": true,
+  "pid": 3543497,
+  "memory_limit": 0,
+  "network": "host",
+  "mounts": [
+    {
+      "Type": "bind",
+      "Source": "/tmp/rs-agent-e2e-20261010-llm-opt-20261011/rs-service-agent.jar",
+      "Destination": "/app/service.jar",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    },
+    {
+      "Type": "bind",
+      "Source": "/tmp/rs-agent-e2e-20261010-llm-opt-20261011/latency-agent-v2.jar",
+      "Destination": "/app/latency-agent.jar",
+      "Mode": "ro",
+      "RW": false,
+      "Propagation": "rprivate"
+    }
+  ],
+  "command": [
+    "sh",
+    "-c",
+    "exec java $JAVA_OPTS -jar /app/service.jar"
+  ],
+  "selected_env": {
+    "SERVER_PORT": "18214",
+    "RS_AGENT_PERFORMANCE_OBSERVATION_ENABLED": "true",
+    "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "false",
+    "RS_AGENT_LLM_SYNTHESIS_ENABLED": "true"
+  },
+  "qa_env_files": [
+    "environment.py"
+  ],
+  "metrics_available": false,
+  "metrics_error_type": "HTTPError",
+  "active_turn_threads": 0
+}

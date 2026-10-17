@@ -21,6 +21,15 @@ public class MilvusRestVectorIndexClient implements ItemVectorIndexClient, Vecto
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
     private final String token;
+    private int searchEf;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void configureSearch(@Value("${rs.recommend.vector-search.ef:0}") int searchEf) {
+        if (searchEf < 0 || searchEf > 32768) {
+            throw new IllegalArgumentException("vector search ef must be between 0 and 32768");
+        }
+        this.searchEf = searchEf;
+    }
 
     public MilvusRestVectorIndexClient(
             RestClient.Builder restClientBuilder,
@@ -51,13 +60,16 @@ public class MilvusRestVectorIndexClient implements ItemVectorIndexClient, Vecto
         if (queryVector.isEmpty() || limit <= 0) {
             return List.of();
         }
-        Map<String, Object> body = Map.of(
+        Map<String, Object> body = new LinkedHashMap<>(Map.of(
                 "collectionName", collectionName,
                 "data", List.of(queryVector),
                 "annsField", "vector",
                 "limit", limit,
                 "outputFields", List.of("item_id")
-        );
+        ));
+        if (searchEf > 0) {
+            body.put("searchParams", Map.of("params", Map.of("ef", Math.max(searchEf, limit))));
+        }
         Map<String, Object> response = callMilvus("/v2/vectordb/entities/search", body);
         Object data = response.get("data");
         if (!(data instanceof List<?> rows)) {
@@ -79,7 +91,10 @@ public class MilvusRestVectorIndexClient implements ItemVectorIndexClient, Vecto
                 .body(body)
                 .retrieve()
                 .body(Map.class);
-        return response == null ? Map.of() : response;
+        if (response == null || !(response.get("code") instanceof Number code) || code.intValue() != 0) {
+            throw new IllegalStateException("Milvus request failed");
+        }
+        return response;
     }
 
     private Map<String, Object> toMilvusRow(ItemVectorDocument document) {

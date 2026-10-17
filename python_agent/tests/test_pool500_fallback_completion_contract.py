@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from rs_lab.experiments.recall.pool500.governance.fallback_completion_contract import (
     FALLBACK_SOURCE_LADDER,
     FallbackCompletionConfig,
@@ -10,6 +12,8 @@ from rs_lab.experiments.recall.pool500.governance.fallback_completion_contract i
     quality_risk_level,
     validate_fallback_completion_contract,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_classify_zero_history() -> None:

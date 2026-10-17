@@ -1,0 +1,31 @@
+{
+  "original_pid": 3551299,
+  "original_wrapper": 3551293,
+  "original_command": [
+    "/mnt/data/luo/venvs/rsagent-vllm/bin/python",
+    "/mnt/data/luo/venvs/rsagent-vllm/bin/vllm",
+    "serve",
+    "/mnt/data/luo/models/Qwen3.5-4B",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18082",
+    "--served-model-name",
+    "qwen35-4b",
+    "--trust-remote-code",
+    "--enable-prefix-caching",
+    "--max-model-len",
+    "4096",
+    "--gpu-memory-utilization",
+    "0.85",
+    "--structured-outputs-config",
+    "{\"backend\":\"xgrammar\"}",
+    "--enable-auto-tool-choice",
+    "--tool-call-parser",
+    "qwen3_xml"
+  ],
+  "gpu": 1,
+  "max_model_len": 16384,
+  "gpu_memory_utilization": 0.78,
+  "wrapper_pid": 1505258
+}

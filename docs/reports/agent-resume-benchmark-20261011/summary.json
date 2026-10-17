@@ -1,0 +1,647 @@
+{
+  "scope": "8a8385 Agent + BF16 对照 4bc94fc Agent + MLP INT4；相同 GPU2、vLLM 参数、真实共享下游、预热、普通推荐；非最初版本整栈还原",
+  "comparisons": [
+    {
+      "concurrency": 1,
+      "before": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "success_mean_ms": 3368.476,
+        "median_ms": 3441.355,
+        "successful_throughput": 0.295,
+        "mean_answer_chars": 189.5,
+        "failed_tool_total": 0,
+        "observed_model_calls": 8.0,
+        "degraded_requests": 0,
+        "error_codes": [],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3472.21,
+            "throughput": 0.2863
+          },
+          {
+            "repeat": 1,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3904.04,
+            "throughput": 0.2548
+          },
+          {
+            "repeat": 2,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2431.97,
+            "throughput": 0.4074
+          },
+          {
+            "repeat": 3,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3509.0,
+            "throughput": 0.2832
+          },
+          {
+            "repeat": 4,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3335.86,
+            "throughput": 0.298
+          },
+          {
+            "repeat": 5,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3447.73,
+            "throughput": 0.2882
+          },
+          {
+            "repeat": 6,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3412.02,
+            "throughput": 0.2914
+          },
+          {
+            "repeat": 7,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 3434.98,
+            "throughput": 0.2896
+          }
+        ]
+      },
+      "after": {
+        "total": 8,
+        "passed": 8,
+        "failed": 0,
+        "success_mean_ms": 2349.111,
+        "median_ms": 2223.425,
+        "successful_throughput": 0.422,
+        "mean_answer_chars": 184.625,
+        "failed_tool_total": 0,
+        "observed_model_calls": 8.0,
+        "degraded_requests": 0,
+        "error_codes": [],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2731.42,
+            "throughput": 0.3615
+          },
+          {
+            "repeat": 1,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2213.68,
+            "throughput": 0.4479
+          },
+          {
+            "repeat": 2,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2137.57,
+            "throughput": 0.4638
+          },
+          {
+            "repeat": 3,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2141.67,
+            "throughput": 0.463
+          },
+          {
+            "repeat": 4,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2233.17,
+            "throughput": 0.4438
+          },
+          {
+            "repeat": 5,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2196.3,
+            "throughput": 0.4515
+          },
+          {
+            "repeat": 6,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2492.92,
+            "throughput": 0.3984
+          },
+          {
+            "repeat": 7,
+            "total": 1,
+            "passed": 1,
+            "successful_mean_ms": 2646.16,
+            "throughput": 0.3755
+          }
+        ]
+      },
+      "pair_scope": "同档同批同位置、同测试账号，独立 Session，非相同输出",
+      "paired_success_count": 8,
+      "paired_before_mean_ms": 3368.476,
+      "paired_after_mean_ms": 2349.111,
+      "both_all_success": true,
+      "conditional_paired_latency_reduction_percent": 30.26,
+      "all_success_latency_reduction_percent": 30.26,
+      "throughput_improvement_percent": 43.05
+    },
+    {
+      "concurrency": 4,
+      "before": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "success_mean_ms": 3879.841,
+        "median_ms": 3878.6400000000003,
+        "successful_throughput": 0.8763,
+        "mean_answer_chars": 115.812,
+        "failed_tool_total": 0,
+        "observed_model_calls": 16.0,
+        "degraded_requests": 0,
+        "error_codes": [],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 5160.52,
+            "throughput": 0.6742
+          },
+          {
+            "repeat": 1,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 3578.84,
+            "throughput": 0.9646
+          },
+          {
+            "repeat": 2,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 3401.57,
+            "throughput": 0.9859
+          },
+          {
+            "repeat": 3,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 3378.43,
+            "throughput": 0.9706
+          }
+        ]
+      },
+      "after": {
+        "total": 16,
+        "passed": 16,
+        "failed": 0,
+        "success_mean_ms": 3344.807,
+        "median_ms": 2900.325,
+        "successful_throughput": 1.128,
+        "mean_answer_chars": 165.125,
+        "failed_tool_total": 0,
+        "observed_model_calls": 16.0,
+        "degraded_requests": 0,
+        "error_codes": [],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 5081.92,
+            "throughput": 0.7316
+          },
+          {
+            "repeat": 1,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 2955.1,
+            "throughput": 1.3335
+          },
+          {
+            "repeat": 2,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 2534.32,
+            "throughput": 1.413
+          },
+          {
+            "repeat": 3,
+            "total": 4,
+            "passed": 4,
+            "successful_mean_ms": 2807.88,
+            "throughput": 1.3861
+          }
+        ]
+      },
+      "pair_scope": "同档同批同位置、同测试账号，独立 Session，非相同输出",
+      "paired_success_count": 16,
+      "paired_before_mean_ms": 3879.841,
+      "paired_after_mean_ms": 3344.807,
+      "both_all_success": true,
+      "conditional_paired_latency_reduction_percent": 13.79,
+      "all_success_latency_reduction_percent": 13.79,
+      "throughput_improvement_percent": 28.72
+    },
+    {
+      "concurrency": 8,
+      "before": {
+        "total": 32,
+        "passed": 30,
+        "failed": 2,
+        "success_mean_ms": 7168.368,
+        "median_ms": 7044.46,
+        "successful_throughput": 0.5236,
+        "mean_answer_chars": 92.867,
+        "failed_tool_total": 0,
+        "observed_model_calls": 45.0,
+        "degraded_requests": 2,
+        "error_codes": [
+          null,
+          null
+        ],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 8,
+            "passed": 8,
+            "successful_mean_ms": 6637.6,
+            "throughput": 1.0176
+          },
+          {
+            "repeat": 1,
+            "total": 8,
+            "passed": 8,
+            "successful_mean_ms": 7019.52,
+            "throughput": 0.991
+          },
+          {
+            "repeat": 2,
+            "total": 8,
+            "passed": 7,
+            "successful_mean_ms": 6200.71,
+            "throughput": 0.4004
+          },
+          {
+            "repeat": 3,
+            "total": 8,
+            "passed": 7,
+            "successful_mean_ms": 8912.72,
+            "throughput": 0.2931
+          }
+        ]
+      },
+      "after": {
+        "total": 32,
+        "passed": 32,
+        "failed": 0,
+        "success_mean_ms": 8062.293,
+        "median_ms": 8544.89,
+        "successful_throughput": 0.9159,
+        "mean_answer_chars": 177.219,
+        "failed_tool_total": 0,
+        "observed_model_calls": 32.0,
+        "degraded_requests": 0,
+        "error_codes": [],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 8,
+            "passed": 8,
+            "successful_mean_ms": 8654.59,
+            "throughput": 0.8527
+          },
+          {
+            "repeat": 1,
+            "total": 8,
+            "passed": 8,
+            "successful_mean_ms": 8603.87,
+            "throughput": 0.8655
+          },
+          {
+            "repeat": 2,
+            "total": 8,
+            "passed": 8,
+            "successful_mean_ms": 6966.35,
+            "throughput": 1.0664
+          },
+          {
+            "repeat": 3,
+            "total": 8,
+            "passed": 8,
+            "successful_mean_ms": 8024.37,
+            "throughput": 0.9081
+          }
+        ]
+      },
+      "pair_scope": "同档同批同位置、同测试账号，独立 Session，非相同输出",
+      "paired_success_count": 30,
+      "paired_before_mean_ms": 7168.368,
+      "paired_after_mean_ms": 8093.532,
+      "both_all_success": false,
+      "conditional_paired_latency_reduction_percent": -12.91,
+      "all_success_latency_reduction_percent": null,
+      "throughput_improvement_percent": 74.92
+    },
+    {
+      "concurrency": 16,
+      "before": {
+        "total": 48,
+        "passed": 23,
+        "failed": 25,
+        "success_mean_ms": 6952.743,
+        "median_ms": 6943.06,
+        "successful_throughput": 0.6955,
+        "mean_answer_chars": 98.739,
+        "failed_tool_total": 0,
+        "observed_model_calls": 30.0,
+        "degraded_requests": 1,
+        "error_codes": [
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          null,
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY",
+          "AGENT_BUSY"
+        ],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 16,
+            "passed": 7,
+            "successful_mean_ms": 7430.45,
+            "throughput": 0.3974
+          },
+          {
+            "repeat": 1,
+            "total": 16,
+            "passed": 8,
+            "successful_mean_ms": 6485.21,
+            "throughput": 1.1011
+          },
+          {
+            "repeat": 2,
+            "total": 16,
+            "passed": 8,
+            "successful_mean_ms": 7002.28,
+            "throughput": 0.9771
+          }
+        ]
+      },
+      "after": {
+        "total": 48,
+        "passed": 48,
+        "failed": 0,
+        "success_mean_ms": 10421.391,
+        "median_ms": 10212.58,
+        "successful_throughput": 1.3551,
+        "mean_answer_chars": 171.604,
+        "failed_tool_total": 0,
+        "observed_model_calls": 48.0,
+        "degraded_requests": 0,
+        "error_codes": [],
+        "batches": [
+          {
+            "repeat": 0,
+            "total": 16,
+            "passed": 16,
+            "successful_mean_ms": 10785.58,
+            "throughput": 1.323
+          },
+          {
+            "repeat": 1,
+            "total": 16,
+            "passed": 16,
+            "successful_mean_ms": 9288.0,
+            "throughput": 1.5592
+          },
+          {
+            "repeat": 2,
+            "total": 16,
+            "passed": 16,
+            "successful_mean_ms": 11190.59,
+            "throughput": 1.2246
+          }
+        ]
+      },
+      "pair_scope": "同档同批同位置、同测试账号，独立 Session，非相同输出",
+      "paired_success_count": 23,
+      "paired_before_mean_ms": 6952.743,
+      "paired_after_mean_ms": 10281.178,
+      "both_all_success": false,
+      "conditional_paired_latency_reduction_percent": -47.87,
+      "all_success_latency_reduction_percent": null,
+      "throughput_improvement_percent": 94.84
+    }
+  ],
+  "strongest_all_success_latency": {
+    "concurrency": 1,
+    "before": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "success_mean_ms": 3368.476,
+      "median_ms": 3441.355,
+      "successful_throughput": 0.295,
+      "mean_answer_chars": 189.5,
+      "failed_tool_total": 0,
+      "observed_model_calls": 8.0,
+      "degraded_requests": 0,
+      "error_codes": [],
+      "batches": [
+        {
+          "repeat": 0,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3472.21,
+          "throughput": 0.2863
+        },
+        {
+          "repeat": 1,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3904.04,
+          "throughput": 0.2548
+        },
+        {
+          "repeat": 2,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2431.97,
+          "throughput": 0.4074
+        },
+        {
+          "repeat": 3,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3509.0,
+          "throughput": 0.2832
+        },
+        {
+          "repeat": 4,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3335.86,
+          "throughput": 0.298
+        },
+        {
+          "repeat": 5,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3447.73,
+          "throughput": 0.2882
+        },
+        {
+          "repeat": 6,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3412.02,
+          "throughput": 0.2914
+        },
+        {
+          "repeat": 7,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 3434.98,
+          "throughput": 0.2896
+        }
+      ]
+    },
+    "after": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "success_mean_ms": 2349.111,
+      "median_ms": 2223.425,
+      "successful_throughput": 0.422,
+      "mean_answer_chars": 184.625,
+      "failed_tool_total": 0,
+      "observed_model_calls": 8.0,
+      "degraded_requests": 0,
+      "error_codes": [],
+      "batches": [
+        {
+          "repeat": 0,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2731.42,
+          "throughput": 0.3615
+        },
+        {
+          "repeat": 1,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2213.68,
+          "throughput": 0.4479
+        },
+        {
+          "repeat": 2,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2137.57,
+          "throughput": 0.4638
+        },
+        {
+          "repeat": 3,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2141.67,
+          "throughput": 0.463
+        },
+        {
+          "repeat": 4,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2233.17,
+          "throughput": 0.4438
+        },
+        {
+          "repeat": 5,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2196.3,
+          "throughput": 0.4515
+        },
+        {
+          "repeat": 6,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2492.92,
+          "throughput": 0.3984
+        },
+        {
+          "repeat": 7,
+          "total": 1,
+          "passed": 1,
+          "successful_mean_ms": 2646.16,
+          "throughput": 0.3755
+        }
+      ]
+    },
+    "pair_scope": "同档同批同位置、同测试账号，独立 Session，非相同输出",
+    "paired_success_count": 8,
+    "paired_before_mean_ms": 3368.476,
+    "paired_after_mean_ms": 2349.111,
+    "both_all_success": true,
+    "conditional_paired_latency_reduction_percent": 30.26,
+    "all_success_latency_reduction_percent": 30.26,
+    "throughput_improvement_percent": 43.05
+  },
+  "original_screen": {
+    "total": 4,
+    "passed": 0,
+    "queries": [
+      {
+        "query": "推荐鼠标",
+        "passed": false,
+        "failed_tools": null,
+        "complete_ms": null
+      },
+      {
+        "query": "请帮我推荐鼠标",
+        "passed": false,
+        "failed_tools": 2,
+        "complete_ms": 5989.95
+      },
+      {
+        "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+        "passed": false,
+        "failed_tools": 2,
+        "complete_ms": 7343.89
+      },
+      {
+        "query": "推荐无线鼠标",
+        "passed": false,
+        "failed_tools": null,
+        "complete_ms": null
+      }
+    ]
+  }
+}

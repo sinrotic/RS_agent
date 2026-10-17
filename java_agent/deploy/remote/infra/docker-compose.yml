@@ -15,7 +15,7 @@ services:
     ports:
       - "127.0.0.1:${RS_MYSQL_HOST_PORT:-13306}:3306"
     volumes:
-      - ../db/mysql:/var/lib/mysql
+      - ${RS_MYSQL_DATA_DIR:-../db/mysql}:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$${MYSQL_ROOT_PASSWORD} --silent"]
@@ -127,6 +127,50 @@ services:
       start_period: 120s
       timeout: 15s
       retries: 20
+
+  kafka:
+    image: apache/kafka:3.9.1
+    profiles: ["full-commerce"]
+    container_name: rs-agent-java-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: -Xms256m -Xmx512m
+    ports:
+      - "127.0.0.1:${RS_KAFKA_HOST_PORT:-19092}:9092"
+    volumes:
+      - ../data/kafka:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "bash -ec ': > /dev/tcp/127.0.0.1/9092'"]
+      interval: 15s
+      start_period: 45s
+      timeout: 10s
+      retries: 12
+
+  commerce-kafka-init:
+    image: apache/kafka:3.9.1
+    profiles: ["full-commerce"]
+    restart: "no"
+    entrypoint: ["/bin/bash", "/scripts/init-commerce-topics.sh"]
+    environment:
+      RS_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      RS_COMMERCE_KAFKA_PARTITIONS: ${RS_COMMERCE_KAFKA_PARTITIONS:-3}
+      RS_COMMERCE_KAFKA_REPLICAS: ${RS_COMMERCE_KAFKA_REPLICAS:-1}
+    volumes:
+      - ./init-commerce-topics.sh:/scripts/init-commerce-topics.sh:ro
+    depends_on:
+      kafka:
+        condition: service_healthy
 
   milvus-etcd:
     image: quay.io/coreos/etcd:v3.5.18

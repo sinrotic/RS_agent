@@ -1,0 +1,37 @@
+# Local Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# VCS and local agent state
+.git/
+.github/
+.claude/
+.omc/
+
+# Local data, generated artifacts, and experiment outputs
+data/
+db/mysql/
+db/milvus/
+db/elasticsearch/
+db/scylla/
+outputs/
+build/
+dist/
+*.egg-info/
+frontend/dist/
+frontend/node_modules/
+
+# Logs, temp files, and machine-local environment files
+*.log
+*.tmp
+tmp/
+tmp*/
+.cache/
+.env
+.env.*
+!.env.example

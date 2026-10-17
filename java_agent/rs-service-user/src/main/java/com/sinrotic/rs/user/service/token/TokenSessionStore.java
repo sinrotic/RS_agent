@@ -11,4 +11,8 @@ public interface TokenSessionStore {
     Optional<TokenSession> findByRefreshTokenHash(String refreshTokenHash);
 
     void revokeSession(String sessionId);
+
+    default void revokeSession(String sessionId, String accessTokenHash, String refreshTokenHash) {
+        revokeSession(sessionId);
+    }
 }

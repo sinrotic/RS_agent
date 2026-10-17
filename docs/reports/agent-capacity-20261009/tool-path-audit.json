@@ -1,0 +1,135 @@
+[
+  {
+    "file": "boundary-exclusive.json",
+    "number": 0,
+    "latency_s": 14.747,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      }
+    ]
+  },
+  {
+    "file": "boundary-exclusive.json",
+    "number": 1,
+    "latency_s": 27.691,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      },
+      {
+        "name": "load_skill",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      },
+      {
+        "name": "load_skill",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      }
+    ]
+  },
+  {
+    "file": "boundary-exclusive.json",
+    "number": 2,
+    "latency_s": 17.489,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      }
+    ]
+  },
+  {
+    "file": "raised-sustain.json",
+    "number": 0,
+    "latency_s": 14.666,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      }
+    ]
+  },
+  {
+    "file": "raised-sustain.json",
+    "number": 1,
+    "latency_s": 26.028,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      },
+      {
+        "name": "load_skill",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      },
+      {
+        "name": "load_skill",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      }
+    ]
+  },
+  {
+    "file": "raised-sustain.json",
+    "number": 2,
+    "latency_s": 13.16,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      }
+    ]
+  },
+  {
+    "file": "comparison-sweep.json",
+    "number": 0,
+    "latency_s": 27.947,
+    "tools": [
+      {
+        "name": "recommend_candidates",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      },
+      {
+        "name": "load_skill",
+        "status": "SUCCESS",
+        "message": null,
+        "agent_name": null
+      },
+      {
+        "name": "call_agent",
+        "status": "FAILED",
+        "message": "failed to call model provider",
+        "agent_name": "rag_agent"
+      },
+      {
+        "name": "call_agent",
+        "status": "FAILED",
+        "message": "failed to call model provider",
+        "agent_name": "rag_agent"
+      }
+    ]
+  }
+]

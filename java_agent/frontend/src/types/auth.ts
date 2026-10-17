@@ -2,7 +2,7 @@ export interface RegisterRequest {
   username: string;
   password?: string; // Optional if auto-registering or handled on login
   nickname?: string;
-  bindStrategy?: 'random' | 'manual' | 'segment';
+  bindStrategy?: 'random' | 'selected';
   profileUserId?: string;
   segment?: string;
 }
@@ -13,7 +13,7 @@ export interface LoginRequest {
 }
 
 export interface RefreshTokenRequest {
-  refreshToken: string;
+  refreshToken?: string;
 }
 
 export interface UserProfileVO {
@@ -33,7 +33,7 @@ export interface AuthTokenVO {
   profileUserId: string;
   profileSummary: string;
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string;
   expiresIn: number;
 }
 

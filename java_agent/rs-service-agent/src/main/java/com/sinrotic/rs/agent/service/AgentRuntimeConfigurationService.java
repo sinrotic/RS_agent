@@ -34,6 +34,8 @@ public interface AgentRuntimeConfigurationService {
     default List<AgentRuntimeToolVO> toolsForProfile(AgentRuntimeProfile profile) {
         return tools().stream()
                 .filter(AgentRuntimeToolVO::enabled)
+                .filter(tool -> !"emit_ui".equals(tool.name())
+                        || profile.allowedOutputBlocks().contains(com.sinrotic.rs.agent.domain.AgentPublicOutputBlock.A2UI))
                 .filter(tool -> AgentCapabilityToolMapping.capabilityForTool(tool.name())
                         .map(profile.allowedCapabilities()::contains)
                         .orElse(true))

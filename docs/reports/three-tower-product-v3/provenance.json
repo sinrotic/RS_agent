@@ -1,0 +1,18 @@
+{
+  "root": "/mnt/data/luo/remote_runs/three_tower_product_v3",
+  "scripts": {
+    "prepare_product_pilot.py": "9bcd0cf7b26452f56145c2b87cb72297ca0c889e06024e10130f84ba70a44949",
+    "confirm_product_recommendation.py": "fe2fc81a09b1b4404f48d33c0973416c198fdb18a08703189f788ff794030839",
+    "three_tower_residual.py": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc",
+    "encode_product_features.py": "05ae3e437cccb88bfc26c1f0f4fb9a843537f4be0a2434eb8a1581c3995bcc25"
+  },
+  "candidate_feature_sha256": "34f68c034b6b36325c16d150cb4adb1245ebfd8c54022c0f303238e05524a7c2",
+  "confirmation_previous_valid_sha256": "786a36d8693ee654cd0d3f4eadaaefe60c5d58090696ee9179dff43ebe7ab11f",
+  "confirmation_rows_sha256": "d327d71ab1c375719b86adb72bc26bbcb17946070acb1de6a20fc306add902fd",
+  "joint_data_sha256": {
+    "items.jsonl": "9d6cd91dea4a95f96b7d49ae5b8c25bb6aa634d57022161bd39c7a7ac55ddd30",
+    "semantic_clean.jsonl": "10102d8aff1562a4c6e307b9515e202f8beed1b851740f85d981a75e25f8cb63",
+    "item_features.npy": "27883b3247062d136e062e0e900569672a78975e8b50e0ac00ca034d10a3caa8",
+    "query_features.npy": "c9e0486044a6ed9ca0a3bbd201c6a1b8efa59bed1f85b444674487bdf9864e3b"
+  }
+}

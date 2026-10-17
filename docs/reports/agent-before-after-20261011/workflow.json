@@ -1,0 +1,44 @@
+{
+  "started_at_utc": "2026-10-11T14:46:30.497853+00:00",
+  "steps": [
+    {
+      "name": "bf16-length-probe",
+      "wall_seconds": 20.27,
+      "completed": true
+    },
+    {
+      "name": "original-bf16-gpu2",
+      "wall_seconds": 79.77,
+      "completed": true
+    },
+    {
+      "name": "current-bf16-gpu2",
+      "wall_seconds": 36.13,
+      "completed": true
+    },
+    {
+      "name": "quant-length-probe",
+      "wall_seconds": 14.55,
+      "completed": true
+    },
+    {
+      "name": "current-quant-gpu2",
+      "wall_seconds": 38.92,
+      "completed": true
+    },
+    {
+      "name": "pre-concurrency-capacity",
+      "wall_seconds": 58.64,
+      "completed": true
+    },
+    {
+      "name": "current-capacity",
+      "wall_seconds": 63.85,
+      "completed": true
+    }
+  ],
+  "completed": true,
+  "audit_returncode": 0,
+  "finished_at_utc": "2026-10-11T15:01:04.878398+00:00",
+  "resumed_at_utc": "2026-10-11T14:52:51.225206+00:00"
+}

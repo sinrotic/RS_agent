@@ -1,0 +1,17 @@
+{
+  "label": "idle_guard",
+  "model_path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+  "mtp": false,
+  "prewarm16": false,
+  "expanded_prefixes": false,
+  "final_prefix_refresh": false,
+  "resolved_scheduler": {
+    "max_num_batched_tokens": 2048,
+    "max_num_seqs": 128,
+    "async_scheduling": true,
+    "enable_chunked_prefill": true
+  },
+  "engine_baseline_passed": true,
+  "local_guard_tests_passed": true,
+  "validation_scope": "本地37项测试已通过，保温遇业务停止剩余请求有行为测试；推理参数沿用已验收基线，当前正式验收待完成"
+}

@@ -21,8 +21,18 @@ public record HomeRecommendRefreshRequestDTO(
                 sessionId,
                 scene,
                 pageSize,
-                refreshToken,
+                catalogCursor(),
                 debug
         ).withDefaults();
+    }
+
+    private String catalogCursor() {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return "";
+        }
+        return switch (refreshToken) {
+            case "rerecall_pool500", "rerank_existing", "feedback-smoke" -> "";
+            default -> refreshToken;
+        };
     }
 }

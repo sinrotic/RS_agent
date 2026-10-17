@@ -1,0 +1,55 @@
+商品三塔最终服务方案 v1（2026-10-13）
+
+结论：冻结并上线当前更稳定的已训练纯三塔，旧模型保护位为0，保留三个塔。
+本发布是模型选定、版本化导出与服务接入，不是新增训练，不把失败的v15全量续训标成通过。
+模型：product_three_tower_final_v1
+候选库：763080件有效目录商品，1024维单位向量。
+BGE-M3固定编码；商品、用户、查询为三个独立1024→256→1024残差MLP。
+商品向量离线编码；用户聚合最近50项可用商品向量，平均互相余弦支持度softmax温度0.15。
+两项或更少历史用均值；没有ID嵌入或额外协同分量；查询使用BGE+独立查询残差。
+模型全部张量与先前稳定纯三塔严格一致，商品矩阵/ID/定义文件SHA一致；仅赋予最终服务版本。
+真实训练来源：/mnt/data/luo/remote_runs/product_v14_training/export/model.pt
+{"data": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/data", "evaluation": "/mnt/data/luo/remote_runs/product_three_tower_v6_20261011/evaluation_v2/rec_dev.jsonl", "output": "/mnt/data/luo/remote_runs/product_three_tower_v6_20261011/query_lr1e5", "checkpoint": "/mnt/data/luo/remote_runs/product_recall_v5_gpu_20261011/shuffle32/last.pt", "mode": "query", "seed": 42, "steps": 600, "eval_every": 200, "lr": 2e-06, "query_lr": 1e-05, "semantic_every": 5, "semantic_weight": 0.1, "anchor": 0.01, "id_dim": 0, "hidden": 256, "history_half_life_days": 0, "pooling": "cohesion"}
+原来源模型SHA：654ef0e6dbf386297e0bce10ab54a58d35f73f2c73532ff10b9f58b8a5fe589a
+最终模型SHA：9318795238fe676fcb111694889880e037e8fa30c4f14982d4b38205e3eb87df
+
+核心召回：一个用户塔HTTP、一个三塔商品索引，历史80件排除、去重，不调用旧保护模型。
+主召回保留兴趣预算65%，主页回放为270-271项；查询三塔保留原65%主候选比例与BGE补充。
+其他召回、排序、商品回填及反馈流程沿用既有服务。旧运行时保留用于备份回滚。
+
+既有离线证据（都是已评测过的回归/复核，非新增独立验证）：
+路线 / 用户数 / MRR / Top10命中人数 / Top100命中人数
+historical candidate / 1632 / 0.00555404 / 17 / 61
+historical current_guarded / 1632 / 0.00584971 / 19 / 62
+historical rejected_full_training / 1632 / 0.00471290 / 16 / 63
+sealed_future candidate / 1890 / 0.01046760 / 46 / 119
+sealed_future current_guarded / 1890 / 0.00915199 / 33 / 120
+sealed_future rejected_full_training / 1890 / 0.01107086 / 46 / 123
+
+此前3000用户回归：
+pure / MRR0.01000542 / Top10 60 / Top100 184
+guarded / MRR0.00944802 / Top10 53 / Top100 186
+
+最终纯三塔相对当前带保护路线，在近期样本MRR较好；历史Top10由带保护19人变为纯三塔17人。
+该取舍与用户明确要求取消保护一致，不宣称所有群体所有指标均提升。
+v15续训近期MRR高5.76%，但历史MRR较此最终纯三塔低15.1%、Top10少1人，因此未选。
+语义344条已用合成查询：{"count": 344, "hit@10": 0.2819767441860465, "hit@50": 0.502906976744186, "hit@100": 0.6075581395348837, "target_coverage": 1.0, "mrr": 0.1739922061406844, "ndcg@100": 0.255493367550616}
+
+实际工程重新验收：
+CPU前向128用户/128查询，误差 user=7.450580596923828e-08 query=2.0302832126617432e-07。
+独立模型定义严格加载、权重/索引哈希、11项Java测试及测试类字节一致通过。
+ANN ef4096，Top100平均重叠99.9375%，最差99.0000%。
+真实Java内部召回8账号各400件逐项顺序一致，旧保护0位；切换后再次在18213核对。
+首页分页、已看商品排除、10种中英文商品需求、8并发、用户塔与查询塔不可用降级均通过。
+8并发P95：基线3138.45ms，最终候选3113.99ms。
+全部发布检查：{"frozen_test_regression": true, "ann": true, "candidate_replay": true, "semantic_type_smoke_vs_online": true, "home_latency": true, "prior_evidence_integrity": true, "frozen_quality_checks": true, "pure_java_route": true, "java11": true, "qwen_restored": true, "qwen_healthy": true, "user_fault_fallback": true, "query_fault_fallback": true, "old_service_healthy": true, "concurrency8": true, "artifact_integrity": true}
+
+最终集合别名：rs_agent_product_three_tower_final_v1_20261013
+CPU运行时18138，推荐18213，网关18288。
+原服务备份：rs-e2e-857e8b14-recommend-fast-before-product-final
+回滚：/home/luo/RS_agent_remote/.venv/bin/python /mnt/data/luo/remote_runs/product_v16_final/scripts/serve_product_final.py rollback
+Qwen GPU1/18082全程保持恢复状态；此次发布未暂停或训练GPU任务。
+
+限制：评分评论正序列不是购买事件；已有历史/语义/封存都已使用过。
+这次根据已有结果选择服务版本，离线/接口验证不等于线上CTR或转化提升。
+证据目录：/mnt/data/luo/remote_runs/product_v16_final

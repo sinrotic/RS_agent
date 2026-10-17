@@ -3,9 +3,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from rs_lab.experiments.recall.pool500.methods.semantic_title_category_expansion import (
     build_semantic_title_category_expansion_source,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def _write_json(path: Path, payload: dict[str, object]) -> None:

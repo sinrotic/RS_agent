@@ -1,0 +1,95 @@
+{
+  "vllm_version": "0.24.0",
+  "mtp_weight_count": 15,
+  "mtp_weight_names": [
+    "mtp.layers.0.mlp.down_proj.weight",
+    "mtp.layers.0.mlp.gate_proj.weight",
+    "mtp.layers.0.mlp.up_proj.weight",
+    "mtp.layers.0.self_attn.q_proj.weight",
+    "mtp.fc.weight",
+    "mtp.layers.0.self_attn.o_proj.weight",
+    "mtp.layers.0.self_attn.k_proj.weight",
+    "mtp.layers.0.self_attn.v_proj.weight"
+  ],
+  "runtime_capability": [
+    {
+      "file": "config/speculative.py",
+      "matches": [
+        "MTPModelTypes = Literal[",
+        "\"deepseek_mtp\",",
+        "\"mimo_mtp\",",
+        "\"mimo_v2_mtp\",",
+        "\"glm4_moe_mtp\",",
+        "\"glm4_moe_lite_mtp\",",
+        "\"glm_ocr_mtp\",",
+        "\"ernie_mtp\",",
+        "\"nemotron_h_mtp\",",
+        "\"exaone_moe_mtp\",",
+        "\"exaone4_5_mtp\",",
+        "\"qwen3_next_mtp\",",
+        "\"qwen3_5_mtp\",",
+        "\"longcat_flash_mtp\",",
+        "\"minimax_m3_mtp\",",
+        "\"mtp\",",
+        "\"pangu_ultra_moe_mtp\",",
+        "\"step3p5_mtp\",",
+        "\"hy_v3_mtp\",",
+        "\"gemma4_mtp\",",
+        "\"eagle\", \"eagle3\", \"extract_hidden_states\", MTPModelTypes, DFlashModelTypes",
+        "tree depth limits the sum of the prefix match and speculation lengths.\"\"\"",
+        "speculation lengths based on the prefix match length: max_spec_tokens =",
+        "max_spec_factor * prefix_match_length.\"\"\"",
+        "hf_config.model_type = \"deepseek_mtp\"",
+        "if hf_config.model_type == \"deepseek_mtp\":",
+        "{\"n_predict\": n_predict, \"architectures\": [\"DeepSeekMTPModel\"]}",
+        "hf_config.model_type = \"deepseek_mtp\"",
+        "{\"n_predict\": n_predict, \"architectures\": [\"DeepSeekV4MTPModel\"]}",
+        "hf_config.model_type = \"pangu_ultra_moe_mtp\""
+      ]
+    },
+    {
+      "file": "config/cache.py",
+      "matches": [
+        "PrefixCachingHashAlgo = Literal[\"sha256\", \"sha256_cbor\", \"xxhash\", \"xxhash_cbor\"]",
+        "by it. This enables prefix-caching keys to be computed at the finest common",
+        "enable_prefix_caching: bool = True",
+        "\"\"\"Whether to enable prefix caching.\"\"\"",
+        "prefix_caching_hash_algo: PrefixCachingHashAlgo = \"sha256\"",
+        "\"\"\"Set the hash algorithm for prefix caching:",
+        "Can be set only when prefix caching is enabled.",
+        "mamba_cache_mode: MambaCacheMode = \"none\"",
+        "- \"none\": set when prefix caching is disabled.",
+        "the default behavior (for models that support it) when prefix caching is",
+        "\"enable_prefix_caching\",",
+        "\"prefix_caching_hash_algo\",",
+        "# Prefix-caching implementation detail (doesn't affect compiled graph)."
+      ]
+    },
+    {
+      "file": "model_executor/models/qwen3_5_mtp.py",
+      "matches": [
+        "\"\"\"Inference-only Qwen3_5 MTP model.\"\"\"",
+        "maybe_prefix,",
+        "def __init__(self, *, vllm_config: VllmConfig, prefix: str = \"\"):",
+        "self.mtp_start_layer_idx = config.num_hidden_layers",
+        "self.num_mtp_layers = getattr(config, \"mtp_num_hidden_layers\", 1)",
+        "# Workaround: mtp.fc is stored as BF16 in NVFP4 checkpoints but is",
+        "prefix=f\"{prefix}.fc\",",
+        "prefix=f\"{prefix}.layers.{idx}\",",
+        "for idx in range(self.num_mtp_layers)",
+        "current_step_idx = spec_step_idx % self.num_mtp_layers",
+        "class Qwen3_5MTP(LocalArgmaxMixin, nn.Module, SupportsMultiModal):",
+        "def __init__(self, *, vllm_config: VllmConfig, prefix: str = \"\"):",
+        "if cache_config.mamba_cache_mode == \"all\":",
+        "\"Qwen3_5MTP currently does not support 'all' prefix caching, \"",
+        "vllm_config=vllm_config, prefix=maybe_prefix(prefix, \"mtp\")",
+        "prefix=maybe_prefix(prefix, \"lm_head\"),",
+        "if name.startswith(\"mtp.\"):",
+        "name = name.replace(\"mtp.\", \"model.\")",
+        "class Qwen3_5MoeMTP(Qwen3_5MTP, QwenNextMixtureOfExperts):",
+        "def __init__(self, *, vllm_config: VllmConfig, prefix: str = \"\"):",
+        "super().__init__(vllm_config=vllm_config, prefix=prefix)"
+      ]
+    }
+  ]
+}

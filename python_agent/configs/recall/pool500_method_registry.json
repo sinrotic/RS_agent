@@ -14,6 +14,22 @@
     "current_registry_excludes_historical_artifact_paths": true,
     "archived_scale_policy": "pre_20260602_three_tier_method_dataset_policy_archived_not_current"
   },
+  "user_quality": {
+    "dataset_contract": {
+      "policy_type": "batch_scoped_train_only_policy",
+      "forbidden_input_scopes": [
+        "holdout",
+        "valid",
+        "test"
+      ],
+      "promotion_policy": {
+        "auto_promotion_allowed": false,
+        "ranking_input_replacement_allowed": false,
+        "pool1000_allowed": false,
+        "final_pool500_ready_claimed": false
+      }
+    }
+  },
   "sources": {
     "category": {
       "status": "READY",

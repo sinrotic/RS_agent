@@ -1,0 +1,42 @@
+{
+  "cleaned": true,
+  "original_infra_restored_to_stopped": {
+    "rs-agent-java-mysql": "exited",
+    "rs-agent-java-scylla": "exited",
+    "rs-agent-java-milvus-etcd": "exited",
+    "rs-agent-java-milvus-minio": "exited",
+    "rs-agent-java-elasticsearch": "exited",
+    "rs-agent-java-milvus-standalone": "exited"
+  },
+  "original_vllm_command_restored": [
+    "/mnt/data/luo/venvs/rsagent-vllm/bin/python",
+    "/mnt/data/luo/venvs/rsagent-vllm/bin/vllm",
+    "serve",
+    "/mnt/data/luo/models/Qwen3.5-4B",
+    "--host",
+    "127.0.0.1",
+    "--port",
+    "18082",
+    "--served-model-name",
+    "qwen35-4b",
+    "--trust-remote-code",
+    "--enable-prefix-caching",
+    "--max-model-len",
+    "4096",
+    "--gpu-memory-utilization",
+    "0.85",
+    "--structured-outputs-config",
+    "{\"backend\":\"xgrammar\"}",
+    "--enable-auto-tool-choice",
+    "--tool-call-parser",
+    "qwen3_xml"
+  ],
+  "model_health": 200,
+  "original_start_script_restored": true,
+  "prefix_keepalive_restored": true,
+  "readiness_marker_exists": true,
+  "gpu_status": "0, 17793 MiB, 100 %\n1, 20257 MiB, 0 %\n2, 17793 MiB, 98 %",
+  "formal_bge_status": "inactive",
+  "owned_test_containers_removed": true,
+  "private_test_credentials_removed": true
+}

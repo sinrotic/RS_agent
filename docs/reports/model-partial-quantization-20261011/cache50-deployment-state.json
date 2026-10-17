@@ -1,0 +1,84 @@
+{
+  "authorization": "用户要求扩大缓存，以支持更多并发；选择已验收的 50% / 128 档",
+  "precision": "MLP INT4 / attention and GDN BF16",
+  "updates": {
+    "MODEL_PATH": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.50",
+    "VLLM_MAX_NUM_SEQS": "128",
+    "VLLM_CACHE_ROOT": "/home/luo/RS_agent_java/model_deploy/quantization-cache/20261011-mlp-int4-bf16-memory50"
+  },
+  "previous_budget": 0.4,
+  "previous_max_num_seqs": 64,
+  "previous_api_pid": 625633,
+  "previous_launcher_pid": 625625,
+  "baseline_sha256": {
+    ".env": "7031bff4741223eaf71f5c3c8c0868c4ea79b1587e88779a72b2d98cb5f3e3b1",
+    "start_qwen35_4b_vllm.sh": "f68e91475b1a2fd5c17af8800547773363cf4377b792147eb9122d5c5b342432",
+    "run_qwen35_4b_vllm.sh": "a0e401fae45e0fb2fe3af50e34229e4fec2400556ff9099d1a4de9e4f82f7921",
+    "vllm_prefix_warmup.py": "ebcf099f6a9762def0f813726932f7625dde7193983cf8662fbe99e392c206a5",
+    "vllm_structured_output_probe.py": "2f977d93707585c5a3c68be4249823a34c2bc01e392370bb78f5adf18bc52b45"
+  },
+  "backup": "/home/luo/RS_agent_java/model_deploy/backup-partial-cache50-20261011-180732",
+  "restore_script": "/home/luo/RS_agent_java/model_deploy/restore_qwen35_4b_partial_memory50.py",
+  "gpu_before": {
+    "used_mib": 11841,
+    "free_mib": 12241,
+    "processes": [
+      {
+        "pid": 3417056,
+        "memory_mib": 3078
+      },
+      {
+        "pid": 627341,
+        "memory_mib": 8734
+      }
+    ]
+  },
+  "promoted": true,
+  "rollback": false,
+  "known_limitations": [
+    "保留已有规划稳定性限制，不把缓存扩容称为工具可靠性修复",
+    "16 路短工具探针不能代表满 16K 或持续负载吞吐"
+  ],
+  "launcher_pid": 806724,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T10:09:42.649891+00:00",
+    "elapsed_seconds": 6.791
+  },
+  "api_pid": 806733,
+  "deployed_env_sha256": "e81fbfbbcf30b95ef5bde02f95ec75f78a48f04ae420edb06e6753bf3ffdbb9c",
+  "model_regression_passed": true,
+  "concurrency_probe_passed": true,
+  "own_clone_id": "b5c426124c08cf292fa6fe3ff48663827b7845308596de28ca8fe9adf4668d0a",
+  "business_passed": 8,
+  "business_total": 8,
+  "health": true,
+  "gpu_after": {
+    "used_mib": 14383,
+    "free_mib": 9699,
+    "processes": [
+      {
+        "pid": 3417056,
+        "memory_mib": 3078
+      },
+      {
+        "pid": 809000,
+        "memory_mib": 11276
+      }
+    ]
+  },
+  "additional_memory_mib": 2542,
+  "own_validation_cleanup_passed": true
+}

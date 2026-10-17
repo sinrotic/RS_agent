@@ -7,6 +7,9 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface StockLogMapper {
 
+    StockLog findByOrderSkuTypeForUpdate(@Param("orderId") Long orderId,
+                                       @Param("skuId") String skuId, @Param("type") String type);
+
     int insertLog(StockLog stockLog);
 
     StockLog findSameLog(

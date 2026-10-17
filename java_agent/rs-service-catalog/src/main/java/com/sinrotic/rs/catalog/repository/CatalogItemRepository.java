@@ -20,4 +20,8 @@ public interface CatalogItemRepository {
     List<String> listCategories();
 
     List<String> listStoreNames();
+
+    default List<CatalogItem> findDiscoveryItems(String category, int offset, int limit) {
+        return findByCategory(category, offset + limit).stream().skip(offset).limit(limit).toList();
+    }
 }

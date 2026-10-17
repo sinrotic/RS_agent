@@ -1,0 +1,42 @@
+{
+  "repo_id": "Intel/Qwen3.5-4B-int4-AutoRound",
+  "revision": "0a857215cab37e8caa857a053005a73cf98ff2c4",
+  "path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-AutoRound-0a857215",
+  "weight_files": [
+    {
+      "name": "model-00001-of-00005.safetensors",
+      "bytes": 1067544984,
+      "sha256": "b47c076eb7576ec04ee8b65fa4d272993a3a970490102dd21d4249a0afe9184b"
+    },
+    {
+      "name": "model-00002-of-00005.safetensors",
+      "bytes": 1073752592,
+      "sha256": "c8db6d295b2d683d22d8f215d4ef4d3f0f6f3e24c5e7057ae17b83542d15aab2"
+    },
+    {
+      "name": "model-00003-of-00005.safetensors",
+      "bytes": 382054568,
+      "sha256": "f49fa70af8d9339de28b4d28976d29556d80c81388314f2840bf5c975487cf93"
+    },
+    {
+      "name": "model-00004-of-00005.safetensors",
+      "bytes": 1271398528,
+      "sha256": "13eae6e21852b7f6d21921c7d2f348f1304eb9c9f3ad440bb400cd62ac27e467"
+    },
+    {
+      "name": "model-00005-of-00005.safetensors",
+      "bytes": 788750680,
+      "sha256": "f1bec9b26d519b48fb330537f8fd45a5fd6b136be6053023a0c469055521e0bf"
+    }
+  ],
+  "quantization_config": {
+    "autoround_version": "0.12.0",
+    "bits": 4,
+    "block_name_to_quantize": "model.language_model.layers",
+    "data_type": "int",
+    "group_size": 128,
+    "packing_format": "auto_round:auto_gptq",
+    "quant_method": "auto-round",
+    "sym": true
+  }
+}

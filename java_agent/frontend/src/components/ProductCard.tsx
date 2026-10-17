@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { HelpCircle, Heart, Image as ImageIcon, XCircle } from 'lucide-react';
+import { ArrowRight, HelpCircle, Heart, Image as ImageIcon, XCircle } from 'lucide-react';
 import { DisplayProduct, userFacingBadgeLabel } from '../utils/displayViewModel';
 
 export type ProductFeedbackAction = 'like' | 'dislike' | 'why';
@@ -7,11 +7,13 @@ export type ProductFeedbackAction = 'like' | 'dislike' | 'why';
 interface ProductCardProps {
   item: DisplayProduct;
   onFeedback: (actionType: ProductFeedbackAction, itemId: string) => void;
+  onOpen: (item: DisplayProduct) => void;
   disabled: boolean;
   variant?: 'compact' | 'mall';
+  position?: number;
 }
 
-export function ProductCard({ item, onFeedback, disabled, variant = 'compact' }: ProductCardProps) {
+export function ProductCard({ item, onFeedback, onOpen, disabled, variant = 'compact', position = 0 }: ProductCardProps) {
   const [imgError, setImgError] = useState(false);
   const price = typeof item.price === 'number' ? `$${item.price.toFixed(2)}` : null;
   const visibleBadges = (item.badges || [])
@@ -22,9 +24,14 @@ export function ProductCard({ item, onFeedback, disabled, variant = 'compact' }:
   const imageHeight = variant === 'mall' ? 'h-48' : 'h-36';
 
   return (
-    <div className="bg-slate-800/80 rounded-2xl border border-slate-700/60 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-1 hover:border-slate-600/80">
+    <div data-recommend-item-id={item.itemId} data-recommend-position={position} className="bg-slate-800/80 rounded-2xl border border-slate-700/60 overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/10 hover:-translate-y-1 hover:border-slate-600/80">
       {/* Product Image Panel */}
-      <div className={`${imageHeight} bg-slate-950/60 flex items-center justify-center relative overflow-hidden group`}>
+      <button
+        type="button"
+        onClick={() => onOpen(item)}
+        className={`${imageHeight} w-full bg-slate-950/60 flex items-center justify-center relative overflow-hidden group cursor-pointer focus:outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-400`}
+        aria-label={`查看 ${item.title || item.itemId} 详情`}
+      >
         {item.imageUrl && !imgError ? (
           <img
             src={item.imageUrl}
@@ -43,7 +50,7 @@ export function ProductCard({ item, onFeedback, disabled, variant = 'compact' }:
         {visibleBadges.length > 0 && (
           <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 items-end z-10">
             {visibleBadges.map((badge) => (
-              <span key={badge} className="bg-indigo-500/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md backdrop-blur-sm tracking-wide">
+              <span key={badge} className="bg-indigo-500/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-md backdrop-blur-xs tracking-wide">
                 {badge}
               </span>
             ))}
@@ -51,21 +58,25 @@ export function ProductCard({ item, onFeedback, disabled, variant = 'compact' }:
         )}
 
         {/* Score indicator */}
-        <div className="absolute bottom-2 left-2.5 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 px-2 py-0.5 rounded text-[10px] font-mono text-indigo-300 font-semibold shadow-sm">
+        <div className="absolute bottom-2 left-2.5 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 px-2 py-0.5 rounded text-[10px] font-mono text-indigo-300 font-semibold shadow-xs">
           Score: {item.score.toFixed(3)}
         </div>
-      </div>
+      </button>
 
       {/* Info Details */}
-      <div className="p-4 flex flex-col flex-grow text-left">
+      <div className="p-4 flex flex-col grow text-left">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           {item.category && <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider truncate max-w-[60%]">{item.category.split('/').pop() || item.category}</div>}
           {item.store && <div className="text-[10px] text-slate-400 font-medium truncate max-w-[40%]">{item.store}</div>}
         </div>
 
-        <h3 className="font-semibold text-sm leading-snug mb-2 flex-grow text-slate-100 line-clamp-2 hover:text-indigo-300 transition-colors">
+        <button
+          type="button"
+          onClick={() => onOpen(item)}
+          className="font-semibold text-sm leading-snug mb-2 grow text-left text-slate-100 line-clamp-2 hover:text-indigo-300 transition-colors cursor-pointer"
+        >
           {item.title || `Item ${item.itemId}`}
-        </h3>
+        </button>
 
         <div className="mb-3.5 flex items-baseline justify-between">
           <div className="font-extrabold text-base text-slate-100">
@@ -87,6 +98,14 @@ export function ProductCard({ item, onFeedback, disabled, variant = 'compact' }:
         {/* Actions button */}
         <div className="mt-auto space-y-2.5">
           <div className="text-[9px] text-slate-500 font-mono">ASIN: {item.itemId}</div>
+          <button
+            type="button"
+            onClick={() => onOpen(item)}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-400/30 bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 text-xs font-bold text-indigo-300 hover:text-white transition-all cursor-pointer"
+          >
+            查看商品详情
+            <ArrowRight size={12} />
+          </button>
           <div className="flex flex-col gap-2">
             <button
               type="button"

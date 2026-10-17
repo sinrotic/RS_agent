@@ -101,22 +101,9 @@ def test_rag_agent_compresses_parent_profile_without_raw_text_leakage() -> None:
     assert support["used_parent_profile_count"] == 1
 
 
-def test_rag_agent_system_prompt_defines_standard_contract_sections() -> None:
-    for section in (
-        "Role_And_Duty",
-        "Why_This_Matters",
-        "Success_Standard",
-        "Context_Use",
-        "Subagent_Communication",
-        "Evidence_Boundary",
-        "Runtime_Boundary",
-        "Response_Style",
-        "Output_Format",
-        "Good_Output_Example",
-        "Bad_Output_Example",
-    ):
-        assert f"<{section}>" in RAG_AGENT_SYSTEM_PROMPT
-        assert f"</{section}>" in RAG_AGENT_SYSTEM_PROMPT
+def test_rag_agent_system_prompt_uses_openai_markdown_sections() -> None:
+    for section in ("# Identity", "# Instructions", "# Examples", "# Context"):
+        assert section in RAG_AGENT_SYSTEM_PROMPT
     assert "RSAgent 内部调用" in RAG_AGENT_SYSTEM_PROMPT
     assert "call_rag_agent 子 Agent 工具" in RAG_AGENT_SYSTEM_PROMPT
     assert "pre_retrieval_query_support" in RAG_AGENT_SYSTEM_PROMPT

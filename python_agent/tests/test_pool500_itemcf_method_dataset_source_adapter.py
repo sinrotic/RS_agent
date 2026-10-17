@@ -19,8 +19,8 @@ def test_build_itemcf_source_from_method_dataset_outputs_loader_edges(tmp_path: 
         "\n".join(
             json.dumps(row, ensure_ascii=False)
             for row in [
-                {"src_item_id": "seed-a", "dst_item_id": "cand-b", "itemcf_score": 0.7, "edge_rank": 2, "reason": "unit"},
-                {"src_item_id": "seed-a", "dst_item_id": "cand-c", "itemcf_score": 0.9, "edge_rank": 1},
+                {"src_item_id": "seed-a", "dst_item_id": "cand-b", "itemcf_score": 0.7, "edge_rank": 2, "reason": "unit", "train_only": True, "source_method": "itemcf_weak"},
+                {"src_item_id": "seed-a", "dst_item_id": "cand-c", "itemcf_score": 0.9, "edge_rank": 1, "train_only": True, "source_method": "itemcf_weak"},
             ]
         )
         + "\n",
@@ -57,7 +57,7 @@ def test_build_itemcf_source_from_method_dataset_supports_limit_rows(tmp_path: P
     rows_path = input_dir / "method_dataset_rows.jsonl"
     rows_path.write_text(
         "".join(
-            json.dumps({"src_item_id": f"seed-{index}", "dst_item_id": f"cand-{index}", "itemcf_score": index}) + "\n"
+            json.dumps({"src_item_id": f"seed-{index}", "dst_item_id": f"cand-{index}", "itemcf_score": index, "edge_rank": index + 1, "train_only": True, "source_method": "itemcf_strong"}) + "\n"
             for index in range(3)
         ),
         encoding="utf-8",
@@ -86,7 +86,7 @@ def test_build_itemcf_weak_source_from_method_dataset_writes_src_item_shards(tmp
     rows_path = input_dir / "method_dataset_rows.jsonl"
     rows_path.write_text(
         "".join(
-            json.dumps({"src_item_id": seed, "dst_item_id": f"cand-{index}", "itemcf_score": 1.0 - index / 10, "edge_rank": index + 1}) + "\n"
+            json.dumps({"src_item_id": seed, "dst_item_id": f"cand-{index}", "itemcf_score": 1.0 - index / 10, "edge_rank": index + 1, "train_only": True, "source_method": "itemcf_weak"}) + "\n"
             for index, seed in enumerate(["seed-a", "seed-b", "seed-a", "seed-z"])
         ),
         encoding="utf-8",
@@ -121,7 +121,7 @@ def test_itemcf_strong_defaults_to_single_edges_path(tmp_path: Path) -> None:
     input_dir.mkdir()
     rows_path = input_dir / "method_dataset_rows.jsonl"
     rows_path.write_text(
-        json.dumps({"src_item_id": "strong-seed", "dst_item_id": "strong-cand", "itemcf_score": 0.8}) + "\n",
+        json.dumps({"src_item_id": "strong-seed", "dst_item_id": "strong-cand", "itemcf_score": 0.8, "edge_rank": 1, "train_only": True, "source_method": "itemcf_strong"}) + "\n",
         encoding="utf-8",
     )
     manifest_path = input_dir / "method_dataset_manifest.json"

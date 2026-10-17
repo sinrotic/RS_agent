@@ -1,0 +1,315 @@
+{
+  "request_payload": {
+    "customer_message": "我最近想给显卡改用一体式水冷，主要担心显存和供电区域温度太高。看到有显卡水冷安装架，但不确定它能不能配我手头的冷排和显卡；我该先核对哪些型号和尺寸？",
+    "extraction": {
+      "schema_version": "rs-shopping-request/2",
+      "intent": {
+        "primary": "compatibility_consultation",
+        "actions": [
+          "verify_compatibility",
+          "guide_verification"
+        ],
+        "evidence": [
+          "不确定它能不能配我手头的冷排和显卡",
+          "我该先核对哪些型号和尺寸？"
+        ]
+      },
+      "context_facts": [
+        {
+          "name": "planned_use",
+          "value": "想给显卡改用一体式水冷",
+          "quote": "我最近想给显卡改用一体式水冷"
+        },
+        {
+          "name": "temperature_concern",
+          "value": "担心显存和供电区域温度太高",
+          "quote": "主要担心显存和供电区域温度太高"
+        },
+        {
+          "name": "available_components",
+          "value": "手头有冷排和显卡，但未提供具体型号",
+          "quote": "我手头的冷排和显卡"
+        }
+      ],
+      "answer_requirements": [
+        {
+          "need": "说明核对显卡水冷安装架与现有冷排、显卡兼容性时应查看的型号和尺寸",
+          "quote": "我该先核对哪些型号和尺寸？"
+        }
+      ],
+      "requirements": [],
+      "unknowns": [
+        {
+          "slot": "gpu_model",
+          "reason": "未提供显卡的具体型号，无法判断具体安装架是否适配",
+          "needed_for": [
+            "verify_compatibility"
+          ],
+          "blocking_level": "needed_for_specific_item"
+        },
+        {
+          "slot": "radiator_model_and_dimensions",
+          "reason": "未提供冷排型号及尺寸，无法判断具体安装架与冷排是否匹配",
+          "needed_for": [
+            "verify_compatibility"
+          ],
+          "blocking_level": "needed_for_specific_item"
+        }
+      ],
+      "clarification": {
+        "mode": "answer_then_optional_question",
+        "safe_answer_before_clarification": true,
+        "unresolved_actions": [],
+        "questions": [
+          {
+            "question": "如果还需要判断具体是否适配，可以提供显卡完整型号，以及冷排型号或尺寸。",
+            "slots": [
+              "gpu_model",
+              "radiator_model_and_dimensions"
+            ],
+            "necessity": "optional",
+            "reason": "具体型号未知不妨碍先说明通用核对方法，但无法据此保证某个安装架适配。"
+          }
+        ]
+      },
+      "recipient": {
+        "target": "self",
+        "quote": "我手头的冷排和显卡",
+        "profile_policy": "weak_reference_if_self"
+      }
+    },
+    "catalog": [
+      {
+        "title": "NZXT Kraken G12 - GPU Mounting Kit for Kraken X Series AIO - Enhanced GPU Cooling - AMD and NVIDIA GPU Compatibility - Active Cooling for VRM, Black",
+        "category": "Water Cooling Systems",
+        "category_path": [
+          "Electronics",
+          "Computers & Accessories",
+          "Computer Components",
+          "Internal Components",
+          "Fans & Cooling",
+          "Water Cooling Systems"
+        ],
+        "price": 14.99,
+        "currency": "SOURCE_UNIT",
+        "store": "NZXT"
+      }
+    ],
+    "profile": {
+      "history": [
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "YaeCCC LED Liquid CPU Cooler Water Cooling System Radiator 120mm with Fan for Inter AMD",
+            "category": "Water Cooling Systems",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Fans & Cooling",
+              "Water Cooling Systems"
+            ],
+            "price": 42.99,
+            "currency": "SOURCE_UNIT",
+            "store": "Yaeccc"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "88MM PLD09210S12HH T129215SU 4Pin Cooler Fan for Gigabyte GeForce GTX1060 1070 GTX 1050ti GTX 960 RX570 RX470 Graphics Card Fan (A Set)",
+            "category": "Graphics Card Fans",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Fans & Cooling",
+              "Graphics Card Fans"
+            ],
+            "price": 11.98,
+            "currency": "SOURCE_UNIT",
+            "store": "CCTVA"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "12 Way ARGB Splitter, 1 to 11 Ports 5V 3Pin RGB LED Splitter Hub with SATA Port",
+            "category": "Splitters",
+            "category_path": [
+              "Electronics",
+              "Television & Video",
+              "Accessories",
+              "Satellite Equipment",
+              "Splitters"
+            ],
+            "price": 7.99,
+            "currency": "SOURCE_UNIT",
+            "store": "daier"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "XSPC Radiator Screw Set, 6-32 UNC, Mixed 5mm & 30mm, Black, 8-Pack",
+            "category": "Water Cooling Systems",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Fans & Cooling",
+              "Water Cooling Systems"
+            ],
+            "price": 5.38,
+            "currency": "SOURCE_UNIT",
+            "store": "XSPC"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "Yongxinsheng DDR3 16GB Kit (8GBx2) Desktop RAM 1333MHz PC3-10600 UDIMM Non-ECC Unbuffered 1.5V 2Rx8 Dual Rank 240 Pin CL9 PC Computer Memory Upgrade Module (Blue)",
+            "category": "Memory",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Memory"
+            ],
+            "price": 23.99,
+            "currency": "SOURCE_UNIT",
+            "store": "Yongxinsheng"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "ZCZQC ARGB Controller 5V 3Pin Aura RGB Controller Plastic SATA Power Supply Light Stripe Remote Controller",
+            "category": "SATA Cables",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Accessories & Peripherals",
+              "Cables & Accessories",
+              "Cables & Interconnects",
+              "SATA Cables"
+            ],
+            "price": 8.99,
+            "currency": "SOURCE_UNIT",
+            "store": "ZCZQC"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "Fancasee (2 Pack) 4-Pin PWM PC Case Fan Hub Power Supply Cable 1 to 5 Way Splitter PC Motherboard Fan Power Extension Cable Cord for ATX Computer Case 4-Pin and 3-Pin Cooling Fans",
+            "category": "Case Fans",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Fans & Cooling",
+              "Case Fans"
+            ],
+            "price": 11.99,
+            "currency": "SOURCE_UNIT",
+            "store": "Fancasee"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "YEEPHTECH Computer Case Fan, Ultra Quiet Cooling Fan Long Life, 3-Pin, 1200 RPM (120mm, Black)",
+            "category": "Case Fans",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Fans & Cooling",
+              "Case Fans"
+            ],
+            "price": 5.49,
+            "currency": "SOURCE_UNIT",
+            "store": "YEEPHTECH"
+          }
+        },
+        {
+          "rating": 5.0,
+          "item": {
+            "title": "Easycargo 100pcs VRM 9mm Heatsink Kit + 10g Thermal Conductive Adhesive Silicone Glue, Small Mini Cooler Heat Sink for Cooling VRM GPU Motherboard Stepper Driver MOSFET Voltage Regulators 9mmx9mmx5mm",
+            "category": "Heatsinks",
+            "category_path": [
+              "Electronics",
+              "Computers & Accessories",
+              "Computer Components",
+              "Internal Components",
+              "Fans & Cooling",
+              "Heatsinks"
+            ],
+            "price": 9.99,
+            "currency": "SOURCE_UNIT",
+            "store": "Easycargo"
+          }
+        }
+      ],
+      "history_meaning": "past_positive_reviews_not_purchases"
+    },
+    "price_unit": "original_listing_units; currency_unconfirmed"
+  },
+  "instruction_sha256": "1729172eb3f7929761dbe8e3da95950c4f8759b0e150d30427332644e424aa89",
+  "requested_model": "gpt-6-luna",
+  "started_at": "2026-10-11T12:14:12.983032+00:00",
+  "response_metadata": {
+    "id": "resp_09fbac8931e22b26016acb7d94837887d1a09312a42bed8e07",
+    "model": "gpt-6-luna",
+    "usage": {
+      "completion_tokens": 657,
+      "total_tokens": 3148,
+      "prompt_tokens": 2491,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_creation_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 228
+      }
+    },
+    "finish_reason": "stop"
+  },
+  "raw_content": "{\"schema_version\":\"rs-shopping-audit/2\",\"checks\":{\"naturalness\":\"pass\",\"extraction_fidelity\":\"pass\",\"fact_boundary\":\"pass\",\"clarification_policy\":\"pass\"},\"reasons\":{\"naturalness\":\"顾客是在询问显卡水冷安装架的适配核对方法，语气和情境自然；提取结果保留了其改用一体式水冷的计划及显存、供电区域的温度顾虑。\",\"extraction_fidelity\":\"提取抓住了核心意图：了解应核对哪些型号和尺寸，并区分通用核对建议与具体适配判断。没有把未提供的具体型号误写为已知要求；具体型号作为可选补充信息处理合理。\",\"fact_boundary\":\"提取中的现有冷排和显卡、温度顾虑及自用语境均有顾客原话依据。目录只列出一款安装套件，历史仅是过去的正面评价，提取没有据此推断当前兼容性或顾客的硬性偏好。\",\"clarification_policy\":\"可以先给出通用的型号与尺寸核对方法，不应因缺少型号而把回答阻断；若要判断某款安装架是否适配，再可选询问显卡完整型号及冷排型号或尺寸。提取采取了这一先回答、后可选追问的策略。\"},\"evidence\":[{\"source\":\"customer\",\"quote\":\"我最近想给显卡改用一体式水冷，主要担心显存和供电区域温度太高。看到有显卡水冷安装架，但不确定它能不能配我手头的冷排和显卡；我该先核对哪些型号和尺寸？\"},{\"source\":\"catalog\",\"quote\":\"NZXT Kraken G12 - GPU Mounting Kit for Kraken X Series AIO - Enhanced GPU Cooling - AMD and NVIDIA GPU Compatibility - Active Cooling for VRM, Black\"}],\"issues\":[]}",
+  "parsed_json": {
+    "schema_version": "rs-shopping-audit/2",
+    "checks": {
+      "naturalness": "pass",
+      "extraction_fidelity": "pass",
+      "fact_boundary": "pass",
+      "clarification_policy": "pass"
+    },
+    "reasons": {
+      "naturalness": "顾客是在询问显卡水冷安装架的适配核对方法，语气和情境自然；提取结果保留了其改用一体式水冷的计划及显存、供电区域的温度顾虑。",
+      "extraction_fidelity": "提取抓住了核心意图：了解应核对哪些型号和尺寸，并区分通用核对建议与具体适配判断。没有把未提供的具体型号误写为已知要求；具体型号作为可选补充信息处理合理。",
+      "fact_boundary": "提取中的现有冷排和显卡、温度顾虑及自用语境均有顾客原话依据。目录只列出一款安装套件，历史仅是过去的正面评价，提取没有据此推断当前兼容性或顾客的硬性偏好。",
+      "clarification_policy": "可以先给出通用的型号与尺寸核对方法，不应因缺少型号而把回答阻断；若要判断某款安装架是否适配，再可选询问显卡完整型号及冷排型号或尺寸。提取采取了这一先回答、后可选追问的策略。"
+    },
+    "evidence": [
+      {
+        "source": "customer",
+        "quote": "我最近想给显卡改用一体式水冷，主要担心显存和供电区域温度太高。看到有显卡水冷安装架，但不确定它能不能配我手头的冷排和显卡；我该先核对哪些型号和尺寸？"
+      },
+      {
+        "source": "catalog",
+        "quote": "NZXT Kraken G12 - GPU Mounting Kit for Kraken X Series AIO - Enhanced GPU Cooling - AMD and NVIDIA GPU Compatibility - Active Cooling for VRM, Black"
+      }
+    ],
+    "issues": []
+  },
+  "call_succeeded": true,
+  "completed_at": "2026-10-11T12:14:26.866749+00:00"
+}

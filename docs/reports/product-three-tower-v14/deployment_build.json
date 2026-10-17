@@ -1,0 +1,26 @@
+{
+  "state": "BUILT",
+  "source_existing_patch": "/mnt/data/luo/remote_runs/product_v9_training/rs-service-recommend.jar",
+  "source_existing_patch_sha256": "241c337c9ea57e2b1300c77fc26fa9708d72ade2197aea0bc1129c0e641b1aed",
+  "jar_sha256": "9365eee81054a8d2a5f8003fbfccb4eaab7fcf4e3467923d955e64e139c982a2",
+  "changed_from_v9": [
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/config/TwoTowerRecallConfiguration.class"
+  ],
+  "added_from_v9": [
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/ProtectedHeadTwoTowerRecallProvider.class"
+  ],
+  "original_live_build_evidence": {
+    "source_jar": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/rs-service-recommend.jar",
+    "source_sha256": "1bd8e034e96df53cdf7cdb7bf95d8b17190069c87f587a04b438eaccc6a353a7",
+    "jar_sha256": "241c337c9ea57e2b1300c77fc26fa9708d72ade2197aea0bc1129c0e641b1aed",
+    "changed_entries": [
+      "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/MilvusRestVectorIndexClient.class"
+    ],
+    "runtime_sha256": "f6787e3d6f1aad6d7703037743dc911d0ff0539819b07c62fdc2668e8729fe53",
+    "ef": 1024,
+    "runtime_accept_queue": 128,
+    "milvus_api_reference": "https://milvus.io/api-reference/restful/v2.6.x/v2/Vector%20(v2)/Search.md",
+    "online_modified": false
+  },
+  "scope": "相对原现网：保留已验证Milvus EF配置补丁，替换双塔装配配置，新增固定头部保护类。其余jar条目原样保留。"
+}

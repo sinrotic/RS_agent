@@ -258,7 +258,7 @@ export function ObserveConsole() {
               value={sessionId}
               onChange={(event) => setSessionId(event.target.value)}
               placeholder="session_xxx"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-cyan-500"
             />
           </label>
           <label className="space-y-1">
@@ -267,7 +267,7 @@ export function ObserveConsole() {
               value={accountId}
               onChange={(event) => setAccountId(event.target.value)}
               placeholder="profile user id"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-cyan-500"
             />
           </label>
           <label className="space-y-1">
@@ -276,7 +276,7 @@ export function ObserveConsole() {
               value={requestId}
               onChange={(event) => setRequestId(event.target.value)}
               placeholder="rec request id"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-cyan-500"
             />
           </label>
           <label className="space-y-1">
@@ -285,7 +285,7 @@ export function ObserveConsole() {
               value={agentRequestId}
               onChange={(event) => setAgentRequestId(event.target.value)}
               placeholder="agent request id"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-cyan-500"
             />
           </label>
           <label className="space-y-1">
@@ -294,7 +294,7 @@ export function ObserveConsole() {
               value={selectedItemId}
               onChange={(event) => setSelectedItemId(event.target.value)}
               placeholder="optional item id"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-none focus:border-cyan-500"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs text-slate-100 outline-hidden focus:border-cyan-500"
             />
           </label>
           <button

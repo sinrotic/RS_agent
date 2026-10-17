@@ -1,0 +1,9 @@
+{
+  "test": "interruptWhileWaitingForModelCapacityReleasesTurnWithoutCallingModel",
+  "tests": 1,
+  "failures": 0,
+  "errors": 1,
+  "error_type": "java.util.concurrent.TimeoutException",
+  "symptom": "模型许可被占用时，中断排队 Turn 后一秒内仍未退出",
+  "configured_model_wait_ms": 5000
+}

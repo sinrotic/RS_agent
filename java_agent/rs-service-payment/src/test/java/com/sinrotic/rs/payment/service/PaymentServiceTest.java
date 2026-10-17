@@ -8,6 +8,8 @@ import com.sinrotic.rs.payment.domain.entity.PaymentOrder;
 import com.sinrotic.rs.payment.domain.vo.PaymentPrepayVO;
 import com.sinrotic.rs.payment.mapper.PaymentCallbackMapper;
 import com.sinrotic.rs.payment.mapper.PaymentOrderMapper;
+import com.sinrotic.rs.payment.mapper.PaymentNotificationMapper;
+import com.sinrotic.rs.payment.domain.entity.PaymentNotification;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DuplicateKeyException;
@@ -29,6 +31,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class PaymentServiceTest {
+    private static final String TEST_SECRET="test-only-commerce-callback-secret-20261011";
+    private static String signature(String payload) { return MockPaymentCallbackSignature.sign(TEST_SECRET,"mock","tx-1",10L,500L,payload); }
 
     private PaymentOrderMapper paymentOrderMapper;
     private PaymentCallbackMapper paymentCallbackMapper;
@@ -40,17 +44,22 @@ class PaymentServiceTest {
         paymentOrderMapper = mock(PaymentOrderMapper.class);
         paymentCallbackMapper = mock(PaymentCallbackMapper.class);
         orderClient = mock(OrderClient.class);
+        when(orderClient.paymentQuote(10L, "account-20")).thenReturn(new OrderClient.PaymentQuote(10L, "account-20", 500L));
+        var outbox = mock(PaymentNotificationMapper.class);
+        when(outbox.claim(eq(10L), any())).thenReturn(1);
+        when(outbox.findByOrderId(10L)).thenReturn(new PaymentNotification(10L, "mock", "tx-1", 1));
         AtomicLong idSequence = new AtomicLong(1000L);
         PaymentTransitionService transitionService =
-                new PaymentTransitionService(paymentOrderMapper, paymentCallbackMapper);
-        paymentService = new PaymentService(paymentOrderMapper, transitionService, orderClient, idSequence::incrementAndGet);
+                new PaymentTransitionService(paymentOrderMapper, paymentCallbackMapper, outbox);
+        paymentService = new PaymentService(paymentOrderMapper, transitionService, orderClient, idSequence::incrementAndGet,
+                new PaymentNotificationService(outbox, orderClient),true,TEST_SECRET);
     }
 
     @Test
     void createPrepayInsertsWaitingPayAndReturnsPrepayView() {
         when(paymentOrderMapper.insertPayment(1001L, 10L, "mock", 500L, "WAITING_PAY")).thenReturn(1);
 
-        PaymentPrepayVO response = paymentService.createPrepay(
+        PaymentPrepayVO response = paymentService.createPrepay("account-20",
                 new CreatePaymentRequestDTO(10L, 20L, 500L, " MoCk ")
         );
 
@@ -68,7 +77,7 @@ class PaymentServiceTest {
                 .thenThrow(new DuplicateKeyException("duplicate order"));
         when(paymentOrderMapper.findByOrderId(10L)).thenReturn(existing);
 
-        PaymentPrepayVO response = paymentService.createPrepay(
+        PaymentPrepayVO response = paymentService.createPrepay("account-20",
                 new CreatePaymentRequestDTO(10L, 20L, 500L, "mock")
         );
 
@@ -88,7 +97,7 @@ class PaymentServiceTest {
 
         assertThrows(
                 PaymentServiceException.class,
-                () -> paymentService.createPrepay(new CreatePaymentRequestDTO(10L, 20L, 500L, "mock"))
+                () -> paymentService.createPrepay("account-20", new CreatePaymentRequestDTO(10L, 20L, 500L, "mock"))
         );
     }
 
@@ -101,7 +110,7 @@ class PaymentServiceTest {
 
         assertThrows(
                 PaymentServiceException.class,
-                () -> paymentService.createPrepay(new CreatePaymentRequestDTO(10L, 20L, 500L, "mock"))
+                () -> paymentService.createPrepay("account-20", new CreatePaymentRequestDTO(10L, 20L, 500L, "mock"))
         );
     }
 
@@ -109,7 +118,7 @@ class PaymentServiceTest {
     void createPrepayInvalidProviderThrows() {
         assertThrows(
                 PaymentServiceException.class,
-                () -> paymentService.createPrepay(new CreatePaymentRequestDTO(10L, 20L, 500L, "realpay"))
+                () -> paymentService.createPrepay("account-20", new CreatePaymentRequestDTO(10L, 20L, 500L, "realpay"))
         );
 
         verify(paymentOrderMapper, never()).insertPayment(any(), any(), any(), any(), any());
@@ -122,7 +131,7 @@ class PaymentServiceTest {
         when(paymentCallbackMapper.insertCallback("mock", "tx-1", 10L, 500L, "PAID", payloadHash)).thenReturn(1);
         when(paymentOrderMapper.markPaid(10L, "mock", 500L, "tx-1")).thenReturn(1);
 
-        paymentService.handleCallback(new PaymentCallbackDTO(" MoCk ", "tx-1", 10L, 500L, "mock-signature", rawPayload));
+        paymentService.handleCallback(new PaymentCallbackDTO(" MoCk ", "tx-1", 10L, 500L, signature(rawPayload), rawPayload));
 
         verify(paymentCallbackMapper).insertCallback("mock", "tx-1", 10L, 500L, "PAID", payloadHash);
         verify(paymentOrderMapper).markPaid(10L, "mock", 500L, "tx-1");
@@ -141,7 +150,7 @@ class PaymentServiceTest {
         assertThrows(
                 PaymentServiceException.class,
                 () -> paymentService.handleCallback(
-                        new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, "mock-signature", rawPayload)
+                        new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, signature(rawPayload), rawPayload)
                 )
         );
 
@@ -164,7 +173,7 @@ class PaymentServiceTest {
         when(paymentOrderMapper.findByOrderId(10L))
                 .thenReturn(paymentOrder(9001L, 10L, "mock", "tx-1", "PAID", 500L));
 
-        PaymentCallbackDTO callback = new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, "mock-signature", rawPayload);
+        PaymentCallbackDTO callback = new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, signature(rawPayload), rawPayload);
         paymentService.handleCallback(callback);
         paymentService.handleCallback(callback);
 
@@ -188,7 +197,7 @@ class PaymentServiceTest {
         when(paymentOrderMapper.findByOrderId(10L))
                 .thenReturn(paymentOrder(9001L, 10L, "mock", "tx-other", "PAID", 500L));
 
-        PaymentCallbackDTO callback = new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, "mock-signature", rawPayload);
+        PaymentCallbackDTO callback = new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, signature(rawPayload), rawPayload);
         paymentService.handleCallback(callback);
         assertThrows(PaymentServiceException.class, () -> paymentService.handleCallback(callback));
 
@@ -208,7 +217,7 @@ class PaymentServiceTest {
         assertThrows(
                 PaymentServiceException.class,
                 () -> paymentService.handleCallback(
-                        new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, "mock-signature", rawPayload)
+                        new PaymentCallbackDTO("mock", "tx-1", 10L, 500L, signature(rawPayload), rawPayload)
                 )
         );
 

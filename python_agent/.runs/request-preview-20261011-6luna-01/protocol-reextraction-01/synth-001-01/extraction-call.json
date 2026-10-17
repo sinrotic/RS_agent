@@ -1,0 +1,120 @@
+{
+  "request_payload": {
+    "customer_message": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？"
+  },
+  "instruction_sha256": "52755f2665287949d218aeab7ba60d5452156bc5f29f1e3f22c43e98f49a32eb",
+  "requested_model": "gpt-6-luna",
+  "started_at": "2026-10-11T12:13:42.628503+00:00",
+  "response_metadata": {
+    "id": "resp_0f528d0741e733e2016acb7d76296887d193996a3ea4d31007",
+    "model": "gpt-6-luna",
+    "usage": {
+      "completion_tokens": 999,
+      "total_tokens": 2104,
+      "prompt_tokens": 1105,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_creation_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 348
+      }
+    },
+    "finish_reason": "stop"
+  },
+  "raw_content": "{\n  \"schema_version\": \"rs-shopping-request/2\",\n  \"intent\": {\n    \"primary\": \"recommendation\",\n    \"actions\": [\n      \"recommend\",\n      \"explain\"\n    ],\n    \"evidence\": [\n      \"有什么合适的选择吗？\",\n      \"续航和降噪效果我不太会看\"\n    ]\n  },\n  \"context_facts\": [\n    {\n      \"name\": \"use_case\",\n      \"value\": \"通勤时希望少受周围噪声影响\",\n      \"quote\": \"她平时通勤时想少受周围噪声影响\"\n    },\n    {\n      \"name\": \"listening_and_calling\",\n      \"value\": \"听音乐和接电话\",\n      \"quote\": \"也会用来听音乐和接电话\"\n    },\n    {\n      \"name\": \"budget_flexibility\",\n      \"value\": \"预算不必卡得特别严格\",\n      \"quote\": \"预算不用卡得特别死\"\n    }\n  ],\n  \"answer_requirements\": [\n    {\n      \"need\": \"说明如何看耳机续航\",\n      \"quote\": \"续航……我不太会看\"\n    },\n    {\n      \"need\": \"说明如何判断降噪效果\",\n      \"quote\": \"降噪效果我不太会看\"\n    }\n  ],\n  \"requirements\": [\n    {\n      \"id\": \"r1\",\n      \"kind\": \"strict\",\n      \"field\": \"product_type\",\n      \"relation\": \"eq\",\n      \"value\": \"头戴式耳机\",\n      \"unit\": null,\n      \"quote\": \"一副头戴式耳机\"\n    },\n    {\n      \"id\": \"r2\",\n      \"kind\": \"preference\",\n      \"field\": \"wearing_pressure\",\n      \"relation\": \"minimize\",\n      \"value\": \"夹耳感\",\n      \"unit\": null,\n      \"quote\": \"希望戴久了别太夹耳\"\n    },\n    {\n      \"id\": \"r3\",\n      \"kind\": \"preference\",\n      \"field\": \"wireless\",\n      \"relation\": \"prefer\",\n      \"value\": true,\n      \"unit\": null,\n      \"quote\": \"无线款优先\"\n    },\n    {\n      \"id\": \"r4\",\n      \"kind\": \"preference\",\n      \"field\": \"noise_cancellation\",\n      \"relation\": \"maximize\",\n      \"value\": \"减少周围噪声影响\",\n      \"unit\": null,\n      \"quote\": \"她平时通勤时想少受周围噪声影响\"\n    }\n  ],\n  \"unknowns\": [],\n  \"clarification\": {\n    \"mode\": \"not_needed\",\n    \"safe_answer_before_clarification\": true,\n    \"unresolved_actions\": [],\n    \"questions\": []\n  },\n  \"recipient\": {\n    \"target\": \"other\",\n    \"quote\": \"给朋友挑……当礼物\",\n    \"profile_policy\": \"do_not_transfer_to_recipient\"\n  }\n}",
+  "parsed_json": {
+    "schema_version": "rs-shopping-request/2",
+    "intent": {
+      "primary": "recommendation",
+      "actions": [
+        "recommend",
+        "explain"
+      ],
+      "evidence": [
+        "有什么合适的选择吗？",
+        "续航和降噪效果我不太会看"
+      ]
+    },
+    "context_facts": [
+      {
+        "name": "use_case",
+        "value": "通勤时希望少受周围噪声影响",
+        "quote": "她平时通勤时想少受周围噪声影响"
+      },
+      {
+        "name": "listening_and_calling",
+        "value": "听音乐和接电话",
+        "quote": "也会用来听音乐和接电话"
+      },
+      {
+        "name": "budget_flexibility",
+        "value": "预算不必卡得特别严格",
+        "quote": "预算不用卡得特别死"
+      }
+    ],
+    "answer_requirements": [
+      {
+        "need": "说明如何看耳机续航",
+        "quote": "续航……我不太会看"
+      },
+      {
+        "need": "说明如何判断降噪效果",
+        "quote": "降噪效果我不太会看"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "r1",
+        "kind": "strict",
+        "field": "product_type",
+        "relation": "eq",
+        "value": "头戴式耳机",
+        "unit": null,
+        "quote": "一副头戴式耳机"
+      },
+      {
+        "id": "r2",
+        "kind": "preference",
+        "field": "wearing_pressure",
+        "relation": "minimize",
+        "value": "夹耳感",
+        "unit": null,
+        "quote": "希望戴久了别太夹耳"
+      },
+      {
+        "id": "r3",
+        "kind": "preference",
+        "field": "wireless",
+        "relation": "prefer",
+        "value": true,
+        "unit": null,
+        "quote": "无线款优先"
+      },
+      {
+        "id": "r4",
+        "kind": "preference",
+        "field": "noise_cancellation",
+        "relation": "maximize",
+        "value": "减少周围噪声影响",
+        "unit": null,
+        "quote": "她平时通勤时想少受周围噪声影响"
+      }
+    ],
+    "unknowns": [],
+    "clarification": {
+      "mode": "not_needed",
+      "safe_answer_before_clarification": true,
+      "unresolved_actions": [],
+      "questions": []
+    },
+    "recipient": {
+      "target": "other",
+      "quote": "给朋友挑……当礼物",
+      "profile_policy": "do_not_transfer_to_recipient"
+    }
+  },
+  "call_succeeded": true,
+  "completed_at": "2026-10-11T12:14:02.756124+00:00"
+}

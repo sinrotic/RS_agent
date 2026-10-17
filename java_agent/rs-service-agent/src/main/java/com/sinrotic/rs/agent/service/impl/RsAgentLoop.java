@@ -3,6 +3,7 @@ package com.sinrotic.rs.agent.service.impl;
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
 import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
 import com.sinrotic.rs.agent.service.AgentInterrupter;
+import com.sinrotic.rs.agent.service.AgentExecutionLimiter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 
@@ -35,6 +36,17 @@ public class RsAgentLoop extends AgentLoop {
             AgentLoopHookDispatcher hookDispatcher,
             AgentInterrupter interrupter
     ) {
+        this(runtimeConfigurationService, toolUseExecutor, modelStreamClient, hookDispatcher, interrupter, null);
+    }
+
+    public RsAgentLoop(
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentModelStreamClient modelStreamClient,
+            AgentLoopHookDispatcher hookDispatcher,
+            AgentInterrupter interrupter,
+            AgentExecutionLimiter executionLimiter
+    ) {
         super(
                 new AgentProfile(
                         "rs_agent",
@@ -51,14 +63,16 @@ public class RsAgentLoop extends AgentLoop {
                                 entry("model_chat", "rs-service-model"),
                                 entry("load_skill", "rs-service-agent"),
                                 entry("call_agent", "rs-service-agent"),
-                                entry("emit_final_answer", "rs-service-agent")
+                                entry("emit_final_answer", "rs-service-agent"),
+                                entry("emit_ui", "rs-service-agent")
                         )
                 ),
                 runtimeConfigurationService,
                 toolUseExecutor,
                 modelStreamClient,
                 hookDispatcher,
-                interrupter
+                interrupter,
+                executionLimiter
         );
     }
 }

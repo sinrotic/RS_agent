@@ -1,0 +1,1947 @@
+{
+  "name": "complex-ladder",
+  "agent_sha256": "4bc94fc6894a65fb933071ac91c2506c5964542c68d464f59155967c027c1c76",
+  "model_before": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml",
+    "1215570 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18092 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-batched-tokens 4096 --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "scope": "现有网关 18288 → 已升级单活 Agent 18214 → 真实模型/推荐/目录/持久历史",
+  "queries": [
+    "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "推荐适合编程使用的键盘，说明各自的区别"
+  ],
+  "stages": [
+    {
+      "concurrent_requests": 2,
+      "distinct_accounts": 2,
+      "distinct_sessions": 2,
+      "passed": 2,
+      "failed": 0,
+      "batch_wall_ms": 20583.69,
+      "completed_requests_per_second": 0.097,
+      "median_ms": 20540.07,
+      "maximum_ms": 20561.82,
+      "peak_model_running": 2.0,
+      "peak_model_waiting": 2.0,
+      "preemptions_delta": 0.0,
+      "complex_tool_cases": 2,
+      "cases": [
+        {
+          "index": 0,
+          "query_index": 0,
+          "complete_ms": 20518.31,
+          "agent_ms": 20513.97,
+          "items": 5,
+          "answer_chars": 23,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_support",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 20547.73
+        },
+        {
+          "index": 1,
+          "query_index": 1,
+          "complete_ms": 20561.82,
+          "agent_ms": 20557.45,
+          "items": 5,
+          "answer_chars": 43,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 20580.63
+        }
+      ],
+      "server_turn_timings": [
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.145677,
+            "restore_and_routing_ms": 27.223901,
+            "recommendation_ms": 48.780601,
+            "answer_ms": 20371.661561,
+            "finalize_ms": 24.38701,
+            "total_ms": 20502.316299
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.175103,
+            "restore_and_routing_ms": 31.78746,
+            "recommendation_ms": 66.146632,
+            "answer_ms": 20399.341061,
+            "finalize_ms": 25.564803,
+            "total_ms": 20548.696039
+          }
+        }
+      ],
+      "timing_note": "服务日志/模型指标是共享时间窗口数据，可能含其他用户请求；不是逐请求精准关联"
+    },
+    {
+      "concurrent_requests": 4,
+      "distinct_accounts": 4,
+      "distinct_sessions": 4,
+      "passed": 4,
+      "failed": 0,
+      "batch_wall_ms": 44735.61,
+      "completed_requests_per_second": 0.089,
+      "median_ms": 29500.71,
+      "maximum_ms": 44716.08,
+      "peak_model_running": 4.0,
+      "peak_model_waiting": 4.0,
+      "preemptions_delta": 0.0,
+      "complex_tool_cases": 4,
+      "cases": [
+        {
+          "index": 0,
+          "query_index": 0,
+          "complete_ms": 15085.7,
+          "agent_ms": 15080.69,
+          "items": 5,
+          "answer_chars": 21,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 15109.07
+        },
+        {
+          "index": 1,
+          "query_index": 1,
+          "complete_ms": 44716.08,
+          "agent_ms": 44711.91,
+          "items": 5,
+          "answer_chars": 132,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text",
+            "product_cards",
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 44733.89
+        },
+        {
+          "index": 2,
+          "query_index": 0,
+          "complete_ms": 16202.52,
+          "agent_ms": 16197.13,
+          "items": 5,
+          "answer_chars": 29,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_support",
+            "rag_support"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 16224.76
+        },
+        {
+          "index": 3,
+          "query_index": 1,
+          "complete_ms": 42798.89,
+          "agent_ms": 42794.37,
+          "items": 5,
+          "answer_chars": 23,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 42819.16
+        }
+      ],
+      "server_turn_timings": [
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.316249,
+            "restore_and_routing_ms": 33.865761,
+            "recommendation_ms": 81.753923,
+            "answer_ms": 14891.1901,
+            "finalize_ms": 24.588783,
+            "total_ms": 15071.337192
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.538271,
+            "restore_and_routing_ms": 34.263779,
+            "recommendation_ms": 107.07233,
+            "answer_ms": 15985.431172,
+            "finalize_ms": 24.716754,
+            "total_ms": 16188.600144
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.539527,
+            "restore_and_routing_ms": 27.787827,
+            "recommendation_ms": 86.637093,
+            "answer_ms": 42604.373086,
+            "finalize_ms": 25.120792,
+            "total_ms": 42785.284536
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.279494,
+            "restore_and_routing_ms": 32.724868,
+            "recommendation_ms": 97.183504,
+            "answer_ms": 44522.097672,
+            "finalize_ms": 20.991253,
+            "total_ms": 44701.989427
+          }
+        }
+      ],
+      "timing_note": "服务日志/模型指标是共享时间窗口数据，可能含其他用户请求；不是逐请求精准关联"
+    },
+    {
+      "concurrent_requests": 8,
+      "distinct_accounts": 8,
+      "distinct_sessions": 8,
+      "passed": 8,
+      "failed": 0,
+      "batch_wall_ms": 59105.69,
+      "completed_requests_per_second": 0.135,
+      "median_ms": 38869.19,
+      "maximum_ms": 59062.28,
+      "peak_model_running": 9.0,
+      "peak_model_waiting": 8.0,
+      "preemptions_delta": 0.0,
+      "complex_tool_cases": 8,
+      "cases": [
+        {
+          "index": 0,
+          "query_index": 0,
+          "complete_ms": 41059.23,
+          "agent_ms": 41054.28,
+          "items": 5,
+          "answer_chars": 23,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_support"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 41081.41
+        },
+        {
+          "index": 1,
+          "query_index": 1,
+          "complete_ms": 38810.47,
+          "agent_ms": 38805.17,
+          "items": 5,
+          "answer_chars": 34,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 38828.93
+        },
+        {
+          "index": 2,
+          "query_index": 0,
+          "complete_ms": 31991.89,
+          "agent_ms": 31985.09,
+          "items": 5,
+          "answer_chars": 21,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "render_product_cards"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 6,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 32014.98
+        },
+        {
+          "index": 3,
+          "query_index": 1,
+          "complete_ms": 32863.48,
+          "agent_ms": 32858.35,
+          "items": 5,
+          "answer_chars": 54,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 32881.14
+        },
+        {
+          "index": 4,
+          "query_index": 0,
+          "complete_ms": 38871.77,
+          "agent_ms": 38866.79,
+          "items": 5,
+          "answer_chars": 23,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 38894.71
+        },
+        {
+          "index": 5,
+          "query_index": 1,
+          "complete_ms": 45398.65,
+          "agent_ms": 45393.92,
+          "items": 5,
+          "answer_chars": 41,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 45416.74
+        },
+        {
+          "index": 6,
+          "query_index": 0,
+          "complete_ms": 38866.61,
+          "agent_ms": 38861.64,
+          "items": 5,
+          "answer_chars": 28,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_support",
+            "rag_support",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 38885.19
+        },
+        {
+          "index": 7,
+          "query_index": 1,
+          "complete_ms": 59062.28,
+          "agent_ms": 59057.24,
+          "items": 5,
+          "answer_chars": 41,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 59101.34
+        }
+      ],
+      "server_turn_timings": [
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.229637,
+            "restore_and_routing_ms": 29.777933,
+            "recommendation_ms": 57.113684,
+            "answer_ms": 31779.834083,
+            "finalize_ms": 30.745329,
+            "total_ms": 31973.521749
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.76391,
+            "restore_and_routing_ms": 36.27657,
+            "recommendation_ms": 78.989466,
+            "answer_ms": 32668.039144,
+            "finalize_ms": 19.870172,
+            "total_ms": 32848.599321
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.162539,
+            "restore_and_routing_ms": 40.566303,
+            "recommendation_ms": 176.449239,
+            "answer_ms": 38514.531746,
+            "finalize_ms": 27.8144,
+            "total_ms": 38793.151051
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.337941,
+            "restore_and_routing_ms": 40.767277,
+            "recommendation_ms": 115.448463,
+            "answer_ms": 38577.472853,
+            "finalize_ms": 40.730648,
+            "total_ms": 38849.777081
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.380985,
+            "restore_and_routing_ms": 37.42183,
+            "recommendation_ms": 78.898136,
+            "answer_ms": 38663.709563,
+            "finalize_ms": 24.63939,
+            "total_ms": 38854.685339
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 1.367952,
+            "restore_and_routing_ms": 41.77029,
+            "recommendation_ms": 174.240414,
+            "answer_ms": 40775.692773,
+            "finalize_ms": 21.728394,
+            "total_ms": 41045.614032
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.232932,
+            "restore_and_routing_ms": 36.650981,
+            "recommendation_ms": 58.490639,
+            "answer_ms": 45218.798844,
+            "finalize_ms": 21.941463,
+            "total_ms": 45381.98783
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.227032,
+            "restore_and_routing_ms": 40.969678,
+            "recommendation_ms": 115.458016,
+            "answer_ms": 58782.33025,
+            "finalize_ms": 31.595407,
+            "total_ms": 59044.720851
+          }
+        }
+      ],
+      "timing_note": "服务日志/模型指标是共享时间窗口数据，可能含其他用户请求；不是逐请求精准关联"
+    },
+    {
+      "concurrent_requests": 16,
+      "distinct_accounts": 8,
+      "distinct_sessions": 16,
+      "passed": 15,
+      "failed": 1,
+      "batch_wall_ms": 92539.03,
+      "completed_requests_per_second": 0.162,
+      "median_ms": 65128.43,
+      "maximum_ms": 92509.76,
+      "peak_model_running": 17.0,
+      "peak_model_waiting": 14.0,
+      "preemptions_delta": 0.0,
+      "complex_tool_cases": 15,
+      "cases": [
+        {
+          "index": 0,
+          "query_index": 0,
+          "complete_ms": 63820.57,
+          "agent_ms": 63813.24,
+          "items": 5,
+          "answer_chars": 23,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_support"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 63840.82
+        },
+        {
+          "index": 1,
+          "query_index": 1,
+          "complete_ms": 73455.01,
+          "agent_ms": 73447.91,
+          "items": 5,
+          "answer_chars": 157,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text",
+            "product_cards",
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 73474.79
+        },
+        {
+          "index": 2,
+          "query_index": 0,
+          "complete_ms": 65025.9,
+          "agent_ms": 65021.8,
+          "items": 5,
+          "answer_chars": 21,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 65053.51
+        },
+        {
+          "index": 3,
+          "query_index": 1,
+          "complete_ms": 92509.76,
+          "agent_ms": 92505.42,
+          "items": 5,
+          "answer_chars": 41,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 92530.37
+        },
+        {
+          "index": 4,
+          "query_index": 0,
+          "complete_ms": 37115.8,
+          "agent_ms": 37110.86,
+          "items": 5,
+          "answer_chars": 21,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_support",
+            "render_product_cards"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 5,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 37136.52
+        },
+        {
+          "index": 5,
+          "query_index": 1,
+          "complete_ms": 59498.03,
+          "agent_ms": 59490.68,
+          "items": 5,
+          "answer_chars": 41,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 59522.61
+        },
+        {
+          "index": 6,
+          "query_index": 0,
+          "complete_ms": 87012.64,
+          "agent_ms": 87007.9,
+          "items": 5,
+          "answer_chars": 19,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_support",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 87033.48
+        },
+        {
+          "index": 7,
+          "query_index": 1,
+          "complete_ms": 68482.95,
+          "agent_ms": 68477.89,
+          "items": 5,
+          "answer_chars": 50,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 68502.86
+        },
+        {
+          "index": 8,
+          "query_index": 0,
+          "complete_ms": 55592.67,
+          "agent_ms": 55585.53,
+          "items": 5,
+          "answer_chars": 21,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_support",
+            "render_product_cards"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 55615.27
+        },
+        {
+          "index": 9,
+          "query_index": 1,
+          "complete_ms": 91113.87,
+          "agent_ms": 91106.59,
+          "items": 5,
+          "answer_chars": 41,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 91131.24
+        },
+        {
+          "index": 10,
+          "query_index": 0,
+          "complete_ms": 87942.23,
+          "agent_ms": 87937.66,
+          "items": 5,
+          "answer_chars": 29,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 87959.08
+        },
+        {
+          "index": 11,
+          "query_index": 1,
+          "complete_ms": null,
+          "agent_ms": 72765.0,
+          "items": 0,
+          "answer_chars": 0,
+          "finish_reason": null,
+          "error_code": "AGENT_STREAM_FAILED",
+          "error_status": 500,
+          "tool_names": [],
+          "failed_tools": 0,
+          "advanced_tool_count": 0,
+          "stage_counts": null,
+          "degradation_reasons": null,
+          "history_turns": 0,
+          "final_blocks": [],
+          "checks": {
+            "complete": false,
+            "five_real_unique_items": false,
+            "answer_and_history": false,
+            "tools_without_failure": true,
+            "deepfm_bge": false,
+            "no_degradation": false
+          },
+          "passed": false,
+          "audit_wall_ms": 72776.33
+        },
+        {
+          "index": 12,
+          "query_index": 0,
+          "complete_ms": 44708.81,
+          "agent_ms": 44703.12,
+          "items": 5,
+          "answer_chars": 21,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_support",
+            "render_product_cards"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 5,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 44734.93
+        },
+        {
+          "index": 13,
+          "query_index": 1,
+          "complete_ms": 65128.43,
+          "agent_ms": 65121.06,
+          "items": 5,
+          "answer_chars": 43,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 65148.6
+        },
+        {
+          "index": 14,
+          "query_index": 0,
+          "complete_ms": 64102.89,
+          "agent_ms": 64098.14,
+          "items": 5,
+          "answer_chars": 23,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "load_skill",
+            "rag_support",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_support",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 64126.53
+        },
+        {
+          "index": 15,
+          "query_index": 1,
+          "complete_ms": 73927.78,
+          "agent_ms": 73922.79,
+          "items": 5,
+          "answer_chars": 25,
+          "finish_reason": "FINAL_ANSWER",
+          "error_code": null,
+          "error_status": null,
+          "tool_names": [
+            "recommend_candidates",
+            "load_skill",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "rag_evidence_search",
+            "load_skill",
+            "load_skill",
+            "rag_evidence_search"
+          ],
+          "failed_tools": 0,
+          "advanced_tool_count": 7,
+          "stage_counts": {
+            "final": 5,
+            "bge_reranked": 96,
+            "fine_rank": 96,
+            "cold_scored": 100,
+            "recall": 100,
+            "coarse_rank": 100,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "history_turns": 1,
+          "final_blocks": [
+            "text"
+          ],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "answer_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "passed": true,
+          "audit_wall_ms": 73945.51
+        }
+      ],
+      "server_turn_timings": [
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.484549,
+            "restore_and_routing_ms": 55.313781,
+            "recommendation_ms": 200.83022,
+            "answer_ms": 36774.77493,
+            "finalize_ms": 22.104541,
+            "total_ms": 37090.849877
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 1.609029,
+            "restore_and_routing_ms": 43.175153,
+            "recommendation_ms": 114.434315,
+            "answer_ms": 44478.206954,
+            "finalize_ms": 27.521897,
+            "total_ms": 44688.424173
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 1.585462,
+            "restore_and_routing_ms": 38.274737,
+            "recommendation_ms": 95.924371,
+            "answer_ms": 55374.572399,
+            "finalize_ms": 22.488842,
+            "total_ms": 55568.733706
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.789936,
+            "restore_and_routing_ms": 57.651786,
+            "recommendation_ms": 205.617448,
+            "answer_ms": 59140.759071,
+            "finalize_ms": 27.839229,
+            "total_ms": 59473.223644
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.995839,
+            "restore_and_routing_ms": 35.461147,
+            "recommendation_ms": 66.914562,
+            "answer_ms": 63626.269252,
+            "finalize_ms": 31.857171,
+            "total_ms": 63791.632815
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 1.114703,
+            "restore_and_routing_ms": 42.866536,
+            "recommendation_ms": 48.8274,
+            "answer_ms": 63935.865953,
+            "finalize_ms": 28.536676,
+            "total_ms": 64087.120873
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.739417,
+            "restore_and_routing_ms": 44.419764,
+            "recommendation_ms": 95.515672,
+            "answer_ms": 64805.449324,
+            "finalize_ms": 27.91911,
+            "total_ms": 65011.993029
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 4.035599,
+            "restore_and_routing_ms": 55.104884,
+            "recommendation_ms": 393.295729,
+            "answer_ms": 64608.807741,
+            "finalize_ms": 26.122678,
+            "total_ms": 65102.956128
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.551794,
+            "restore_and_routing_ms": 30.546245,
+            "recommendation_ms": 55.865282,
+            "answer_ms": 68321.614761,
+            "finalize_ms": 25.733067,
+            "total_ms": 68468.808461
+          }
+        },
+        {
+          "route": "agent",
+          "success": false,
+          "stages": {
+            "admission_ms": 2.892301,
+            "restore_and_routing_ms": 53.403393,
+            "recommendation_ms": 177.998341,
+            "total_ms": 72742.901666
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.088889,
+            "restore_and_routing_ms": 57.711894,
+            "recommendation_ms": 221.224318,
+            "answer_ms": 73100.802369,
+            "finalize_ms": 28.358988,
+            "total_ms": 73431.517787
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.618782,
+            "restore_and_routing_ms": 45.219085,
+            "recommendation_ms": 164.952061,
+            "answer_ms": 73623.401971,
+            "finalize_ms": 36.447488,
+            "total_ms": 73909.312487
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 2.770192,
+            "restore_and_routing_ms": 43.386592,
+            "recommendation_ms": 73.323079,
+            "answer_ms": 86820.181535,
+            "finalize_ms": 33.456797,
+            "total_ms": 86995.665857
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 1.867649,
+            "restore_and_routing_ms": 43.42392,
+            "recommendation_ms": 164.355474,
+            "answer_ms": 87646.731187,
+            "finalize_ms": 30.010384,
+            "total_ms": 87923.829163
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 3.522994,
+            "restore_and_routing_ms": 36.818144,
+            "recommendation_ms": 179.416741,
+            "answer_ms": 90814.782565,
+            "finalize_ms": 34.222635,
+            "total_ms": 91090.753471
+          }
+        },
+        {
+          "route": "agent",
+          "success": true,
+          "stages": {
+            "admission_ms": 1.367521,
+            "restore_and_routing_ms": 41.961639,
+            "recommendation_ms": 125.122151,
+            "answer_ms": 92251.648873,
+            "finalize_ms": 40.070952,
+            "total_ms": 92489.195336
+          }
+        }
+      ],
+      "timing_note": "服务日志/模型指标是共享时间窗口数据，可能含其他用户请求；不是逐请求精准关联"
+    }
+  ],
+  "quality_scope": "完整流程属性与工具状态，不替代语义质量评测",
+  "timing_scope": "Session 预先创建；请求计时包含网关/SSE/目录，整批吞吐包含后置历史及追踪核验",
+  "warmup": [
+    {
+      "index": 0,
+      "query_index": 0,
+      "complete_ms": 8019.34,
+      "agent_ms": 8014.07,
+      "items": 5,
+      "answer_chars": 23,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_evidence_search",
+        "load_skill",
+        "rag_support",
+        "rag_support",
+        "render_product_cards"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 6,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 1,
+      "final_blocks": [
+        "text"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 8045.97
+    },
+    {
+      "index": 1,
+      "query_index": 1,
+      "complete_ms": 10470.89,
+      "agent_ms": 10465.24,
+      "items": 5,
+      "answer_chars": 41,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "load_skill",
+        "rag_evidence_search",
+        "load_skill",
+        "rag_evidence_search"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 7,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 1,
+      "final_blocks": [
+        "text"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 10496.66
+    }
+  ],
+  "stopped_at_first_failure": 16,
+  "model_after": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml",
+    "1215570 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18092 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-batched-tokens 4096 --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "model_process_unchanged": true,
+  "agent_container_unchanged": true
+}

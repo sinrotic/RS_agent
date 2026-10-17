@@ -1,0 +1,13 @@
+server:
+  port: 8095
+spring:
+  application:
+    name: rs-service-promotion
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/rs_agent?serverTimezone=UTC
+    username: root
+    password: root

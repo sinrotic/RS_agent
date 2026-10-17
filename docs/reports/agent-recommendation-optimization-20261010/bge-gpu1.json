@@ -1,0 +1,108 @@
+{
+  "device": "GPU 1",
+  "dtype": "float16",
+  "allocator_fraction_cap": 0.11,
+  "samples": [
+    {
+      "candidates": 8,
+      "embedding_ms": 18.58406700193882,
+      "rerank_ms": 27.445894666016102,
+      "combined_ms": 46.02996166795492
+    },
+    {
+      "candidates": 8,
+      "embedding_ms": 17.95043982565403,
+      "rerank_ms": 20.68408392369747,
+      "combined_ms": 38.6345237493515
+    },
+    {
+      "candidates": 8,
+      "embedding_ms": 17.634553834795952,
+      "rerank_ms": 20.50098590552807,
+      "combined_ms": 38.13553974032402
+    },
+    {
+      "candidates": 32,
+      "embedding_ms": 17.86538865417242,
+      "rerank_ms": 58.393764309585094,
+      "combined_ms": 76.25915296375751
+    },
+    {
+      "candidates": 32,
+      "embedding_ms": 17.797023057937622,
+      "rerank_ms": 58.308267034590244,
+      "combined_ms": 76.10529009252787
+    },
+    {
+      "candidates": 32,
+      "embedding_ms": 17.850750125944614,
+      "rerank_ms": 58.253129944205284,
+      "combined_ms": 76.1038800701499
+    },
+    {
+      "candidates": 96,
+      "embedding_ms": 17.977287992835045,
+      "rerank_ms": 161.39144450426102,
+      "combined_ms": 179.36873249709606
+    },
+    {
+      "candidates": 96,
+      "embedding_ms": 18.231929279863834,
+      "rerank_ms": 161.06903739273548,
+      "combined_ms": 179.30096667259932
+    },
+    {
+      "candidates": 96,
+      "embedding_ms": 18.229804933071136,
+      "rerank_ms": 161.08650621026754,
+      "combined_ms": 179.31631114333868
+    }
+  ],
+  "concurrent_8_ms": [
+    311.261179856956,
+    471.3298296555877,
+    632.5924433767796,
+    791.5132828056812,
+    950.8070182055235,
+    1110.4018837213516,
+    1270.3253384679556,
+    1430.6129263713956
+  ],
+  "bulk_batch_samples": [
+    {
+      "batch_size": 8,
+      "pairs": 768,
+      "scores": 768,
+      "combined_rerank_ms": 1230.4341653361917
+    },
+    {
+      "batch_size": 32,
+      "pairs": 768,
+      "scores": 768,
+      "combined_rerank_ms": 415.22492934018373
+    },
+    {
+      "batch_size": 64,
+      "pairs": 768,
+      "scores": 768,
+      "combined_rerank_ms": 274.9724220484495
+    }
+  ],
+  "long_text_samples": [
+    {
+      "text_chars": 400,
+      "candidates": 96,
+      "rerank_ms": 178.03614679723978
+    },
+    {
+      "text_chars": 1200,
+      "candidates": 96,
+      "rerank_ms": 248.691963031888
+    }
+  ],
+  "embedding_cosine_to_cpu_fp32": 0.999999463558197,
+  "max_score_difference_to_cpu_fp32": 0.00013613887131214142,
+  "peak_allocated_mib": 2311.78466796875,
+  "peak_reserved_mib": 2366.0,
+  "scope": "真实权重与现有推理锁，合成短商品文本；不含业务服务、数据库、网络和浏览器；小样本不是质量门禁"
+}

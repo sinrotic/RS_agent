@@ -12,6 +12,18 @@ class PublicAgentStreamProjectorTest {
     private final PublicAgentStreamProjector projector = new PublicAgentStreamProjector();
 
     @Test
+    void preservesPublicDegradationWithoutInternalDiagnostics() {
+        var event = projector.project(new AgentStreamEventVO("done", "req", Map.of("response", Map.of(
+                "request_id", "req", "degradation_reasons", java.util.List.of("model_rank_unavailable", "raw_path"),
+                "tool_calls", java.util.List.of("secret"))))).orElseThrow();
+        var response = (Map<?, ?>) event.data().get("response");
+        assertThat(response.containsKey("degradation_reasons")).isTrue();
+        assertThat(response.containsKey("tool_calls")).isFalse();
+        assertThat(((Map<?, ?>) event.data().get("response")).get("degradation_reasons"))
+                .isEqualTo(java.util.List.of("model_rank_unavailable"));
+    }
+
+    @Test
     void dropsInternalToolAndModelEvents() {
         assertThat(projector.project(new AgentStreamEventVO("tool_result", "req", Map.of(
                 "metadata", Map.of("ranking_evidence", "secret")

@@ -1,0 +1,146 @@
+{
+  "historical_full_pipeline_scope": "BF16 原模型历史小样本；热状态、随机输出和恢复后的真实 RAG 工作量可能不同，非稳定 SLA",
+  "historical_full_pipeline_pairs": [
+    {
+      "label": "llm-0",
+      "query": "推荐鼠标",
+      "before_failed": true,
+      "after_failed": false,
+      "before_complete_ms": null,
+      "after_complete_ms": 6349.89,
+      "duration_change_percent": null,
+      "before_llm_calls": 2,
+      "after_llm_calls": 1,
+      "before_model_first_delta_ms": 1304.4161796569824,
+      "after_model_first_delta_ms": 784.9640846252441
+    },
+    {
+      "label": "llm-1",
+      "query": "推荐鼠标",
+      "before_failed": false,
+      "after_failed": false,
+      "before_complete_ms": 14386.19,
+      "after_complete_ms": 3087.21,
+      "duration_change_percent": -78.54,
+      "before_llm_calls": 5,
+      "after_llm_calls": 1,
+      "before_model_first_delta_ms": 357.56969451904297,
+      "after_model_first_delta_ms": 465.9879207611084
+    },
+    {
+      "label": "llm-2",
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "before_failed": false,
+      "after_failed": false,
+      "before_complete_ms": 10962.47,
+      "after_complete_ms": 10372.14,
+      "duration_change_percent": -5.39,
+      "before_llm_calls": 4,
+      "after_llm_calls": 4,
+      "before_model_first_delta_ms": 546.3078022003174,
+      "after_model_first_delta_ms": 1421.5986728668213
+    },
+    {
+      "label": "llm-3",
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "before_failed": true,
+      "after_failed": false,
+      "before_complete_ms": null,
+      "after_complete_ms": 12276.91,
+      "duration_change_percent": null,
+      "before_llm_calls": 4,
+      "after_llm_calls": 5,
+      "before_model_first_delta_ms": 560.0614547729492,
+      "after_model_first_delta_ms": 632.4596405029297
+    },
+    {
+      "label": "multi-0",
+      "query": "请帮我推荐鼠标",
+      "before_failed": false,
+      "after_failed": false,
+      "before_complete_ms": 9878.66,
+      "after_complete_ms": 2723.14,
+      "duration_change_percent": -72.43,
+      "before_llm_calls": 4,
+      "after_llm_calls": 1,
+      "before_model_first_delta_ms": 615.8308982849121,
+      "after_model_first_delta_ms": 395.11847496032715
+    },
+    {
+      "label": "multi-1",
+      "query": "换一批鼠标，适合办公使用",
+      "before_failed": false,
+      "after_failed": false,
+      "before_complete_ms": 7131.43,
+      "after_complete_ms": 18091.63,
+      "duration_change_percent": 153.69,
+      "before_llm_calls": 3,
+      "after_llm_calls": 8,
+      "before_model_first_delta_ms": 578.8938999176025,
+      "after_model_first_delta_ms": 587.9008769989014
+    },
+    {
+      "label": "multi-2",
+      "query": "再推荐五款鼠标，说明理由",
+      "before_failed": false,
+      "after_failed": false,
+      "before_complete_ms": 6355.89,
+      "after_complete_ms": 19626.19,
+      "duration_change_percent": 208.79,
+      "before_llm_calls": 3,
+      "after_llm_calls": 8,
+      "before_model_first_delta_ms": 571.2945461273193,
+      "after_model_first_delta_ms": 644.1974639892578
+    }
+  ],
+  "historical_success_count": {
+    "before": 5,
+    "after": 7,
+    "total": 7
+  },
+  "model_delta_definition": "从单次模型 HTTP 调用开始到首次 content/tool_calls/reasoning_content 非空；不是网关请求到首字",
+  "last_concurrency_optimization_scope": "INT4 同模型、同普通推荐输入、16 路独立 Session；中位耗时只统计成功请求",
+  "last_concurrency_optimization": {
+    "before": {
+      "concurrent_requests": 16,
+      "passed": 8,
+      "failed": 8,
+      "median_ms": 7590.28,
+      "maximum_ms": 7820.98,
+      "completed_requests_per_second": 1.02
+    },
+    "after": {
+      "concurrent_requests": 16,
+      "passed": 16,
+      "failed": 0,
+      "median_ms": 9717.78,
+      "maximum_ms": 10587.77,
+      "completed_requests_per_second": 1.508
+    },
+    "completion_throughput_change_percent": 47.84,
+    "successful_duration_change_percent": 28.03
+  },
+  "frontend_streaming_behavior": "当前 agentClient.ts 只在 answer_block 调用展示回调，不逐 token 显示正文",
+  "current_first_public_token_ms": null,
+  "current_first_visible_block_ms": 2601.685,
+  "current_measurement_status": "当前采集器核验通过；两条普通与一条办公静音完整通过，键盘 BGE 降级不计合格样本",
+  "complex_concurrency_before_after_available": false,
+  "limitations": [
+    "模型首次非空增量可能是工具参数或推理内容，不能当作用户可见正文",
+    "并发优化改善完整完成率与吞吐，没有证明单请求或首字更快",
+    "复杂并发没有同条件旧新版对照，不能宣称其加速幅度",
+    "失败耗时不与成功耗时计算降幅；不混合 BF16/INT4/快速推荐的指标"
+  ],
+  "current_first_visible_scope": "普通鼠标单轮，服务器本机调用真实网关；不含用户公网链路和浏览器渲染",
+  "current_ordinary_samples": 2,
+  "current_ordinary_complete_mean_ms": 2663.36,
+  "current_measurement_checked_at_utc": "2026-10-11T14:03:07.503199+00:00",
+  "current_public_token_event_count": 0,
+  "current_model_ttft_mean_ms": 313.073,
+  "current_model_ttft_samples_ms": [
+    419.059,
+    207.087
+  ],
+  "current_model_ttft_scope": "真实普通单轮推荐；每个共享指标窗口仅新增一条模型 TTFT，未按 request_id 关联；非高并发 SLA",
+  "current_model_ttft_checked_at_utc": "2026-10-11T14:11:33.248954+00:00"
+}

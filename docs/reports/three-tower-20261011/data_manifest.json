@@ -1,0 +1,31 @@
+{
+  "scope": "SMOKE_ONLY",
+  "source_data": "python_agent\\data\\processed\\amazon_2023_sciomc_twotower_recent2y\\smoke",
+  "item_count": 4820,
+  "rec_train": 2880,
+  "rec_valid": 1000,
+  "rec_train_with_explicit_negatives": 538,
+  "semantic_source_items": 100,
+  "label_counts": {
+    "(5.0, 1)": 3856,
+    "(4.0, 1)": 685,
+    "(3.0, 1)": 339,
+    "(1.0, 0)": 220,
+    "(2.0, 0)": 155
+  },
+  "rating_policy": "rating >= 3 per original clean_full stats.json config.positive_rating_threshold",
+  "rec_eval": "last positive within existing train-only smoke per user; not official validation",
+  "semantic_eval": "synthetic source-item recovery on held-out exact-title groups; NOT relevance gold",
+  "limitations": [
+    "existing smoke users selected by file order",
+    "small candidate universe",
+    "no human judgments",
+    "exact-title grouping only; near-duplicate families not yet audited"
+  ],
+  "source_hashes": {
+    "canonical_items.jsonl": "316dd91c99111e85687087aec2f6092e32f0ee0dc5c7e69c706142eeea3dec7c",
+    "canonical_interactions.train.jsonl": "6361626b7665cfb6be81219201aeaedaa676cdd648e1ed6a3962096aeb20349b"
+  },
+  "semantic_generated_source_items": 20,
+  "semantic_agent_reviewed_queries": 26
+}

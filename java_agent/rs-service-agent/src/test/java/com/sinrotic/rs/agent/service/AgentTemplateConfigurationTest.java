@@ -30,7 +30,8 @@ class AgentTemplateConfigurationTest {
                             AgentPublicOutputBlock.TEXT,
                             AgentPublicOutputBlock.PRODUCT_CARDS,
                             AgentPublicOutputBlock.COMPARISON_TABLE,
-                            AgentPublicOutputBlock.FOLLOWUP_QUESTION
+                            AgentPublicOutputBlock.FOLLOWUP_QUESTION,
+                            AgentPublicOutputBlock.A2UI
                     );
             assertThat(service.defaultProfile().maxLoops()).isEqualTo(8);
             assertThat(service.defaultProfile().failurePolicy()).isEqualTo(AgentProfileFailurePolicy.FAIL_TURN);

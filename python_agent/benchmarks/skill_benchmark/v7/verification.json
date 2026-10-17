@@ -1,0 +1,58 @@
+{
+  "schema_version": "rs-quality-engineering-verification/1",
+  "benchmark_sha256": "38e3120ef2dee757cc8f53b4f785f8d5cb4679cad3d911e9c9ef52b0b6458feb",
+  "frozen_v6_sha256": "a47262fc783c70fe09aede121313501c4ba86b3bdc9bacdbb0adefd6fdbb1d7a",
+  "quality_scorer_sha256": "9e5c17c4eac981d9b8f2559194f6ca192052ec5bc83c43f8aadfc6630109fe6b",
+  "python_regression": {
+    "passed": 162,
+    "failed": 0,
+    "skipped": 0,
+    "elapsed_seconds": 120.16,
+    "suites": [
+      "test_skill_quality_evolution.py",
+      "test_online_evaluation.py",
+      "test_natural_profile_skill_benchmark.py",
+      "test_profile_contrast_skill_benchmark.py",
+      "test_customer_skill_benchmark.py",
+      "test_skill_benchmark.py",
+      "test_personalized_skill_benchmark.py",
+      "test_skill_benchmark_population.py",
+      "test_skill_benchmark_readiness.py"
+    ],
+    "java_fixture_executable": "C:/Users/luo/.jdks/corretto-21.0.5/bin/java.exe",
+    "java_source_recompiled_in_this_work": false
+  },
+  "ruff": "passed",
+  "controlled_evolution_test": {
+    "independent_training_clusters": 21,
+    "development_repeats": 3,
+    "candidate_proposals": 2,
+    "accepted_candidates": 1,
+    "regressive_candidates_rejected": 1,
+    "final_holdout_runs": 2,
+    "reused_holdout_blocked_before_model_calls": true,
+    "grading_and_human_labels": "test_fixtures_not_actual_quality_evidence"
+  },
+  "actual_dataset_review": {
+    "review_pack_tasks": 60,
+    "review_pack_turns": 82,
+    "completed_reviews": 0,
+    "test_gold_exported_in_review_pack": false,
+    "real_use_facts_imported": 0,
+    "human_labels_complete": false,
+    "human_calibration_complete": false
+  },
+  "formal_evolution": {
+    "status": "blocked",
+    "preflight_report": "preflight-current/result.json",
+    "blockers": [
+      "independent_human_labels_pending",
+      "structural_calibration_pending",
+      "quality_calibration_pending",
+      "optimizer_not_configured"
+    ],
+    "real_model_iteration_executed": false,
+    "live_capture_enabled_by_this_work": false,
+    "auto_deploy": false
+  }
+}

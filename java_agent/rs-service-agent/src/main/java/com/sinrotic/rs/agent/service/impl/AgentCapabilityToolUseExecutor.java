@@ -36,6 +36,14 @@ public final class AgentCapabilityToolUseExecutor implements AgentToolUseExecuto
 
     @Override
     public CompletableFuture<Map<String, Object>> execute(AgentModelStreamEvent event) {
+        boolean registered = runtimeConfigurationService.tools().stream().anyMatch(tool -> tool.name().equals(event.toolName()));
+        boolean authorized = AgentCapabilityToolMapping.capabilityForTool(event.toolName())
+                .map(runtimeConfigurationService.defaultProfile().allowedCapabilities()::contains).orElse(true);
+        if (registered && authorized && runtimeConfigurationService.toolsForProfile(runtimeConfigurationService.defaultProfile()).stream()
+                .noneMatch(tool -> tool.name().equals(event.toolName()))) {
+            return CompletableFuture.completedFuture(Map.of("status", "FAILED", "error_code", "TOOL_UNAVAILABLE",
+                    "error_message", "Tool is disabled, unauthorized, or its dependency is not ready"));
+        }
         return AgentCapabilityToolMapping.capabilityForTool(event.toolName())
                 .map(capabilityId -> executeCapability(event, capabilityId))
                 .orElseGet(() -> executeInternalTool(event));
@@ -45,6 +53,18 @@ public final class AgentCapabilityToolUseExecutor implements AgentToolUseExecuto
             AgentModelStreamEvent event,
             String capabilityId
     ) {
+        // 正式装配使用既有虚拟线程执行器，不能在提交工具的模型流线程上等待 HTTP。
+        // 自定义执行器继续遵守其原有执行约定。
+        if (delegate instanceof VirtualThreadAgentToolUseExecutor virtualThreads) {
+            if ("recommend".equals(capabilityId)) {
+                return virtualThreads.executeRecommendation(event, ignored -> executeCapabilityNow(event, capabilityId));
+            }
+            return virtualThreads.execute(event, ignored -> executeCapabilityNow(event, capabilityId));
+        }
+        return CompletableFuture.completedFuture(executeCapabilityNow(event, capabilityId));
+    }
+
+    private Map<String, Object> executeCapabilityNow(AgentModelStreamEvent event, String capabilityId) {
         AgentRuntimeProfile profile = runtimeConfigurationService.defaultProfile();
         AgentCapabilityResult result = capabilityRegistry.execute(profile, new AgentCapabilityRequest(
                 requestId(event),
@@ -52,7 +72,7 @@ public final class AgentCapabilityToolUseExecutor implements AgentToolUseExecuto
                 capabilityId,
                 event.arguments()
         ));
-        return CompletableFuture.completedFuture(toToolResult(result));
+        return toToolResult(result);
     }
 
     private CompletableFuture<Map<String, Object>> executeInternalTool(AgentModelStreamEvent event) {

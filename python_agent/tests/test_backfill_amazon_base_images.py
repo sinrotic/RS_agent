@@ -7,6 +7,8 @@ import pytest
 
 from scripts.data import backfill_amazon_base_images as backfill
 
+pytestmark = pytest.mark.unit
+
 
 def write_jsonl(path: Path, records: list[dict[str, object]]) -> None:
     path.write_text("".join(json.dumps(record, ensure_ascii=False) + "\n" for record in records), encoding="utf-8")

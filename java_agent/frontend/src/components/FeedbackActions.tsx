@@ -33,7 +33,7 @@ export function FeedbackActions({ actions, onAction, disabled, size = 'md', alig
           type="button"
           onClick={() => onAction(action)}
           disabled={disabled}
-          className={`flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 font-medium text-indigo-300 shadow-sm transition-all hover:bg-indigo-500/20 hover:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-40 cursor-pointer ${compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'}`}
+          className={`flex items-center gap-2 rounded-full border border-indigo-500/20 bg-indigo-500/10 font-medium text-indigo-300 shadow-xs transition-all hover:bg-indigo-500/20 hover:text-white focus:outline-hidden focus:ring-2 focus:ring-indigo-500 disabled:opacity-40 cursor-pointer ${compact ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm'}`}
         >
           {actionIcon(action.type, compact ? 12 : 14)}
           {action.label}

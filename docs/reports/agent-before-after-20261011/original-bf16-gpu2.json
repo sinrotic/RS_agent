@@ -1,0 +1,465 @@
+{
+  "checked_at_utc": "2026-10-11T14:48:21.035923+00:00",
+  "phase": "latency",
+  "version": "original",
+  "model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "target_model_before": [
+    "1901139 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B --host 127.0.0.1 --port 18096 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.78 --max-num-seqs 256 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":false} --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "cases": [
+    {
+      "query": "推荐鼠标",
+      "passed": false,
+      "agent_done_ms": 31058.14,
+      "sse_event_counts": {
+        "started": 1
+      },
+      "error_code": null,
+      "first_model_call_ttft_ms": 7208.847,
+      "first_observed_model_count": 1.0,
+      "label": "warmup",
+      "concurrent_requests": 1,
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 507.0,
+          "vllm:prefix_cache_hits_total": 0.0,
+          "vllm:request_prompt_tokens_count": 13.0,
+          "vllm:request_prompt_tokens_sum": 507.0,
+          "vllm:time_to_first_token_seconds_count": 13.0,
+          "vllm:time_to_first_token_seconds_sum": 2.795081615447998,
+          "vllm:request_queue_time_seconds_count": 13.0,
+          "vllm:request_queue_time_seconds_sum": 0.00021242722868919373,
+          "vllm:request_prefill_time_seconds_count": 13.0,
+          "vllm:request_prefill_time_seconds_sum": 2.732102527283132
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 35547.0,
+          "vllm:prefix_cache_hits_total": 13200.0,
+          "vllm:request_prompt_tokens_count": 16.0,
+          "vllm:request_prompt_tokens_sum": 29511.0,
+          "vllm:time_to_first_token_seconds_count": 17.0,
+          "vllm:time_to_first_token_seconds_sum": 11.190775394439697,
+          "vllm:request_queue_time_seconds_count": 16.0,
+          "vllm:request_queue_time_seconds_sum": 4.327167079783976,
+          "vllm:request_prefill_time_seconds_count": 16.0,
+          "vllm:request_prefill_time_seconds_sum": 4.963392052799463
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 35040.0,
+          "vllm:prefix_cache_hits_total": 13200.0,
+          "vllm:request_prompt_tokens_count": 3.0,
+          "vllm:request_prompt_tokens_sum": 29004.0,
+          "vllm:time_to_first_token_seconds_count": 4.0,
+          "vllm:time_to_first_token_seconds_sum": 8.3956937789917,
+          "vllm:request_queue_time_seconds_count": 3.0,
+          "vllm:request_queue_time_seconds_sum": 4.326954652555287,
+          "vllm:request_prefill_time_seconds_count": 3.0,
+          "vllm:request_prefill_time_seconds_sum": 2.231289525516331
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 4.0,
+        "internally_consistent": false
+      }
+    },
+    {
+      "query": "推荐鼠标",
+      "passed": false,
+      "first_text_block_ms": 8651.21,
+      "done_event_ms": 8726.79,
+      "agent_done_ms": 8728.84,
+      "sse_event_counts": {
+        "started": 1,
+        "answer_block": 1,
+        "done": 1
+      },
+      "error_code": null,
+      "complete_ms": 8734.3,
+      "items": 5,
+      "answer_chars": 38,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "call_agent",
+        "call_agent"
+      ],
+      "failed_tools": 2,
+      "stage_counts": {
+        "coarse_rank": 100,
+        "recall": 100,
+        "cold_scored": 100,
+        "fine_rank": 96,
+        "bge_reranked": 96,
+        "final": 5,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "failed_tool_codes": [
+        {
+          "tool_name": "call_agent",
+          "error_code": null
+        },
+        {
+          "tool_name": "call_agent",
+          "error_code": null
+        }
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "text_and_history": true,
+        "tools_without_failure": false,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "first_model_call_ttft_ms": 499.789,
+      "first_observed_model_count": 1.0,
+      "label": "ordinary-0",
+      "concurrent_requests": 1,
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 35547.0,
+          "vllm:prefix_cache_hits_total": 13200.0,
+          "vllm:request_prompt_tokens_count": 16.0,
+          "vllm:request_prompt_tokens_sum": 29511.0,
+          "vllm:time_to_first_token_seconds_count": 17.0,
+          "vllm:time_to_first_token_seconds_sum": 11.190775394439697,
+          "vllm:request_queue_time_seconds_count": 16.0,
+          "vllm:request_queue_time_seconds_sum": 4.327167079783976,
+          "vllm:request_prefill_time_seconds_count": 16.0,
+          "vllm:request_prefill_time_seconds_sum": 4.963392052799463
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 70524.0,
+          "vllm:prefix_cache_hits_total": 37488.0,
+          "vllm:request_prompt_tokens_count": 20.0,
+          "vllm:request_prompt_tokens_sum": 64488.0,
+          "vllm:time_to_first_token_seconds_count": 21.0,
+          "vllm:time_to_first_token_seconds_sum": 12.654886245727539,
+          "vllm:request_queue_time_seconds_count": 20.0,
+          "vllm:request_queue_time_seconds_sum": 4.642428437247872,
+          "vllm:request_prefill_time_seconds_count": 20.0,
+          "vllm:request_prefill_time_seconds_sum": 5.8509639063850045
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 34977.0,
+          "vllm:prefix_cache_hits_total": 24288.0,
+          "vllm:request_prompt_tokens_count": 4.0,
+          "vllm:request_prompt_tokens_sum": 34977.0,
+          "vllm:time_to_first_token_seconds_count": 4.0,
+          "vllm:time_to_first_token_seconds_sum": 1.4641108512878418,
+          "vllm:request_queue_time_seconds_count": 4.0,
+          "vllm:request_queue_time_seconds_sum": 0.3152613574638963,
+          "vllm:request_prefill_time_seconds_count": 4.0,
+          "vllm:request_prefill_time_seconds_sum": 0.8875718535855412
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 4.0,
+        "internally_consistent": true,
+        "input_tokens": 34977,
+        "cached_tokens": 24288,
+        "cache_hit_percent": 69.44,
+        "mean_model_ttft_ms": 366.028,
+        "mean_model_queue_ms": 78.815,
+        "mean_model_prefill_ms": 221.893
+      }
+    },
+    {
+      "query": "推荐鼠标",
+      "passed": false,
+      "first_text_block_ms": 7890.98,
+      "done_event_ms": 7914.03,
+      "agent_done_ms": 7915.62,
+      "sse_event_counts": {
+        "started": 1,
+        "answer_block": 1,
+        "done": 1
+      },
+      "error_code": null,
+      "complete_ms": 7919.98,
+      "items": 5,
+      "answer_chars": 18,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "call_agent",
+        "call_agent"
+      ],
+      "failed_tools": 2,
+      "stage_counts": {
+        "coarse_rank": 100,
+        "recall": 100,
+        "cold_scored": 100,
+        "fine_rank": 96,
+        "bge_reranked": 96,
+        "final": 5,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "failed_tool_codes": [
+        {
+          "tool_name": "call_agent",
+          "error_code": null
+        },
+        {
+          "tool_name": "call_agent",
+          "error_code": null
+        }
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "text_and_history": true,
+        "tools_without_failure": false,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "first_model_call_ttft_ms": 492.459,
+      "first_observed_model_count": 1.0,
+      "label": "ordinary-1",
+      "concurrent_requests": 1,
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 70524.0,
+          "vllm:prefix_cache_hits_total": 37488.0,
+          "vllm:request_prompt_tokens_count": 20.0,
+          "vllm:request_prompt_tokens_sum": 64488.0,
+          "vllm:time_to_first_token_seconds_count": 21.0,
+          "vllm:time_to_first_token_seconds_sum": 12.654886245727539,
+          "vllm:request_queue_time_seconds_count": 20.0,
+          "vllm:request_queue_time_seconds_sum": 4.642428437247872,
+          "vllm:request_prefill_time_seconds_count": 20.0,
+          "vllm:request_prefill_time_seconds_sum": 5.8509639063850045
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 105411.0,
+          "vllm:prefix_cache_hits_total": 62832.0,
+          "vllm:request_prompt_tokens_count": 24.0,
+          "vllm:request_prompt_tokens_sum": 99375.0,
+          "vllm:time_to_first_token_seconds_count": 25.0,
+          "vllm:time_to_first_token_seconds_sum": 14.012503147125244,
+          "vllm:request_queue_time_seconds_count": 24.0,
+          "vllm:request_queue_time_seconds_sum": 4.962910381145775,
+          "vllm:request_prefill_time_seconds_count": 24.0,
+          "vllm:request_prefill_time_seconds_sum": 6.616421341896057
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 34887.0,
+          "vllm:prefix_cache_hits_total": 25344.0,
+          "vllm:request_prompt_tokens_count": 4.0,
+          "vllm:request_prompt_tokens_sum": 34887.0,
+          "vllm:time_to_first_token_seconds_count": 4.0,
+          "vllm:time_to_first_token_seconds_sum": 1.357616901397705,
+          "vllm:request_queue_time_seconds_count": 4.0,
+          "vllm:request_queue_time_seconds_sum": 0.32048194389790297,
+          "vllm:request_prefill_time_seconds_count": 4.0,
+          "vllm:request_prefill_time_seconds_sum": 0.7654574355110526
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 4.0,
+        "internally_consistent": true,
+        "input_tokens": 34887,
+        "cached_tokens": 25344,
+        "cache_hit_percent": 72.65,
+        "mean_model_ttft_ms": 339.404,
+        "mean_model_queue_ms": 80.12,
+        "mean_model_prefill_ms": 191.364
+      }
+    },
+    {
+      "query": "推荐鼠标",
+      "passed": false,
+      "first_text_block_ms": 12147.37,
+      "done_event_ms": 12168.99,
+      "agent_done_ms": 12170.59,
+      "sse_event_counts": {
+        "started": 1,
+        "answer_block": 1,
+        "done": 1
+      },
+      "error_code": null,
+      "complete_ms": 12174.92,
+      "items": 5,
+      "answer_chars": 34,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "call_agent",
+        "call_agent"
+      ],
+      "failed_tools": 2,
+      "stage_counts": {
+        "coarse_rank": 100,
+        "recall": 100,
+        "cold_scored": 100,
+        "fine_rank": 96,
+        "bge_reranked": 96,
+        "final": 5,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "failed_tool_codes": [
+        {
+          "tool_name": "call_agent",
+          "error_code": null
+        },
+        {
+          "tool_name": "call_agent",
+          "error_code": null
+        }
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "text_and_history": true,
+        "tools_without_failure": false,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "first_model_call_ttft_ms": 472.063,
+      "first_observed_model_count": 1.0,
+      "label": "ordinary-2",
+      "concurrent_requests": 1,
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 105411.0,
+          "vllm:prefix_cache_hits_total": 62832.0,
+          "vllm:request_prompt_tokens_count": 24.0,
+          "vllm:request_prompt_tokens_sum": 99375.0,
+          "vllm:time_to_first_token_seconds_count": 25.0,
+          "vllm:time_to_first_token_seconds_sum": 14.012503147125244,
+          "vllm:request_queue_time_seconds_count": 24.0,
+          "vllm:request_queue_time_seconds_sum": 4.962910381145775,
+          "vllm:request_prefill_time_seconds_count": 24.0,
+          "vllm:request_prefill_time_seconds_sum": 6.616421341896057
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 140392.0,
+          "vllm:prefix_cache_hits_total": 88176.0,
+          "vllm:request_prompt_tokens_count": 28.0,
+          "vllm:request_prompt_tokens_sum": 134356.0,
+          "vllm:time_to_first_token_seconds_count": 29.0,
+          "vllm:time_to_first_token_seconds_sum": 15.339209079742432,
+          "vllm:request_queue_time_seconds_count": 28.0,
+          "vllm:request_queue_time_seconds_sum": 5.2696506306529045,
+          "vllm:request_prefill_time_seconds_count": 28.0,
+          "vllm:request_prefill_time_seconds_sum": 7.383060798980296
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 34981.0,
+          "vllm:prefix_cache_hits_total": 25344.0,
+          "vllm:request_prompt_tokens_count": 4.0,
+          "vllm:request_prompt_tokens_sum": 34981.0,
+          "vllm:time_to_first_token_seconds_count": 4.0,
+          "vllm:time_to_first_token_seconds_sum": 1.3267059326171875,
+          "vllm:request_queue_time_seconds_count": 4.0,
+          "vllm:request_queue_time_seconds_sum": 0.3067402495071292,
+          "vllm:request_prefill_time_seconds_count": 4.0,
+          "vllm:request_prefill_time_seconds_sum": 0.7666394570842385
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 4.0,
+        "internally_consistent": true,
+        "input_tokens": 34981,
+        "cached_tokens": 25344,
+        "cache_hit_percent": 72.45,
+        "mean_model_ttft_ms": 331.676,
+        "mean_model_queue_ms": 76.685,
+        "mean_model_prefill_ms": 191.66
+      }
+    }
+  ],
+  "stages": [],
+  "scope": "独立 Agent、真实当前 GPU1 模型和共享下游；独立 Session，非线上网关或浏览器耗时；非最大持续容量",
+  "model_comparison_scope": "模型量化、缓存预算、权重和参数固定，仅比较 Agent 版本及对应编排配置",
+  "quality_scope": "完整商品、正文、持久历史、DeepFM/BGE 与工具无失败；不替代解释语义人工回归",
+  "configuration": {
+    "version": "original",
+    "jar_sha256": "122d3f3f470e5d63b2077ace215ee339cbfaf847c550334fb5396b88e68d1417",
+    "model_port": 18096,
+    "flags": {
+      "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "false",
+      "RS_AGENT_LLM_SYNTHESIS_ENABLED": "false",
+      "RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED": "false",
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "8",
+      "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS": "200",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "8",
+      "RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS": "15000",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2"
+    }
+  },
+  "completed": true,
+  "model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "target_model_after": [
+    "1901139 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B --host 127.0.0.1 --port 18096 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.78 --max-num-seqs 256 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":false} --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "target_model_process_unchanged": true,
+  "model_process_unchanged": true,
+  "dependencies_stable": true,
+  "clone_cleaned": true
+}

@@ -1,0 +1,27 @@
+{
+  "mode": "gdn_bf16",
+  "label": "gdn_bf16",
+  "model_path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-attn-MLP-BF16-GDN-20261011",
+  "gpu": 2,
+  "gpu_memory_utilization": 0.5,
+  "max_num_seqs": 128,
+  "model_passed": true,
+  "business_completed": true,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T08:56:29.933909+00:00",
+    "elapsed_seconds": 6.542
+  },
+  "gpu_memory_mib": 11311
+}

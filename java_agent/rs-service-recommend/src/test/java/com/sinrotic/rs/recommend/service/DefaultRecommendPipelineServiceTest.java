@@ -33,7 +33,7 @@ class DefaultRecommendPipelineServiceTest {
     }
 
     @Test
-    void recallKeepsExistingMockBehaviorWhenTwoTowerIsNotRequested() {
+    void recallDoesNotFabricateCandidatesWhenRequestedSourceIsUnavailable() {
         CapturingTwoTowerRecallProvider provider = new CapturingTwoTowerRecallProvider(List.of(
                 new PipelineCandidateVO("B100", "two_tower", 0.88, null, null, null)
         ));
@@ -47,8 +47,9 @@ class DefaultRecommendPipelineServiceTest {
         ).withDefaults());
 
         assertEquals(null, provider.userId);
-        assertEquals("B001", response.candidates().getFirst().itemId());
-        assertEquals("popular", response.candidates().getFirst().source());
+        assertEquals(List.of(), response.candidates());
+        assertEquals(0, response.sourceDistribution().get("popular"));
+        assertEquals(0, response.candidateCount());
     }
 
     private static final class CapturingTwoTowerRecallProvider implements TwoTowerRecallProvider {

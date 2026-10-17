@@ -1,0 +1,29 @@
+{
+  "variant": "int4_autoround",
+  "repeat": 1,
+  "configuration": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "0",
+    "VLLM_CACHE_ROOT": "/tmp/rs-agent-quantization-retry-20261011/cache/int4_autoround"
+  },
+  "passed": true,
+  "gpu_memory_mib": 18521,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T03:46:12.463755+00:00",
+    "elapsed_seconds": 6.546
+  }
+}

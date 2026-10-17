@@ -1,0 +1,58 @@
+{
+  "health": 200,
+  "model_root": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+  "served_model": "qwen35-4b",
+  "precision": "MLP INT4 / attention and GDN BF16",
+  "int4_modules": 96,
+  "model_loading_gib": 5.52,
+  "gpu": 1,
+  "gpu_memory_utilization": 0.4,
+  "max_num_seqs": 64,
+  "max_model_len": 16384,
+  "api_pid": 625633,
+  "launcher_pid": 625625,
+  "gpu_memory": {
+    "used_mib": 11841,
+    "free_mib": 12241,
+    "processes": [
+      {
+        "pid": 3417056,
+        "memory_mib": 3078
+      },
+      {
+        "pid": 627341,
+        "memory_mib": 8734
+      }
+    ]
+  },
+  "structured_probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T09:16:55.136761+00:00",
+    "elapsed_seconds": 5.05
+  },
+  "startup_scripts_unchanged": true,
+  "runtime_env_sha256": "7031bff4741223eaf71f5c3c8c0868c4ea79b1587e88779a72b2d98cb5f3e3b1",
+  "shared_agent_running": true,
+  "shared_agent_model_url": "http://127.0.0.1:18082/v1",
+  "bge_pid_unchanged": 3417056,
+  "own_validation_cleaned": true,
+  "kernel_evidence": [
+    "(EngineCore pid=627341) INFO 10-11 17:15:46 [auto_gptq.py:355] Using MarlinLinearKernel for AutoGPTQLinearMethod"
+  ],
+  "cache_capacity_evidence": [
+    "(EngineCore pid=627341) INFO 10-11 17:16:03 [gpu_worker.py:508] Available KV cache memory: 1.83 GiB",
+    "(EngineCore pid=627341) INFO 10-11 17:16:03 [kv_cache_utils.py:2146] GPU KV cache size: 48,720 tokens",
+    "(EngineCore pid=627341) INFO 10-11 17:16:03 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 2.97x"
+  ]
+}

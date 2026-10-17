@@ -1,0 +1,61 @@
+{
+  "checked_at_utc": "2026-10-11T11:08:55.249247+00:00",
+  "read_only": true,
+  "health": 200,
+  "api_pid": 806733,
+  "model_path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+  "gpu": 1,
+  "precision": "MLP INT4 / attention and GDN BF16",
+  "max_model_len": 16384,
+  "max_num_seqs": 128,
+  "gpu_memory_utilization": 0.5,
+  "selected_env": {
+    "CUDA_VISIBLE_DEVICES": "1",
+    "VLLM_MAX_NUM_BATCHED_TOKENS": null,
+    "VLLM_MAX_NUM_SEQS": "128",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.50",
+    "VLLM_CACHE_ROOT": "/home/luo/RS_agent_java/model_deploy/quantization-cache/20261011-mlp-int4-bf16-memory50",
+    "VLLM_SPECULATIVE_CONFIG": null,
+    "VLLM_PREFIX_KEEPALIVE": "true",
+    "VLLM_WARMUP_ONLY_WHEN_IDLE": "true",
+    "VLLM_USE_FLASHINFER_SAMPLER": "0"
+  },
+  "resolved_startup": {
+    "version": "0.24.0",
+    "chunked_prefill": "True",
+    "prefix_caching": "True",
+    "kv_cache_dtype": "auto",
+    "speculative_config": "None",
+    "enforce_eager": "False",
+    "compilation_mode": "VLLM_COMPILE",
+    "cudagraph_mode": "FULL_AND_PIECEWISE",
+    "compile_ranges_endpoints": "[2048]",
+    "max_cudagraph_capture_size": "256",
+    "ordinary_attention_backend": "FLASH_ATTN",
+    "quantized_linear_kernel": "MarlinLinearKernel",
+    "mamba_cache_mode": "align",
+    "max_num_batched_tokens_from_log": null,
+    "async_scheduling_from_log": null,
+    "async_scheduling_note": "Startup log does not expose this field; do not count its default as a newly enabled optimization.",
+    "server_info_unavailable": "HTTPError"
+  },
+  "mtp_num_hidden_layers": 1,
+  "mtp_tensor_count": 15,
+  "mtp_tensor_first_keys": [
+    "mtp.fc.weight",
+    "mtp.layers.0.input_layernorm.weight",
+    "mtp.layers.0.mlp.down_proj.weight"
+  ],
+  "metrics_snapshot": {
+    "vllm:num_requests_running": 0.0,
+    "vllm:num_requests_waiting": 0.0,
+    "vllm:kv_cache_usage_perc": 0.0,
+    "vllm:prefix_cache_queries_total": 2106181.0,
+    "vllm:prefix_cache_hits_total": 1411344.0,
+    "vllm:num_preemptions_total": 0.0,
+    "vllm:request_queue_time_seconds_count": 345.0,
+    "vllm:request_queue_time_seconds_sum": 42.4733633864671
+  },
+  "metrics_scope": "Instance lifetime includes benchmarks and keepalive; not a production-only sample.",
+  "gpu_used_free_utilization": "14383, 9699, 0"
+}

@@ -1,0 +1,421 @@
+{
+  "eligible_candidate_count": 763080,
+  "excluded_empty_text": 6,
+  "metrics": {
+    "online_v4": {
+      "old/rec_dev/old_catalog": {
+        "count": 1485,
+        "hit@10": 0.00404040404040404,
+        "hit@50": 0.020202020202020204,
+        "hit@100": 0.03164983164983165,
+        "target_coverage": 0.6303030303030303,
+        "mrr": 0.0022579075225929797,
+        "ndcg@100": 0.007211104477242643,
+        "candidate_target_coverage": 0.6377104377104377,
+        "known_history_coverage": 0.9885521885521885
+      },
+      "old/rec_confirm/old_catalog": {
+        "count": 1485,
+        "hit@10": 0.006734006734006734,
+        "hit@50": 0.027609427609427608,
+        "hit@100": 0.041750841750841754,
+        "target_coverage": 0.6249158249158249,
+        "mrr": 0.0034148937677825056,
+        "ndcg@100": 0.00997577852127725,
+        "candidate_target_coverage": 0.6303030303030303,
+        "known_history_coverage": 0.9851851851851852
+      },
+      "old/semantic": {
+        "count": 347,
+        "hit@10": 0.37752161383285304,
+        "hit@50": 0.5936599423631124,
+        "hit@100": 0.7118155619596542,
+        "target_coverage": 1.0,
+        "mrr": 0.20905033787138275,
+        "ndcg@100": 0.30566899195849495
+      },
+      "expanded/rec_dev/expanded_fixed_history": {
+        "count": 1485,
+        "hit@10": 0.003367003367003367,
+        "hit@50": 0.015488215488215488,
+        "hit@100": 0.027609427609427608,
+        "target_coverage": 0.8336700336700337,
+        "mrr": 0.001577763065850873,
+        "ndcg@100": 0.005870536593858155,
+        "candidate_target_coverage": 0.8444444444444444,
+        "known_history_coverage": 0.9885521885521885
+      },
+      "expanded/rec_dev/expanded_full_history": {
+        "count": 1485,
+        "hit@10": 0.0047138047138047135,
+        "hit@50": 0.016835016835016835,
+        "hit@100": 0.027609427609427608,
+        "target_coverage": 0.8444444444444444,
+        "mrr": 0.002143605007059172,
+        "ndcg@100": 0.006442590505032151,
+        "candidate_target_coverage": 0.8444444444444444,
+        "known_history_coverage": 1.0
+      },
+      "expanded/rec_confirm/expanded_fixed_history": {
+        "count": 1485,
+        "hit@10": 0.00808080808080808,
+        "hit@50": 0.02356902356902357,
+        "hit@100": 0.03569023569023569,
+        "target_coverage": 0.832996632996633,
+        "mrr": 0.0030425220164565802,
+        "ndcg@100": 0.008666571456897556,
+        "candidate_target_coverage": 0.8430976430976431,
+        "known_history_coverage": 0.9851851851851852
+      },
+      "expanded/rec_confirm/expanded_full_history": {
+        "count": 1485,
+        "hit@10": 0.00808080808080808,
+        "hit@50": 0.022895622895622896,
+        "hit@100": 0.03434343434343434,
+        "target_coverage": 0.8430976430976431,
+        "mrr": 0.0028162746037816086,
+        "ndcg@100": 0.008287511854314807,
+        "candidate_target_coverage": 0.8430976430976431,
+        "known_history_coverage": 1.0
+      },
+      "expanded/semantic": {
+        "count": 347,
+        "hit@10": 0.2334293948126801,
+        "hit@50": 0.42939481268011526,
+        "hit@100": 0.515850144092219,
+        "target_coverage": 1.0,
+        "mrr": 0.12117299593073999,
+        "ndcg@100": 0.19574646058864895
+      }
+    },
+    "candidate_v6": {
+      "old/rec_dev/old_catalog": {
+        "count": 1485,
+        "hit@10": 0.009427609427609427,
+        "hit@50": 0.03164983164983165,
+        "hit@100": 0.039057239057239054,
+        "target_coverage": 0.6303030303030303,
+        "mrr": 0.003365670551868594,
+        "ndcg@100": 0.009651989858030105,
+        "candidate_target_coverage": 0.6377104377104377,
+        "known_history_coverage": 0.9885521885521885
+      },
+      "old/rec_confirm/old_catalog": {
+        "count": 1485,
+        "hit@10": 0.00808080808080808,
+        "hit@50": 0.028956228956228958,
+        "hit@100": 0.04511784511784512,
+        "target_coverage": 0.6249158249158249,
+        "mrr": 0.00486922013378802,
+        "ndcg@100": 0.011655072376853256,
+        "candidate_target_coverage": 0.6303030303030303,
+        "known_history_coverage": 0.9851851851851852
+      },
+      "old/semantic": {
+        "count": 347,
+        "hit@10": 0.37752161383285304,
+        "hit@50": 0.6138328530259366,
+        "hit@100": 0.7031700288184438,
+        "target_coverage": 1.0,
+        "mrr": 0.21645500292732212,
+        "ndcg@100": 0.3104746632992739
+      },
+      "expanded/rec_dev/expanded_fixed_history": {
+        "count": 1485,
+        "hit@10": 0.007407407407407408,
+        "hit@50": 0.020875420875420877,
+        "hit@100": 0.037037037037037035,
+        "target_coverage": 0.8336700336700337,
+        "mrr": 0.0029066334075061803,
+        "ndcg@100": 0.008772550732293402,
+        "candidate_target_coverage": 0.8444444444444444,
+        "known_history_coverage": 0.9885521885521885
+      },
+      "expanded/rec_dev/expanded_full_history": {
+        "count": 1485,
+        "hit@10": 0.00808080808080808,
+        "hit@50": 0.024242424242424242,
+        "hit@100": 0.03838383838383838,
+        "target_coverage": 0.8444444444444444,
+        "mrr": 0.00322398495324561,
+        "ndcg@100": 0.009289646780369596,
+        "candidate_target_coverage": 0.8444444444444444,
+        "known_history_coverage": 1.0
+      },
+      "expanded/rec_confirm/expanded_fixed_history": {
+        "count": 1485,
+        "hit@10": 0.009427609427609427,
+        "hit@50": 0.028282828282828285,
+        "hit@100": 0.04107744107744108,
+        "target_coverage": 0.832996632996633,
+        "mrr": 0.004689650353843688,
+        "ndcg@100": 0.010854776832580211,
+        "candidate_target_coverage": 0.8430976430976431,
+        "known_history_coverage": 0.9851851851851852
+      },
+      "expanded/rec_confirm/expanded_full_history": {
+        "count": 1485,
+        "hit@10": 0.008754208754208754,
+        "hit@50": 0.028282828282828285,
+        "hit@100": 0.04242424242424243,
+        "target_coverage": 0.8430976430976431,
+        "mrr": 0.004912063589045409,
+        "ndcg@100": 0.011229977506444503,
+        "candidate_target_coverage": 0.8430976430976431,
+        "known_history_coverage": 1.0
+      },
+      "expanded/semantic": {
+        "count": 347,
+        "hit@10": 0.25360230547550433,
+        "hit@50": 0.4409221902017291,
+        "hit@100": 0.5244956772334294,
+        "target_coverage": 1.0,
+        "mrr": 0.131976617950113,
+        "ndcg@100": 0.20586101803374302
+      }
+    }
+  },
+  "decomposition": {
+    "online_v4": {
+      "rec_dev": {
+        "users": 1485,
+        "old_hits": 47,
+        "expanded_fixed_history_hits": 41,
+        "expanded_full_history_hits": 41,
+        "new_target_hits_from_expansion": 3,
+        "old_target_hits_lost_to_more_candidates": 9,
+        "history_completion_gained_hits": 5,
+        "history_completion_lost_hits": 5,
+        "target_group_metrics": {
+          "old_catalog_targets": {
+            "count": 947,
+            "hit@10": 0.005279831045406547,
+            "hit@50": 0.023231256599788808,
+            "hit@100": 0.03907074973600845,
+            "target_coverage": 1.0,
+            "mrr": 0.0024850263805634718,
+            "ndcg@100": 0.008608151461674499
+          },
+          "newly_covered_targets": {
+            "count": 307,
+            "hit@10": 0.006514657980456026,
+            "hit@50": 0.009771986970684038,
+            "hit@100": 0.013029315960912053,
+            "target_coverage": 1.0,
+            "mrr": 0.0027033662967076958,
+            "ndcg@100": 0.004610187184908779
+          },
+          "still_uncovered_targets": {
+            "count": 231,
+            "hit@10": 0.0,
+            "hit@50": 0.0,
+            "hit@100": 0.0,
+            "target_coverage": 0.0,
+            "mrr": 0.0,
+            "ndcg@100": 0.0
+          }
+        }
+      },
+      "rec_confirm": {
+        "users": 1485,
+        "old_hits": 62,
+        "expanded_fixed_history_hits": 53,
+        "expanded_full_history_hits": 51,
+        "new_target_hits_from_expansion": 6,
+        "old_target_hits_lost_to_more_candidates": 15,
+        "history_completion_gained_hits": 5,
+        "history_completion_lost_hits": 7,
+        "target_group_metrics": {
+          "old_catalog_targets": {
+            "count": 936,
+            "hit@10": 0.008547008547008548,
+            "hit@50": 0.029914529914529916,
+            "hit@100": 0.04807692307692308,
+            "target_coverage": 1.0,
+            "mrr": 0.003386641116978303,
+            "ndcg@100": 0.010984335169594656
+          },
+          "newly_covered_targets": {
+            "count": 316,
+            "hit@10": 0.012658227848101266,
+            "hit@50": 0.0189873417721519,
+            "hit@100": 0.0189873417721519,
+            "target_coverage": 1.0,
+            "mrr": 0.0032033914592531545,
+            "ndcg@100": 0.006410181597838272
+          },
+          "still_uncovered_targets": {
+            "count": 233,
+            "hit@10": 0.0,
+            "hit@50": 0.0,
+            "hit@100": 0.0,
+            "target_coverage": 0.0,
+            "mrr": 0.0,
+            "ndcg@100": 0.0
+          }
+        }
+      }
+    },
+    "candidate_v6": {
+      "rec_dev": {
+        "users": 1485,
+        "old_hits": 58,
+        "expanded_fixed_history_hits": 55,
+        "expanded_full_history_hits": 57,
+        "new_target_hits_from_expansion": 3,
+        "old_target_hits_lost_to_more_candidates": 6,
+        "history_completion_gained_hits": 8,
+        "history_completion_lost_hits": 6,
+        "target_group_metrics": {
+          "old_catalog_targets": {
+            "count": 947,
+            "hit@10": 0.010559662090813094,
+            "hit@50": 0.03484688489968321,
+            "hit@100": 0.05385427666314678,
+            "target_coverage": 1.0,
+            "mrr": 0.004206398616634484,
+            "ndcg@100": 0.012786609364364944
+          },
+          "newly_covered_targets": {
+            "count": 307,
+            "hit@10": 0.006514657980456026,
+            "hit@50": 0.009771986970684038,
+            "hit@100": 0.019543973941368076,
+            "target_coverage": 1.0,
+            "mrr": 0.0026194077055924263,
+            "ndcg@100": 0.0054925289928183995
+          },
+          "still_uncovered_targets": {
+            "count": 231,
+            "hit@10": 0.0,
+            "hit@50": 0.0,
+            "hit@100": 0.0,
+            "target_coverage": 0.0,
+            "mrr": 0.0,
+            "ndcg@100": 0.0
+          }
+        }
+      },
+      "rec_confirm": {
+        "users": 1485,
+        "old_hits": 67,
+        "expanded_fixed_history_hits": 61,
+        "expanded_full_history_hits": 63,
+        "new_target_hits_from_expansion": 8,
+        "old_target_hits_lost_to_more_candidates": 14,
+        "history_completion_gained_hits": 7,
+        "history_completion_lost_hits": 5,
+        "target_group_metrics": {
+          "old_catalog_targets": {
+            "count": 936,
+            "hit@10": 0.009615384615384616,
+            "hit@50": 0.03739316239316239,
+            "hit@100": 0.057692307692307696,
+            "target_coverage": 1.0,
+            "mrr": 0.00604352072097014,
+            "ndcg@100": 0.014651276528614341
+          },
+          "newly_covered_targets": {
+            "count": 316,
+            "hit@10": 0.012658227848101266,
+            "hit@50": 0.022151898734177215,
+            "hit@100": 0.028481012658227847,
+            "target_coverage": 1.0,
+            "mrr": 0.005182528591469565,
+            "ndcg@100": 0.009376334703440075
+          },
+          "still_uncovered_targets": {
+            "count": 233,
+            "hit@10": 0.0,
+            "hit@50": 0.0,
+            "hit@100": 0.0,
+            "target_coverage": 0.0,
+            "mrr": 0.0,
+            "ndcg@100": 0.0
+          }
+        }
+      }
+    }
+  },
+  "paired_comparisons": {
+    "rec_dev/old_catalog": {
+      "candidate_minus_online": {
+        "hit@100_delta": 0.007407407407407408,
+        "paired_95pct": [
+          0.00202020202020202,
+          0.012794612794612794
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      },
+      "mrr_delta": 0.0011077630292756144,
+      "ndcg_delta": 0.0024408853807874617
+    },
+    "rec_dev/expanded_fixed_history": {
+      "candidate_minus_online": {
+        "hit@100_delta": 0.009427609427609427,
+        "paired_95pct": [
+          0.003367003367003367,
+          0.015488215488215488
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      },
+      "mrr_delta": 0.0013288703416553074,
+      "ndcg_delta": 0.0029020141384352464
+    },
+    "rec_dev/expanded_full_history": {
+      "candidate_minus_online": {
+        "hit@100_delta": 0.010774410774410775,
+        "paired_95pct": [
+          0.0047138047138047135,
+          0.017508417508417508
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      },
+      "mrr_delta": 0.001080379946186438,
+      "ndcg_delta": 0.0028470562753374444
+    },
+    "rec_confirm/old_catalog": {
+      "candidate_minus_online": {
+        "hit@100_delta": 0.003367003367003367,
+        "paired_95pct": [
+          -0.0013468013468013469,
+          0.00808080808080808
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      },
+      "mrr_delta": 0.0014543263660055147,
+      "ndcg_delta": 0.001679293855576006
+    },
+    "rec_confirm/expanded_fixed_history": {
+      "candidate_minus_online": {
+        "hit@100_delta": 0.0053872053872053875,
+        "paired_95pct": [
+          0.0,
+          0.011447811447811448
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      },
+      "mrr_delta": 0.0016471283373871077,
+      "ndcg_delta": 0.0021882053756826555
+    },
+    "rec_confirm/expanded_full_history": {
+      "candidate_minus_online": {
+        "hit@100_delta": 0.00808080808080808,
+        "paired_95pct": [
+          0.0026936026936026937,
+          0.014141414141414142
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      },
+      "mrr_delta": 0.0020957889852638006,
+      "ndcg_delta": 0.0029424656521296957
+    }
+  },
+  "scope": "同一批已经复评过的valid用户；两版模型权重固定；不推断线上转化收益"
+}

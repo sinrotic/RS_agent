@@ -5,7 +5,7 @@
 ## Goal
 
 Turn ranked item IDs produced by any recall provider into complete product
-records with a Redis cache-aside path and MySQL as the source of truth.
+records with a bounded Caffeine L1, Redis L2, and MySQL as the source of truth.
 
 This slice does not change BM25, Milvus, two-tower recall, RRF, reranking, or
 model serving. Those systems produce `item_id`, score, and rank. Catalog owns
@@ -16,14 +16,15 @@ the exact-ID lookup that follows recall.
 For one item:
 
 ```text
-item_id -> Redis GET -> cache miss -> MySQL rs_catalog_item -> Redis SET -> response
+item_id -> Caffeine -> Redis GET -> cache miss -> MySQL rs_catalog_item
+        -> Redis SET + Caffeine PUT -> response
 ```
 
 For ranked candidates:
 
 ```text
-ranked item_ids -> Redis MGET -> MySQL IN(misses) -> Redis SET(misses)
-                -> restore original ID order -> complete product cards
+ranked item_ids -> Caffeine bulk lookup -> Redis MGET -> MySQL IN(misses)
+                -> backfill Redis/Caffeine -> restore input order -> product cards
 ```
 
 Redis never determines relevance and does not alter recall scores or order.
@@ -43,24 +44,28 @@ each batch upsert occur in one transaction.
 
 ## Cache Contract
 
-- Key format: `rs:catalog:item:v1:{item_id}`.
+- Redis key format: `rs:catalog:item:v2:{item_id}`.
 - Value: JSON serialization of the canonical `CatalogItem` entity.
-- Default TTL: 24 hours, configurable through
-  `rs.catalog.cache.item-ttl-seconds`.
+- Redis default TTL is 24 hours plus randomized jitter of up to one hour,
+  configurable through `rs.catalog.cache.item-ttl-seconds` and
+  `rs.catalog.cache.item-ttl-jitter-seconds`.
 - Cache is enabled with `rs.catalog.cache.enabled=true`.
 - Cache failures degrade to MySQL for the current request.
-- Only MySQL hits are cached; missing IDs are not negatively cached in this
-  first version.
+- The local positive cache is bounded to 10,000 entries with a five-minute
+  TTL. Unknown IDs use a separate bounded 30-second negative cache.
+- A fixed striped-lock set coalesces concurrent misses for the same IDs. Locks
+  are acquired by sorted stripe index so multi-ID requests cannot deadlock.
 - Batch reads deduplicate database misses but preserve duplicate IDs and input
   order in the response.
 
 ## Components
 
-`CatalogItemCache` defines single and batch get/put operations.
-`RedisCatalogItemCache` owns Redis keys and JSON serialization.
-`NoopCatalogItemCache` keeps local tests and deployments usable when caching is
-disabled. `DefaultCatalogService` owns the cache-aside orchestration and keeps
-the existing public and internal Catalog contracts unchanged.
+`CatalogLocalCache` owns bounded positive and negative L1 entries.
+`CatalogItemCache` defines L2 batch get/put operations, and
+`RedisCatalogItemCache` owns Redis keys, JSON serialization, and TTL jitter.
+No-op implementations keep deployments usable when either cache is disabled.
+`DefaultCatalogService` owns cache-aside orchestration and concurrent miss
+coalescing while keeping the public and internal Catalog contracts unchanged.
 
 Gateway adds `/api/catalog/** -> lb://rs-service-catalog`. Recall services use
 the existing internal batch endpoint
@@ -77,8 +82,9 @@ the existing internal batch endpoint
 
 ## Verification
 
-Automated tests cover cache hits, partial misses, order restoration, duplicate
-IDs, Redis failure fallback, nested attribute JSON, and Gateway routing.
+Automated tests cover L1/L2 hits, partial misses, order restoration, duplicate
+IDs, Redis failure fallback, local negative caching, concurrent miss
+coalescing, nested attribute JSON, and Gateway routing.
 
 Remote acceptance requires:
 

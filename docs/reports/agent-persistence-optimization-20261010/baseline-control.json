@@ -1,0 +1,12 @@
+{
+  "before_control_sha256": "f5b2300b8436f21d8fae0b23eacbc3a7ed8c235d8327176d6d82fa992f95e02a",
+  "identical_non_optimization_class": "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/VirtualThreadAgentToolUseExecutor.class",
+  "business_class_changes": [
+    "BOOT-INF/classes/com/sinrotic/rs/agent/config/AgentSessionPersistenceConfiguration.class",
+    "BOOT-INF/classes/com/sinrotic/rs/agent/config/AgentSessionPersistenceProperties$Mysql.class",
+    "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/MysqlAgentSessionProjectionStore$DataSourceSqlExecutor.class",
+    "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/MysqlAgentSessionProjectionStore$SqlExecutor.class",
+    "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/MysqlAgentSessionProjectionStore.class",
+    "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/RedisAgentHotSessionStore.class"
+  ]
+}

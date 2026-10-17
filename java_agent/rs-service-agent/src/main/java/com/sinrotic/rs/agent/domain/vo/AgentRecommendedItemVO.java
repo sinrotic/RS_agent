@@ -12,6 +12,11 @@ public record AgentRecommendedItemVO(
         @JsonProperty("score")
         double score,
         @JsonProperty("reason")
-        String reason
+        String reason,
+        @JsonProperty("card_set_id")
+        String cardSetId
 ) {
+    public AgentRecommendedItemVO(String itemId, String title, String category, double score, String reason) {
+        this(itemId, title, category, score, reason, "");
+    }
 }

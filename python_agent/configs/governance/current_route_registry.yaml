@@ -12,7 +12,7 @@ routes:
     notes: Pool200 source-balanced recall route retired on 2026-06-08; only historical records remain.
   current_ranking_route:
     role: ranking
-    status: current_engineering_main
+    status: current
     authority_refs: ["dic/decisions/COLD_DEEPFM_MAIN_RANKING_ROUTE_ADR_2026_06_20.md", "dic/ENGINEERING_NARRATIVE_LOG.md"]
     config_paths: []
     workflow_paths: ["rs_core/online/ranking/cold_deepfm.py", "rs_core/online/ranking/ranking.py"]
@@ -38,7 +38,7 @@ routes:
     status: provisional_current
     authority_refs: ["dic/README.md", "dic/architecture/ARCHITECTURE.md", "dic/guides/CODEBASE_GOVERNANCE_GUIDE.md"]
     config_paths: ["configs/serving/online_service.yaml"]
-    workflow_paths: ["rs_core/serving/application/recommendation_service.py", "rs_core/workflow/online_recommendation.py", "rs_core/workflow/hybrid_environment.py"]
+    workflow_paths: ["rs_core/serving/application/recommendation_service.py", "rs_core/workflow/hybrid_environment.py"]
     script_paths: ["scripts/serving/run_service.py"]
     required_output_paths: ["outputs/recall/pool500_vnext_hot010_stable_20260522/pool500_candidates.jsonl"]
     promotion_gate_ref: dic/guides/CODEBASE_GOVERNANCE_GUIDE.md#agent-demo-route-promotion

@@ -1,0 +1,31 @@
+{
+  "single": [],
+  "multi_turn": [],
+  "failures": [
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "label": "ordinary-0",
+      "error": "HTTP 401: {\"code\":\"UNAUTHORIZED\",\"message\":\"Authorization bearer token is invalid\"}"
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "label": "ordinary-1",
+      "error": "HTTP 401: {\"code\":\"UNAUTHORIZED\",\"message\":\"Authorization bearer token is invalid\"}"
+    },
+    {
+      "query": "请帮我推荐鼠标",
+      "label": "multi-turn-0",
+      "error": "HTTP 401: {\"code\":\"UNAUTHORIZED\",\"message\":\"Authorization bearer token is invalid\"}"
+    },
+    {
+      "query": "换一批鼠标，适合办公使用",
+      "label": "multi-turn-1",
+      "error": "HTTP 401: {\"code\":\"UNAUTHORIZED\",\"message\":\"Authorization bearer token is invalid\"}"
+    },
+    {
+      "query": "再推荐五款鼠标，说明理由",
+      "label": "multi-turn-2",
+      "error": "HTTP 401: {\"code\":\"UNAUTHORIZED\",\"message\":\"Authorization bearer token is invalid\"}"
+    }
+  ]
+}

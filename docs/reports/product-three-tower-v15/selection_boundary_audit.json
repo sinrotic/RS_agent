@@ -1,0 +1,32 @@
+{
+  "state": "CORRECTED_DEVELOPMENT_ONLY",
+  "reason": "开发语义允许少2条，88/347-2/347比86/347高一个浮点单位；整数计数恢复预定规则。",
+  "baseline_hit10": 88,
+  "minimum_hit10": 86,
+  "classification": [
+    {
+      "epoch": 1,
+      "hit10_count": 86,
+      "floating_gate": false,
+      "integer_gate": true
+    },
+    {
+      "epoch": 2,
+      "hit10_count": 86,
+      "floating_gate": false,
+      "integer_gate": true
+    },
+    {
+      "epoch": 3,
+      "hit10_count": 87,
+      "floating_gate": true,
+      "integer_gate": true
+    }
+  ],
+  "before_epoch": 3,
+  "corrected_epoch": 1,
+  "selection_uses_sealed_metrics": false,
+  "sealed_computed_before_correction": true,
+  "timestamp": 1791823808.0820427,
+  "limitation": "原训练已为epoch3计算一次同一1890封存；纠错后按开发规则选型再重放，不宣称新第二封存或只打开一次。"
+}

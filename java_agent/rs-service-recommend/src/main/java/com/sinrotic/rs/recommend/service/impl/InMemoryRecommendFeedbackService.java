@@ -4,7 +4,6 @@ import com.sinrotic.rs.recommend.domain.dto.RecommendEventFeedbackRequestDTO;
 import com.sinrotic.rs.recommend.domain.dto.RecommendExposureFeedbackRequestDTO;
 import com.sinrotic.rs.recommend.domain.vo.RecommendFeedbackAckVO;
 import com.sinrotic.rs.recommend.service.RecommendFeedbackService;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Locale;
@@ -15,7 +14,6 @@ import java.util.UUID;
 /**
  * In-memory feedback sink until the event pipeline is attached.
  */
-@Service
 public class InMemoryRecommendFeedbackService implements RecommendFeedbackService {
 
     private static final Set<String> SUPPORTED_EVENT_TYPES = Set.of("click", "like", "dislike", "why");

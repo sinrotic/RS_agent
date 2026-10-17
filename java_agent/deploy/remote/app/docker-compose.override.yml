@@ -1,0 +1,8 @@
+services:
+  rs-service-model:
+    environment:
+      RS_MODEL_RUNTIME_EMBEDDING_BASE_URL: ${RS_MODEL_RUNTIME_EMBEDDING_BASE_URL:-http://172.21.0.1:18115}
+  rs-service-recommend:
+    environment:
+      RS_MODEL_BASE_URL: http://rs-service-model:18105
+      RS_RECOMMEND_RAG_MILVUS_COLLECTION: rs_agent_rag_chunks_milvus_v2

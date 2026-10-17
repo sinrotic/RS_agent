@@ -1,0 +1,14 @@
+[Unit]
+Description=RS Agent trained COLD and DeepFM ranking
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 %h/RS_agent_java/model_deploy/trained_ranking_runtime.py --directory %h/RS_agent_java/data/models/cold_deepfm_20260914
+Restart=always
+RestartSec=5
+MemoryMax=256M
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

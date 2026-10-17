@@ -1,0 +1,179 @@
+{
+  "scope": "business_baseline",
+  "model_base": "18082",
+  "business_regression": [
+    {
+      "query": "推荐鼠标",
+      "elapsed_ms": 5136.87,
+      "complete_with_catalog_ms": 5145.47,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 156,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "2f600541cf84d462ac06534e01289ed1c37f83626e3609ca4eee65c6ec61ca1c",
+      "passed": true
+    },
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 7534.52,
+      "complete_with_catalog_ms": 7543.54,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 230,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 2,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "call_agent"
+      ],
+      "answer_sha256": "deec74cc367867c2a347a79fe222d68cfaeef9a767ccca9519e526f5ebb682fd",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 9815.06,
+      "complete_with_catalog_ms": 9822.66,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 70,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 6,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "load_skill",
+        "load_skill",
+        "load_skill",
+        "call_agent"
+      ],
+      "answer_sha256": "1bc63685e94ccf292e312cec49ceff09d67c9d9101ccde958fd6ab4583f2e929",
+      "passed": true
+    },
+    {
+      "query": "请帮我推荐鼠标",
+      "elapsed_ms": 3333.21,
+      "complete_with_catalog_ms": 3340.07,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 169,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "01bd9afbc8f1e78645a1a721aab5f984614d0cfbe417baa8c077f2780ff26592",
+      "passed": true
+    },
+    {
+      "query": "换一批鼠标，适合办公使用",
+      "elapsed_ms": 10119.07,
+      "complete_with_catalog_ms": 10126.91,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 20,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent",
+        "call_agent"
+      ],
+      "answer_sha256": "563ec18c8acb94a94a75e1c5e474d819e25f030cf70578f3146baa148e5de9f1",
+      "passed": true
+    }
+  ],
+  "advice_diagnostic": [
+    {
+      "query": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "elapsed_ms": 2068.03,
+      "complete_with_catalog_ms": null,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 169,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "a4568640eab9fab3a6c68bb136d8d1986598929ad57964b0fb61500a6ab78676",
+      "passed": false,
+      "advice_complete": true,
+      "advice_respects_no_products": false
+    },
+    {
+      "query": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "elapsed_ms": 1994.12,
+      "complete_with_catalog_ms": null,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 195,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "6c247375fd18f243b29fb5fd9a95cd00aa8fb02be18204a64c6cbe8845cec3a1",
+      "passed": false,
+      "advice_complete": true,
+      "advice_respects_no_products": false
+    },
+    {
+      "query": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "elapsed_ms": 892.38,
+      "complete_with_catalog_ms": null,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 21,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "001f88ac18e8b5d2ae464fb1df4154984d05219c74972000689090656e15ec7e",
+      "passed": false,
+      "advice_complete": false,
+      "advice_respects_no_products": false
+    }
+  ]
+}

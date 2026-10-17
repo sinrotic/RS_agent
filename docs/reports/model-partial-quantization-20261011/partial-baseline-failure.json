@@ -1,0 +1,40 @@
+[
+  {
+    "event_type": "rag_support_argument_shape",
+    "keys": [
+      "candidate_item_ids",
+      "query",
+      "top_k"
+    ],
+    "query_nonempty": true,
+    "candidate_count": 5,
+    "argument_types": {
+      "query": "str",
+      "candidate_item_ids": "list",
+      "top_k": "int"
+    }
+  },
+  {
+    "event_type": "rag_support_argument_shape",
+    "keys": [
+      "candidate_item_ids",
+      "max_support_per_item",
+      "providers"
+    ],
+    "query_nonempty": false,
+    "candidate_count": 5,
+    "argument_types": {
+      "candidate_item_ids": "list",
+      "max_support_per_item": "int",
+      "providers": "list"
+    }
+  },
+  {
+    "event_type": "tool_result",
+    "tool_name": "rag_support",
+    "status": "error",
+    "error_code": "",
+    "error_message": "",
+    "agent_name": "rs_agent"
+  }
+]

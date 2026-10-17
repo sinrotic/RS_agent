@@ -1,0 +1,28 @@
+{
+  "source_products": 1000,
+  "attempted_products": 1000,
+  "expected_queries": 4000,
+  "accepted": 3539,
+  "split_counts": {
+    "test": 344,
+    "train": 2848,
+    "valid": 347
+  },
+  "split_product_counts": {
+    "test": 99,
+    "train": 789,
+    "valid": 99
+  },
+  "rejected_generated_queries": 437,
+  "missing_queries": 24,
+  "human_reviewed": false,
+  "evaluation": "synthetic source-product recovery; NOT search relevance gold",
+  "negative_policy": "trainer masks positives sharing strip/lower query; other unobserved items are weak negatives, not relevance judgments",
+  "test_policy": "excluded from semantic_clean and query_features; do not use for tuning",
+  "hashes": {
+    "generation_inputs.jsonl": "18c2369f030b60e1c5433320b0e8643f52b59ce8f7a11c220d9c12d1996f3046",
+    "generation_records.jsonl": "b635ac5145237b89feea05f8b8aca2a0aaa6c26d3a1028922ecafb968f3bbe10",
+    "semantic_clean.jsonl": "12057e458fdd043890d9844ed1aab9b29a977775bea809b56ea6032ac0275f4f",
+    "semantic_test.jsonl": "02b385a47328a5e4c7f92c30faf3d46ad128c770ae0990719e4df0c8f2c6c6c0"
+  }
+}

@@ -2,6 +2,7 @@ package com.sinrotic.rs.agent.config;
 
 import com.sinrotic.rs.agent.service.AgentCapabilityRegistry;
 import com.sinrotic.rs.agent.service.AgentDelegateService;
+import com.sinrotic.rs.agent.service.AgentExecutionLimiter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolResultStore;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
@@ -18,12 +19,14 @@ public class AgentToolExecutionConfiguration {
     public VirtualThreadAgentToolUseExecutor virtualThreadAgentToolUseExecutor(
             AgentRuntimeConfigurationService runtimeConfigurationService,
             AgentDelegateService agentDelegateService,
-            AgentToolResultStore toolResultStore
+            AgentToolResultStore toolResultStore,
+            AgentExecutionLimiter executionLimiter
     ) {
         return new VirtualThreadAgentToolUseExecutor(
                 runtimeConfigurationService,
                 agentDelegateService,
-                toolResultStore
+                toolResultStore,
+                executionLimiter
         );
     }
 

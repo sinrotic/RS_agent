@@ -1,0 +1,223 @@
+{
+  "started_at_utc": "2026-10-11T18:09:04.601446+08:00",
+  "scope": "共享 QA 网关到真实 LLM 推荐结束及目录补齐；会话建立不计入耗时",
+  "comparison_limit": "历史 BF16 小样本，非同时控制组；共享服务可能有其他请求",
+  "cases": [
+    {
+      "index": 0,
+      "query": "推荐鼠标",
+      "agent_done_ms": 8766.3,
+      "complete_with_catalog_ms": 8772.8,
+      "item_count": 5,
+      "catalog_count": 5,
+      "answer_chars": 244,
+      "finish_reason": "FINAL_ANSWER",
+      "degradation_reasons": [],
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "ranking_degraded": 0,
+      "model_success_counter_delta": 3.0,
+      "checks": {
+        "response_without_error": true,
+        "five_unique_catalog_items": true,
+        "answer_text": true,
+        "final_answer": true,
+        "no_declared_degradation": true,
+        "real_deepfm_bge": true,
+        "ranking_not_degraded": true,
+        "model_activity_observed": true
+      },
+      "passed": true
+    },
+    {
+      "index": 1,
+      "query": "推荐鼠标",
+      "agent_done_ms": 2170.82,
+      "complete_with_catalog_ms": 2177.26,
+      "item_count": 5,
+      "catalog_count": 5,
+      "answer_chars": 61,
+      "finish_reason": "FINAL_ANSWER",
+      "degradation_reasons": [],
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "ranking_degraded": 0,
+      "model_success_counter_delta": 4.0,
+      "checks": {
+        "response_without_error": true,
+        "five_unique_catalog_items": true,
+        "answer_text": true,
+        "final_answer": true,
+        "no_declared_degradation": true,
+        "real_deepfm_bge": true,
+        "ranking_not_degraded": true,
+        "model_activity_observed": true
+      },
+      "passed": true
+    },
+    {
+      "index": 2,
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "agent_done_ms": 12629.57,
+      "complete_with_catalog_ms": 12635.67,
+      "item_count": 5,
+      "catalog_count": 5,
+      "answer_chars": 23,
+      "finish_reason": "FINAL_ANSWER",
+      "degradation_reasons": [],
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "ranking_degraded": 0,
+      "model_success_counter_delta": 20.0,
+      "checks": {
+        "response_without_error": true,
+        "five_unique_catalog_items": true,
+        "answer_text": true,
+        "final_answer": true,
+        "no_declared_degradation": true,
+        "real_deepfm_bge": true,
+        "ranking_not_degraded": true,
+        "model_activity_observed": true
+      },
+      "passed": true
+    },
+    {
+      "index": 3,
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "agent_done_ms": 11641.48,
+      "complete_with_catalog_ms": 11649.06,
+      "item_count": 5,
+      "catalog_count": 5,
+      "answer_chars": 53,
+      "finish_reason": "FINAL_ANSWER",
+      "degradation_reasons": [],
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "ranking_degraded": 0,
+      "model_success_counter_delta": 8.0,
+      "checks": {
+        "response_without_error": true,
+        "five_unique_catalog_items": true,
+        "answer_text": true,
+        "final_answer": true,
+        "no_declared_degradation": true,
+        "real_deepfm_bge": true,
+        "ranking_not_degraded": true,
+        "model_activity_observed": true
+      },
+      "passed": true
+    }
+  ],
+  "failures": [],
+  "agent_flags": {
+    "direct_recommendation": false,
+    "llm_synthesis": true
+  },
+  "agent_jar_sha256": [
+    "8a8385f3ee802ed38333ffc49bd43a6306b97b5d829e013b433ce75a9179fa03",
+    "99de4a414251e4f4408fa47886d1e4482de354e528bfafcfb67b4b4b31557dad"
+  ],
+  "model_before": {
+    "commands": [
+      "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+    ],
+    "models": {
+      "object": "list",
+      "data": [
+        {
+          "id": "qwen35-4b",
+          "object": "model",
+          "created": 1791713365,
+          "owned_by": "vllm",
+          "root": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+          "parent": null,
+          "max_model_len": 16384,
+          "permission": [
+            {
+              "id": "modelperm-bf6608fba7adf8d4",
+              "object": "model_permission",
+              "created": 1791713365,
+              "allow_create_engine": false,
+              "allow_sampling": true,
+              "allow_logprobs": true,
+              "allow_search_indices": false,
+              "allow_view": true,
+              "allow_fine_tuning": false,
+              "organization": "*",
+              "group": null,
+              "is_blocking": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "model_after": {
+    "commands": [
+      "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+    ],
+    "models": {
+      "object": "list",
+      "data": [
+        {
+          "id": "qwen35-4b",
+          "object": "model",
+          "created": 1791713402,
+          "owned_by": "vllm",
+          "root": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+          "parent": null,
+          "max_model_len": 16384,
+          "permission": [
+            {
+              "id": "modelperm-9277a4ed7d908d10",
+              "object": "model_permission",
+              "created": 1791713402,
+              "allow_create_engine": false,
+              "allow_sampling": true,
+              "allow_logprobs": true,
+              "allow_search_indices": false,
+              "allow_view": true,
+              "allow_fine_tuning": false,
+              "organization": "*",
+              "group": null,
+              "is_blocking": false
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "model_process_unchanged": true,
+  "status": "完成",
+  "model_identity_check": "按 PID、启动命令、模型路径与上下文上限核对；/v1/models 的 created 和 permission ID 每次查询会变化，不参与比较",
+  "model_counter_limit": "全局成功计数包含共享服务其他请求和预热，只作模型活动证据，不能作为单轮调用次数",
+  "quality_scope": "仅核验最终结束、文字非空、五件真实商品、历史、DeepFM/BGE 和无声明降级；没有验证理由语义正确性或全部现有功能"
+}

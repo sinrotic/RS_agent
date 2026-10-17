@@ -2,9 +2,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import pytest
+
 from rs_core.online.recall.candidate_store.cassandra import CassandraCandidateStore, CassandraSettings
 from rs_core.online.recall.candidate_store.factory import build_candidate_store_from_env
 from rs_core.online.recall.candidate_store.base import NoopCandidateStore, SafeCandidateStore
+
+pytestmark = pytest.mark.unit
 
 
 class FakeSession:

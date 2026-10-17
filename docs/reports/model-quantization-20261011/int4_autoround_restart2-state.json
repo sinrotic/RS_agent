@@ -1,0 +1,14 @@
+{
+  "variant": "int4_autoround",
+  "repeat": 2,
+  "model_path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-AutoRound-0a857215-rs-runtime",
+  "configuration": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "0",
+    "VLLM_CACHE_ROOT": "/tmp/rs-agent-quantization-retry-20261011/cache/int4_autoround"
+  },
+  "passed": false,
+  "error": "Command '['/mnt/data/luo/venvs/rsagent-vllm/bin/python', '/tmp/rs-agent-quantization-retry-20261011/benchmark.py', '--base-url', 'http://127.0.0.1:18092/v1', '--output', '/tmp/rs-agent-quantization-retry-20261011/int4_autoround_restart2.json']' returned non-zero exit status 1."
+}

@@ -2,19 +2,27 @@ from __future__ import annotations
 
 import ast
 import json
+import textwrap
 from pathlib import Path
 from typing import Any
 
+import yaml
+
 
 def load_config(path: str | Path) -> dict[str, Any]:
-    """Load JSON or a tiny YAML subset without external dependencies."""
-    text = Path(path).read_text(encoding="utf-8").strip()
+    """Load a JSON or YAML mapping."""
+    text = textwrap.dedent(Path(path).read_text(encoding="utf-8")).strip()
     if not text:
         return {}
     try:
         return json.loads(text)
     except json.JSONDecodeError:
-        return _parse_simple_yaml(text)
+        value = yaml.safe_load(text)
+        if value is None:
+            return {}
+        if not isinstance(value, dict):
+            raise ValueError("Configuration root must be a mapping")
+        return value
 
 
 def _parse_simple_yaml(text: str) -> dict[str, Any]:

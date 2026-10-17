@@ -12,4 +12,6 @@ public interface ProfileUserMapper {
     boolean existsReviewUser(@Param("profileUserId") String profileUserId);
 
     String selectRandomReviewUserId();
+
+    java.util.List<String> selectRecentPositiveItemIds(@Param("profileUserId") String profileUserId, @Param("limit") int limit);
 }

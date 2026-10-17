@@ -1,0 +1,26 @@
+{
+  "business_artifacts": {
+    "rs-service-agent.jar": "34347facf7f1500345755b9f5867dee9f8d8249dd23a39b332b03fc6390c88a1",
+    "rs-service-recommend.jar": "5531870a5c7ecba01622dd8519a11b13ad74f32646b5e8cb267aa2eb58ea990a"
+  },
+  "gpu_before_cleanup": "0, NVIDIA GeForce RTX 4090, 17793 MiB, 95 %\n1, NVIDIA GeForce RTX 4090, 23293 MiB, 0 %\n2, NVIDIA GeForce RTX 4090, 17793 MiB, 100 %\n",
+  "initially_stopped_infra": [
+    "rs-agent-java-mysql",
+    "rs-agent-java-scylla",
+    "rs-agent-java-milvus-etcd",
+    "rs-agent-java-milvus-minio",
+    "rs-agent-java-elasticsearch",
+    "rs-agent-java-milvus-standalone"
+  ],
+  "qa_prefix": "rs-e2e-41ff9be6-",
+  "vllm": {
+    "pid": 3551299,
+    "args": {
+      "--port": "18082",
+      "--served-model-name": "qwen35-4b",
+      "--max-model-len": "4096",
+      "--gpu-memory-utilization": "0.85"
+    },
+    "prefix_caching": true
+  }
+}

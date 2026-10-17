@@ -1,0 +1,144 @@
+{
+  "label": "promoted-no-keepalive",
+  "passed": false,
+  "results": [
+    {
+      "number": 0,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-b80b1c676d-1-0-2f19338e",
+      "success": true,
+      "events": {
+        "answer_block": 4,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议重点关注以下三个方面："
+        },
+        {
+          "type": "text",
+          "content": "1. **容量与分区**：通勤包通常需要能容纳笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升物品取用的便利性。"
+        },
+        {
+          "type": "text",
+          "content": "2. **背负舒适度**：通勤时间较长，建议选择有加厚肩垫、可调节肩带和良好透气背板的设计。良好的背负系统能有效减轻长时间携带的负担，提升舒适度。"
+        },
+        {
+          "type": "text",
+          "content": "3. **材质与耐用性**：通勤包需要经受日常频繁使用，建议选择耐磨、防水或易清洁的材质。同时注意拉链顺滑度和缝线质量，确保长期使用不易损坏。"
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791539341.6787996,
+      "http_status": 200,
+      "latency_s": 4.865,
+      "first_event_s": 4.857,
+      "first_answer_s": 4.857,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "answer_complete": true,
+      "passed": true
+    },
+    {
+      "number": 1,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-b80b1c676d-1-1-3313296c",
+      "success": true,
+      "events": {
+        "answer_block": 4,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议重点关注以下三个方面："
+        },
+        {
+          "type": "text",
+          "content": "1. **容量与分区**：通勤包通常需要能容纳笔记本电脑（建议14-16英寸）、文件、水杯和日常用品。选择带有独立电脑隔层和合理分区设计的款式，能提升取物效率和物品保护性。"
+        },
+        {
+          "type": "text",
+          "content": "2. **背负系统与舒适度**：通勤时可能需长时间背负，建议选择有加厚肩垫、可调节肩带和良好透气背板的设计，减轻肩部压力并提升长时间佩戴的舒适度。"
+        },
+        {
+          "type": "text",
+          "content": "3. **材质与耐用性**：通勤场景可能涉及雨天或日常磨损，推荐选择耐磨面料（如尼龙、聚酯纤维）并具备防水或防泼水功能的产品，延长使用寿命。"
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791539346.5818691,
+      "http_status": 200,
+      "latency_s": 3.323,
+      "first_event_s": 3.32,
+      "first_answer_s": 3.32,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "answer_complete": true,
+      "passed": true
+    },
+    {
+      "number": 2,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-b80b1c676d-1-2-ed2b6ccc",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "type": "text",
+          "content": "选购通勤双肩包时，建议重点关注以下三个方面："
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791539349.9275749,
+      "http_status": 200,
+      "latency_s": 1.384,
+      "first_event_s": 1.382,
+      "first_answer_s": 1.382,
+      "model_calls": 2.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 0,
+      "answer_complete": false,
+      "passed": false
+    }
+  ]
+}

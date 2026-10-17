@@ -1,0 +1,28 @@
+{
+  "controller": {
+    "state": "RUNNING",
+    "active_run": "replacement32",
+    "completed": [
+      "v4_reference"
+    ],
+    "device": "cpu",
+    "online_modified": false,
+    "updated_unix": 1791721601.703223
+  },
+  "training": {
+    "state": "TRAINING",
+    "epoch": 1,
+    "step": 1100,
+    "epoch_unique": 64430,
+    "total_unique": 64430,
+    "loss_mean": 2.94462121963501,
+    "elapsed_seconds": 111.7241786159575
+  },
+  "followup": {
+    "state": "WAITING_FOR_SCREENING",
+    "online_modified": false
+  },
+  "online_container_unchanged": true,
+  "online_health": "UP",
+  "gpu_attempt": "blocked before any training; CPU only resumed"
+}

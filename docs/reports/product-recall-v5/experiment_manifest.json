@@ -1,0 +1,54 @@
+{
+  "arms": [
+    [
+      "replacement32",
+      [
+        "--sampler",
+        "replacement"
+      ]
+    ],
+    [
+      "shuffle32",
+      []
+    ],
+    [
+      "shuffle127",
+      [
+        "--negatives",
+        "127"
+      ]
+    ],
+    [
+      "mixed127",
+      [
+        "--negatives",
+        "127",
+        "--negative-mode",
+        "mixed"
+      ]
+    ],
+    [
+      "attention_mixed127",
+      [
+        "--negatives",
+        "127",
+        "--negative-mode",
+        "mixed",
+        "--user",
+        "attention"
+      ]
+    ]
+  ],
+  "epochs": 3,
+  "seeds": [
+    42
+  ],
+  "train_rows": 387951,
+  "candidate_count": 203887,
+  "data_source": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/data",
+  "script_sha256": "1f06062f50ca4405d180c42b4cda91750867e788dd5a6e6277098d231324c25b",
+  "resource_policy": "CPUQuota=200%, MemoryMax=8G, Nice=15, IO idle, CUDA hidden",
+  "negative_policy": "known positives excluded, unique candidate IDs; category negatives are weak, not explicit dislikes",
+  "selection": "same development cohort, official test not read; final step and curves both reported",
+  "started_unix": 1791721108.0254338
+}

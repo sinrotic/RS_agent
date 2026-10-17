@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -19,7 +20,7 @@ public class AppPaymentController {
     }
 
     @PostMapping("/prepay")
-    public PaymentPrepayVO createPrepay(@RequestBody CreatePaymentRequestDTO request) {
-        return paymentService.createPrepay(request);
+    public PaymentPrepayVO createPrepay(@RequestHeader("X-Account-Id") String accountId, @RequestBody CreatePaymentRequestDTO request) {
+        return paymentService.createPrepay(accountId, request);
     }
 }

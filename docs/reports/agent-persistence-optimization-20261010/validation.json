@@ -1,0 +1,52 @@
+{
+  "rs-service-agent": {
+    "tests": {
+      "tests": 204,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "before_sha256": "66b5227cf17d3af178936dee2dadb57390000fd180a267c933a6587b6b56ea68",
+    "after_sha256": "cec49b897a1c6549c4ce1ca8df7a91b7f34a98193136dae0d9d454166669efea",
+    "business_class_changes": [
+      "BOOT-INF/classes/com/sinrotic/rs/agent/config/AgentSessionPersistenceConfiguration.class",
+      "BOOT-INF/classes/com/sinrotic/rs/agent/config/AgentSessionPersistenceProperties$Mysql.class",
+      "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/MysqlAgentSessionProjectionStore$DataSourceSqlExecutor.class",
+      "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/MysqlAgentSessionProjectionStore$SqlExecutor.class",
+      "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/MysqlAgentSessionProjectionStore.class",
+      "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/RedisAgentHotSessionStore.class",
+      "BOOT-INF/classes/com/sinrotic/rs/agent/service/impl/VirtualThreadAgentToolUseExecutor.class"
+    ]
+  },
+  "rs-service-recommend": {
+    "tests": {
+      "tests": 104,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "before_sha256": "738a6ac45f58548203479fb84ae2c2b39c028d6700d9144b81f526def6a1cb67",
+    "after_sha256": "5531870a5c7ecba01622dd8519a11b13ad74f32646b5e8cb267aa2eb58ea990a",
+    "business_class_changes": [
+      "BOOT-INF/classes/com/sinrotic/rs/recommend/config/RecommendationPersistenceConfiguration.class",
+      "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/JdbcRecommendationPersistenceStore.class"
+    ]
+  },
+  "final_agent": {
+    "tests": {
+      "tests": 206,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "sha256": "fcea47dfee9b6e297cca887090fecbdf887430761cc2c7178824b6084d6150ca"
+  },
+  "final_local_package": {
+    "sha256": "34347facf7f1500345755b9f5867dee9f8d8249dd23a39b332b03fc6390c88a1",
+    "command": "mvn -pl rs-service-agent -am package -DskipTests -q",
+    "changes_since_measured_package": [
+      "BOOT-INF/classes/com/sinrotic/rs/agent/config/AgentSessionPersistenceProperties$Mysql.class"
+    ],
+    "reason": "仅连接池配置 getter/setter 格式调整导致行号变化；没有业务逻辑改动。"
+  }
+}

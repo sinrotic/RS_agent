@@ -1,0 +1,29 @@
+{
+  "checked_at": "2026-10-11T02:27:56.736979+00:00",
+  "health": {
+    "error": "URLError",
+    "detail": "<urlopen error [Errno 111] Connection refused>"
+  },
+  "model_processes": [
+    {
+      "pid": 3354485,
+      "settings": {
+        "--host": "127.0.0.1",
+        "--port": "18082",
+        "--served-model-name": "qwen35-4b",
+        "--enable-prefix-caching": true,
+        "--mamba-cache-mode": "align",
+        "--speculative-config": "{\"method\":\"mtp\",\"num_speculative_tokens\":1}",
+        "--max-model-len": "16384",
+        "--gpu-memory-utilization": "0.78"
+      },
+      "log": "/tmp/rs-agent-e2e-20261010-llm-opt-20261011/mtp-model.log"
+    }
+  ],
+  "prior_process_shutdown_evidence": [
+    "(APIServer pid=1505267) INFO 10-11 10:26:41 [launcher.py:100] [shutdown] API server: shutdown triggered",
+    "(EngineCore pid=1507573) INFO 10-11 10:26:41 [core.py:1214] [shutdown] EngineCore: trigger received signal=SIGTERM"
+  ],
+  "gpu_process_snapshot": "gpu_uuid, pid, process_name, used_gpu_memory [MiB]\nGPU-04bb7e45-f875-e5a9-d694-94c465db00cb, 3975157, /home/luo/miniconda3/envs/lattice_env/bin/python, 17770 MiB\nGPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9, 3357556, VLLM::EngineCore, 9588 MiB\n",
+  "scope": "基线完成后原进程收到 SIGTERM，随后观察到另一 MTP 试验进程。本次研究未启动、停止或重配置模型进程。"
+}

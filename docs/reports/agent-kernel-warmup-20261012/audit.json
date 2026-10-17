@@ -1,0 +1,45 @@
+{
+  "checked_at_utc": "2026-10-11T16:40:13.367642+00:00",
+  "model_unchanged": true,
+  "dependencies_unchanged": true,
+  "model_and_business_env_lines_unchanged": true,
+  "installed_file_sha256_match": true,
+  "keepalive_alive": true,
+  "health": {
+    "agent": 200,
+    "gateway": 200,
+    "recommend": 200,
+    "catalog": 200,
+    "user": 200,
+    "model": 200
+  },
+  "model_metrics": {
+    "vllm:num_requests_running": 0.0,
+    "vllm:num_requests_waiting": 0.0,
+    "vllm:prefix_cache_queries_total": 3177463.0,
+    "vllm:prefix_cache_hits_total": 2272512.0,
+    "vllm:request_prompt_tokens_count": 401.0,
+    "vllm:request_prompt_tokens_sum": 2801791.0,
+    "vllm:time_to_first_token_seconds_count": 401.0,
+    "vllm:time_to_first_token_seconds_sum": 170.1531524658203,
+    "vllm:request_queue_time_seconds_count": 401.0,
+    "vllm:request_queue_time_seconds_sum": 43.20152529608458,
+    "vllm:request_prefill_time_seconds_count": 401.0,
+    "vllm:request_prefill_time_seconds_sum": 90.88064045179635
+  },
+  "temporary_port_closed": true,
+  "temporary_model_stopped": true,
+  "temporary_group_remaining_pids": [],
+  "gpu_snapshot": [
+    "0, 17793, 99",
+    "1, 14425, 0",
+    "2, 3759, 3"
+  ],
+  "compute_processes": [
+    "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb, 3975157, 17770",
+    "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9, 3417056, 3120",
+    "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9, 1616131, 11276",
+    "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad, 2293691, 3736"
+  ],
+  "passed": true
+}

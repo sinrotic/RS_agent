@@ -1,0 +1,29 @@
+{
+  "status": "已正式部署：GPU 1 / 18082 / 50% 显存预算，缓存扩容验收通过",
+  "deployment_report": "cache-expansion.md",
+  "production_model_process_memory_mib": 11276,
+  "production_gpu_free_mib": 9699,
+  "model": "Qwen3.5-4B",
+  "precision": "MLP INT4；普通注意力及 GDN 投影 BF16；其他浮点模块保留原精度",
+  "model_loading_gib": 5.52,
+  "historical_isolated_memory40_mib": 8761,
+  "settings": {
+    "MODEL_PATH": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.50",
+    "VLLM_MAX_NUM_SEQS": "128",
+    "VLLM_MAX_MODEL_LEN": "16384",
+    "VLLM_CACHE_ROOT": "/home/luo/RS_agent_java/model_deploy/quantization-cache/20261011-mlp-int4-bf16-memory50",
+    "VLLM_JSON_COMPACT_OUTPUT": "true",
+    "VLLM_ENFORCE_STRICT_TOOL_CALLING": "true"
+  },
+  "actual_business_passed": 8,
+  "actual_business_samples": 8,
+  "fixed_planning_incomplete": 4,
+  "fixed_planning_samples": 16,
+  "tested_scope": "正式 GPU 1 的启动探针、直连回归、16 路短工具探针 32/32 及真实业务 8/8；未做持续高并发长上下文负载测试",
+  "optimization_attempt_status": "后续性能候选未推广，正式服务已恢复原配置和脚本",
+  "optimization_attempt_report": "../model-serving-next-optimizations-20261011/execution.md",
+  "current_runtime_audit": "../model-serving-next-optimizations-20261011/production-original-live-state.json"
+}

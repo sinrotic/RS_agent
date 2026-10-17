@@ -1,0 +1,329 @@
+{
+  "date": "2026-09-14",
+  "scope": "streaming full scan; no model loading, no training, no distinct-ID recount",
+  "source_root": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_recall_recent_2y_1m_3m_remote_restore",
+  "manifest_counts": {
+    "interactions": {
+      "train": {
+        "interaction_count": 11538991,
+        "distinct_user_count": 6826801,
+        "distinct_item_count": 864288
+      },
+      "valid": {
+        "interaction_count": 154867,
+        "distinct_user_count": 127171,
+        "distinct_item_count": 71895
+      },
+      "test": {
+        "interaction_count": 242147,
+        "distinct_user_count": 187056,
+        "distinct_item_count": 94723
+      },
+      "all": {
+        "interaction_count": 11936005,
+        "distinct_user_count": 7080947,
+        "distinct_item_count": 887002
+      }
+    },
+    "canonical_items": {
+      "train_only": 864288,
+      "all_window": 887002
+    },
+    "user_sequences": {
+      "all": 7080947,
+      "train": 6826801
+    }
+  },
+  "window_policy": {
+    "timezone": "UTC",
+    "boundary_policy": "half_open",
+    "splits": {
+      "train": {
+        "start_ms": 1623715200000,
+        "end_ms": 1684108800000,
+        "start_utc": "2021-06-15T00:00:00Z",
+        "end_utc": "2023-05-15T00:00:00Z"
+      },
+      "valid": {
+        "start_ms": 1684108800000,
+        "end_ms": 1686787200000,
+        "start_utc": "2023-05-15T00:00:00Z",
+        "end_utc": "2023-06-15T00:00:00Z"
+      },
+      "test": {
+        "start_ms": 1686787200000,
+        "end_ms": 1694649600000,
+        "start_utc": "2023-06-15T00:00:00Z",
+        "end_utc": "2023-09-14T00:00:00Z"
+      }
+    }
+  },
+  "files": {
+    "canonical_interactions.train.jsonl": {
+      "bytes": 4638479307,
+      "rows": 11538991,
+      "parse_errors": 0,
+      "field_counts": {
+        "user_id": 11538991,
+        "parent_asin": 11538991,
+        "category": 11538991,
+        "rating": 11538991,
+        "timestamp": 11538991,
+        "verified_purchase": 11538991,
+        "helpful_vote": 11538991,
+        "user_interaction_count": 11538991,
+        "item_interaction_count": 11538991,
+        "row_num": 11538991,
+        "label_binary": 11538991,
+        "label_strong": 11538991,
+        "label_strength": 11538991,
+        "dedup_strategy": 11538991,
+        "split": 11538991
+      },
+      "empty_counts": {},
+      "categories": {
+        "Electronics": 8584960,
+        "Office_Products": 2954031
+      },
+      "rating_label_verified_counts": {
+        "(4.0, 1, 1, True)": 1007095,
+        "(5.0, 1, 1, True)": 6616401,
+        "(1.0, 0, 0, True)": 1641602,
+        "(2.0, 0, 0, True)": 607620,
+        "(3.0, 1, 1, True)": 716101,
+        "(5.0, 1, 0, False)": 583771,
+        "(4.0, 1, 0, False)": 143131,
+        "(1.0, 0, 0, False)": 113701,
+        "(3.0, 1, 0, False)": 64658,
+        "(2.0, 0, 0, False)": 44909,
+        "(0.0, 0, 0, True)": 2
+      },
+      "min_timestamp": 1623715203296,
+      "max_timestamp": 1684108779230,
+      "elapsed_seconds": 80.09
+    },
+    "canonical_interactions.valid.jsonl": {
+      "bytes": 62351765,
+      "rows": 154867,
+      "parse_errors": 0,
+      "field_counts": {
+        "user_id": 154867,
+        "parent_asin": 154867,
+        "category": 154867,
+        "rating": 154867,
+        "timestamp": 154867,
+        "verified_purchase": 154867,
+        "helpful_vote": 154867,
+        "user_interaction_count": 154867,
+        "item_interaction_count": 154867,
+        "row_num": 154867,
+        "label_binary": 154867,
+        "label_strong": 154867,
+        "label_strength": 154867,
+        "dedup_strategy": 154867,
+        "split": 154867
+      },
+      "empty_counts": {},
+      "categories": {
+        "Electronics": 117382,
+        "Office_Products": 37485
+      },
+      "rating_label_verified_counts": {
+        "(1.0, 0, 0, True)": 25559,
+        "(5.0, 1, 1, True)": 89478,
+        "(5.0, 1, 0, False)": 5082,
+        "(2.0, 0, 0, True)": 8765,
+        "(4.0, 1, 1, True)": 13035,
+        "(3.0, 1, 1, True)": 9273,
+        "(4.0, 1, 0, False)": 1049,
+        "(1.0, 0, 0, False)": 1535,
+        "(3.0, 1, 0, False)": 602,
+        "(2.0, 0, 0, False)": 489
+      },
+      "min_timestamp": 1684108809399,
+      "max_timestamp": 1686787189215,
+      "elapsed_seconds": 0.97
+    },
+    "canonical_interactions.test.jsonl": {
+      "bytes": 97230923,
+      "rows": 242147,
+      "parse_errors": 0,
+      "field_counts": {
+        "user_id": 242147,
+        "parent_asin": 242147,
+        "category": 242147,
+        "rating": 242147,
+        "timestamp": 242147,
+        "verified_purchase": 242147,
+        "helpful_vote": 242147,
+        "user_interaction_count": 242147,
+        "item_interaction_count": 242147,
+        "row_num": 242147,
+        "label_binary": 242147,
+        "label_strong": 242147,
+        "label_strength": 242147,
+        "dedup_strategy": 242147,
+        "split": 242147
+      },
+      "empty_counts": {},
+      "categories": {
+        "Electronics": 184177,
+        "Office_Products": 57970
+      },
+      "rating_label_verified_counts": {
+        "(5.0, 1, 1, True)": 144541,
+        "(3.0, 1, 1, True)": 14296,
+        "(1.0, 0, 0, True)": 36866,
+        "(4.0, 1, 1, True)": 21150,
+        "(2.0, 0, 0, True)": 12455,
+        "(5.0, 1, 0, False)": 7572,
+        "(1.0, 0, 0, False)": 2297,
+        "(4.0, 1, 0, False)": 1407,
+        "(2.0, 0, 0, False)": 767,
+        "(3.0, 1, 0, False)": 796
+      },
+      "min_timestamp": 1686787206753,
+      "max_timestamp": 1694625981867,
+      "elapsed_seconds": 1.59
+    },
+    "canonical_items.jsonl": {
+      "bytes": 2678614488,
+      "rows": 864288,
+      "parse_errors": 0,
+      "field_counts": {
+        "parent_asin": 864288,
+        "category": 864288,
+        "source_categories": 864288,
+        "title_clean": 864288,
+        "main_category": 864288,
+        "categories_flat": 864288,
+        "categories_path": 864288,
+        "description_text": 864288,
+        "features_text": 864288,
+        "item_text": 864288,
+        "average_rating": 864288,
+        "rating_number": 864288,
+        "store": 864288
+      },
+      "empty_counts": {
+        "description_text": 409701,
+        "features_text": 122520,
+        "categories_flat": 51258,
+        "categories_path": 51258,
+        "store": 2351,
+        "main_category": 42974,
+        "title_clean": 35
+      },
+      "categories": {
+        "Office_Products": 291153,
+        "Electronics": 573135
+      },
+      "rating_label_verified_counts": {},
+      "min_timestamp": null,
+      "max_timestamp": null,
+      "elapsed_seconds": 13.8
+    }
+  },
+  "audit_method": {
+    "implementation": "Python standard library json line-by-line; Counter for fields, null/empty values, categories and rating-label-verified combinations; min/max timestamps",
+    "unique_ids_recounted": false,
+    "sha256_verified": false,
+    "remote_runtime_probed": false,
+    "models_loaded": false,
+    "null_definition": "None or empty string or empty list",
+    "test_use": "Schema and aggregate quality audit only; no prediction, training or model selection",
+    "limitations": [
+      "No cross-split dedup or item-ID coverage join performed",
+      "No historical metadata snapshot verification",
+      "No trained-model metric rerun"
+    ]
+  },
+  "base_file_schema_probe": [
+    {
+      "path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Electronics\\metadata.base.jsonl",
+      "bytes": 4927427181,
+      "sample_rows": 1,
+      "field_types": {
+        "dataset": "str",
+        "category": "str",
+        "parent_asin": "str",
+        "title": "str",
+        "main_category": "str",
+        "categories": "list",
+        "description": "list",
+        "features": "list",
+        "price": "NoneType",
+        "average_rating": "float",
+        "rating_number": "int",
+        "store": "str",
+        "details": "dict",
+        "bought_together": "NoneType",
+        "images": "list"
+      }
+    },
+    {
+      "path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Electronics\\reviews.base.jsonl",
+      "bytes": 24800725462,
+      "sample_rows": 1,
+      "field_types": {
+        "dataset": "str",
+        "category": "str",
+        "user_id": "str",
+        "parent_asin": "str",
+        "asin": "str",
+        "rating": "float",
+        "title": "str",
+        "text": "str",
+        "text_len": "int",
+        "timestamp": "int",
+        "verified_purchase": "bool",
+        "helpful_vote": "int"
+      }
+    },
+    {
+      "path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Office_Products\\metadata.base.jsonl",
+      "bytes": 2002108411,
+      "sample_rows": 1,
+      "field_types": {
+        "dataset": "str",
+        "category": "str",
+        "parent_asin": "str",
+        "title": "str",
+        "main_category": "str",
+        "categories": "list",
+        "description": "list",
+        "features": "list",
+        "price": "float",
+        "average_rating": "float",
+        "rating_number": "int",
+        "store": "str",
+        "details": "dict",
+        "bought_together": "NoneType",
+        "images": "list"
+      }
+    },
+    {
+      "path": "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\data\\processed\\amazon_2023_base\\Office_Products\\reviews.base.jsonl",
+      "bytes": 6438405034,
+      "sample_rows": 1,
+      "field_types": {
+        "dataset": "str",
+        "category": "str",
+        "user_id": "str",
+        "parent_asin": "str",
+        "asin": "str",
+        "rating": "float",
+        "title": "str",
+        "text": "str",
+        "text_len": "int",
+        "timestamp": "int",
+        "verified_purchase": "bool",
+        "helpful_vote": "int"
+      }
+    }
+  ],
+  "checks": {
+    "counts_match_manifest": true,
+    "timestamps_in_declared_windows": true
+  }
+}

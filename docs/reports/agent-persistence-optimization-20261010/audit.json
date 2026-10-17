@@ -1,0 +1,13 @@
+{
+  "successful_complete_requests": 63,
+  "steady_state_failed_requests": 0,
+  "five_real_items_each": true,
+  "separate_deliveries": true,
+  "deepfm_and_96_bge_each": true,
+  "scylla_transcript": "\n seq | entry_type\n-----+-------------------\n   1 |      USER_MESSAGE\n   2 | ASSISTANT_MESSAGE\n   3 | ASSISTANT_MESSAGE\n   4 |   ASSISTANT_FINAL\n\n(4 rows)\n",
+  "mysql_projection": "4\n1\t4\n",
+  "retry_without_new_delivery_or_history": true,
+  "feedback_applied_and_deduplicated": true,
+  "redis_ttl_ms": 86225232,
+  "recovered_without_hot_state_or_process_cache": true
+}

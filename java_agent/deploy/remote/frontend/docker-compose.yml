@@ -1,0 +1,22 @@
+services:
+  rs-frontend:
+    image: nginx:alpine
+    container_name: rs-agent-java-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${RS_FRONTEND_HOST_PORT:-18089}:80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - rs-agent-java
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+networks:
+  rs-agent-java:
+    external: true
+    name: rs-agent-java_default

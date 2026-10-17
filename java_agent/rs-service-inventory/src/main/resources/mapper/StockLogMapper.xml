@@ -5,6 +5,12 @@
 
 <mapper namespace="com.sinrotic.rs.inventory.mapper.StockLogMapper">
 
+    <select id="findByOrderSkuTypeForUpdate" resultMap="StockLogMap">
+        SELECT id, request_id, order_id, sku_id, quantity, type, created_at
+        FROM stock_logs WHERE order_id = #{orderId} AND sku_id = #{skuId} AND type = #{type}
+        FOR UPDATE
+    </select>
+
     <resultMap id="StockLogMap" type="com.sinrotic.rs.inventory.domain.entity.StockLog">
         <constructor>
             <arg column="id" javaType="long"/>

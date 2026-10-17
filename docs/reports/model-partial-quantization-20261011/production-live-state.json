@@ -1,0 +1,52 @@
+{
+  "health": 200,
+  "precision": "INT4 weights / BF16 activations",
+  "model_root": "/mnt/data/luo/models/Qwen3.5-4B-INT4-AutoRound-0a857215-rs-runtime",
+  "api_pid": 3845227,
+  "gpu": 1,
+  "max_model_len": 16384,
+  "gpu_memory_utilization": 0.5,
+  "ready_probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T04:31:22.849362+00:00",
+    "elapsed_seconds": 3.965
+  },
+  "model_loading_gib": 3.73,
+  "quantization_config": {
+    "autoround_version": "0.12.0",
+    "bits": 4,
+    "block_name_to_quantize": "model.language_model.layers",
+    "data_type": "int",
+    "group_size": 128,
+    "packing_format": "auto_round:auto_gptq",
+    "quant_method": "auto-round",
+    "sym": true
+  },
+  "kernel_evidence": [
+    "(EngineCore pid=3847460) INFO 10-11 12:30:04 [auto_gptq.py:355] Using MarlinLinearKernel for AutoGPTQLinearMethod"
+  ],
+  "gpu_memory": {
+    "total_mib": 24564,
+    "used_mib": 14871,
+    "free_mib": 9211
+  },
+  "runtime_env_sha256": "ca0a1fbeba27c862b6a7f22b57ac40d7017fa76652bfd0380f6ddff097874330",
+  "startup_scripts_unchanged": true,
+  "isolated_model_port_closed": true,
+  "cache_capacity_evidence": [
+    "(EngineCore pid=3847460) INFO 10-11 12:30:30 [gpu_worker.py:508] Available KV cache memory: 5.49 GiB",
+    "(EngineCore pid=3847460) INFO 10-11 12:30:30 [kv_cache_utils.py:2146] GPU KV cache size: 147,024 tokens",
+    "(EngineCore pid=3847460) INFO 10-11 12:30:30 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 8.97x"
+  ]
+}

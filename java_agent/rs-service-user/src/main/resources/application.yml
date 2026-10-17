@@ -9,5 +9,7 @@ spring:
 
 rs:
   auth:
+    refresh-cookie:
+      secure: ${RS_AUTH_REFRESH_COOKIE_SECURE:false}
     token-store:
-      type: memory
+      type: ${RS_AUTH_TOKEN_STORE_TYPE:memory}

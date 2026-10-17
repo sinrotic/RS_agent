@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from rs_core.common.io import write_json, write_jsonl
 from rs_lab.experiments.recall.pool500.methods.category.builder import expand_category_candidates_for_users
+
+pytestmark = pytest.mark.unit
 
 
 def test_category_on_demand_expands_requested_users_from_index_only_artifacts(tmp_path: Path) -> None:

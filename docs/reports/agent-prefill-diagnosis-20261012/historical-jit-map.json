@@ -1,0 +1,41 @@
+{
+  "http_model_calls": 105,
+  "jit_events": [
+    {
+      "request_ordinal": 1,
+      "time": "10-11 23:42:26",
+      "kernel": "_zero_kv_blocks_kernel"
+    },
+    {
+      "request_ordinal": 1,
+      "time": "10-11 23:42:26",
+      "kernel": "_compute_slot_mapping_kernel"
+    },
+    {
+      "request_ordinal": 1,
+      "time": "10-11 23:42:27",
+      "kernel": "_causal_conv1d_fwd_kernel"
+    },
+    {
+      "request_ordinal": 1,
+      "time": "10-11 23:42:28",
+      "kernel": "batch_memcpy_kernel"
+    },
+    {
+      "request_ordinal": 1,
+      "time": "10-11 23:42:29",
+      "kernel": "apply_token_bitmask_inplace_kernel"
+    },
+    {
+      "request_ordinal": 2,
+      "time": "10-11 23:42:34",
+      "kernel": "_fused_post_conv_kernel"
+    },
+    {
+      "request_ordinal": 13,
+      "time": "10-11 23:43:04",
+      "kernel": "fused_sigmoid_gating_delta_rule_update_kernel"
+    }
+  ],
+  "interpretation": "该临时模型只接收本轮新版对照；第1次为预热、第2次为单并发正式样本0"
+}

@@ -1,0 +1,29 @@
+{
+  "variant": "w8a16_middle",
+  "repeat": 2,
+  "configuration": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_QUANTIZATION": "fp8_per_block",
+    "VLLM_QUANTIZATION_CONFIG": "{\"ignore\":[\"lm_head\",\"re:.*visual.*\",\"re:.*linear_attn.*\",\"re:.*self_attn.*\",\"re:.*layers\\\\.(?:0|1|2|3|4|5|6|7|24|25|26|27|28|29|30|31)\\\\..*\"]}",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "1",
+    "VLLM_CACHE_ROOT": "/tmp/rs-agent-quantization-retry-20261011/cache/w8a16_middle"
+  },
+  "passed": true,
+  "gpu_memory_mib": 17673,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T03:39:09.618560+00:00",
+    "elapsed_seconds": 5.693
+  }
+}

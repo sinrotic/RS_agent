@@ -122,7 +122,7 @@ class OrderServiceTest {
     void createSeckillOrderUsesResolvedItemTitleAndPrice() {
         SeckillOrderCreateMessageDTO message = new SeckillOrderCreateMessageDTO(
                 "sec-req-1",
-                1L,
+                "acc_1",
                 "activity-1",
                 "item-9",
                 "sku-9",
@@ -141,7 +141,7 @@ class OrderServiceTest {
         verify(inventoryClient).lock("sec-req-1", 1001L, "sku-9", 3);
         verify(orderMapper).insertOrder(org.mockito.ArgumentMatchers.argThat(order ->
                 order.getRequestId().equals("sec-req-1")
-                        && order.getAccountId().equals(1L)
+                        && order.getAccountId().equals("acc_1")
                         && order.getProfileUserId() == null
                         && order.getSessionId() == null
                         && order.getRecommendRequestId() == null
@@ -163,7 +163,7 @@ class OrderServiceTest {
         OrderService serviceWithConfiguredResolver = orderServiceWithConfiguredResolver(properties);
         SeckillOrderCreateMessageDTO message = new SeckillOrderCreateMessageDTO(
                 "sec-req-configured",
-                1L,
+                "acc_1",
                 "activity-1",
                 "item-9",
                 "sku-9",
@@ -180,7 +180,7 @@ class OrderServiceTest {
         verify(inventoryClient).lock("sec-req-configured", 1001L, "sku-9", 3);
         verify(orderMapper).insertOrder(org.mockito.ArgumentMatchers.argThat(order ->
                 order.getRequestId().equals("sec-req-configured")
-                        && order.getAccountId().equals(1L)
+                        && order.getAccountId().equals("acc_1")
                         && order.getTotalAmount().equals(597L)
         ));
         verify(orderItemMapper).insertItem(org.mockito.ArgumentMatchers.argThat(item ->
@@ -197,7 +197,7 @@ class OrderServiceTest {
     void createSeckillOrderReturnsExistingOrderForDuplicateRequestId() {
         SeckillOrderCreateMessageDTO message = new SeckillOrderCreateMessageDTO(
                 "sec-req-1",
-                1L,
+                "acc_1",
                 "activity-1",
                 "item-9",
                 "sku-9",
@@ -227,7 +227,7 @@ class OrderServiceTest {
         );
         SeckillOrderCreateMessageDTO message = new SeckillOrderCreateMessageDTO(
                 "sec-req-missing",
-                1L,
+                "acc_1",
                 "missing-activity",
                 "item-9",
                 "sku-9",
@@ -248,7 +248,7 @@ class OrderServiceTest {
         OrderService serviceWithConfiguredResolver = orderServiceWithConfiguredResolver(properties);
         SeckillOrderCreateMessageDTO message = new SeckillOrderCreateMessageDTO(
                 "sec-req-mismatch",
-                1L,
+                "acc_1",
                 "activity-1",
                 "wrong-item",
                 "sku-9",
@@ -269,7 +269,7 @@ class OrderServiceTest {
         OrderService serviceWithConfiguredResolver = orderServiceWithConfiguredResolver(properties);
         SeckillOrderCreateMessageDTO message = new SeckillOrderCreateMessageDTO(
                 "sec-req-missing-sku",
-                1L,
+                "acc_1",
                 "activity-1",
                 "item-9",
                 "missing-sku",
@@ -495,7 +495,7 @@ class OrderServiceTest {
     private CreateOrderRequestDTO createRequest(String requestId) {
         return new CreateOrderRequestDTO(
                 requestId,
-                1L,
+                "acc_1",
                 "profile-1",
                 "session-1",
                 "rec-1",
@@ -511,7 +511,7 @@ class OrderServiceTest {
         Order order = new Order();
         order.setOrderId(orderId);
         order.setRequestId(requestId);
-        order.setAccountId(1L);
+        order.setAccountId("acc_1");
         order.setStatus(status);
         order.setTotalAmount(300L);
         return order;

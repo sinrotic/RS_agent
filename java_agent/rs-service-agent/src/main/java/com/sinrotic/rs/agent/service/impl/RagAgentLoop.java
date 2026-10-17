@@ -3,6 +3,7 @@ package com.sinrotic.rs.agent.service.impl;
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
 import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
 import com.sinrotic.rs.agent.service.AgentInterrupter;
+import com.sinrotic.rs.agent.service.AgentExecutionLimiter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 
@@ -34,6 +35,17 @@ public class RagAgentLoop extends AgentLoop {
             AgentLoopHookDispatcher hookDispatcher,
             AgentInterrupter interrupter
     ) {
+        this(runtimeConfigurationService, toolUseExecutor, modelStreamClient, hookDispatcher, interrupter, null);
+    }
+
+    public RagAgentLoop(
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentModelStreamClient modelStreamClient,
+            AgentLoopHookDispatcher hookDispatcher,
+            AgentInterrupter interrupter,
+            AgentExecutionLimiter executionLimiter
+    ) {
         super(
                 new AgentProfile(
                         "rag_agent",
@@ -48,7 +60,8 @@ public class RagAgentLoop extends AgentLoop {
                 toolUseExecutor,
                 modelStreamClient,
                 hookDispatcher,
-                interrupter
+                interrupter,
+                executionLimiter
         );
     }
 }

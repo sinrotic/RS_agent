@@ -1,0 +1,30 @@
+{
+  "schema_version": "rs-skill-calibration-report/1",
+  "benchmark_sha256": "efea6b39ee27de18f2e10605e188205ce7840a82eea74b07a1c11e3a36549c02",
+  "scorer_sha256": "1050f8ba9b66a3e8877073e81f405ea5f9e2a48730aa36c5c2d938475fad81ac",
+  "review_queue_sha256": "23d458564c57ff61450e6ceae1611f796e407db24c5192a58fcd8d642cb968a9",
+  "scoring_key_sha256": "c710fe18e70eb54d521ae8c90d900bd8aff11c6596ccd78e32b2b0bfedca5a91",
+  "human_labels_sha256": "169fabe38e94c65ddcaeefdb088a7d37a84236e84c61fc9a371d62ba7bc32837",
+  "review_origin": "human",
+  "reviewed_pairs": 0,
+  "valid_reviewed_pairs": 0,
+  "invalid_pairs": 0,
+  "reviewed_families": 0,
+  "agreement": null,
+  "agreement_family_bootstrap_95pct": null,
+  "disagreements": [],
+  "policy": {
+    "min_valid_pairs": 30,
+    "min_independent_families": 10,
+    "min_agreement": 0.8,
+    "min_bootstrap_lower": 0.6,
+    "note": "engineering_acceptance_thresholds; not_guaranteed_business_validity"
+  },
+  "passed": false,
+  "blockers": [
+    "fewer_than_30_valid_human_pairs",
+    "fewer_than_10_independent_reviewed_users",
+    "formula_human_agreement_not_established"
+  ],
+  "auto_deploy": false
+}

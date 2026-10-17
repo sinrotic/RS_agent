@@ -1,0 +1,79 @@
+{
+  "gpu": "0, NVIDIA GeForce RTX 4090, 17793 MiB, 24564 MiB, 100 %\n1, NVIDIA GeForce RTX 4090, 23325 MiB, 24564 MiB, 0 %\n2, NVIDIA GeForce RTX 4090, 17793 MiB, 24564 MiB, 100 %\n",
+  "scope": "real full fast recommendation, same query, no vLLM configuration changes",
+  "services": {
+    "agent-base": {
+      "mounts": [
+        {
+          "Source": "/tmp/rs-agent-e2e-20261010-pool-1400/rs-service-agent-before.jar",
+          "Destination": "/app/service.jar",
+          "RW": false
+        }
+      ],
+      "settings": {
+        "RS_AGENT_SESSION_PERSISTENCE_ENABLED": "true",
+        "RS_RECOMMEND_FEEDBACK_PERSISTENCE": "jdbc",
+        "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "true",
+        "RS_RECOMMEND_INFERENCE_CACHE_EMBEDDING_VERSION": "bge_m3_fp16_e2e_v1",
+        "RS_RECOMMEND_INFERENCE_CACHE_RERANKER_VERSION": "bge_reranker_fp16_e2e_v1"
+      }
+    },
+    "agent-fast": {
+      "mounts": [
+        {
+          "Source": "/tmp/rs-agent-e2e-20261010-pool-1400/rs-service-agent-final.jar",
+          "Destination": "/app/service.jar",
+          "RW": false
+        }
+      ],
+      "settings": {
+        "RS_AGENT_SESSION_PERSISTENCE_ENABLED": "true",
+        "RS_RECOMMEND_FEEDBACK_PERSISTENCE": "jdbc",
+        "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "true",
+        "RS_RECOMMEND_INFERENCE_CACHE_EMBEDDING_VERSION": "bge_m3_fp16_e2e_v1",
+        "RS_RECOMMEND_INFERENCE_CACHE_RERANKER_VERSION": "bge_reranker_fp16_e2e_v1"
+      }
+    },
+    "recommend-base": {
+      "mounts": [
+        {
+          "Source": "/tmp/rs-agent-e2e-20261010-pool-1400/rs-service-recommend-before.jar",
+          "Destination": "/app/service.jar",
+          "RW": false
+        }
+      ],
+      "settings": {
+        "RS_RECOMMEND_FEEDBACK_PERSISTENCE": "jdbc",
+        "RS_AGENT_SESSION_PERSISTENCE_ENABLED": "true",
+        "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "true",
+        "RS_RECOMMEND_INFERENCE_CACHE_EMBEDDING_VERSION": "bge_m3_fp16_e2e_v1",
+        "RS_RECOMMEND_INFERENCE_CACHE_RERANKER_VERSION": "bge_reranker_fp16_e2e_v1"
+      }
+    },
+    "recommend-fast": {
+      "mounts": [
+        {
+          "Source": "/tmp/rs-agent-e2e-20261010-pool-1400/rs-service-recommend.jar",
+          "Destination": "/app/service.jar",
+          "RW": false
+        }
+      ],
+      "settings": {
+        "RS_RECOMMEND_FEEDBACK_PERSISTENCE": "jdbc",
+        "RS_AGENT_SESSION_PERSISTENCE_ENABLED": "true",
+        "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "true",
+        "RS_RECOMMEND_INFERENCE_CACHE_EMBEDDING_VERSION": "bge_m3_fp16_e2e_v1",
+        "RS_RECOMMEND_INFERENCE_CACHE_RERANKER_VERSION": "bge_reranker_fp16_e2e_v1"
+      }
+    }
+  },
+  "vllm_after": {
+    "pid": 3551299,
+    "settings": {
+      "--port": "18082",
+      "--max-model-len": "4096",
+      "--gpu-memory-utilization": "0.85"
+    },
+    "prefix_caching": true
+  }
+}

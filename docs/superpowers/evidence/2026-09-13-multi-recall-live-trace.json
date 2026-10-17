@@ -1,0 +1,70 @@
+{
+  "checks": [
+    "真实浏览器经 Gateway 返回的交付 Trace 包含协同、类目和双塔贡献"
+  ],
+  "batches": [
+    {
+      "action": "different",
+      "request_id": "rec_req_2c6e2222-a9b6-42c6-bd6a-6a2ce20d5f2c",
+      "source_distribution": {
+        "profile_category": 16,
+        "itemcf_strong": 9,
+        "two_tower": 15,
+        "swing_recall": 9,
+        "category": 11,
+        "profile_semantic": 12,
+        "popular": 16,
+        "catalog_exploration": 24,
+        "usercf_recall": 9,
+        "itemcf_weak": 9
+      }
+    },
+    {
+      "action": "different",
+      "request_id": "rec_req_9656776a-0fe6-4846-96f4-bc8d00903ae9",
+      "source_distribution": {
+        "profile_category": 16,
+        "itemcf_strong": 10,
+        "two_tower": 15,
+        "swing_recall": 10,
+        "category": 11,
+        "profile_semantic": 10,
+        "popular": 16,
+        "catalog_exploration": 24,
+        "usercf_recall": 9,
+        "itemcf_weak": 9
+      }
+    },
+    {
+      "action": "dislike",
+      "request_id": "rec_req_0b6fbd68-afa8-4a13-b497-409e3b85f5e2",
+      "source_distribution": {
+        "usercf_recall": 9,
+        "popular": 16,
+        "itemcf_strong": 10,
+        "category": 11,
+        "catalog_exploration": 24,
+        "profile_semantic": 10,
+        "current_delivery": 3,
+        "two_tower": 15,
+        "swing_recall": 10,
+        "itemcf_weak": 9,
+        "profile_category": 16
+      }
+    },
+    {
+      "action": "similar",
+      "request_id": "rec_req_e6dff99a-290e-4ca2-b241-1d4ce2e3a6af",
+      "source_distribution": {
+        "two_tower": 0,
+        "itemcf_strong": 0,
+        "itemcf_weak": 0,
+        "swing_recall": 0,
+        "feedback_category": 32,
+        "catalog_exploration": 24,
+        "feedback_semantic": 40
+      }
+    }
+  ],
+  "status": "PASS"
+}

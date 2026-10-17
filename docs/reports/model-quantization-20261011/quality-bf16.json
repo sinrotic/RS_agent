@@ -1,0 +1,102 @@
+{
+  "passed": true,
+  "results": [
+    {
+      "case": "advice_0",
+      "passed": true,
+      "elapsed_ms": 1120.16,
+      "usage": {
+        "prompt_tokens": 344,
+        "total_tokens": 421,
+        "completion_tokens": 77,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "suggestions": [
+          "选择容量适中，能容纳日常电脑和文件，但不宜过重。",
+          "注重背包的背负系统，确保长时间背负舒适，减轻肩部压力。",
+          "检查背包材质和防水性能，以适应通勤环境中的各种天气条件。"
+        ]
+      }
+    },
+    {
+      "case": "advice_1",
+      "passed": true,
+      "elapsed_ms": 808.73,
+      "usage": {
+        "prompt_tokens": 344,
+        "total_tokens": 421,
+        "completion_tokens": 77,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "suggestions": [
+          "选择容量适中，能容纳日常电脑和文件，但不宜过重。",
+          "注重背包的背负系统，确保长时间背负舒适，减轻肩部压力。",
+          "检查背包材质和防水性能，以适应通勤环境中的各种天气条件。"
+        ]
+      }
+    },
+    {
+      "case": "advice_2",
+      "passed": true,
+      "elapsed_ms": 806.45,
+      "usage": {
+        "prompt_tokens": 344,
+        "total_tokens": 421,
+        "completion_tokens": 77,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "suggestions": [
+          "选择容量适中，能容纳日常电脑和文件，但不宜过重。",
+          "注重背包的背负系统，确保长时间背负舒适，减轻肩部压力。",
+          "检查背包材质和防水性能，以适应通勤环境中的各种天气条件。"
+        ]
+      }
+    },
+    {
+      "case": "budget_math",
+      "passed": true,
+      "elapsed_ms": 468.63,
+      "usage": {
+        "prompt_tokens": 329,
+        "total_tokens": 371,
+        "completion_tokens": 42,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "total": 278,
+        "remaining": 22
+      }
+    },
+    {
+      "case": "clarify_budget",
+      "passed": true,
+      "elapsed_ms": 632.39,
+      "usage": {
+        "prompt_tokens": 312,
+        "total_tokens": 356,
+        "completion_tokens": 44,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "question": "我想买日常通勤背包，还没确定预算。只问我预算，不检索商品。"
+      }
+    },
+    {
+      "case": "clarify_size",
+      "passed": true,
+      "elapsed_ms": 353.22,
+      "usage": {
+        "prompt_tokens": 315,
+        "total_tokens": 346,
+        "completion_tokens": 31,
+        "prompt_tokens_details": null
+      },
+      "result": {
+        "question": "我的电脑尺寸是多少？"
+      }
+    }
+  ]
+}

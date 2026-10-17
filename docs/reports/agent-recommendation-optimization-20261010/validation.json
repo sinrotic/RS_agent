@@ -1,0 +1,38 @@
+{
+  "cutoff_local": "2026-10-10 11:10 Asia/Shanghai",
+  "modules": {
+    "rs-service-agent": {
+      "tests": 199,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "rs-service-recommend": {
+      "tests": 101,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "total": {
+    "tests": 300,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1
+  },
+  "report_count": 84,
+  "build": "mvn -pl rs-service-agent,rs-service-recommend -am package -DargLine=-Xmx1024m -q",
+  "exit_code": 0,
+  "jars_sha256": {
+    "rs-service-agent": "00ec02dd054e8e20830b174c8589fb164ecdf56c6994ee6be3287949d8cf5017",
+    "rs-service-recommend": "a687fb9e21fdb78ff153024368cf2ff02dd82cd82b88cb4220319e8e3433fb78"
+  },
+  "python_http_tests": {
+    "passed": 3
+  },
+  "limits": {
+    "maven_heap": "1536m",
+    "test_heap": "1024m"
+  },
+  "full_business_300ms_acceptance": false
+}

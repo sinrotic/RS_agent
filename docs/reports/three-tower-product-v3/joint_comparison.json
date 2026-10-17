@@ -1,0 +1,92 @@
+{
+  "rec": {
+    "run_names": [
+      "joint_control_rec",
+      "joint_adjusted_rec_seed43",
+      "joint_adjusted_rec_seed44"
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "rec_hit100": [
+      0.033,
+      0.035,
+      0.034
+    ],
+    "semantic_source_hit10": [
+      0.5,
+      0.6,
+      0.5
+    ],
+    "semantic_source_mrr": [
+      0.38213117720291767,
+      0.4337903471962331,
+      0.3829105381053055
+    ]
+  },
+  "semantic": {
+    "run_names": [
+      "joint_adjusted_semantic_seed42",
+      "joint_adjusted_semantic_seed43",
+      "joint_adjusted_semantic_seed44"
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "rec_hit100": [
+      0.031,
+      0.031,
+      0.031
+    ],
+    "semantic_source_hit10": [
+      0.3,
+      0.3,
+      0.3
+    ],
+    "semantic_source_mrr": [
+      0.14585320306651905,
+      0.12346260180917239,
+      0.13248411409189145
+    ]
+  },
+  "joint": {
+    "run_names": [
+      "joint_weight01_qlr",
+      "joint_adjusted_joint_seed43",
+      "joint_adjusted_joint_seed44"
+    ],
+    "seeds": [
+      42,
+      43,
+      44
+    ],
+    "rec_hit100": [
+      0.033,
+      0.035,
+      0.034
+    ],
+    "semantic_source_hit10": [
+      0.6,
+      0.6,
+      0.6
+    ],
+    "semantic_source_mrr": [
+      0.36601507004216366,
+      0.36725733917728165,
+      0.3676316015216452
+    ]
+  },
+  "joint_vs_rec": {
+    "mean_hit100_delta": 0.0,
+    "paired_user_95pct": [
+      -0.001,
+      0.001
+    ],
+    "selection_adjusted": false
+  },
+  "scope": "technical proxy with 16 semantic train and 10 holdout queries; tuning on proxy prevents final quality claims"
+}

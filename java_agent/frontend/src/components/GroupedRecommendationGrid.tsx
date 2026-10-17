@@ -1,14 +1,15 @@
-import { RecommendationGroup } from '../utils/displayViewModel';
+import { DisplayProduct, RecommendationGroup } from '../utils/displayViewModel';
 import { ProductCard, ProductFeedbackAction } from './ProductCard';
 
 interface GroupedRecommendationGridProps {
   groups: RecommendationGroup[];
   onFeedback: (actionType: ProductFeedbackAction, itemId: string) => void;
+  onOpen: (item: DisplayProduct) => void;
   disabled: boolean;
   variant?: 'compact' | 'mall';
 }
 
-export function GroupedRecommendationGrid({ groups, onFeedback, disabled, variant = 'compact' }: GroupedRecommendationGridProps) {
+export function GroupedRecommendationGrid({ groups, onFeedback, onOpen, disabled, variant = 'compact' }: GroupedRecommendationGridProps) {
   if (groups.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-800/40 p-8 text-center text-sm text-slate-400">
@@ -34,13 +35,15 @@ export function GroupedRecommendationGrid({ groups, onFeedback, disabled, varian
             </span>
           </div>
           <div className={`grid grid-cols-1 gap-4 sm:grid-cols-2 ${variant === 'mall' ? 'lg:grid-cols-3 xl:grid-cols-4' : 'xl:grid-cols-3'}`}>
-            {group.items.map((item) => (
+            {group.items.map((item, index) => (
               <ProductCard
                 key={item.itemId}
                 item={item}
                 onFeedback={onFeedback}
+                onOpen={onOpen}
                 disabled={disabled}
                 variant={variant}
+                position={index + 1}
               />
             ))}
           </div>

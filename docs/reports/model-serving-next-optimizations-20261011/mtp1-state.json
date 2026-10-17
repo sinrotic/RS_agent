@@ -1,0 +1,56 @@
+{
+  "label": "mtp1",
+  "model_path": "/mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011",
+  "budget": 0.5,
+  "max_num_seqs": 128,
+  "max_num_batched_tokens_requested": null,
+  "mtp": true,
+  "prewarm16": true,
+  "passed": true,
+  "launcher_pid": 1300619,
+  "probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_8"
+    ],
+    "checked_at": "2026-10-11T12:16:38.970153+00:00",
+    "elapsed_seconds": 10.62
+  },
+  "extra_probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream",
+      "named_tool_concurrency_16"
+    ],
+    "checked_at": "2026-10-11T12:16:43.936695+00:00",
+    "elapsed_seconds": 4.854
+  },
+  "resolved_scheduler": {
+    "max_num_batched_tokens": 2048,
+    "max_num_seqs": 128,
+    "async_scheduling": true,
+    "enable_chunked_prefill": true
+  },
+  "resolved_cache": {
+    "block_size": 528,
+    "mamba_cache_mode": "align",
+    "cache_dtype": "auto"
+  },
+  "gpu_used_mib": 11791,
+  "owned_cleanup_passed": true
+}

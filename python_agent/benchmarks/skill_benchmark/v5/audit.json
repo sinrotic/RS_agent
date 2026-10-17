@@ -1,0 +1,319 @@
+{
+  "schema_version": "rs-skill-readiness-audit/1",
+  "benchmark_sha256": "efea6b39ee27de18f2e10605e188205ce7840a82eea74b07a1c11e3a36549c02",
+  "summary": {
+    "catalog_count": 900,
+    "task_count": 1985,
+    "family_count": 150,
+    "turn_count": 2705,
+    "split_counts": {
+      "train": 1187,
+      "dev": 382,
+      "test": 416
+    },
+    "kind_counts": {
+      "clear_purchase": 150,
+      "missing_budget": 150,
+      "gift_needs": 150,
+      "explicit_new_need": 150,
+      "price_priority": 150,
+      "explicit_store_preference": 150,
+      "confirmed_history_preference": 150,
+      "budget_change": 150,
+      "reject_previous": 150,
+      "unknown_warranty": 150,
+      "tool_unavailable": 150,
+      "budget_unaffordable": 150,
+      "compatibility_unknown": 58,
+      "repeat_purchase": 13,
+      "profile_contrast_authorized": 18,
+      "profile_contrast_uncertain": 24,
+      "profile_contrast_override": 24,
+      "profile_contrast_gift": 24,
+      "profile_contrast_cross_category": 24
+    },
+    "human_reviewed": false,
+    "profile_count": 150
+  },
+  "independent_users_per_split": {
+    "train": 90,
+    "dev": 30,
+    "test": 30
+  },
+  "independent_statistical_clusters_per_split": {
+    "train": 83,
+    "dev": 29,
+    "test": 26
+  },
+  "profile_contrast_groups_per_split": {
+    "train": {
+      "authorized": 6,
+      "uncertain": 7,
+      "override": 7,
+      "gift": 7,
+      "cross_category": 7
+    },
+    "dev": {
+      "uncertain": 1,
+      "override": 1,
+      "gift": 1,
+      "cross_category": 1
+    },
+    "test": {
+      "authorized": 3,
+      "uncertain": 4,
+      "override": 4,
+      "gift": 4,
+      "cross_category": 4
+    }
+  },
+  "catalog_curation": {
+    "catalog_corrections": [
+      {
+        "item_id": "B0141EPA7S",
+        "corrected_category": "CB Radio Microphones",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Fixed-mount CB Radios",
+        "original_path": [
+          "Electronics",
+          "Portable Audio & Video",
+          "CB & Two-Way Radios",
+          "CB Radios & Scanners",
+          "Fixed-mount CB Radios"
+        ],
+        "reason": "标题明确为 CB 麦克风配件，不是电台主机",
+        "evidence": "RoadKing RK56CHSS Chrome Noise Canceling CB Microphone with Chrome Flex Cord,XLR",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0778M33SB",
+        "corrected_category": "Keyboards",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Keyboard & Mouse Combos",
+        "original_path": [
+          "Electronics",
+          "Computers & Accessories",
+          "Computer Accessories & Peripherals",
+          "Keyboards, Mice & Accessories",
+          "Keyboard & Mouse Combos"
+        ],
+        "reason": "标题是带触摸板的键盘，没有独立鼠标套装证据",
+        "evidence": "Mini Wireless Keyboard,Q9 Mini Keyboard with Touchpad,Colorful Backlit Small Wireless Keyboard,Mini Rechargeable Handheld Remote Keyboard for PC,Raspberry Pi 4, Android TV Box,KODI,Windows 7 8 10",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B07BRM55KC",
+        "corrected_category": "Open-Ear Headphones",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Earbud Headphones",
+        "original_path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ],
+        "reason": "标题明确为开放式/骨传导/空气传导，不属于入耳式",
+        "evidence": "GZCRDZ Bone Conduction Wired Headphones with Noise Cancelling Mic 3.5mm Connector Sweat Resistant Headphones for Cycling Running and Other Sports (Black)",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B07DBTFKD9",
+        "corrected_category": "SWR Meters",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Fixed-mount CB Radios",
+        "original_path": [
+          "Electronics",
+          "Portable Audio & Video",
+          "CB & Two-Way Radios",
+          "CB Radios & Scanners",
+          "Fixed-mount CB Radios"
+        ],
+        "reason": "标题明确为驻波比测量表，不是车载电台",
+        "evidence": "Workman SWR Meter for CB Radio Antennas SWR2T",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B09BC3MG1X",
+        "corrected_category": "Pen Refills",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Gel Ink Rollerball Pens",
+        "original_path": [
+          "Office Products",
+          "Office & School Supplies",
+          "Writing & Correction Supplies",
+          "Pens & Refills",
+          "Rollerball Pens",
+          "Gel Ink Rollerball Pens"
+        ],
+        "reason": "标题明确为替换笔芯，不是整支笔",
+        "evidence": "Cross Selectip Gel Rollingball Pen Refill, Black, 1 per Card (8523)",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B09HR8FMBJ",
+        "corrected_category": "Pen Refills",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Ballpoint Pens",
+        "original_path": [
+          "Office Products",
+          "Office & School Supplies",
+          "Writing & Correction Supplies",
+          "Pens & Refills",
+          "Ballpoint Pens"
+        ],
+        "reason": "标题明确为替换笔芯，不是整支笔",
+        "evidence": "10 Pack, Pen Savings Ballpoint Pen Refills Compatible with Montblanc Twist Style Ballpoint Pens, Medium Point (Bulk Packed) (Assorted)",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B09PTV7FDP",
+        "corrected_category": "Heart Rate Monitors",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Portable Bluetooth Speakers",
+        "original_path": [
+          "Electronics",
+          "Portable Audio & Video",
+          "Portable Speakers & Docks",
+          "Portable Bluetooth Speakers"
+        ],
+        "reason": "标题明确为胸带心率计，不是音箱",
+        "evidence": "Magene H603 Chest Strap Heart Rate Monitor, ANT+ and Bluetooth Compatible with Fully Adjustable Strap, iPhone & Android Compatible",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B09Z4HV86M",
+        "corrected_category": "Wi-Fi Range Extenders",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Earbud Headphones",
+        "original_path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ],
+        "reason": "标题明确为 Wi-Fi 信号扩展器，不是耳机",
+        "evidence": "WiFi Extender Signal Booster Up to 2640sq.ft and 25 Devices, Wireless Internet Repeater, WiFi Range Extender, Long Range Amplifier with Ethernet Port, 1-Tap Setup, Access Point, Alexa Compatible",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0B8Z2C1J8",
+        "corrected_category": "Sticky Note Dispensers",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Self-Stick Notes",
+        "original_path": [
+          "Office Products",
+          "Office & School Supplies",
+          "Paper",
+          "Notebooks & Writing Pads",
+          "Self-Stick Notes"
+        ],
+        "reason": "标题明确为便利贴分配器，不是便利贴纸",
+        "evidence": "Post-it Pop-up Notes Dispenser, 3 in x 3 in, Black Base Clear Top (DS330-BK)",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0BL79KPTX",
+        "corrected_category": "Open-Ear Headphones",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Earbud Headphones",
+        "original_path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ],
+        "reason": "标题明确为开放式/骨传导/空气传导，不属于入耳式",
+        "evidence": "WFOELVR Open Ear Wireless Headphones Bluetooth Headphones Wirless Earbuds Bluetooth Earbuds Wireless Earphones Bluetooth Earphones (G37-Black)",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0BN5R2MZL",
+        "corrected_category": "Open-Ear Headphones",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Earbud Headphones",
+        "original_path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ],
+        "reason": "标题明确为开放式/骨传导/空气传导，不属于入耳式",
+        "evidence": "Air Conduction Headphones, Open Ear Headphones Wireless Bluetooth with Mic, Wireless Bluetooth 5.2 Headphones with Wraparound Frame for Workout Running Cycling",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0BWF1LXQL",
+        "corrected_category": "Micro SD Memory Cards",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Dome Cameras",
+        "original_path": [
+          "Electronics",
+          "Camera & Photo",
+          "Video Surveillance",
+          "Surveillance Cameras",
+          "Dome Cameras"
+        ],
+        "reason": "标题明确为 micro SD 存储卡，不是摄像头",
+        "evidence": "ARMIDO 64GB Class 10 Micro SDXC Flash Memory Card for Wireless WiFi Light Socket Bulb Security Camera- 100MB/s UHS-I, C10, U3 (64G)",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0BZ77GKLP",
+        "corrected_category": "Open-Ear Headphones",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Earbud Headphones",
+        "original_path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ],
+        "reason": "标题明确为开放式/骨传导/空气传导，不属于入耳式",
+        "evidence": "Ear Clips Ear Buds Clip On Earbuds Open Ear Headphones Bone Conduction Earbuds Wireless Bone Conduction Headphones Bluetooth Bone Conducting Earbud Earphones",
+        "scope": "benchmark_only; not_source_database_write"
+      },
+      {
+        "item_id": "B0CCCYYYHL",
+        "corrected_category": "Open-Ear Headphones",
+        "version": "title-grounded-category-and-traits/1",
+        "original_category": "Earbud Headphones",
+        "original_path": [
+          "Electronics",
+          "Headphones, Earbuds & Accessories",
+          "Headphones & Earbuds",
+          "Earbud Headphones"
+        ],
+        "reason": "标题明确为开放式/骨传导/空气传导，不属于入耳式",
+        "evidence": "EUQQ Open Ear Clip Headphones, Wireless Earbuds Bluetooth 5.3, Sports Earbuds Built-in Microphone with Earhooks & Ear Hook, Wireless Charging Case & Display, Waterproof Fitness Earbuds for Running",
+        "scope": "benchmark_only; not_source_database_write"
+      }
+    ],
+    "history_unique_items_corrected": 7,
+    "scope": "known_title_grounded_contradictions; not_full_catalog_semantic_certification",
+    "full_semantic_review": "pending"
+  },
+  "outcome_turn_counts": {
+    "recommend": 1870,
+    "clarify": 420,
+    "uncertain_match": 150,
+    "no_match": 207,
+    "defer": 58
+  },
+  "reference_path_failures": [],
+  "zero_idcg_recommendation_turns": [],
+  "profile_history_metadata_min": 4,
+  "formula_controls": {
+    "origin": "not_real_agent; diagnostic_only; oracle_exclusion_path",
+    "price_only_mean_ranking_score": 96.85215476564957,
+    "price_only_nonoptimal_turns": 124,
+    "ranking_turns": 1870
+  },
+  "ready_for_baseline_diagnostics": true,
+  "ready_for_validated_skill_iteration": false,
+  "readiness_blockers": [
+    "human_task_review_pending",
+    "scoring_calibration_pending",
+    "full_catalog_semantic_review_pending"
+  ],
+  "auto_deploy": false
+}

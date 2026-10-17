@@ -1,0 +1,109 @@
+{
+  "checked_at_utc": "2026-10-11T15:04:36.842076+00:00",
+  "shared_agent_id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+  "shared_agent_running": true,
+  "shared_agent_unchanged": true,
+  "shared_model_unchanged": true,
+  "shared_model": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "current_jar_sha256": "4bc94fc6894a65fb933071ac91c2506c5964542c68d464f59155967c027c1c76",
+  "current_jar_matches": true,
+  "shared_agent_flags": {
+    "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "false",
+    "RS_AGENT_LLM_SYNTHESIS_ENABLED": "true",
+    "RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED": "true",
+    "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+    "RS_AGENT_MAX_MODEL_STREAMS": "16",
+    "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS": "15000",
+    "RS_AGENT_MAX_RECOMMENDATION_CALLS": "4",
+    "RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS": "15000",
+    "RS_AGENT_MAX_TOOL_CALLS": "64",
+    "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2"
+  },
+  "test_container_absent": true,
+  "private_clone_env_absent": true,
+  "temporary_model_stopped": true,
+  "temporary_gpu_process_groups_absent": true,
+  "gpu_snapshot": {
+    "gpus": [
+      {
+        "index": 0,
+        "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 17793,
+        "utilization": 94
+      },
+      {
+        "index": 1,
+        "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 14367,
+        "utilization": 0
+      },
+      {
+        "index": 2,
+        "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 3785,
+        "utilization": 2
+      }
+    ],
+    "processes": [
+      {
+        "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "pid": 3975157,
+        "used_mib": 17770,
+        "script": "train_highh_native_1m.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 3417056,
+        "used_mib": 3062,
+        "script": "bge_m3_embedding_server.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 1616131,
+        "used_mib": 11276,
+        "script": "(非脚本入口)"
+      },
+      {
+        "gpu_uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+        "pid": 1903294,
+        "used_mib": 3762,
+        "script": "(非脚本入口)"
+      }
+    ]
+  },
+  "health": {
+    "agent": {
+      "status": 200,
+      "health": "UP"
+    },
+    "gateway": {
+      "status": 200,
+      "health": "UP"
+    },
+    "recommend": {
+      "status": 200,
+      "health": "UP"
+    },
+    "catalog": {
+      "status": 200,
+      "health": "UP"
+    },
+    "user": {
+      "status": 200,
+      "health": "UP"
+    },
+    "model": {
+      "status": 200,
+      "health": "UP"
+    }
+  },
+  "temporary_model_port_closed": true
+}

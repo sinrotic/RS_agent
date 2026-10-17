@@ -3,15 +3,17 @@ package com.sinrotic.rs.recommend.service.impl;
 import com.sinrotic.rs.recommend.domain.dto.AgentRecommendCandidatesRequestDTO;
 import com.sinrotic.rs.recommend.domain.dto.AgentRecommendToolRequestDTO;
 import com.sinrotic.rs.recommend.domain.dto.HomeRecommendRequestDTO;
+import com.sinrotic.rs.recommend.domain.delivery.RecommendationIdentity;
 import com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidateItemVO;
 import com.sinrotic.rs.recommend.domain.vo.AgentRecommendCandidatesVO;
 import com.sinrotic.rs.recommend.domain.vo.HomeRecommendVO;
 import com.sinrotic.rs.recommend.domain.vo.RecommendItemVO;
 import com.sinrotic.rs.recommend.service.AgentRecommendService;
 import com.sinrotic.rs.recommend.service.HomeRecommendService;
+import com.sinrotic.rs.recommend.service.SemanticItemRecallProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -22,15 +24,32 @@ import java.util.Map;
 public class DefaultAgentRecommendService implements AgentRecommendService {
 
     private final HomeRecommendService homeRecommendService;
+    private final SemanticItemRecallProvider semanticItemRecallProvider;
+    private TrainedAgentCandidateRanker trainedRanker;
+
+    @Autowired
+    public void setTrainedAgentRanker(TrainedAgentCandidateRanker ranker) { this.trainedRanker = ranker; }
 
     public DefaultAgentRecommendService(HomeRecommendService homeRecommendService) {
+        this(homeRecommendService, null);
+    }
+
+    @Autowired
+    public DefaultAgentRecommendService(
+            HomeRecommendService homeRecommendService,
+            SemanticItemRecallProvider semanticItemRecallProvider
+    ) {
         this.homeRecommendService = homeRecommendService;
+        this.semanticItemRecallProvider = semanticItemRecallProvider;
     }
 
     @Override
     public AgentRecommendCandidatesVO candidates(AgentRecommendCandidatesRequestDTO request) {
-        HomeRecommendVO homeResponse = homeRecommendService.recommendHome(new HomeRecommendRequestDTO(
-                request.profileUserId(),
+        AgentRecommendationBudget.from(request.constraints());
+        HomeRecommendVO homeResponse = homeRecommendService.recommendHome(new RecommendationIdentity(
+                request.accountId(), request.profileUserId(), request.taskId()
+        ), new HomeRecommendRequestDTO(
+                request.taskId(),
                 request.scene(),
                 request.limit(),
                 "",
@@ -47,7 +66,18 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
 
     @Override
     public AgentRecommendCandidatesVO semanticRecall(AgentRecommendToolRequestDTO request) {
-        return runHomeBackedTool(request, request.returnCount());
+        if (semanticItemRecallProvider == null || request.query() == null || request.query().isBlank()) {
+            return runHomeBackedTool(request, request.returnCount());
+        }
+        String requestId = "rec_req_semantic_" + java.util.UUID.randomUUID();
+        AgentRecommendationBudget.from(request.constraints());
+        List<com.sinrotic.rs.recommend.domain.recall.ItemEmbeddingText> recalled;
+        try { recalled = semanticItemRecallProvider.recall(requestId,request.query(),request.recallLimit()); }
+        catch (RuntimeException error) { return runHomeBackedTool(request,request.returnCount()); }
+        if (recalled.isEmpty()) return runHomeBackedTool(request,request.returnCount());
+        if (trainedRanker==null) throw new IllegalStateException("Agent 候选处理器未配置");
+        // 仅召回失败允许回退；偏好读取或交付失败必须保留原错误。
+        return trainedRanker.rank(request,recalled,"semantic");
     }
 
     @Override
@@ -62,15 +92,21 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
 
     @Override
     public AgentRecommendCandidatesVO rerankCandidates(AgentRecommendToolRequestDTO request) {
-        return runHomeBackedTool(request, request.returnCount());
+        if (trainedRanker == null || !trainedRanker.trainedRankingEnabled()) throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,"训练排序未启用");
+        return trainedRanker.rerank(request);
     }
 
     private AgentRecommendCandidatesVO runHomeBackedTool(
             AgentRecommendToolRequestDTO request,
             int returnCount
     ) {
-        HomeRecommendVO homeResponse = homeRecommendService.recommendHome(new HomeRecommendRequestDTO(
-                firstNonBlank(request.sessionId(), request.profileUserId()),
+        AgentRecommendationBudget.from(request.constraints());
+        String sessionId = firstNonBlank(request.sessionId(), request.taskId());
+        HomeRecommendVO homeResponse = homeRecommendService.recommendHome(new RecommendationIdentity(
+                request.accountId(), request.profileUserId(), sessionId
+        ), new HomeRecommendRequestDTO(
+                sessionId,
                 request.scene(),
                 returnCount,
                 "",
@@ -89,52 +125,10 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
             List<AgentRecommendCandidateItemVO> candidates,
             Map<String, Object> constraints
     ) {
-        BigDecimal priceMin = decimalConstraint(constraints, "price_min", "min_price", "budget_min");
-        BigDecimal priceMax = decimalConstraint(constraints, "price_max", "max_price", "budget_max", "budget");
-        if (priceMin == null && priceMax == null) {
-            return candidates;
-        }
+        var budget = AgentRecommendationBudget.from(constraints);
         return candidates.stream()
-                .filter(candidate -> matchesPrice(candidate.price(), priceMin, priceMax))
+                .filter(candidate -> budget.matches(candidate.price()))
                 .toList();
-    }
-
-    private boolean matchesPrice(BigDecimal price, BigDecimal priceMin, BigDecimal priceMax) {
-        if (price == null) {
-            return true;
-        }
-        if (priceMin != null && price.compareTo(priceMin) < 0) {
-            return false;
-        }
-        return priceMax == null || price.compareTo(priceMax) <= 0;
-    }
-
-    private BigDecimal decimalConstraint(Map<String, Object> constraints, String... keys) {
-        if (constraints == null || constraints.isEmpty()) {
-            return null;
-        }
-        for (String key : keys) {
-            Object value = constraints.get(key);
-            BigDecimal decimal = toDecimal(value);
-            if (decimal != null) {
-                return decimal;
-            }
-        }
-        return null;
-    }
-
-    private BigDecimal toDecimal(Object value) {
-        if (value instanceof Number number) {
-            return new BigDecimal(number.toString());
-        }
-        if (value instanceof String text && !text.isBlank()) {
-            try {
-                return new BigDecimal(text.trim());
-            } catch (NumberFormatException ignored) {
-                return null;
-            }
-        }
-        return null;
     }
 
     private List<AgentRecommendCandidateItemVO> toAgentCandidates(List<RecommendItemVO> items) {
@@ -143,7 +137,7 @@ public class DefaultAgentRecommendService implements AgentRecommendService {
                         item.itemId(),
                         titleOf(item),
                         categoryOf(item),
-                        null,
+                        item.display()==null ? null : item.display().price(),
                         "",
                         valueOrEmpty(item.reason()),
                         valueOrEmpty(item.reason())

@@ -1,12 +1,19 @@
 name: CI
 
 on:
+  push:
+    branches:
+      - main
+  pull_request:
   workflow_dispatch:
 
 jobs:
   python:
     name: Python checks
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python_agent
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -19,18 +26,18 @@ jobs:
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -e "python_agent[dev]"
+          python -m pip install -e ".[dev,serving]"
 
       - name: Run ruff on v1 scope
         run: |
-          python -m ruff check python_agent/rs_core python_agent/scripts/ci/validate_engineering_contracts.py python_agent/scripts/ci/select_tests_by_marker.py python_agent/tests
+          python -m ruff check rs_core scripts/ci/validate_engineering_contracts.py scripts/ci/select_tests_by_marker.py tests
 
       - name: Validate engineering contracts
-        run: python python_agent/scripts/ci/validate_engineering_contracts.py
+        run: python scripts/ci/validate_engineering_contracts.py
 
       - name: Select minimum unit and smoke tests
         run: |
-          python python_agent/scripts/ci/select_tests_by_marker.py --marker unit --marker smoke > .pytest-selected-tests.txt
+          python scripts/ci/select_tests_by_marker.py --marker unit --marker smoke > .pytest-selected-tests.txt
           test -s .pytest-selected-tests.txt
 
       - name: Collect minimum unit and smoke tests
@@ -51,7 +58,7 @@ jobs:
 
       - name: Select serving tests
         run: |
-          python python_agent/scripts/ci/select_tests_by_marker.py --marker serving > .pytest-selected-serving-tests.txt
+          python scripts/ci/select_tests_by_marker.py --marker serving > .pytest-selected-serving-tests.txt
           test -s .pytest-selected-serving-tests.txt
 
       - name: Collect serving tests
@@ -70,8 +77,76 @@ jobs:
       - name: Run serving tests
         run: python -m pytest -m "serving" -q $(cat .pytest-selected-serving-tests.txt)
 
+      - name: Check Java deployment and model launch contracts
+        working-directory: .
+        run: python -m pytest tests -q
+
       - name: Check no tracked temporary configs
-        run: test -z "$(git ls-files 'python_agent/configs/**/_tmp_*.yaml')"
+        run: test -z "$(git -C .. ls-files 'python_agent/configs/**/_tmp_*.yaml')"
+
+  java:
+    name: Java checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run Java tests
+        run: mvn -B -f java_agent/pom.xml test
+
+  java-frontend:
+    name: Java frontend checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: java_agent/frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm --prefix java_agent/frontend ci
+
+      - name: Audit Java frontend dependencies
+        run: npm --prefix java_agent/frontend audit --audit-level=moderate
+
+      - name: Type-check
+        run: npm --prefix java_agent/frontend run lint
+
+      - name: Test
+        run: npm --prefix java_agent/frontend test
+
+      - name: Build
+        run: npm --prefix java_agent/frontend run build
+
+      - name: Install browser for user-flow checks
+        working-directory: java_agent/frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Check history retry stop and preference user flows
+        working-directory: java_agent/frontend
+        shell: bash
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 5173 --strictPort > "$RUNNER_TEMP/rs-frontend-e2e.log" 2>&1 &
+          frontend_pid=$!
+          trap 'kill "$frontend_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5173 >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:5173 >/dev/null
+          npm run test:e2e
 
   frontend:
     name: Frontend checks

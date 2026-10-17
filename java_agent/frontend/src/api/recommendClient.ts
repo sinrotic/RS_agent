@@ -88,9 +88,9 @@ export async function recommendHome(req: HomeRecommendRequest): Promise<HomeReco
     await mockDelay(600);
     return {
       request_id: `req-${Math.random().toString(36).substring(2, 9)}`,
-      session_id: `jsess-${Date.now()}`,
+      session_id: req.sessionId,
       scene: req.scene || 'home',
-      profile_user_id: req.profileUserId,
+      profile_user_id: '',
       items: MOCK_RECOMMEND_ITEMS,
       has_more: false,
       next_cursor: '',
@@ -100,12 +100,24 @@ export async function recommendHome(req: HomeRecommendRequest): Promise<HomeReco
         fine_rank_size: 20,
         final_return_size: 6,
         first_screen_display_size: 6
-      }
+      },
+      preference_version: 0,
+      applied_feedback_event_ids: []
     };
   }
 
   // Real request to Java Endpoint: rs-service-recommend -> POST /api/recommend/home
-  return postJson<HomeRecommendVO>('/recommend/home', req);
+  return postJson<HomeRecommendVO>('/recommend/home', homeRecommendRequest(req));
+}
+
+export function homeRecommendRequest(req: HomeRecommendRequest) {
+  return {
+    session_id: req.sessionId,
+    scene: req.scene,
+    page_size: req.limit,
+    cursor: req.cursor,
+    debug: req.debug,
+  };
 }
 
 export async function refreshHome(req: HomeRecommendRefreshRequest): Promise<HomeRecommendVO> {
@@ -117,7 +129,7 @@ export async function refreshHome(req: HomeRecommendRefreshRequest): Promise<Hom
       request_id: `req-${Math.random().toString(36).substring(2, 9)}`,
       session_id: req.sessionId,
       scene: req.scene || 'home',
-      profile_user_id: req.profileUserId,
+      profile_user_id: '',
       items: shuffled,
       has_more: false,
       next_cursor: '',
@@ -127,10 +139,33 @@ export async function refreshHome(req: HomeRecommendRefreshRequest): Promise<Hom
         fine_rank_size: 20,
         final_return_size: 6,
         first_screen_display_size: 6
-      }
+      },
+      preference_version: 0,
+      applied_feedback_event_ids: []
     };
   }
 
   // Real request to Java Endpoint: rs-service-recommend -> POST /api/recommend/home/refresh
-  return postJson<HomeRecommendVO>('/recommend/home/refresh', req);
+  return postJson<HomeRecommendVO>('/recommend/home/refresh', homeRecommendRefreshRequest(req));
+}
+
+export function homeRecommendRefreshRequest(req: HomeRecommendRefreshRequest) {
+  return {
+    session_id: req.sessionId,
+    scene: req.scene,
+    page_size: req.limit,
+    refresh_token: req.cursor || req.refreshAction || '',
+    debug: req.debug,
+  };
+}
+
+// 新路由区分“换个方向”和“找相似”；旧分页游标仍在原批次应用反馈。
+export function homeFeedbackCursor(
+  action: 'like' | 'dislike',
+  nextCursor: string,
+  currentRequestId: string,
+  pageStartCursor: string,
+): string {
+  if (!nextCursor.startsWith('feed:')) return pageStartCursor;
+  return `${action === 'like' ? 'similar' : 'rerank'}:${currentRequestId}`;
 }

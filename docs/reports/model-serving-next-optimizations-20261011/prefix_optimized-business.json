@@ -1,0 +1,179 @@
+{
+  "label": "prefix_optimized",
+  "business_regression": [
+    {
+      "query": "推荐鼠标",
+      "elapsed_ms": 4226.83,
+      "complete_with_catalog_ms": 4232.06,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 223,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "dc77845c4867fe0bc6ed2465f21c0d4e696af02513dd9182c20d3d5a794acfb9",
+      "passed": true
+    },
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 2233.25,
+      "complete_with_catalog_ms": 2238.68,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 21,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "28c9163fe4a849cc409fd71eee5c572db9062cdf85e3a8a0cf17dc320b97aefb",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 2670.54,
+      "complete_with_catalog_ms": 2676.06,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 51,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 2,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "render_product_cards"
+      ],
+      "answer_sha256": "80a673ebd5e1bcccf89f6c621c0a1d485c155ab5b331025398c9acce726d1e6e",
+      "passed": true
+    },
+    {
+      "query": "推荐鼠标",
+      "elapsed_ms": 2424.24,
+      "complete_with_catalog_ms": 2429.11,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 204,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "3715b6772c2e955c2d3b5afc6c0712218c27e47986d4e69f9b76fb6d4dbf3229",
+      "passed": true
+    },
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 8516.62,
+      "complete_with_catalog_ms": 8521.61,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 184,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 6,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_evidence_search",
+        "load_skill",
+        "rag_support",
+        "render_product_cards"
+      ],
+      "answer_sha256": "707824232e6e4025d36038ad5099b259e5be6dc7e6c85178fa481692fad5095a",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 9659.03,
+      "complete_with_catalog_ms": 9663.83,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 30,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "load_skill",
+        "rag_support",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search"
+      ],
+      "answer_sha256": "62da81fb52ea9f2e7db27c23a5294adeeb162249063c413285d3989007370571",
+      "passed": true
+    },
+    {
+      "query": "请帮我推荐鼠标",
+      "elapsed_ms": 2485.97,
+      "complete_with_catalog_ms": 2490.8,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 186,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "2e99b9c2f8d44ac43774f96b205a64c7a7ea45229dc0e6f6f76f3903aa8bc6a7",
+      "passed": true
+    },
+    {
+      "query": "换一批鼠标，适合办公使用",
+      "elapsed_ms": 10522.83,
+      "complete_with_catalog_ms": 10527.45,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 36,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search"
+      ],
+      "answer_sha256": "961afbf06490317c41953040e298d46c4491c529b08784e305d3cc48bd37b94c",
+      "passed": true
+    }
+  ]
+}

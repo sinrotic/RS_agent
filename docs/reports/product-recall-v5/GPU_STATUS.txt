@@ -1,0 +1,24 @@
+2026-10-11：GPU 2 迁移记录（已全部完成，以 GPU_RESULTS.txt / gpu_analysis.json 为准）
+
+用户已明确允许共享 GPU 2；训练不再要求 GPU 2 完全空闲。
+远程目录：/mnt/data/luo/remote_runs/product_recall_v5_gpu_20261011
+服务：rs-product-v5-gpu-shared.service
+监控：该目录 status.json、各组 progress.json、migration_controller.log。
+
+已停止旧 CPU 训练与 CPU 后续调度服务，保留原目录和已完成成果。
+replacement32 已在 CPU 完成3轮，checkpoint与结果以只读使用的符号链接保留。
+旧 shuffle32 尚无完成轮次 checkpoint，保存中断进度后重新在 GPU 运行。
+新增按完成轮次恢复模型、优化器、抽样顺序的能力；小样本验证与连续训练参数完全一致。
+
+GPU 流程：CPU checkpoint 在 GPU 复评 → shuffle32 → shuffle127 → mixed127
+→ attention_mixed127 → replacement32_gpu_control。
+最后一组为相同 GPU 后端控制；不能把 CPU/GPU 混用结果直接当严格消融。
+CPU checkpoint 的 GPU 复评 Hit@100 同为4.7%，MRR差异约1.5e-12。
+
+资源：仅 CUDA_VISIBLE_DEVICES=2，PyTorch 显存分配上限20%，CPU配额2核，
+内存8GB，nice=15，低IO优先级。GPU剩余显存不足或线上连续健康检查失败，
+只终止自己的训练子进程，不停止其他GPU任务，不修改或重启线上服务。
+
+仅现有387951条训练样本、203887个候选商品与1000用户开发集；
+不读取官方最终测试集，不进行模型发布。开发集目标覆盖率61.7%。
+旧 RUNNING.txt / STATUS_UPDATE.txt 是 CPU 阶段记录，不能作为当前运行状态。

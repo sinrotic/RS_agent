@@ -3,6 +3,7 @@ package com.sinrotic.rs.gateway.filter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -12,15 +13,19 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @Component
 public class GatewayRequestFilter implements GlobalFilter, Ordered {
@@ -41,25 +46,46 @@ public class GatewayRequestFilter implements GlobalFilter, Ordered {
     private final int maxRequestsPerMinute;
     private final Clock clock;
     private final GatewayTokenValidator tokenValidator;
+    private final TrustedProxyResolver trustedProxies;
     private final ConcurrentMap<String, AtomicInteger> rateCounters = new ConcurrentHashMap<>();
+    private final AtomicLong activeRateWindow = new AtomicLong(Long.MIN_VALUE);
 
     public GatewayRequestFilter() {
-        this(DEFAULT_MAX_REQUESTS_PER_MINUTE, Clock.systemUTC(), new PresenceGatewayTokenValidator());
+        this(DEFAULT_MAX_REQUESTS_PER_MINUTE, Clock.systemUTC(), new PresenceGatewayTokenValidator(), Set.of());
     }
 
     GatewayRequestFilter(int maxRequestsPerMinute, Clock clock) {
-        this(maxRequestsPerMinute, clock, new PresenceGatewayTokenValidator());
+        this(maxRequestsPerMinute, clock, new PresenceGatewayTokenValidator(), Set.of());
     }
 
     GatewayRequestFilter(int maxRequestsPerMinute, Clock clock, GatewayTokenValidator tokenValidator) {
+        this(maxRequestsPerMinute, clock, tokenValidator, Set.of());
+    }
+
+    GatewayRequestFilter(
+            int maxRequestsPerMinute,
+            Clock clock,
+            GatewayTokenValidator tokenValidator,
+            Set<String> trustedProxyAddresses
+    ) {
+        this(maxRequestsPerMinute,clock,tokenValidator,new TrustedProxyResolver(trustedProxyAddresses,clock));
+    }
+
+    GatewayRequestFilter(int maxRequestsPerMinute,Clock clock,GatewayTokenValidator tokenValidator,
+                         TrustedProxyResolver trustedProxies) {
         this.maxRequestsPerMinute = maxRequestsPerMinute;
         this.clock = clock;
         this.tokenValidator = tokenValidator;
+        this.trustedProxies = trustedProxies;
     }
 
     @Autowired
-    public GatewayRequestFilter(GatewayTokenValidator tokenValidator) {
-        this(DEFAULT_MAX_REQUESTS_PER_MINUTE, Clock.systemUTC(), tokenValidator);
+    public GatewayRequestFilter(
+            GatewayTokenValidator tokenValidator,
+            @Value("${rs.gateway.rate-limit.max-requests-per-minute:120}") int maxRequestsPerMinute,
+            @Value("${rs.gateway.rate-limit.trusted-proxies:}") String trustedProxies
+    ) {
+        this(maxRequestsPerMinute, Clock.systemUTC(), tokenValidator, parseTrustedProxies(trustedProxies));
     }
 
     @Override
@@ -79,8 +105,7 @@ public class GatewayRequestFilter implements GlobalFilter, Ordered {
         ServerWebExchange mutatedExchange = exchange.mutate().request(requestBuilder.build()).build();
         if (requiresAuthentication(request.getMethod(), path)) {
             Optional<String> accessToken = bearerToken(request.getHeaders());
-            Optional<GatewayUserContext> userContext = accessToken.flatMap(tokenValidator::validate);
-            if (userContext.isEmpty()) {
+            if (accessToken.isEmpty()) {
                 return writeJsonError(
                         mutatedExchange,
                         HttpStatus.UNAUTHORIZED,
@@ -88,18 +113,43 @@ public class GatewayRequestFilter implements GlobalFilter, Ordered {
                         "Authorization bearer token is required"
                 );
             }
-            mutatedExchange = withUserContext(mutatedExchange, userContext.get());
+            ServerWebExchange authenticatedExchange = mutatedExchange;
+            return tokenValidator.validate(accessToken.get())
+                    .flatMap(userContext -> proceed(
+                            withUserContext(authenticatedExchange, userContext),
+                            request,
+                            chain
+                    ).thenReturn(Boolean.TRUE))
+                    .switchIfEmpty(Mono.defer(() -> writeJsonError(
+                            authenticatedExchange,
+                            HttpStatus.UNAUTHORIZED,
+                            "UNAUTHORIZED",
+                            "Authorization bearer token is invalid"
+                    ).thenReturn(Boolean.FALSE)))
+                    .then();
         }
-        if (isApiRequest(request.getMethod(), path) && isRateLimited(request)) {
-            return writeJsonError(
-                    mutatedExchange,
+        return proceed(mutatedExchange, request, chain);
+    }
+
+    private Mono<Void> proceed(
+            ServerWebExchange exchange,
+            ServerHttpRequest originalRequest,
+            GatewayFilterChain chain
+    ) {
+        if (!isApiRequest(originalRequest.getMethod(),originalRequest.getURI().getPath()) || maxRequestsPerMinute <= 0)
+            return chain.filter(exchange);
+        Mono<String> client = Mono.fromCallable(() -> clientKey(originalRequest));
+        // DNS 只在缓存过期时查询，并放到有界线程池，避免阻塞 Gateway 的事件循环。
+        if (trustedProxies.requiresLookup()) client = client.subscribeOn(Schedulers.boundedElastic());
+        return client.flatMap(key -> {
+            if (isRateLimited(key)) return writeJsonError(
+                    exchange,
                     HttpStatus.TOO_MANY_REQUESTS,
                     "TOO_MANY_REQUESTS",
                     "Too many requests"
             );
-        }
-
-        return chain.filter(mutatedExchange);
+            return chain.filter(exchange);
+        });
     }
 
     @Override
@@ -144,25 +194,49 @@ public class GatewayRequestFilter implements GlobalFilter, Ordered {
         return exchange.mutate().request(requestBuilder.build()).build();
     }
 
-    private boolean isRateLimited(ServerHttpRequest request) {
+    private boolean isRateLimited(String client) {
         if (maxRequestsPerMinute <= 0) {
             return false;
         }
         long minuteWindow = clock.instant().getEpochSecond() / 60;
-        String key = clientKey(request) + ":" + minuteWindow;
+        evictExpiredRateWindows(minuteWindow);
+        String key = client + ":" + minuteWindow;
         int currentCount = rateCounters.computeIfAbsent(key, ignored -> new AtomicInteger()).incrementAndGet();
         return currentCount > maxRequestsPerMinute;
     }
 
     private String clientKey(ServerHttpRequest request) {
+        String remoteAddress = request.getRemoteAddress() == null
+                ? "unknown"
+                : request.getRemoteAddress().getAddress() == null ? request.getRemoteAddress().getHostString()
+                : request.getRemoteAddress().getAddress().getHostAddress();
         String forwardedFor = request.getHeaders().getFirst("X-Forwarded-For");
-        if (forwardedFor != null && !forwardedFor.isBlank()) {
-            return forwardedFor.split(",")[0].trim();
+        if (trustedProxies.trusted(remoteAddress) && forwardedFor != null && !forwardedFor.isBlank()) {
+            // 部署契约为单层可信入口；旧 Nginx 的追加模式也只能使用最右侧真实上游地址。
+            String[] addresses = forwardedFor.split(",",-1);
+            String client = addresses[addresses.length-1].trim();
+            if (TrustedProxyResolver.numericAddress(client)) return TrustedProxyResolver.normalize(client);
         }
-        if (request.getRemoteAddress() != null) {
-            return request.getRemoteAddress().getHostString();
+        return remoteAddress;
+    }
+
+    private void evictExpiredRateWindows(long minuteWindow) {
+        long previousWindow = activeRateWindow.getAndSet(minuteWindow);
+        if (previousWindow == minuteWindow) {
+            return;
         }
-        return "unknown";
+        String currentSuffix = ":" + minuteWindow;
+        rateCounters.keySet().removeIf(key -> !key.endsWith(currentSuffix));
+    }
+
+    private static Set<String> parseTrustedProxies(String value) {
+        if (value == null || value.isBlank()) {
+            return Set.of();
+        }
+        return java.util.Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(item -> !item.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private Mono<Void> writeJsonError(

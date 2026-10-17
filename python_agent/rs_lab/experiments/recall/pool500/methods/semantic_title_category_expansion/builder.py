@@ -18,7 +18,6 @@ import yaml
 
 from rs_core.common.io import iter_jsonl, read_json, write_json, write_jsonl
 from rs_core.common.runtime import enforce_project_venv
-from rs_core.online.recall.candidate_merge import semantic_title_category_expansion_candidates_for_user
 from rs_lab.experiments.recall.pool500.common.source_layout import FORBIDDEN_EVIDENCE_SCOPES, method_output_dir
 
 ROOT = Path(__file__).resolve().parents[6]
@@ -594,7 +593,6 @@ def _title_category_scorer_candidate_rows(
             inverted_index.setdefault(token, set()).add(item_id)
 
     rows: list[dict[str, Any]] = []
-    progress_step = max(1, len(sequences) // 10)
     for sequence_index, sequence in enumerate(sequences, start=1):
         user_id = str(sequence.get("user_id", ""))
         seed_items = seed_items_by_user.get(user_id, [])

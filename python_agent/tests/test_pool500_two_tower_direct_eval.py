@@ -3,7 +3,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from rs_lab.experiments.recall.run_pool500_two_tower_direct_eval import run_two_tower_direct_eval
+
+pytestmark = pytest.mark.experiment
 
 
 def test_two_tower_direct_eval_scores_without_using_labels_for_generation(tmp_path: Path) -> None:

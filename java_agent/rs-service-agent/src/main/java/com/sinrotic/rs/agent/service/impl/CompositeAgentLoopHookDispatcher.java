@@ -35,6 +35,13 @@ public class CompositeAgentLoopHookDispatcher implements AgentLoopHookDispatcher
     }
 
     @Override
+    public boolean supportsDirectRecommendation() {
+        return getClass() == CompositeAgentLoopHookDispatcher.class
+                && globalDispatcher.supportsDirectRecommendation()
+                && profileDispatchers.stream().allMatch(AgentProfileHookDispatcher::supportsDirectRecommendation);
+    }
+
+    @Override
     public AgentLoopHookResult dispatch(AgentLoopHookContext context) {
         AgentLoopHookResult globalResult = globalDispatcher.dispatch(context);
         if (globalResult.blocked() || globalResult.preventContinuation()) {

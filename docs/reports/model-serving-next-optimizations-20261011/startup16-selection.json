@@ -1,0 +1,19 @@
+{
+  "candidate": "startup16",
+  "accepted": false,
+  "scope": "原两条前缀不变，以首次16路短工具突发至少降低8%为目标，仍需正式同卡稳态、P95和业务验收",
+  "first_burst_median_ratio": 1.0113822591452577,
+  "minimum_first_burst_improvement": 0.08,
+  "steady_median_ratios": {
+    "warm_tool_c1": 0.9989385948614748,
+    "warm_tool_c4": 1.0010949892214276,
+    "warm_tool_c8": 1.0883799332952868,
+    "warm_tool_c16": 1.1024268559431063,
+    "mixed_c4": 0.9998500339991412,
+    "mixed_c8": 0.9396096052373368,
+    "mixed_c16": 1.0508493375776784,
+    "decode128": 1.0027055086846373
+  },
+  "planning_no_regression": true,
+  "kv_cache_tokens": 106496
+}

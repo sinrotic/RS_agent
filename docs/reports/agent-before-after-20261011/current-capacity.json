@@ -1,0 +1,2352 @@
+{
+  "checked_at_utc": "2026-10-11T15:00:00.052374+00:00",
+  "phase": "capacity",
+  "version": "current",
+  "model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "target_model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "cases": [
+    {
+      "query": "推荐鼠标",
+      "passed": true,
+      "first_text_block_ms": 3757.08,
+      "done_event_ms": 3883.92,
+      "agent_done_ms": 3895.33,
+      "sse_event_counts": {
+        "started": 1,
+        "answer_block": 3,
+        "done": 1
+      },
+      "error_code": null,
+      "complete_ms": 3899.59,
+      "items": 5,
+      "answer_chars": 164,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "failed_tools": 0,
+      "stage_counts": {
+        "coarse_rank": 100,
+        "recall": 100,
+        "cold_scored": 100,
+        "fine_rank": 96,
+        "bge_reranked": 96,
+        "final": 5,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "failed_tool_codes": [],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "text_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "first_model_call_ttft_ms": 615.698,
+      "first_observed_model_count": 1.0,
+      "label": "warmup",
+      "concurrent_requests": 1,
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1381544.0,
+          "vllm:prefix_cache_hits_total": 956208.0,
+          "vllm:request_prompt_tokens_count": 169.0,
+          "vllm:request_prompt_tokens_sum": 1282622.0,
+          "vllm:time_to_first_token_seconds_count": 169.0,
+          "vllm:time_to_first_token_seconds_sum": 73.37255644798279,
+          "vllm:request_queue_time_seconds_count": 169.0,
+          "vllm:request_queue_time_seconds_sum": 20.54871135018766,
+          "vllm:request_prefill_time_seconds_count": 169.0,
+          "vllm:request_prefill_time_seconds_sum": 37.84436286147684
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1388147.0,
+          "vllm:prefix_cache_hits_total": 956208.0,
+          "vllm:request_prompt_tokens_count": 170.0,
+          "vllm:request_prompt_tokens_sum": 1289225.0,
+          "vllm:time_to_first_token_seconds_count": 170.0,
+          "vllm:time_to_first_token_seconds_sum": 73.98825478553772,
+          "vllm:request_queue_time_seconds_count": 170.0,
+          "vllm:request_queue_time_seconds_sum": 20.690781271085143,
+          "vllm:request_prefill_time_seconds_count": 170.0,
+          "vllm:request_prefill_time_seconds_sum": 38.27276432234794
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 6603.0,
+          "vllm:prefix_cache_hits_total": 0.0,
+          "vllm:request_prompt_tokens_count": 1.0,
+          "vllm:request_prompt_tokens_sum": 6603.0,
+          "vllm:time_to_first_token_seconds_count": 1.0,
+          "vllm:time_to_first_token_seconds_sum": 0.6156983375549316,
+          "vllm:request_queue_time_seconds_count": 1.0,
+          "vllm:request_queue_time_seconds_sum": 0.14206992089748383,
+          "vllm:request_prefill_time_seconds_count": 1.0,
+          "vllm:request_prefill_time_seconds_sum": 0.4284014608711004
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 1.0,
+        "internally_consistent": true,
+        "input_tokens": 6603,
+        "cached_tokens": 0,
+        "cache_hit_percent": 0.0,
+        "mean_model_ttft_ms": 615.698,
+        "mean_model_queue_ms": 142.07,
+        "mean_model_prefill_ms": 428.401
+      }
+    }
+  ],
+  "stages": [
+    {
+      "repeat": 0,
+      "concurrent_requests": 8,
+      "distinct_accounts": 8,
+      "distinct_sessions": 8,
+      "batch_wall_ms": 8039.24,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6726.18,
+          "done_event_ms": 6793.31,
+          "agent_done_ms": 6794.92,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6799.41,
+          "items": 5,
+          "answer_chars": 134,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7413.7,
+          "done_event_ms": 7494.99,
+          "agent_done_ms": 7496.48,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7500.67,
+          "items": 5,
+          "answer_chars": 181,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7573.12,
+          "done_event_ms": 7626.17,
+          "agent_done_ms": 7627.72,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7631.82,
+          "items": 5,
+          "answer_chars": 203,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7434.17,
+          "done_event_ms": 7509.18,
+          "agent_done_ms": 7510.59,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7514.44,
+          "items": 5,
+          "answer_chars": 188,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7951.25,
+          "done_event_ms": 8011.79,
+          "agent_done_ms": 8012.59,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8016.85,
+          "items": 5,
+          "answer_chars": 281,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 5579.21,
+          "done_event_ms": 5628.53,
+          "agent_done_ms": 5630.28,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 5634.56,
+          "items": 5,
+          "answer_chars": 56,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7709.29,
+          "done_event_ms": 7772.79,
+          "agent_done_ms": 7774.29,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7778.29,
+          "items": 5,
+          "answer_chars": 256,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 5487.98,
+          "done_event_ms": 5560.07,
+          "agent_done_ms": 5563.64,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 5569.33,
+          "items": 5,
+          "answer_chars": 56,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1388147.0,
+          "vllm:prefix_cache_hits_total": 956208.0,
+          "vllm:request_prompt_tokens_count": 170.0,
+          "vllm:request_prompt_tokens_sum": 1289225.0,
+          "vllm:time_to_first_token_seconds_count": 170.0,
+          "vllm:time_to_first_token_seconds_sum": 73.98825478553772,
+          "vllm:request_queue_time_seconds_count": 170.0,
+          "vllm:request_queue_time_seconds_sum": 20.690781271085143,
+          "vllm:request_prefill_time_seconds_count": 170.0,
+          "vllm:request_prefill_time_seconds_sum": 38.27276432234794
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1473828.0,
+          "vllm:prefix_cache_hits_total": 1024320.0,
+          "vllm:request_prompt_tokens_count": 178.0,
+          "vllm:request_prompt_tokens_sum": 1341957.0,
+          "vllm:time_to_first_token_seconds_count": 178.0,
+          "vllm:time_to_first_token_seconds_sum": 78.60117220878601,
+          "vllm:request_queue_time_seconds_count": 178.0,
+          "vllm:request_queue_time_seconds_sum": 21.671077477745712,
+          "vllm:request_prefill_time_seconds_count": 178.0,
+          "vllm:request_prefill_time_seconds_sum": 40.77794676553458
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 85681.0,
+          "vllm:prefix_cache_hits_total": 68112.0,
+          "vllm:request_prompt_tokens_count": 8.0,
+          "vllm:request_prompt_tokens_sum": 52732.0,
+          "vllm:time_to_first_token_seconds_count": 8.0,
+          "vllm:time_to_first_token_seconds_sum": 4.612917423248291,
+          "vllm:request_queue_time_seconds_count": 8.0,
+          "vllm:request_queue_time_seconds_sum": 0.9802962066605687,
+          "vllm:request_prefill_time_seconds_count": 8.0,
+          "vllm:request_prefill_time_seconds_sum": 2.5051824431866407
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 8.0,
+        "internally_consistent": false
+      },
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "successful_mean_ms": 7055.67,
+      "successful_median_ms": 7507.56,
+      "successful_p95_ms": 8016.85,
+      "successful_max_ms": 8016.85,
+      "completed_requests_per_second": 0.9951
+    },
+    {
+      "repeat": 0,
+      "concurrent_requests": 16,
+      "distinct_accounts": 8,
+      "distinct_sessions": 16,
+      "batch_wall_ms": 9855.02,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9465.97,
+          "done_event_ms": 9520.92,
+          "agent_done_ms": 9522.26,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9526.58,
+          "items": 5,
+          "answer_chars": 179,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7042.5,
+          "done_event_ms": 7095.83,
+          "agent_done_ms": 7097.76,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7102.87,
+          "items": 5,
+          "answer_chars": 50,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9221.02,
+          "done_event_ms": 9284.6,
+          "agent_done_ms": 9285.99,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9290.22,
+          "items": 5,
+          "answer_chars": 192,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7224.13,
+          "done_event_ms": 7269.93,
+          "agent_done_ms": 7271.62,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7275.61,
+          "items": 5,
+          "answer_chars": 58,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8822.28,
+          "done_event_ms": 8889.5,
+          "agent_done_ms": 8890.32,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8894.56,
+          "items": 5,
+          "answer_chars": 142,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7662.69,
+          "done_event_ms": 7716.54,
+          "agent_done_ms": 7718.32,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7722.47,
+          "items": 5,
+          "answer_chars": 87,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8396.22,
+          "done_event_ms": 8455.31,
+          "agent_done_ms": 8457.65,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8463.71,
+          "items": 5,
+          "answer_chars": 121,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8434.62,
+          "done_event_ms": 8505.82,
+          "agent_done_ms": 8507.2,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8510.88,
+          "items": 5,
+          "answer_chars": 129,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9640.88,
+          "done_event_ms": 9707.86,
+          "agent_done_ms": 9709.25,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9711.79,
+          "items": 5,
+          "answer_chars": 211,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 8
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8641.39,
+          "done_event_ms": 8704.74,
+          "agent_done_ms": 8706.03,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8710.11,
+          "items": 5,
+          "answer_chars": 140,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 9
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7063.88,
+          "done_event_ms": 7118.01,
+          "agent_done_ms": 7119.08,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7124.21,
+          "items": 5,
+          "answer_chars": 56,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 10
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7176.96,
+          "done_event_ms": 7225.8,
+          "agent_done_ms": 7227.59,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7232.27,
+          "items": 5,
+          "answer_chars": 56,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 11
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9663.93,
+          "done_event_ms": 9730.6,
+          "agent_done_ms": 9731.65,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9735.13,
+          "items": 5,
+          "answer_chars": 227,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 12
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9726.27,
+          "done_event_ms": 9800.75,
+          "agent_done_ms": 9802.19,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9806.28,
+          "items": 5,
+          "answer_chars": 256,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 13
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9639.22,
+          "done_event_ms": 9706.22,
+          "agent_done_ms": 9707.65,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9711.72,
+          "items": 5,
+          "answer_chars": 210,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 14
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9756.48,
+          "done_event_ms": 9832.71,
+          "agent_done_ms": 9833.7,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9837.44,
+          "items": 5,
+          "answer_chars": 219,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 15
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1473828.0,
+          "vllm:prefix_cache_hits_total": 1024320.0,
+          "vllm:request_prompt_tokens_count": 178.0,
+          "vllm:request_prompt_tokens_sum": 1341957.0,
+          "vllm:time_to_first_token_seconds_count": 178.0,
+          "vllm:time_to_first_token_seconds_sum": 78.60117220878601,
+          "vllm:request_queue_time_seconds_count": 178.0,
+          "vllm:request_queue_time_seconds_sum": 21.671077477745712,
+          "vllm:request_prefill_time_seconds_count": 178.0,
+          "vllm:request_prefill_time_seconds_sum": 40.77794676553458
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1645284.0,
+          "vllm:prefix_cache_hits_total": 1161600.0,
+          "vllm:request_prompt_tokens_count": 194.0,
+          "vllm:request_prompt_tokens_sum": 1447450.0,
+          "vllm:time_to_first_token_seconds_count": 194.0,
+          "vllm:time_to_first_token_seconds_sum": 91.54563307762146,
+          "vllm:request_queue_time_seconds_count": 194.0,
+          "vllm:request_queue_time_seconds_sum": 26.5197681998834,
+          "vllm:request_prefill_time_seconds_count": 194.0,
+          "vllm:request_prefill_time_seconds_sum": 45.94579200912267
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 171456.0,
+          "vllm:prefix_cache_hits_total": 137280.0,
+          "vllm:request_prompt_tokens_count": 16.0,
+          "vllm:request_prompt_tokens_sum": 105493.0,
+          "vllm:time_to_first_token_seconds_count": 16.0,
+          "vllm:time_to_first_token_seconds_sum": 12.94446086883545,
+          "vllm:request_queue_time_seconds_count": 16.0,
+          "vllm:request_queue_time_seconds_sum": 4.84869072213769,
+          "vllm:request_prefill_time_seconds_count": 16.0,
+          "vllm:request_prefill_time_seconds_sum": 5.16784524358809
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 16.0,
+        "internally_consistent": false
+      },
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "successful_mean_ms": 8665.99,
+      "successful_median_ms": 8802.33,
+      "successful_p95_ms": 9837.44,
+      "successful_max_ms": 9837.44,
+      "completed_requests_per_second": 1.6235
+    },
+    {
+      "repeat": 1,
+      "concurrent_requests": 8,
+      "distinct_accounts": 8,
+      "distinct_sessions": 8,
+      "batch_wall_ms": 8237.95,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7115.25,
+          "done_event_ms": 7169.53,
+          "agent_done_ms": 7170.85,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7174.92,
+          "items": 5,
+          "answer_chars": 171,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7688.2,
+          "done_event_ms": 7747.37,
+          "agent_done_ms": 7748.67,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7752.8,
+          "items": 5,
+          "answer_chars": 212,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8160.31,
+          "done_event_ms": 8213.7,
+          "agent_done_ms": 8214.93,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8219.07,
+          "items": 5,
+          "answer_chars": 275,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7926.32,
+          "done_event_ms": 7998.09,
+          "agent_done_ms": 7999.99,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8004.23,
+          "items": 5,
+          "answer_chars": 258,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 8036.58,
+          "done_event_ms": 8090.51,
+          "agent_done_ms": 8093.42,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8097.5,
+          "items": 5,
+          "answer_chars": 290,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7452.4,
+          "done_event_ms": 7504.79,
+          "agent_done_ms": 7506.12,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7510.71,
+          "items": 5,
+          "answer_chars": 161,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 6875.33,
+          "done_event_ms": 6933.74,
+          "agent_done_ms": 6935.15,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 6939.42,
+          "items": 5,
+          "answer_chars": 136,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7945.76,
+          "done_event_ms": 8013.08,
+          "agent_done_ms": 8014.21,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 8017.67,
+          "items": 5,
+          "answer_chars": 262,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1645284.0,
+          "vllm:prefix_cache_hits_total": 1161600.0,
+          "vllm:request_prompt_tokens_count": 194.0,
+          "vllm:request_prompt_tokens_sum": 1447450.0,
+          "vllm:time_to_first_token_seconds_count": 194.0,
+          "vllm:time_to_first_token_seconds_sum": 91.54563307762146,
+          "vllm:request_queue_time_seconds_count": 194.0,
+          "vllm:request_queue_time_seconds_sum": 26.5197681998834,
+          "vllm:request_prefill_time_seconds_count": 194.0,
+          "vllm:request_prefill_time_seconds_sum": 45.94579200912267
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1717806.0,
+          "vllm:prefix_cache_hits_total": 1219680.0,
+          "vllm:request_prompt_tokens_count": 202.0,
+          "vllm:request_prompt_tokens_sum": 1500204.0,
+          "vllm:time_to_first_token_seconds_count": 202.0,
+          "vllm:time_to_first_token_seconds_sum": 95.66535997390747,
+          "vllm:request_queue_time_seconds_count": 202.0,
+          "vllm:request_queue_time_seconds_sum": 27.173168369568884,
+          "vllm:request_prefill_time_seconds_count": 202.0,
+          "vllm:request_prefill_time_seconds_sum": 48.3492314722389
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 72522.0,
+          "vllm:prefix_cache_hits_total": 58080.0,
+          "vllm:request_prompt_tokens_count": 8.0,
+          "vllm:request_prompt_tokens_sum": 52754.0,
+          "vllm:time_to_first_token_seconds_count": 8.0,
+          "vllm:time_to_first_token_seconds_sum": 4.119726896286011,
+          "vllm:request_queue_time_seconds_count": 8.0,
+          "vllm:request_queue_time_seconds_sum": 0.653400169685483,
+          "vllm:request_prefill_time_seconds_count": 8.0,
+          "vllm:request_prefill_time_seconds_sum": 2.4034394631162286
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 8.0,
+        "internally_consistent": false
+      },
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "successful_mean_ms": 7714.54,
+      "successful_median_ms": 7878.51,
+      "successful_p95_ms": 8219.07,
+      "successful_max_ms": 8219.07,
+      "completed_requests_per_second": 0.9711
+    },
+    {
+      "repeat": 1,
+      "concurrent_requests": 16,
+      "distinct_accounts": 8,
+      "distinct_sessions": 16,
+      "batch_wall_ms": 11874.19,
+      "cases": [
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9534.78,
+          "done_event_ms": 9591.93,
+          "agent_done_ms": 9593.27,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9597.45,
+          "items": 5,
+          "answer_chars": 155,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 0
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 10934.06,
+          "done_event_ms": 11024.26,
+          "agent_done_ms": 11025.39,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11029.44,
+          "items": 5,
+          "answer_chars": 233,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 1
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7354.68,
+          "done_event_ms": 7398.76,
+          "agent_done_ms": 7400.16,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7404.21,
+          "items": 5,
+          "answer_chars": 56,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 2
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11249.19,
+          "done_event_ms": 11318.69,
+          "agent_done_ms": 11319.89,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11322.7,
+          "items": 5,
+          "answer_chars": 251,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 3
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11652.54,
+          "done_event_ms": 11716.37,
+          "agent_done_ms": 11717.9,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11722.32,
+          "items": 5,
+          "answer_chars": 281,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 4
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11763.58,
+          "done_event_ms": 11830.52,
+          "agent_done_ms": 11831.55,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11835.66,
+          "items": 5,
+          "answer_chars": 247,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 5
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11245.46,
+          "done_event_ms": 11310.15,
+          "agent_done_ms": 11311.4,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11316.13,
+          "items": 5,
+          "answer_chars": 248,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 6
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11709.17,
+          "done_event_ms": 11784.44,
+          "agent_done_ms": 11785.97,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11790.18,
+          "items": 5,
+          "answer_chars": 285,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 7
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 10185.54,
+          "done_event_ms": 10250.69,
+          "agent_done_ms": 10252.01,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 10256.03,
+          "items": 5,
+          "answer_chars": 193,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 8
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9959.12,
+          "done_event_ms": 10012.86,
+          "agent_done_ms": 10014.04,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 10018.26,
+          "items": 5,
+          "answer_chars": 170,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 9
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11655.01,
+          "done_event_ms": 11718.44,
+          "agent_done_ms": 11719.53,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11724.54,
+          "items": 5,
+          "answer_chars": 270,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 10
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 7593.22,
+          "done_event_ms": 7632.83,
+          "agent_done_ms": 7633.86,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 2,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 7640.59,
+          "items": 5,
+          "answer_chars": 56,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 11
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 9252.21,
+          "done_event_ms": 9306.37,
+          "agent_done_ms": 9307.72,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 9311.8,
+          "items": 5,
+          "answer_chars": 126,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 12
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 11785.38,
+          "done_event_ms": 11851.86,
+          "agent_done_ms": 11852.39,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 11855.76,
+          "items": 5,
+          "answer_chars": 248,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 13
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 10067.76,
+          "done_event_ms": 10125.46,
+          "agent_done_ms": 10126.84,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 10131.08,
+          "items": 5,
+          "answer_chars": 170,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 14
+        },
+        {
+          "query": "推荐鼠标",
+          "passed": true,
+          "first_text_block_ms": 10668.4,
+          "done_event_ms": 10725.75,
+          "agent_done_ms": 10726.48,
+          "sse_event_counts": {
+            "started": 1,
+            "answer_block": 3,
+            "done": 1
+          },
+          "error_code": null,
+          "complete_ms": 10730.31,
+          "items": 5,
+          "answer_chars": 195,
+          "tool_names": [
+            "recommend_candidates"
+          ],
+          "failed_tools": 0,
+          "stage_counts": {
+            "coarse_rank": 100,
+            "recall": 100,
+            "cold_scored": 100,
+            "fine_rank": 96,
+            "bge_reranked": 96,
+            "final": 5,
+            "deepfm_scored": 100
+          },
+          "degradation_reasons": [],
+          "failed_tool_codes": [],
+          "checks": {
+            "complete": true,
+            "five_real_unique_items": true,
+            "text_and_history": true,
+            "tools_without_failure": true,
+            "deepfm_bge": true,
+            "no_degradation": true
+          },
+          "index": 15
+        }
+      ],
+      "model_metrics": {
+        "before": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1717806.0,
+          "vllm:prefix_cache_hits_total": 1219680.0,
+          "vllm:request_prompt_tokens_count": 202.0,
+          "vllm:request_prompt_tokens_sum": 1500204.0,
+          "vllm:time_to_first_token_seconds_count": 202.0,
+          "vllm:time_to_first_token_seconds_sum": 95.66535997390747,
+          "vllm:request_queue_time_seconds_count": 202.0,
+          "vllm:request_queue_time_seconds_sum": 27.173168369568884,
+          "vllm:request_prefill_time_seconds_count": 202.0,
+          "vllm:request_prefill_time_seconds_sum": 48.3492314722389
+        },
+        "after": {
+          "vllm:num_requests_running": 0.0,
+          "vllm:num_requests_waiting": 0.0,
+          "vllm:prefix_cache_queries_total": 1882687.0,
+          "vllm:prefix_cache_hits_total": 1351680.0,
+          "vllm:request_prompt_tokens_count": 218.0,
+          "vllm:request_prompt_tokens_sum": 1605721.0,
+          "vllm:time_to_first_token_seconds_count": 218.0,
+          "vllm:time_to_first_token_seconds_sum": 108.2016499042511,
+          "vllm:request_queue_time_seconds_count": 218.0,
+          "vllm:request_queue_time_seconds_sum": 31.797010528855026,
+          "vllm:request_prefill_time_seconds_count": 218.0,
+          "vllm:request_prefill_time_seconds_sum": 53.45776767283678
+        },
+        "delta": {
+          "vllm:prefix_cache_queries_total": 164881.0,
+          "vllm:prefix_cache_hits_total": 132000.0,
+          "vllm:request_prompt_tokens_count": 16.0,
+          "vllm:request_prompt_tokens_sum": 105517.0,
+          "vllm:time_to_first_token_seconds_count": 16.0,
+          "vllm:time_to_first_token_seconds_sum": 12.536289930343628,
+          "vllm:request_queue_time_seconds_count": 16.0,
+          "vllm:request_queue_time_seconds_sum": 4.623842159286141,
+          "vllm:request_prefill_time_seconds_count": 16.0,
+          "vllm:request_prefill_time_seconds_sum": 5.108536200597882
+        },
+        "scope": "共享模型窗口的累计指标差，未按 request_id 关联",
+        "observed_model_calls": 16.0,
+        "internally_consistent": false
+      },
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "successful_mean_ms": 10480.4,
+      "successful_median_ms": 10879.88,
+      "successful_p95_ms": 11855.76,
+      "successful_max_ms": 11855.76,
+      "completed_requests_per_second": 1.3475
+    }
+  ],
+  "scope": "独立 Agent、真实当前 GPU1 模型和共享下游；独立 Session，非线上网关或浏览器耗时；非最大持续容量",
+  "model_comparison_scope": "模型量化、缓存预算、权重和参数固定，仅比较 Agent 版本及对应编排配置",
+  "quality_scope": "完整商品、正文、持久历史、DeepFM/BGE 与工具无失败；不替代解释语义人工回归",
+  "configuration": {
+    "version": "current",
+    "jar_sha256": "4bc94fc6894a65fb933071ac91c2506c5964542c68d464f59155967c027c1c76",
+    "model_port": 18082,
+    "flags": {
+      "RS_AGENT_DIRECT_RECOMMENDATION_ENABLED": "false",
+      "RS_AGENT_LLM_SYNTHESIS_ENABLED": "true",
+      "RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED": "true",
+      "RS_AGENT_MAX_ACTIVE_LOOPS": "32",
+      "RS_AGENT_MAX_MODEL_STREAMS": "16",
+      "RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS": "15000",
+      "RS_AGENT_MAX_RECOMMENDATION_CALLS": "4",
+      "RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS": "15000",
+      "RS_AGENT_MAX_TOOL_CALLS": "64",
+      "RS_AGENT_MAX_SESSION_QUEUE_SIZE": "2"
+    }
+  },
+  "completed": true,
+  "model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "target_model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "target_model_process_unchanged": true,
+  "model_process_unchanged": true,
+  "dependencies_stable": true,
+  "clone_cleaned": true
+}

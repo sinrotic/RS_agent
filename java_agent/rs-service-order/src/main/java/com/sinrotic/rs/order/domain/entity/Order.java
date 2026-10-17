@@ -6,7 +6,7 @@ public class Order {
 
     private Long orderId;
     private String requestId;
-    private Long accountId;
+    private String accountId;
     private String profileUserId;
     private String sessionId;
     private String recommendRequestId;
@@ -33,11 +33,11 @@ public class Order {
         this.requestId = requestId;
     }
 
-    public Long getAccountId() {
+    public String getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Long accountId) {
+    public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
 

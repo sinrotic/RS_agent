@@ -1,0 +1,12 @@
+{
+  "state": "FIXED_BEFORE_DEVELOPMENT",
+  "main_checkpoint": "/mnt/data/luo/remote_runs/product_v10_training/initial_cohesion.pt",
+  "main_catalog_count": 763080,
+  "legacy_count": 203887,
+  "legacy_head_count": 10,
+  "route": "固定10个现网未看过头部候选，其余均来自扩库三塔，按ID去重，查询仍走三塔。主体预算约260/270由新三塔提供。不是新单模型胜过现网的声明。",
+  "dev_gate": "六开发群体MRR>=实际旧库95%；Hit10不退；Hit100>=实际旧库与同扩库现网。",
+  "final_gate": "历史MRR>=实际旧库95%，历史Hit10/100不退；新3000滚动封存MRR和Hit100>=实际旧库及同扩库现网，Hit10不退。工程另验收。",
+  "timestamp": 1791740772.7406108,
+  "online_modified": false
+}

@@ -1,0 +1,19 @@
+{
+  "model_key": "two_tower_sparse_aware_epoch5_queryv2",
+  "model_sha256": "b406a0834c93e5a4f769d0cda3276f9e18e68a28082c3cdaf879a5db56c2f858",
+  "item_embeddings_sha256": "617b2a37432531219ca2f61d63f4fe308180b35a451217bd6d35219a945db42c",
+  "source_checkpoint": "/mnt/data/luo/RS_agent_remote_storage/outputs/two_tower_sparse_aware_serial_checkpoints/checkpoints/epoch_5",
+  "item_count": 448282,
+  "collection": "rs_agent_two_tower_epoch5_20260913",
+  "dimension": 64,
+  "metric": "COSINE",
+  "query_history_order": "newest_first",
+  "query_window": 80,
+  "query_recency_decay": 0.85,
+  "query_projection": "normalized_seed_mean_mlp_residual_queryv2",
+  "scope": "用户授权的 Java 首页新增双塔召回；原 pool500 离线诊断状态保留",
+  "candidate_generation_allowed": true,
+  "ranking_input_replacement_allowed": false,
+  "offline_pool500_promotion_claimed": false,
+  "index_verified": true
+}

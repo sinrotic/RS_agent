@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+rule_files: [/etc/prometheus/alerts.yml]
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: [alertmanager:9093]
+scrape_configs:
+  - job_name: rs-agent-java
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - rs-api-gateway:18088
+          - rs-service-user:18101
+          - rs-service-catalog:18102
+          - rs-service-recommend:18103
+          - rs-service-agent:18104
+          - rs-service-model:18105
+          - rs-service-platform-trace:18108
+  - job_name: rs-commerce-java
+    metrics_path: /actuator/prometheus
+    file_sd_configs:
+      - files: [/etc/prometheus/commerce-targets.yml]

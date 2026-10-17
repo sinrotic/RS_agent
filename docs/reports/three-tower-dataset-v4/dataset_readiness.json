@@ -1,0 +1,53 @@
+{
+  "status": "READY_FOR_BOUNDED_EXPERIMENT_NOT_PRODUCTION",
+  "recommendation": {
+    "rec_train.jsonl": 387951,
+    "rec_valid.jsonl": 1000
+  },
+  "candidate_count": 203887,
+  "semantic_train": 2848,
+  "semantic_valid": 347,
+  "synthetic_test_separate": 344,
+  "learning_curves": {
+    "200": {
+      "train_groups": 200,
+      "train_queries": 718,
+      "valid_queries": 347,
+      "data": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/curve_200"
+    },
+    "400": {
+      "train_groups": 400,
+      "train_queries": 1433,
+      "valid_queries": 347,
+      "data": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/curve_400"
+    },
+    "800": {
+      "train_groups": 789,
+      "train_queries": 2848,
+      "valid_queries": 347,
+      "data": "/mnt/data/luo/remote_runs/three_tower_dataset_v4/curve_800"
+    }
+  },
+  "checks": [
+    "item/vector alignment",
+    "finite normalized vectors",
+    "recommendation time order",
+    "target absent from history",
+    "semantic group split disjoint",
+    "test excluded from training input"
+  ],
+  "query_encoding_seconds": 6.86898017115891,
+  "peak_cuda_gib": 2.592015266418457,
+  "human_gold_available": false,
+  "full_catalog_evaluation": false,
+  "training_started": false,
+  "hashes": {
+    "rec_train.jsonl": "2659c58d524598d7fb113fe732146f5759cf74b14ad96a18bf7a40435950494c",
+    "rec_valid.jsonl": "15a3248f83d7bd52c3498332f8c5f5a5dcfa4b7b9d27fb41b199b285285fe755",
+    "items.jsonl": "04457320f0778f33808376957a214b04d1e0794cc1ce27a5dad4ce57da4b9964",
+    "item_features.npy": "0afa1bcc5e62ead30053be5a9f50b4465df94ee4c72934b776a1072b45875b96",
+    "semantic_clean.jsonl": "12057e458fdd043890d9844ed1aab9b29a977775bea809b56ea6032ac0275f4f",
+    "semantic_test.jsonl": "02b385a47328a5e4c7f92c30faf3d46ad128c770ae0990719e4df0c8f2c6c6c0",
+    "query_features.npy": "39374a8da3941deea7083777cb3629574b09e744eb6a3fa55f1ad18574a03b45"
+  }
+}

@@ -23,6 +23,7 @@
         <module>rs-service-inventory</module>
         <module>rs-service-payment</module>
         <module>rs-service-seckill</module>
+        <module>rs-service-promotion</module>
     </modules>
     
     <packaging>pom</packaging>
@@ -180,6 +181,14 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>

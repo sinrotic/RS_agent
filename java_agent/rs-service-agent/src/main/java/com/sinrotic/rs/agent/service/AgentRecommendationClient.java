@@ -9,4 +9,7 @@ import java.util.List;
 public interface AgentRecommendationClient {
 
     List<AgentRecommendedItemVO> recommend(AgentChatRequestDTO request);
+    default AgentRecommendationDelivery recommendDelivery(AgentChatRequestDTO request) {
+        return new AgentRecommendationDelivery(recommend(request), List.of());
+    }
 }

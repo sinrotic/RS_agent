@@ -1,0 +1,110 @@
+{
+  "recommendation_runs": [
+    {
+      "seed": 42,
+      "complete": true,
+      "step": 6000,
+      "baseline": {
+        "count": 1000,
+        "hit@10": 0.01,
+        "hit@50": 0.021,
+        "hit@100": 0.027,
+        "target_coverage": 0.617,
+        "mrr": 0.005621034869683449,
+        "ndcg@100": 0.009494483916279578
+      },
+      "last": {
+        "count": 1000,
+        "hit@10": 0.012,
+        "hit@50": 0.037,
+        "hit@100": 0.044,
+        "target_coverage": 0.617,
+        "mrr": 0.005164344813598109,
+        "ndcg@100": 0.012028424266719939
+      },
+      "vs_baseline": {
+        "hit@100_delta": 0.017,
+        "paired_95pct": [
+          0.009,
+          0.027
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      }
+    },
+    {
+      "seed": 43,
+      "complete": true,
+      "step": 6000,
+      "baseline": {
+        "count": 1000,
+        "hit@10": 0.01,
+        "hit@50": 0.021,
+        "hit@100": 0.027,
+        "target_coverage": 0.617,
+        "mrr": 0.005621034869683449,
+        "ndcg@100": 0.009494483916279578
+      },
+      "last": {
+        "count": 1000,
+        "hit@10": 0.01,
+        "hit@50": 0.028,
+        "hit@100": 0.041,
+        "target_coverage": 0.617,
+        "mrr": 0.004923570045888653,
+        "ndcg@100": 0.011206634103514159
+      },
+      "vs_baseline": {
+        "hit@100_delta": 0.014,
+        "paired_95pct": [
+          0.005,
+          0.023
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      }
+    },
+    {
+      "seed": 44,
+      "complete": true,
+      "step": 6000,
+      "baseline": {
+        "count": 1000,
+        "hit@10": 0.01,
+        "hit@50": 0.021,
+        "hit@100": 0.027,
+        "target_coverage": 0.617,
+        "mrr": 0.005621034869683449,
+        "ndcg@100": 0.009494483916279578
+      },
+      "last": {
+        "count": 1000,
+        "hit@10": 0.01,
+        "hit@50": 0.035,
+        "hit@100": 0.041,
+        "target_coverage": 0.617,
+        "mrr": 0.004968617526732633,
+        "ndcg@100": 0.011293740976619237
+      },
+      "vs_baseline": {
+        "hit@100_delta": 0.014,
+        "paired_95pct": [
+          0.005,
+          0.024
+        ],
+        "unit": "one target per user",
+        "selection_adjusted": false
+      }
+    }
+  ],
+  "generation_products": 492,
+  "generation_status": {
+    "complete": 489,
+    "failed": 3
+  },
+  "workflow": {
+    "state": "WAITING_SEMANTIC_DATA",
+    "updated_unix": 1791715511.4070547,
+    "rec_mean_hit100_gain": 0.015
+  }
+}

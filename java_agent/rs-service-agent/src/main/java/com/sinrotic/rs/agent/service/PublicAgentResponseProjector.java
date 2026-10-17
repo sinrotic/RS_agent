@@ -20,6 +20,7 @@ public final class PublicAgentResponseProjector {
         if (!(rawBlocks instanceof List<?> blocks) || blocks.isEmpty()) {
             throw new IllegalArgumentException("emit_final_answer requires non-empty blocks");
         }
+        if (blocks.size() > 12) throw new IllegalArgumentException("too many answer blocks");
         List<Map<String, Object>> projected = new ArrayList<>();
         for (Object rawBlock : blocks) {
             if (!(rawBlock instanceof Map<?, ?> block)) {
@@ -47,6 +48,7 @@ public final class PublicAgentResponseProjector {
             case TEXT, FOLLOWUP_QUESTION -> result.put("content", boundedText(rawBlock.get("content"), "content", MAX_CONTENT_LENGTH));
             case PRODUCT_CARDS -> projectProductCards(rawBlock, result);
             case COMPARISON_TABLE -> projectComparisonTable(rawBlock, result);
+            case A2UI -> result.put("messages", new A2uiMessageProjector().project(rawBlock.get("messages")));
         }
         return Map.copyOf(result);
     }

@@ -1,0 +1,75 @@
+{
+  "date": "2026-10-09",
+  "change": "为 Spring AI 模型流补齐关闭、阻塞读取唤醒与实际 HTTP 调用取消；正常请求的提示词、工具定义和业务预算不变。",
+  "root_cause": "Java 流提前退出未自动关闭，且当前 Spring AI 2.0.0 适配未将 reactive 取消传给 SDK HTTP 流。应用停止不能保证 vLLM 停止生成。",
+  "validation_command": "mvn -pl rs-service-agent -am test -DargLine=-Xmx1024m",
+  "tests": {
+    "tests": 166,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1,
+    "suites": 42,
+    "passed": 165
+  },
+  "skipped_cases": [
+    "existingAgentClientReceivesConstrainedToolArgumentsFromLocalQwen(boolean)"
+  ],
+  "excluded_prior_run_reports": [
+    "TEST-com.sinrotic.rs.agent.service.MultiInstanceSessionTurnDiagnosticTest.xml",
+    "TEST-com.sinrotic.rs.agent.service.NonStreamingChatPersistenceDiagnosticTest.xml"
+  ],
+  "regression_coverage": [
+    "真实 Agent Loop 收到最终回答后关闭上游；接收方异常原样返回并关闭上游",
+    "真实 HTTP：接收方退出与等待期间用户中断均关闭连接；配置的 HTTP headers 保留，内部关联标识不外发",
+    "两个会话并发：中断一个不会取消另一个；两者最终均正确返回 INTERRUPTED",
+    "最终回答已发布时与中断竞争，保持既有 FINAL_ANSWER 完成语义",
+    "普通、严格 schema、最终回答三模式：首次/重复请求 JSON 相同，模型、温度和输出预算保持原值",
+    "整个 Agent 模块既有权限、会话、工具、编排、公开事件和持久化测试"
+  ],
+  "gpu1_probe": {
+    "java_stream_close_only": {
+      "samples": 2,
+      "metrics_idle_observed_ms": [
+        15065.067826,
+        15329.520177
+      ],
+      "mean_metrics_idle_observed_ms": 15197.2940015,
+      "generated_tokens_after_stop": [
+        1505.0,
+        1535.0
+      ],
+      "mean_generated_tokens_after_stop": 1520.0
+    },
+    "http_cancellation": {
+      "samples": 2,
+      "metrics_idle_observed_ms": [
+        118.549747,
+        118.345754
+      ],
+      "mean_metrics_idle_observed_ms": 118.4477505,
+      "generated_tokens_after_stop": [
+        1.0,
+        1.0
+      ],
+      "mean_generated_tokens_after_stop": 1.0
+    }
+  },
+  "gpu1_scope": "原 GPU 1 Qwen3.5-4B BF16 4K 部署；纯文本流停止探针，两个组均温度0、关闭thinking、输出预算1536；没有测试最大 Agent 并发。",
+  "measurement_limit": "vLLM running/token 指标有刷新间隔；空闲观察时间不是精确的 HTTP/GPU 取消延迟。结果只代表两次该类停止请求。",
+  "deployment_state": {
+    "deployed": false,
+    "model_restarted": false,
+    "model_server_pid_before_after": 447372,
+    "model_max_len_before_after": 4096,
+    "gpu0_training_pid_before_after": 41487,
+    "gpu2_training_pid_before_after": 41488,
+    "running_after_probe": 0,
+    "waiting_after_probe": 0
+  },
+  "probe_jar_sha256": "5e13b219dc2adf69843443db64f2338ac6c1b3bc00973ccd8a07c435a4953fa7",
+  "invalid_probe": "gpu1-unscoped-probe.json 已显式标为不能比较：首版测试包装器丢失模型专用参数，不纳入结论。",
+  "remaining_limits": [
+    "完整业务服务未部署此次改动；真实推荐/RAG、长会话质量和最大并发未重测。",
+    "正常请求仍受 GPU 推理和调度预算限制；减少取消请求空转不能直接换算成吞吐提升。"
+  ]
+}

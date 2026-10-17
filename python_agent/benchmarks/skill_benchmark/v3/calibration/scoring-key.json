@@ -1,0 +1,4705 @@
+{
+  "schema_version": "rs-skill-calibration-key/1",
+  "benchmark_sha256": "331bf0638c511c42450a82c4ca1336ee79beabc8eba723217f535588426b7d1e",
+  "scorer_sha256": "8b1cde6e861b9c76ac84fa82a63de47eae9b535d61d2e781ccc9410b0999ddc3",
+  "review_queue_sha256": "e63b8a6e0df830105d945d625d50470077e9f75a6ce302679dc83955cc85c9d7",
+  "pairs": [
+    {
+      "pair_id": "calibration-000",
+      "task_id": "profile-family-109-personalized",
+      "family_id": "profile-family-109",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.3862096021701777,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 16,
+        "potentially_feasible_count": 16,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08H1CM2Q8",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9795450454463633,
+            "relevance": 0.9795450454463633,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BWDLXJY7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6445480727796373,
+            "relevance": 0.6445480727796373,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 75.68463856773361,
+        "ndcg": 0.7568463856773362,
+        "idcg": 1.3862096021701777,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 16,
+        "potentially_feasible_count": 16,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BWDLXJY7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6445480727796373,
+            "relevance": 0.6445480727796373,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0CBMH6SWZ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6412752800510555,
+            "relevance": 0.6412752800510555,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-001",
+      "task_id": "profile-family-104-personalized_budget_change",
+      "family_id": "profile-family-104",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 71.787620930545,
+        "ndcg": 0.71787620930545,
+        "idcg": 1.1535712519098087,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 21,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0B2W73Y1P",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5136363636363637,
+            "relevance": 0.5136363636363637,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BFFDPJYD",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.49844692228922516,
+            "relevance": 0.49844692228922516,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.1535712519098087,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 21,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09BB3CB25",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8295027875753783,
+            "relevance": 0.8295027875753783,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0B2W73Y1P",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5136363636363637,
+            "relevance": 0.5136363636363637,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-002",
+      "task_id": "profile-family-100-category_switch",
+      "family_id": "profile-family-100",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 39.72539793780261,
+        "ndcg": 0.39725397937802615,
+        "idcg": 0.2959626175343081,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 3,
+        "potentially_feasible_count": 3,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09LGZPT9F",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.02727272727272731,
+            "relevance": 0.02727272727272731,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09CLKXWD9",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.1431214802896219,
+            "relevance": 0.1431214802896219,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.2959626175343081,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 3,
+        "potentially_feasible_count": 3,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08YYQ5LKZ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.20566301724439473,
+            "relevance": 0.20566301724439473,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09CLKXWD9",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.1431214802896219,
+            "relevance": 0.1431214802896219,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-003",
+      "task_id": "profile-family-116-tool_unavailable",
+      "family_id": "profile-family-116",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 35.787817486996545,
+        "ndcg": 0.3578781748699654,
+        "idcg": 1.3109799071087185,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 14,
+        "potentially_feasible_count": 14,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C9LWJ77T",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.28786529260213467,
+            "relevance": 0.28786529260213467,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C8D5BYNB",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2873629002576371,
+            "relevance": 0.2873629002576371,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.3109799071087185,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 14,
+        "potentially_feasible_count": 14,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C3LXVGBW",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9172432830327567,
+            "relevance": 0.9172432830327567,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0B8Z7KLS6",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6240577843209422,
+            "relevance": 0.6240577843209422,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-004",
+      "task_id": "profile-family-112-explicit_overrides_profile",
+      "family_id": "profile-family-112",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 35.41463322946276,
+        "ndcg": 0.3541463322946276,
+        "idcg": 0.9857991201232228,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 3,
+        "potentially_feasible_count": 3,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B098SS6CQ7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.09090909090909101,
+            "relevance": 0.09090909090909101,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B09P575DXQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.4092500795852472,
+            "relevance": 0.4092500795852472,
+            "soft_coverage": 1.0
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.9857991201232228,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 3,
+        "potentially_feasible_count": 3,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0CC88J7YM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7275910682614034,
+            "relevance": 0.7275910682614034,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B09P575DXQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.4092500795852472,
+            "relevance": 0.4092500795852472,
+            "soft_coverage": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-005",
+      "task_id": "profile-family-096-personalized_budget_change",
+      "family_id": "profile-family-096",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.09696783014674207,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 2,
+        "potentially_feasible_count": 2,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09Y8F5HWP",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.07976065504933866,
+            "relevance": 0.07976065504933866,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08SJT2BYN",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0272727272727273,
+            "relevance": 0.0272727272727273,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 80.02251632348364,
+        "ndcg": 0.8002251632348364,
+        "idcg": 0.09696783014674207,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 2,
+        "potentially_feasible_count": 2,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08SJT2BYN",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0272727272727273,
+            "relevance": 0.0272727272727273,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09Y8F5HWP",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.07976065504933866,
+            "relevance": 0.07976065504933866,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-006",
+      "task_id": "profile-family-095-personalized_exclude_previous",
+      "family_id": "profile-family-095",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 90.51665510074498,
+        "ndcg": 0.9051665510074498,
+        "idcg": 1.1216911060271213,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09WMQZ6BV",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6251383399209485,
+            "relevance": 0.6251383399209485,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07RYSJ2NT",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6184189723320158,
+            "relevance": 0.6184189723320158,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.1216911060271213,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C39Y2MT6",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7272727272727273,
+            "relevance": 0.7272727272727273,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09WMQZ6BV",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6251383399209485,
+            "relevance": 0.6251383399209485,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-007",
+      "task_id": "profile-family-102-no_match",
+      "family_id": "profile-family-102",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0CD1X6KJG",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-008",
+      "task_id": "profile-family-101-personalized_budget_change",
+      "family_id": "profile-family-101",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 53.10262772973392,
+        "ndcg": 0.5310262772973392,
+        "idcg": 1.1380924780435004,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 6,
+        "potentially_feasible_count": 6,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09WMQZ6BV",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5069262264007885,
+            "relevance": 0.5069262264007885,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08G54P6CD",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.15442414132989613,
+            "relevance": 0.15442414132989613,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.1380924780435004,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 6,
+        "potentially_feasible_count": 6,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07RYSJ2NT",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8182576389415421,
+            "relevance": 0.8182576389415421,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09WMQZ6BV",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5069262264007885,
+            "relevance": 0.5069262264007885,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-009",
+      "task_id": "profile-family-105-explicit_overrides_profile",
+      "family_id": "profile-family-105",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.375356981200155,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C1MNN6NJ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8432962720732504,
+            "relevance": 0.8432962720732504,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B0C1YKWYFG",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8432962720732504,
+            "relevance": 0.8432962720732504,
+            "soft_coverage": 1.0
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 39.294626027276905,
+        "ndcg": 0.3929462602727691,
+        "idcg": 1.375356981200155,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09YVR9T67",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.09090909090909094,
+            "relevance": 0.09090909090909094,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B09Y1K4YPT",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7124918247220405,
+            "relevance": 0.7124918247220405,
+            "soft_coverage": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-010",
+      "task_id": "profile-family-099-personalized_budget_change",
+      "family_id": "profile-family-099",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.3370677541519764,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B086X4MQ9S",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9591488781286229,
+            "relevance": 0.9591488781286229,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B082DQQWMC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5989872468117029,
+            "relevance": 0.5989872468117029,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 4.002484401898738,
+        "ndcg": 0.04002484401898738,
+        "idcg": 1.3370677541519764,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BPH2FHDC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.027272727272727285,
+            "relevance": 0.027272727272727285,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BX92M1Z5",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0415944895314738,
+            "relevance": 0.0415944895314738,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-011",
+      "task_id": "profile-family-115-unknown_attribute",
+      "family_id": "profile-family-115",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 37,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0C42R1RBT",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.3689450190800224,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 37,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-012",
+      "task_id": "profile-family-119-no_match",
+      "family_id": "profile-family-119",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B087N6X64W",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.7,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-013",
+      "task_id": "profile-family-111-no_match",
+      "family_id": "profile-family-111",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0C8D5BYNB",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-014",
+      "task_id": "profile-family-106-personalized",
+      "family_id": "profile-family-106",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 65.8791927812318,
+        "ndcg": 0.6587919278123179,
+        "idcg": 0.982887519392744,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 6,
+        "potentially_feasible_count": 6,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C3VBX27X",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.40513986013986014,
+            "relevance": 0.40513986013986014,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BS3T3W2F",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.38416083916083915,
+            "relevance": 0.38416083916083915,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.982887519392744,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 6,
+        "potentially_feasible_count": 6,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BJ7121NC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7272727272727273,
+            "relevance": 0.7272727272727273,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C3VBX27X",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.40513986013986014,
+            "relevance": 0.40513986013986014,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-015",
+      "task_id": "profile-family-117-no_match",
+      "family_id": "profile-family-117",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0BRWF3W67",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-016",
+      "task_id": "profile-family-091-personalized_exclude_previous",
+      "family_id": "profile-family-091",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 89.86006446738838,
+        "ndcg": 0.8986006446738839,
+        "idcg": 1.002705232565719,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B097P2NLVH",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6246294842790525,
+            "relevance": 0.6246294842790525,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08KJTKD5T",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.4380869384551456,
+            "relevance": 0.4380869384551456,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.002705232565719,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B097P2NLVH",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6246294842790525,
+            "relevance": 0.6246294842790525,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B005FYMS38",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5992358834664573,
+            "relevance": 0.5992358834664573,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-017",
+      "task_id": "profile-family-103-explicit_overrides_profile",
+      "family_id": "profile-family-103",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 38.05497668747317,
+        "ndcg": 0.3805497668747317,
+        "idcg": 1.5465672101107,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B089M6PH8B",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.09090909090909101,
+            "relevance": 0.09090909090909101,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B09YMCQ5K8",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7887355090447149,
+            "relevance": 0.7887355090447149,
+            "soft_coverage": 1.0
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.5465672101107,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09DCC6CPP",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9558207077532446,
+            "relevance": 0.9558207077532446,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B0BRW1N913",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9363110536687487,
+            "relevance": 0.9363110536687487,
+            "soft_coverage": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-018",
+      "task_id": "profile-family-108-no_match",
+      "family_id": "profile-family-108",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0CG5N9795",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-019",
+      "task_id": "profile-family-092-personalized",
+      "family_id": "profile-family-092",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 77.56957727828421,
+        "ndcg": 0.7756957727828422,
+        "idcg": 1.2000309673733327,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08LKX63MF",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7562245826599703,
+            "relevance": 0.7562245826599703,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07F88Y6T2",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2767889213521614,
+            "relevance": 0.2767889213521614,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.2000309673733327,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08LKX63MF",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7562245826599703,
+            "relevance": 0.7562245826599703,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07RK8CLVV",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7034164773513064,
+            "relevance": 0.7034164773513064,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-020",
+      "task_id": "profile-family-107-tool_unavailable",
+      "family_id": "profile-family-107",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.020149542037539,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 21,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C281Q6XQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6266322823217712,
+            "relevance": 0.6266322823217712,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BD5MBSTM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6237101000360402,
+            "relevance": 0.6237101000360402,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 66.54040718035826,
+        "ndcg": 0.6654040718035826,
+        "idcg": 1.020149542037539,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 21,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07QMTDCK7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2834507076551435,
+            "relevance": 0.2834507076551435,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C281Q6XQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6266322823217712,
+            "relevance": 0.6266322823217712,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-021",
+      "task_id": "profile-family-118-personalized_budget_change",
+      "family_id": "profile-family-118",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.2553916055883056,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 12,
+        "potentially_feasible_count": 12,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BNHDY4X8",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8682053069450969,
+            "relevance": 0.8682053069450969,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BVDNJ8XP",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6136757641425086,
+            "relevance": 0.6136757641425086,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 75.38393499575014,
+        "ndcg": 0.7538393499575013,
+        "idcg": 1.2553916055883056,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 12,
+        "potentially_feasible_count": 12,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BVDNJ8XP",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6136757641425086,
+            "relevance": 0.6136757641425086,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BX2SMS61",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5272977314400885,
+            "relevance": 0.5272977314400885,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-022",
+      "task_id": "profile-family-094-no_match",
+      "family_id": "profile-family-094",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0CB7J8KN4",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-023",
+      "task_id": "profile-family-114-personalized_exclude_previous",
+      "family_id": "profile-family-114",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 39.383647471303156,
+        "ndcg": 0.39383647471303157,
+        "idcg": 0.931153311889057,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BHZJFT6P",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.23724544268258926,
+            "relevance": 0.23724544268258926,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09VLBY4RS",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.20521570643362724,
+            "relevance": 0.20521570643362724,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.931153311889057,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B00L99PQJQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5883358377160031,
+            "relevance": 0.5883358377160031,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08CGPFHWB",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.543352841156234,
+            "relevance": 0.543352841156234,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-024",
+      "task_id": "profile-family-097-category_switch",
+      "family_id": "profile-family-097",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.47644903219740986,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 29,
+        "potentially_feasible_count": 29,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0CDLM2MJB",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2931884660752882,
+            "relevance": 0.2931884660752882,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BL79KPTX",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.29046112516449274,
+            "relevance": 0.29046112516449274,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 32.811345217370295,
+        "ndcg": 0.32811345217370297,
+        "idcg": 0.47644903219740986,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 29,
+        "potentially_feasible_count": 29,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07RGY9KLM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.027272727272727285,
+            "relevance": 0.027272727272727285,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B094LZ8G66",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.20454988647443456,
+            "relevance": 0.20454988647443456,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-025",
+      "task_id": "profile-family-098-category_switch",
+      "family_id": "profile-family-098",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 19.797606612204067,
+        "ndcg": 0.19797606612204066,
+        "idcg": 0.2727053414636062,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08BRCCRK9",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0272727272727273,
+            "relevance": 0.0272727272727273,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BVMKFMFP",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.04234449760765554,
+            "relevance": 0.04234449760765554,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.2727053414636062,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B088WBG8YF",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.18531100478468898,
+            "relevance": 0.18531100478468898,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B00IVC5XBK",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.13851674641148326,
+            "relevance": 0.13851674641148326,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-026",
+      "task_id": "profile-family-113-category_switch",
+      "family_id": "profile-family-113",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 34.45537312614595,
+        "ndcg": 0.3445537312614595,
+        "idcg": 0.2537111721795928,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BK6MRTTR",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.027272727272727303,
+            "relevance": 0.027272727272727303,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07S5YQ16N",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0953266245949173,
+            "relevance": 0.0953266245949173,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.2537111721795928,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09BC3MG1X",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.16440388879413273,
+            "relevance": 0.16440388879413273,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07VDB19N4",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.14154869520723182,
+            "relevance": 0.14154869520723182,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-027",
+      "task_id": "profile-family-090-personalized_exclude_previous",
+      "family_id": "profile-family-090",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.1594179128438777,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 15,
+        "potentially_feasible_count": 15,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08F7586NK",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.786587053659694,
+            "relevance": 0.786587053659694,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0B49SHYCK",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5909229309185812,
+            "relevance": 0.5909229309185812,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 81.18728162440982,
+        "ndcg": 0.8118728162440982,
+        "idcg": 1.1594179128438777,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 15,
+        "potentially_feasible_count": 15,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0B49SHYCK",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5909229309185812,
+            "relevance": 0.5909229309185812,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B06VTLDVRY",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5553343350864012,
+            "relevance": 0.5553343350864012,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-028",
+      "task_id": "profile-family-093-personalized_exclude_previous",
+      "family_id": "profile-family-093",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 61.561750104658955,
+        "ndcg": 0.6156175010465895,
+        "idcg": 1.2915285399706997,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07BWFT253",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6240926157697121,
+            "relevance": 0.6240926157697121,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09VDL3CW6",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2710205939242235,
+            "relevance": 0.2710205939242235,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.2915285399706997,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B00KFCRMSG",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.897769939697349,
+            "relevance": 0.897769939697349,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07BWFT253",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6240926157697121,
+            "relevance": 0.6240926157697121,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-029",
+      "task_id": "profile-family-110-personalized_budget_change",
+      "family_id": "profile-family-110",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.9973504444250277,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 12,
+        "potentially_feasible_count": 12,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BHN9YP21",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6457277819200203,
+            "relevance": 0.6457277819200203,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07QMTDCK7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5573087344741676,
+            "relevance": 0.5573087344741676,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 88.0629775858178,
+        "ndcg": 0.880629775858178,
+        "idcg": 0.9973504444250277,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 12,
+        "potentially_feasible_count": 12,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07QMTDCK7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5573087344741676,
+            "relevance": 0.5573087344741676,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09VXNSWXZ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5087535688955973,
+            "relevance": 0.5087535688955973,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-030",
+      "task_id": "profile-family-109-personalized_exclude_previous",
+      "family_id": "profile-family-109",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.3862096021701777,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 16,
+        "potentially_feasible_count": 16,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08H1CM2Q8",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9795450454463633,
+            "relevance": 0.9795450454463633,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BWDLXJY7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6445480727796373,
+            "relevance": 0.6445480727796373,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 75.68463856773361,
+        "ndcg": 0.7568463856773362,
+        "idcg": 1.3862096021701777,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 16,
+        "potentially_feasible_count": 16,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BWDLXJY7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6445480727796373,
+            "relevance": 0.6445480727796373,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0CBMH6SWZ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6412752800510555,
+            "relevance": 0.6412752800510555,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-031",
+      "task_id": "profile-family-104-unknown_attribute",
+      "family_id": "profile-family-104",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 41,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 41,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0BCH2JH4K",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.2455574385667595,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-032",
+      "task_id": "profile-family-100-unknown_attribute",
+      "family_id": "profile-family-100",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 21,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0BWDLXJY7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.2945480727796374,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-033",
+      "task_id": "profile-family-116-unknown_attribute",
+      "family_id": "profile-family-116",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 14,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 14,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0C9LWJ77T",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.28786529260213467,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-034",
+      "task_id": "profile-family-112-tool_unavailable",
+      "family_id": "profile-family-112",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.5149903832924154,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 3,
+        "potentially_feasible_count": 3,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B098SS6CQ7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.37727272727272726,
+            "relevance": 0.37727272727272726,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0CC88J7YM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.21827732047842102,
+            "relevance": 0.21827732047842102,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 57.42626379666659,
+        "ndcg": 0.5742626379666659,
+        "idcg": 0.5149903832924154,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 3,
+        "potentially_feasible_count": 3,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0CC88J7YM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.21827732047842102,
+            "relevance": 0.21827732047842102,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09P575DXQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.12277502387557415,
+            "relevance": 0.12277502387557415,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-035",
+      "task_id": "profile-family-096-category_switch",
+      "family_id": "profile-family-096",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 32.811345217370295,
+        "ndcg": 0.32811345217370297,
+        "idcg": 0.47644903219740986,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 29,
+        "potentially_feasible_count": 29,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07RGY9KLM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.027272727272727285,
+            "relevance": 0.027272727272727285,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B094LZ8G66",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.20454988647443456,
+            "relevance": 0.20454988647443456,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.47644903219740986,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 29,
+        "potentially_feasible_count": 29,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0CDLM2MJB",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2931884660752882,
+            "relevance": 0.2931884660752882,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BL79KPTX",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.29046112516449274,
+            "relevance": 0.29046112516449274,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-036",
+      "task_id": "profile-family-095-personalized_budget_change",
+      "family_id": "profile-family-095",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 80.26381265955528,
+        "ndcg": 0.8026381265955528,
+        "idcg": 0.8023639031461283,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 5,
+        "potentially_feasible_count": 5,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0183JT776",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.37727272727272726,
+            "relevance": 0.37727272727272726,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0834WPX5D",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.42276518310713473,
+            "relevance": 0.42276518310713473,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.8023639031461283,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 5,
+        "potentially_feasible_count": 5,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09WMQZ6BV",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5069262264007885,
+            "relevance": 0.5069262264007885,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07RYSJ2NT",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.4682576389415422,
+            "relevance": 0.4682576389415422,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-037",
+      "task_id": "profile-family-102-category_switch",
+      "family_id": "profile-family-102",
+      "formula_preference": "tie",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.0272727272727273,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 1,
+        "feasible_count": 1,
+        "potentially_feasible_count": 1,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0845Y227M",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0272727272727273,
+            "relevance": 0.0272727272727273,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.0272727272727273,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 1,
+        "feasible_count": 1,
+        "potentially_feasible_count": 1,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0845Y227M",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.0272727272727273,
+            "relevance": 0.0272727272727273,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-038",
+      "task_id": "profile-family-101-unknown_attribute",
+      "family_id": "profile-family-101",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 11,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B01KLLQRCC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.20122529644268777,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 11,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-039",
+      "task_id": "profile-family-105-personalized",
+      "family_id": "profile-family-105",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 75.53016270741985,
+        "ndcg": 0.7553016270741985,
+        "idcg": 1.302039440745766,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C1MNN6NJ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6029888816219751,
+            "relevance": 0.6029888816219751,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C1YKWYFG",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6029888816219751,
+            "relevance": 0.6029888816219751,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.302039440745766,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 9,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0939XGGGX",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9215958142576847,
+            "relevance": 0.9215958142576847,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C1MNN6NJ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6029888816219751,
+            "relevance": 0.6029888816219751,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-040",
+      "task_id": "profile-family-099-personalized_exclude_previous",
+      "family_id": "profile-family-099",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 3.7174145700921257,
+        "ndcg": 0.03717414570092126,
+        "idcg": 1.3974038438397012,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 18,
+        "potentially_feasible_count": 18,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B096BMJPL8",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.027272727272727285,
+            "relevance": 0.027272727272727285,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08BCQCBD1",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.039108263133135944,
+            "relevance": 0.039108263133135944,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.3974038438397012,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 18,
+        "potentially_feasible_count": 18,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B086X4MQ9S",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9928963066328809,
+            "relevance": 0.9928963066328809,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B082DQQWMC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.641129277731878,
+            "relevance": 0.641129277731878,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-041",
+      "task_id": "profile-family-115-no_match",
+      "family_id": "profile-family-115",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0C42R1RBT",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.11666666666666665,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-042",
+      "task_id": "profile-family-119-explicit_overrides_profile",
+      "family_id": "profile-family-119",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 13.125756543281202,
+        "ndcg": 0.13125756543281203,
+        "idcg": 1.4187670418246612,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 19,
+        "potentially_feasible_count": 19,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B087N6X64W",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.09090909090909095,
+            "relevance": 0.09090909090909095,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B0B2Z8CVTC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.15107041057674828,
+            "relevance": 0.15107041057674828,
+            "soft_coverage": 1.0
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.4187670418246612,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 19,
+        "potentially_feasible_count": 19,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B096KSQMSY",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8788283097822792,
+            "relevance": 0.8788283097822792,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B088CWYM1T",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.855782642974104,
+            "relevance": 0.855782642974104,
+            "soft_coverage": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-043",
+      "task_id": "profile-family-111-tool_unavailable",
+      "family_id": "profile-family-111",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 16.3556526964809,
+        "ndcg": 0.163556526964809,
+        "idcg": 1.1750033449248598,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07NW72QY9",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.02727272727272732,
+            "relevance": 0.02727272727272732,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08KXMCB7S",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.26137099742362896,
+            "relevance": 0.26137099742362896,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.1750033449248598,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0B74LR69K",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9933805668016195,
+            "relevance": 0.9933805668016195,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C9LWJ77T",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.28786529260213467,
+            "relevance": 0.28786529260213467,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-044",
+      "task_id": "profile-family-106-unknown_attribute",
+      "family_id": "profile-family-106",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 6,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 6,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0CBS2TXJC",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.33520979020979025,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-045",
+      "task_id": "profile-family-117-personalized_exclude_previous",
+      "family_id": "profile-family-117",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 34.34999149278157,
+        "ndcg": 0.3434999149278157,
+        "idcg": 1.39727444594742,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 32,
+        "potentially_feasible_count": 32,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C2Q7YST5",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.294552136530686,
+            "relevance": 0.294552136530686,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BRWF3W67",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2938703013029871,
+            "relevance": 0.2938703013029871,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.39727444594742,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 32,
+        "potentially_feasible_count": 32,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0CDLM2MJB",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9931884660752882,
+            "relevance": 0.9931884660752882,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BL79KPTX",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6404611251644927,
+            "relevance": 0.6404611251644927,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-046",
+      "task_id": "profile-family-091-personalized",
+      "family_id": "profile-family-091",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 89.86006446738838,
+        "ndcg": 0.8986006446738839,
+        "idcg": 1.002705232565719,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B097P2NLVH",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6246294842790525,
+            "relevance": 0.6246294842790525,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08KJTKD5T",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.4380869384551456,
+            "relevance": 0.4380869384551456,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.002705232565719,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B097P2NLVH",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6246294842790525,
+            "relevance": 0.6246294842790525,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B005FYMS38",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5992358834664573,
+            "relevance": 0.5992358834664573,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-047",
+      "task_id": "profile-family-103-unknown_attribute",
+      "family_id": "profile-family-103",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 8,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0BRW1N913",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.45589331610062456,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-048",
+      "task_id": "profile-family-108-personalized",
+      "family_id": "profile-family-108",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 41.16996546694845,
+        "ndcg": 0.4116996546694845,
+        "idcg": 1.087598623780296,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07F88Y6T2",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2767889213521614,
+            "relevance": 0.2767889213521614,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0CG5N9795",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.27098905307503274,
+            "relevance": 0.27098905307503274,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.087598623780296,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0B77T18FT",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9129642578402671,
+            "relevance": 0.9129642578402671,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07F88Y6T2",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2767889213521614,
+            "relevance": 0.2767889213521614,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-049",
+      "task_id": "profile-family-092-explicit_overrides_profile",
+      "family_id": "profile-family-092",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 35.41213722713944,
+        "ndcg": 0.3541213722713944,
+        "idcg": 1.5473076064444409,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B091RN5H91",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.09090909090909093,
+            "relevance": 0.09090909090909093,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B0B778BNFG",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7243684410569164,
+            "relevance": 0.7243684410569164,
+            "soft_coverage": 1.0
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.5473076064444409,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 8,
+        "potentially_feasible_count": 8,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08LKX63MF",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.965193053311012,
+            "relevance": 0.965193053311012,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B07F88Y6T2",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9226297378405379,
+            "relevance": 0.9226297378405379,
+            "soft_coverage": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-050",
+      "task_id": "profile-family-107-personalized_exclude_previous",
+      "family_id": "profile-family-107",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 66.54040718035826,
+        "ndcg": 0.6654040718035826,
+        "idcg": 1.020149542037539,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 21,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07QMTDCK7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.2834507076551435,
+            "relevance": 0.2834507076551435,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0C281Q6XQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6266322823217712,
+            "relevance": 0.6266322823217712,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.020149542037539,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 21,
+        "potentially_feasible_count": 21,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0C281Q6XQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6266322823217712,
+            "relevance": 0.6266322823217712,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0BD5MBSTM",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6237101000360402,
+            "relevance": 0.6237101000360402,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-051",
+      "task_id": "profile-family-118-no_match",
+      "family_id": "profile-family-118",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0C7Q3729Y",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-052",
+      "task_id": "profile-family-094-personalized_budget_change",
+      "family_id": "profile-family-094",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.7883039090262407,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B072N9SRP2",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5498840619245721,
+            "relevance": 0.5498840619245721,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B00QTW0R6K",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.37788651708381643,
+            "relevance": 0.37788651708381643,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 78.05432766154897,
+        "ndcg": 0.7805432766154896,
+        "idcg": 0.7883039090262407,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 4,
+        "potentially_feasible_count": 4,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BRY5DSSG",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.37727272727272726,
+            "relevance": 0.37727272727272726,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B0B41J5P87",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.37727272727272726,
+            "relevance": 0.37727272727272726,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-053",
+      "task_id": "profile-family-114-personalized",
+      "family_id": "profile-family-114",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 39.383647471303156,
+        "ndcg": 0.39383647471303157,
+        "idcg": 0.931153311889057,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BHZJFT6P",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.23724544268258926,
+            "relevance": 0.23724544268258926,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09VLBY4RS",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.20521570643362724,
+            "relevance": 0.20521570643362724,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.931153311889057,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B00L99PQJQ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5883358377160031,
+            "relevance": 0.5883358377160031,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08CGPFHWB",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.543352841156234,
+            "relevance": 0.543352841156234,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-054",
+      "task_id": "profile-family-097-unknown_attribute",
+      "family_id": "profile-family-097",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 12,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B0C6G363Z2",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.2596422751904202,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 12,
+        "violations": [],
+        "items": []
+      }
+    },
+    {
+      "pair_id": "calibration-055",
+      "task_id": "profile-family-098-personalized",
+      "family_id": "profile-family-098",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 43.758867375581666,
+        "ndcg": 0.43758867375581667,
+        "idcg": 0.8707457732959951,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 18,
+        "potentially_feasible_count": 18,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B08XMB6CSF",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.24004255396533852,
+            "relevance": 0.24004255396533852,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09BXC5K9Q",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.22345741875647857,
+            "relevance": 0.22345741875647857,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 0.8707457732959951,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 18,
+        "potentially_feasible_count": 18,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B09C3HG598",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5535443452326829,
+            "relevance": 0.5535443452326829,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B08BZ2YHZ6",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.5027523686555493,
+            "relevance": 0.5027523686555493,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-056",
+      "task_id": "profile-family-113-explicit_overrides_profile",
+      "family_id": "profile-family-113",
+      "formula_preference": "B",
+      "candidate_a": {
+        "success": true,
+        "task_score": 18.690080786112702,
+        "ndcg": 0.186900807861127,
+        "idcg": 1.5065863276120344,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0845Y1FRN",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.09090909090909106,
+            "relevance": 0.09090909090909106,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B0BF72MB9S",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.30220973056793965,
+            "relevance": 0.30220973056793965,
+            "soft_coverage": 1.0
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.5065863276120344,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 7,
+        "potentially_feasible_count": 7,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B098SS6CQ7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.9612521806551657,
+            "relevance": 0.9612521806551657,
+            "soft_coverage": 1.0
+          },
+          {
+            "item_id": "B0B15L5QY3",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.8643341732893972,
+            "relevance": 0.8643341732893972,
+            "soft_coverage": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-057",
+      "task_id": "profile-family-090-no_match",
+      "family_id": "profile-family-090",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "no_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 0,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B07R2JPGCV",
+            "hard_checks": [
+              true,
+              true,
+              false,
+              true
+            ],
+            "hard_pass": false,
+            "potentially_feasible": false,
+            "utility": 0.0,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-058",
+      "task_id": "profile-family-093-unknown_attribute",
+      "family_id": "profile-family-093",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 9,
+        "violations": [],
+        "items": []
+      },
+      "candidate_b": {
+        "success": false,
+        "task_score": 0.0,
+        "ndcg": null,
+        "idcg": 0,
+        "ranking_applicable": false,
+        "expected_outcome": "uncertain_match",
+        "required_count": 0,
+        "feasible_count": 0,
+        "potentially_feasible_count": 9,
+        "violations": [
+          "hard_constraint_failed",
+          "missing_limitation_explanation",
+          "wrong_count",
+          "wrong_outcome"
+        ],
+        "items": [
+          {
+            "item_id": "B09VDL3CW6",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true,
+              null
+            ],
+            "hard_pass": false,
+            "potentially_feasible": true,
+            "utility": 0.2710205939242235,
+            "relevance": 0.0,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    },
+    {
+      "pair_id": "calibration-059",
+      "task_id": "profile-family-110-personalized_exclude_previous",
+      "family_id": "profile-family-110",
+      "formula_preference": "A",
+      "candidate_a": {
+        "success": true,
+        "task_score": 100.0,
+        "ndcg": 1.0,
+        "idcg": 1.1926552622441517,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 23,
+        "potentially_feasible_count": 23,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B0BHN9YP21",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.7929923633636267,
+            "relevance": 0.7929923633636267,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B07QMTDCK7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6334507076551434,
+            "relevance": 0.6334507076551434,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      },
+      "candidate_b": {
+        "success": true,
+        "task_score": 86.16437793980595,
+        "ndcg": 0.8616437793980595,
+        "idcg": 1.1926552622441517,
+        "ranking_applicable": true,
+        "expected_outcome": "recommend",
+        "required_count": 2,
+        "feasible_count": 23,
+        "potentially_feasible_count": 23,
+        "violations": [],
+        "items": [
+          {
+            "item_id": "B07QMTDCK7",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6334507076551434,
+            "relevance": 0.6334507076551434,
+            "soft_coverage": 0.9999999999999999
+          },
+          {
+            "item_id": "B09VXNSWXZ",
+            "hard_checks": [
+              true,
+              true,
+              true,
+              true
+            ],
+            "hard_pass": true,
+            "potentially_feasible": true,
+            "utility": 0.6247815668741417,
+            "relevance": 0.6247815668741417,
+            "soft_coverage": 0.9999999999999999
+          }
+        ]
+      }
+    }
+  ]
+}

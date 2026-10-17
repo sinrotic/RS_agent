@@ -1,0 +1,195 @@
+{
+  "label": "control",
+  "business_regression": [
+    {
+      "query": "推荐鼠标",
+      "elapsed_ms": 4048.64,
+      "complete_with_catalog_ms": 4055.77,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 258,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "17f0a0a80bc09680df810e9c88049c07f27207291288c33bed6888ccf465160d",
+      "passed": true
+    },
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 18822.71,
+      "complete_with_catalog_ms": 18830.57,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 21,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_support",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "call_agent",
+        "rag_evidence_search",
+        "load_skill"
+      ],
+      "answer_sha256": "412d370a56109e7c9250d6e54071aaa3ebf97930f7bf130f77e8437084766437",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 20453.66,
+      "complete_with_catalog_ms": 20459.98,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 55,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_support",
+        "rag_support",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "load_skill"
+      ],
+      "answer_sha256": "9568cec8d84dac1e7525ca574ad6159977d4f03e8442f87fefe55b5ac69e88a6",
+      "passed": true
+    },
+    {
+      "query": "推荐鼠标",
+      "elapsed_ms": 1532.15,
+      "complete_with_catalog_ms": 1537.99,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 95,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "4147cb3afb74705c947d05c9d1fc686263c0b040d4d9ed55a0c13c86bead798f",
+      "passed": true
+    },
+    {
+      "query": "推荐一款适合办公的鼠标，最好静音，说明理由",
+      "elapsed_ms": 26117.96,
+      "complete_with_catalog_ms": 26125.7,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 29,
+      "block_types": [
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "call_agent",
+        "rag_evidence_search",
+        "load_skill",
+        "load_skill",
+        "rag_support",
+        "rag_support",
+        "load_skill"
+      ],
+      "answer_sha256": "bda2674bac77ef35ff68450b413025df33bf1bbe36eaf9a4a67239e7ad175ca6",
+      "passed": true
+    },
+    {
+      "query": "推荐适合编程使用的键盘，说明各自的区别",
+      "elapsed_ms": 26094.52,
+      "complete_with_catalog_ms": 26100.53,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 57,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "call_agent",
+        "load_skill",
+        "load_skill",
+        "rag_support",
+        "rag_support",
+        "load_skill",
+        "rag_support"
+      ],
+      "answer_sha256": "445250152c767a96a70a3c9b005955091e2f091527bc6f61754aa60faa4984aa",
+      "passed": true
+    },
+    {
+      "query": "请帮我推荐鼠标",
+      "elapsed_ms": 2214.66,
+      "complete_with_catalog_ms": 2220.69,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 220,
+      "block_types": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "tool_count": 1,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "answer_sha256": "7e152615e8f2322c961506dd2d29651b7f16b57e173ee62404a223a86bdb2521",
+      "passed": true
+    },
+    {
+      "query": "换一批鼠标，适合办公使用",
+      "elapsed_ms": 32194.94,
+      "complete_with_catalog_ms": 32201.23,
+      "finish_reason": null,
+      "item_count": 5,
+      "text_characters": 61,
+      "block_types": [
+        "text",
+        "product_cards"
+      ],
+      "tool_count": 8,
+      "failed_tools": 0,
+      "tool_names": [
+        "recommend_candidates",
+        "rag_evidence_search",
+        "call_agent",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "call_agent"
+      ],
+      "answer_sha256": "7791f63db2b184db1ae5b2ffd063d415e5f34904cd3755c2db54472e8a5a9124",
+      "passed": true
+    }
+  ]
+}

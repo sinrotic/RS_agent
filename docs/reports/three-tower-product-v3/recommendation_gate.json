@@ -1,0 +1,16 @@
+{
+  "seeds": [
+    42,
+    43,
+    44
+  ],
+  "frozen_steps": 150,
+  "baseline_hit100": 0.03,
+  "mean_hit100": 0.034333333333333334,
+  "delta": 0.004333333333333333,
+  "paired_user_bootstrap_95pct": [
+    -0.0006666666666666668,
+    0.009666666666666665
+  ],
+  "note": "averages 3 fixed seeds then resamples users; not uncertainty over seed population or selection-adjusted"
+}

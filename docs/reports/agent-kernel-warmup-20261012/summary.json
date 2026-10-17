@@ -1,0 +1,103 @@
+{
+  "serial": {
+    "before": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "successful_mean_ms": 2151.05,
+      "successful_median_ms": 2169.22,
+      "successful_p95_ms": 2410.57,
+      "successful_max_ms": 2410.57,
+      "valid_ttft_samples": 8,
+      "mean_model_ttft_ms": 191.31475,
+      "median_model_ttft_ms": 160.33249999999998,
+      "min_model_ttft_ms": 150.437,
+      "max_model_ttft_ms": 380.461,
+      "mean_first_text_block_ms": 2094.99125,
+      "mean_prefill_ms": 124.2765,
+      "mean_queue_ms": 19.703625,
+      "cached_tokens_each": [
+        4224,
+        4224,
+        5280,
+        5280,
+        5280,
+        5280,
+        5280,
+        5280
+      ],
+      "model_unchanged": true,
+      "dependencies_unchanged": true
+    },
+    "after": {
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "successful_mean_ms": 2093.78,
+      "successful_median_ms": 2024.63,
+      "successful_p95_ms": 2633.54,
+      "successful_max_ms": 2633.54,
+      "valid_ttft_samples": 8,
+      "mean_model_ttft_ms": 172.85399999999998,
+      "median_model_ttft_ms": 155.31650000000002,
+      "min_model_ttft_ms": 147.666,
+      "max_model_ttft_ms": 299.176,
+      "mean_first_text_block_ms": 2034.4125,
+      "mean_prefill_ms": 107.048625,
+      "mean_queue_ms": 18.430625,
+      "cached_tokens_each": [
+        5280,
+        5280,
+        5280,
+        5280,
+        5280,
+        5280,
+        5280,
+        5280
+      ],
+      "model_unchanged": true,
+      "dependencies_unchanged": true
+    }
+  },
+  "bursts": [
+    {
+      "concurrency": 4,
+      "before": {
+        "total": 8,
+        "passed": 8,
+        "mean_model_ttft_ms": 319.4065,
+        "mean_complete_ms": 2614.8575
+      },
+      "after": {
+        "total": 8,
+        "passed": 8,
+        "mean_model_ttft_ms": 344.033,
+        "mean_complete_ms": 2492.48375
+      }
+    },
+    {
+      "concurrency": 8,
+      "before": {
+        "total": 16,
+        "passed": 16,
+        "mean_model_ttft_ms": 508.99800000000005,
+        "mean_complete_ms": 8185.501875
+      },
+      "after": {
+        "total": 16,
+        "passed": 16,
+        "mean_model_ttft_ms": 511.3525,
+        "mean_complete_ms": 7863.01875
+      }
+    }
+  ],
+  "cold_partial": {
+    "input_tokens": 6610,
+    "cached_tokens": 4752,
+    "previous_unwarmed_ttft_ms": 442.087,
+    "warmed_first_ttft_ms": 134.346,
+    "formal_jit_events": [],
+    "scope": "同 GPU、权重、缓存数量和请求预算，两个隔离进程；旧单次冷请求对新单次已预热请求，不是业务平均增益"
+  },
+  "serial_mean_ttft_reduction_percent": 9.649412813178293
+}

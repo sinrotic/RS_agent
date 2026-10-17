@@ -9,6 +9,7 @@ import com.sinrotic.rs.agent.domain.vo.AgentRuntimeSkillVO;
 import com.sinrotic.rs.agent.domain.vo.AgentRuntimeSystemPromptVO;
 import com.sinrotic.rs.agent.domain.vo.AgentRuntimeToolVO;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
+import com.sinrotic.rs.agent.service.A2uiMessageProjector;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
@@ -24,6 +25,8 @@ import java.util.concurrent.ConcurrentMap;
 public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeConfigurationService {
 
     private final AgentProfileRegistry profileRegistry;
+
+    private final java.util.function.Predicate<String> toolAvailability;
 
     private final ConcurrentMap<String, AgentRuntimeSkillVO> skills = new ConcurrentHashMap<>();
 
@@ -65,8 +68,9 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                     - 当工具结果冲突时，优先使用最新且可靠的工具结果，并简短说明不确定性。
 
                     生成最终答案时：
-                    - 所有用户可见内容都必须通过 emit_final_answer 工具输出。
+                    - 最终用户可见答案通过 emit_final_answer 工具输出；交互界面可先通过 emit_ui 发布。
                     - 使用有序 blocks 组织答案，例如 text、product_cards、comparison_table 或 followup_question。
+                    - 需要交互表单、动态布局或局部更新时，加载 a2ui-interface；用 emit_ui 渐进展示，用 emit_final_answer 完成本轮。
                     - 开头直接给出推荐结论或下一个最关键的问题。
                     - 推荐理由要围绕用户意图、商品属性和证据说明。
                     - 不要向用户暴露内部工具名、skill 名称或编排细节。
@@ -78,6 +82,12 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
     }
 
     public InMemoryAgentRuntimeConfigurationService(AgentTemplateProperties properties) {
+        this(properties, name -> true);
+    }
+
+    public InMemoryAgentRuntimeConfigurationService(AgentTemplateProperties properties,
+            java.util.function.Predicate<String> toolAvailability) {
+        this.toolAvailability = toolAvailability;
         profileRegistry = new AgentProfileRegistry(properties);
         loadBuiltInSkills();
         loadDefaultTools();
@@ -86,6 +96,12 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
     @Override
     public AgentRuntimeProfile defaultProfile() {
         return profileRegistry.defaultProfile();
+    }
+
+    @Override
+    public List<AgentRuntimeToolVO> toolsForProfile(AgentRuntimeProfile profile) {
+        return AgentRuntimeConfigurationService.super.toolsForProfile(profile).stream()
+                .filter(tool -> toolAvailability.test(tool.name())).toList();
     }
 
     @Override
@@ -174,8 +190,7 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                         "source", skill.source()
                 ))
                 .toList());
-        context.put("available_tools", tools().stream()
-                .filter(AgentRuntimeToolVO::enabled)
+        context.put("available_tools", toolsForProfile(defaultProfile()).stream()
                 .map(tool -> Map.of(
                         "name", tool.name(),
                         "service", tool.service(),
@@ -190,7 +205,9 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
     public List<String> runtimeContextMessages() {
         List<String> messages = new java.util.ArrayList<>();
         messages.add(skillListingReminder());
-        messages.add(agentListingReminder());
+        if (toolsForProfile(defaultProfile()).stream().anyMatch(tool -> "call_agent".equals(tool.name()))) {
+            messages.add(agentListingReminder());
+        }
         if (extensionToolListingEnabled) {
             messages.add(extensionToolListingReminder());
         }
@@ -259,6 +276,10 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
             for (Resource resource : resources) {
                 String content = resource.getContentAsString(StandardCharsets.UTF_8);
                 AgentRuntimeSkillVO skill = parseSkill(resource, content);
+                if ("a2ui-interface".equals(skill.name())) {
+                    skill = new AgentRuntimeSkillVO(skill.name(), skill.description(), skill.source(),
+                            skill.enabled(), skill.content() + A2uiMessageProjector.modelInstructions());
+                }
                 skills.put(skill.name(), skill);
             }
         } catch (IOException ex) {
@@ -313,7 +334,7 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                 Map.of(
                         "type", "object",
                         "properties", Map.of(
-                                "agent_name", Map.of("type", "string"),
+                                "agent_name", Map.of("type", "string", "enum", List.of("rag_agent")),
                                 "task", Map.of("type", "string"),
                                 "query", Map.of("type", "string"),
                                 "candidate_item_ids", Map.of("type", "array", "items", Map.of("type", "string"))
@@ -325,38 +346,14 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
                 "rs-service-agent",
                 "Emit the ordered user-visible final answer blocks. Use this after required internal tools are complete.",
                 true,
-                Map.of(
-                        "type", "object",
-                        "properties", Map.of(
-                                "blocks", Map.of(
-                                        "type", "array",
-                                        "items", Map.of(
-                                                "type", "object",
-                                                "properties", Map.of(
-                                                        "type", Map.of(
-                                                                "type", "string",
-                                                                "enum", List.of(
-                                                                        "text",
-                                                                        "product_cards",
-                                                                        "comparison_table",
-                                                                        "followup_question"
-                                                                )
-                                                        ),
-                                                        "content", Map.of("type", "string"),
-                                                        "card_set_id", Map.of("type", "string"),
-                                                        "item_ids", Map.of(
-                                                                "type", "array",
-                                                                "items", Map.of("type", "string")
-                                                        ),
-                                                        "layout", Map.of("type", "string")
-                                                ),
-                                                "required", List.of("type")
-                                        )
-                                )
-                        ),
-                        "required", List.of("blocks")
-                )
+                finalAnswerToolSchema()
         ));
+        tools.put("emit_ui", new AgentRuntimeToolVO(
+                "emit_ui", "rs-service-agent",
+                "Publish validated A2UI shopping UI messages without finishing the turn. Load a2ui-interface first. Use the registered catalog and send only user-facing data.",
+                true, Map.of("type", "object", "additionalProperties", false,
+                        "properties", Map.of("messages", A2uiMessageProjector.messagesSchema()),
+                        "required", List.of("messages"))));
         tools.put("recommend_candidates", new AgentRuntimeToolVO(
                 "recommend_candidates",
                 "rs-service-recommend",
@@ -483,6 +480,53 @@ public class InMemoryAgentRuntimeConfigurationService implements AgentRuntimeCon
         return Map.of(
                 "type", "object",
                 "properties", properties
+        );
+    }
+
+    private Map<String, Object> finalAnswerToolSchema() {
+        Map<String, Object> blockProperties = new LinkedHashMap<>();
+        blockProperties.put("type", Map.of(
+                "type", "string",
+                "enum", List.of("text", "product_cards", "comparison_table", "followup_question", "a2ui")
+        ));
+        blockProperties.put("content", Map.of(
+                "type", List.of("string", "null"),
+                "maxLength", 4000
+        ));
+        blockProperties.put("card_set_id", Map.of(
+                "type", List.of("string", "null"),
+                "maxLength", 128
+        ));
+        blockProperties.put("item_ids", Map.of(
+                "type", List.of("array", "null"),
+                "items", Map.of("type", "string", "maxLength", 128),
+                "maxItems", 20
+        ));
+        blockProperties.put("layout", Map.of(
+                "type", List.of("string", "null"),
+                "maxLength", 64
+        ));
+        blockProperties.put("messages", Map.of("anyOf", List.of(
+                A2uiMessageProjector.messagesSchema(), Map.of("type", "null"))));
+
+        Map<String, Object> blockSchema = new LinkedHashMap<>();
+        blockSchema.put("type", "object");
+        blockSchema.put("additionalProperties", false);
+        blockSchema.put("properties", blockProperties);
+        blockSchema.put("required", List.of("type", "content", "card_set_id", "item_ids", "layout", "messages"));
+
+        return Map.of(
+                "type", "object",
+                "additionalProperties", false,
+                "properties", Map.of(
+                        "blocks", Map.of(
+                                "type", "array",
+                                "minItems", 1,
+                                "maxItems", 12,
+                                "items", blockSchema
+                        )
+                ),
+                "required", List.of("blocks")
         );
     }
 

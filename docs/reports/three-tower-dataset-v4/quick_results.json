@@ -1,0 +1,53 @@
+{
+  "scope": "733-product-generation snapshot, seed42 only; preliminary, not full comparison",
+  "semantic_train": 2089,
+  "semantic_valid": 249,
+  "rec_steps": 6000,
+  "joint_rec_steps": 6000,
+  "joint_semantic_updates": 400,
+  "rec": {
+    "count": 1000,
+    "hit@10": 0.012,
+    "hit@50": 0.037,
+    "hit@100": 0.044,
+    "target_coverage": 0.617,
+    "mrr": 0.005164344813598109,
+    "ndcg@100": 0.012028424266719939
+  },
+  "joint_rec": {
+    "count": 1000,
+    "hit@10": 0.012,
+    "hit@50": 0.034,
+    "hit@100": 0.044,
+    "target_coverage": 0.617,
+    "mrr": 0.005106871865525374,
+    "ndcg@100": 0.011984474417405803
+  },
+  "bge_semantic": {
+    "count": 249,
+    "hit@10": 0.3614457831325301,
+    "hit@50": 0.6265060240963856,
+    "hit@100": 0.7429718875502008,
+    "target_coverage": 1.0,
+    "mrr": 0.19765262573354908,
+    "ndcg@100": 0.3024374356678376
+  },
+  "rec_semantic_retention": {
+    "count": 249,
+    "hit@10": 0.3654618473895582,
+    "hit@50": 0.6265060240963856,
+    "hit@100": 0.7309236947791165,
+    "target_coverage": 1.0,
+    "mrr": 0.19796276653425665,
+    "ndcg@100": 0.3007533368438566
+  },
+  "joint_semantic": {
+    "count": 249,
+    "hit@10": 0.3815261044176707,
+    "hit@50": 0.6224899598393574,
+    "hit@100": 0.7349397590361446,
+    "target_coverage": 1.0,
+    "mrr": 0.206606178063035,
+    "ndcg@100": 0.3084807678617519
+  }
+}

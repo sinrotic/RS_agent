@@ -1,0 +1,35 @@
+{
+  "verified_date": "2026-10-11",
+  "connectivity": {
+    "requested_model": "gpt-6-luna",
+    "returned_model": "gpt-6-luna",
+    "valid_json": true,
+    "probe_total_tokens_reported": 331
+  },
+  "candidate_slots": 8,
+  "usable_customer_messages": 7,
+  "generation_json_failures": 1,
+  "initial_synthesis_model_calls": 21,
+  "additional_diagnostic_model_calls": 3,
+  "all_candidate_slots_remain_quarantined": true,
+  "model_independence": "shared_model_preview",
+  "is_gold": false,
+  "human_reviewed": false,
+  "auto_deploy": false,
+  "formal_dataset_matches_source_snapshot": true,
+  "formal_dataset_tasks": 2899,
+  "all_usable_customer_messages_present_verbatim_in_preview": true,
+  "regression": {
+    "passed": 37,
+    "files": [
+      "tests/test_request_synthesis.py",
+      "tests/test_openai_compatible_client.py"
+    ]
+  },
+  "limitations": [
+    "同模型生成、提取和审核可能共享偏差。",
+    "模型的语义判断不是经独立批准的质量标签。",
+    "补充审核属于新调用，不是恢复初次审核响应。",
+    "本批包含协议与语义失败，不具备加入正式评测集的资格。"
+  ]
+}

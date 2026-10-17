@@ -1,0 +1,19 @@
+{
+  "scope": "seed42 development screening; not independent test or production promotion",
+  "runs": {
+    "v4_reference": {
+      "seconds": null,
+      "epochs": [],
+      "evaluation": {
+        "count": 1000,
+        "hit@10": 0.012,
+        "hit@50": 0.037,
+        "hit@100": 0.044,
+        "target_coverage": 0.617,
+        "mrr": 0.005164344823483306,
+        "ndcg@100": 0.012028424266719939
+      }
+    }
+  },
+  "followup": "only choose extensions/multiple seeds after inspecting development quality and stage costs"
+}

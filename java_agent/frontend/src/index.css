@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../tailwind.config.js";
 
 @layer base {
   body {
@@ -47,7 +46,7 @@
 }
 
 .gradient-text {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400;
+  @apply bg-clip-text text-transparent bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400;
 }
 
 /* Shimmer Animation for Loading Skeleton */

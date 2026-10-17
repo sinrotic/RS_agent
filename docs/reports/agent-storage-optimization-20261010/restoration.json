@@ -1,0 +1,62 @@
+{
+  "verified_at": "2026-10-10T16:44:53.149152+00:00",
+  "qa_containers_remaining": [],
+  "original_infra_status": {
+    "rs-agent-java-mysql": "exited",
+    "rs-agent-java-scylla": "exited",
+    "rs-agent-java-milvus-etcd": "exited",
+    "rs-agent-java-milvus-minio": "exited",
+    "rs-agent-java-elasticsearch": "exited",
+    "rs-agent-java-milvus-standalone": "exited"
+  },
+  "database_removed": true,
+  "database_user_removed": true,
+  "keyspace_removed": true,
+  "qa_private_files_remaining": [],
+  "temporary_bge_stopped": true,
+  "wire_probe_stopped": true,
+  "business_jar_sha256": {
+    "rs-service-agent": "122d3f3f470e5d63b2077ace215ee339cbfaf847c550334fb5396b88e68d1417",
+    "rs-service-recommend": "aaf8140158f3d8c3def2af14d1fc9f1d34b69f1ceb1ceba7a16c08bc5cafb2d8",
+    "rs-service-model": "a0e49d54bbd141f2efdf17b9464103bc830b3b4e70e9bd156edd9b501793aa36"
+  },
+  "mysql_mounts": {
+    "/var/lib/mysql": "/var/lib/rs-agent-java/mysql-nvme-20261010",
+    "/docker-entrypoint-initdb.d": "/home/luo/RS_agent_java/infra/mysql/init",
+    "/var/lib/mysql/rs_agent": "/home/luo/RS_agent_java/db/mysql/rs_agent"
+  },
+  "local_qwen": [
+    {
+      "id": "qwen35-4b",
+      "object": "model",
+      "created": 1791650693,
+      "owned_by": "vllm",
+      "root": "/mnt/data/luo/models/Qwen3.5-4B",
+      "parent": null,
+      "max_model_len": 16384,
+      "permission": [
+        {
+          "id": "modelperm-ad697d527aa7300a",
+          "object": "model_permission",
+          "created": 1791650693,
+          "allow_create_engine": false,
+          "allow_sampling": true,
+          "allow_logprobs": true,
+          "allow_search_indices": false,
+          "allow_view": true,
+          "allow_fine_tuning": false,
+          "organization": "*",
+          "group": null,
+          "is_blocking": false
+        }
+      ]
+    }
+  ],
+  "gpu": "0, 17793, 24564, 99\n1, 18577, 24564, 0\n2, 17793, 24564, 95",
+  "gpu_processes": "3975157, 17770, GPU-04bb7e45-f875-e5a9-d694-94c465db00cb\n1507573, 18554, GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9\n3975158, 17770, GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+  "training_original_pids_present": {
+    "3975157": true,
+    "3975158": true
+  },
+  "cold_backup_retained": true
+}

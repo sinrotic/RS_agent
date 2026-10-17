@@ -1,0 +1,938 @@
+{
+  "config": {
+    "base": "http://127.0.0.1:18204",
+    "model_base": "http://127.0.0.1:18082",
+    "gpu": 1,
+    "pid": 384542,
+    "levels": "8",
+    "rounds": 3,
+    "timeout": 90,
+    "p95_budget": 30,
+    "output": "/tmp/rs-agent-quantization-20261009/capacity-fp8-w8a16-8.json",
+    "label": "fp8-w8a16-8",
+    "prompt": "mixed",
+    "stop_after_failed_levels": 2,
+    "require_exclusive_gpu": true,
+    "audit_report": null,
+    "run_id": "808f42ab3a"
+  },
+  "model": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791538281,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 16384,
+        "permission": [
+          {
+            "id": "modelperm-9636e950b9fcdb27",
+            "object": "model_permission",
+            "created": 1791538281,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "started_at": 1791538281.9956703,
+  "scope": "真实 Java Agent/模型；内存会话和固定候选；不包含网关、数据库与在线推荐",
+  "phases": [
+    {
+      "concurrency": 8,
+      "requests": 24,
+      "successful": 24,
+      "success_rate": 1.0,
+      "elapsed_s": 10.167,
+      "successful_turns_per_s": 2.361,
+      "p50_s": 2.72,
+      "p95_s": 4.723,
+      "p99_s": 4.732,
+      "first_answer_p95_s": 4.722,
+      "before_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 43341.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 16896.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 43341.0,
+        "vllm:generation_tokens_total": 2016.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 27982.0,
+        "vllm:iteration_tokens_total_count": 2016.0,
+        "vllm:iteration_tokens_total_sum": 28461.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      },
+      "after_model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 282717.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 178992.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 205129.0,
+        "vllm:generation_tokens_total": 4260.0,
+        "vllm:request_success_total": 63.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 32015.0,
+        "vllm:iteration_tokens_total_count": 2344.0,
+        "vllm:iteration_tokens_total_sum": 81085.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      },
+      "requests_detail": [
+        {
+          "number": 0,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-0-11bbcca9",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0092418,
+          "http_status": 200,
+          "latency_s": 4.717,
+          "first_event_s": 4.715,
+          "first_answer_s": 4.715
+        },
+        {
+          "number": 1,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-1-162cf584",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0103333,
+          "http_status": 200,
+          "latency_s": 4.716,
+          "first_event_s": 4.715,
+          "first_answer_s": 4.715
+        },
+        {
+          "number": 2,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-2-04e448fd",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0094597,
+          "http_status": 200,
+          "latency_s": 4.45,
+          "first_event_s": 4.449,
+          "first_answer_s": 4.449
+        },
+        {
+          "number": 3,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-3-b56a6892",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0108864,
+          "http_status": 200,
+          "latency_s": 4.671,
+          "first_event_s": 4.669,
+          "first_answer_s": 4.669
+        },
+        {
+          "number": 4,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-4-a8c545c9",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0098565,
+          "http_status": 200,
+          "latency_s": 4.723,
+          "first_event_s": 4.722,
+          "first_answer_s": 4.722
+        },
+        {
+          "number": 5,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-5-449ed631",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0096543,
+          "http_status": 200,
+          "latency_s": 4.401,
+          "first_event_s": 4.398,
+          "first_answer_s": 4.398
+        },
+        {
+          "number": 6,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-6-71d9ef93",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0100493,
+          "http_status": 200,
+          "latency_s": 4.678,
+          "first_event_s": 4.677,
+          "first_answer_s": 4.677
+        },
+        {
+          "number": 7,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-7-047620f9",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538282.0090268,
+          "http_status": 200,
+          "latency_s": 4.732,
+          "first_event_s": 4.73,
+          "first_answer_s": 4.73
+        },
+        {
+          "number": 8,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-8-63432ca5",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7430978,
+          "http_status": 200,
+          "latency_s": 2.36,
+          "first_event_s": 2.359,
+          "first_answer_s": 2.359
+        },
+        {
+          "number": 9,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-9-2387d067",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7438633,
+          "http_status": 200,
+          "latency_s": 2.567,
+          "first_event_s": 2.565,
+          "first_answer_s": 2.565
+        },
+        {
+          "number": 10,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-10-fe0d7aa0",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7436483,
+          "http_status": 200,
+          "latency_s": 2.641,
+          "first_event_s": 2.64,
+          "first_answer_s": 2.64
+        },
+        {
+          "number": 11,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-11-3fe34bd1",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7432966,
+          "http_status": 200,
+          "latency_s": 2.408,
+          "first_event_s": 2.406,
+          "first_answer_s": 2.406
+        },
+        {
+          "number": 12,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-12-c2e649ec",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7440653,
+          "http_status": 200,
+          "latency_s": 2.597,
+          "first_event_s": 2.596,
+          "first_answer_s": 2.596
+        },
+        {
+          "number": 13,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-13-3907ba1e",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7434788,
+          "http_status": 200,
+          "latency_s": 2.649,
+          "first_event_s": 2.647,
+          "first_answer_s": 2.647
+        },
+        {
+          "number": 14,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-14-ef113821",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.744295,
+          "http_status": 200,
+          "latency_s": 2.352,
+          "first_event_s": 2.348,
+          "first_answer_s": 2.348
+        },
+        {
+          "number": 15,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-15-d0e72f15",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538286.7428904,
+          "http_status": 200,
+          "latency_s": 2.589,
+          "first_event_s": 2.588,
+          "first_answer_s": 2.588
+        },
+        {
+          "number": 16,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-16-c2d23056",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.3945065,
+          "http_status": 200,
+          "latency_s": 2.778,
+          "first_event_s": 2.777,
+          "first_answer_s": 2.777
+        },
+        {
+          "number": 17,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-17-7e9f85fd",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.395285,
+          "http_status": 200,
+          "latency_s": 2.567,
+          "first_event_s": 2.566,
+          "first_answer_s": 2.566
+        },
+        {
+          "number": 18,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-18-d781508e",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？比如 500 元以内、500-1000 元，还是 1000 元以上？"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.3949094,
+          "http_status": 200,
+          "latency_s": 2.734,
+          "first_event_s": 2.733,
+          "first_answer_s": 2.733
+        },
+        {
+          "number": 19,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-19-481849b8",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.394721,
+          "http_status": 200,
+          "latency_s": 2.769,
+          "first_event_s": 2.768,
+          "first_answer_s": 2.768
+        },
+        {
+          "number": 20,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-20-472e0d89",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.3954759,
+          "http_status": 200,
+          "latency_s": 2.521,
+          "first_event_s": 2.52,
+          "first_answer_s": 2.52
+        },
+        {
+          "number": 21,
+          "prompt": "我想买一个日常通勤双肩包，但还没确定预算。请先问我一个最关键的澄清问题，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-21-dd371c52",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "followup_question",
+              "content": "您希望这个通勤双肩包的预算范围大概是多少呢？（例如：500 元以内、800-1500 元、2000 元以上等）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.3956802,
+          "http_status": 200,
+          "latency_s": 2.72,
+          "first_event_s": 2.718,
+          "first_answer_s": 2.718
+        },
+        {
+          "number": 22,
+          "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+          "session_id": "capacity-808f42ab3a-8-22-879631c5",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "选购通勤双肩包时，建议考虑以下三个方面："
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.3950937,
+          "http_status": 200,
+          "latency_s": 2.752,
+          "first_event_s": 2.751,
+          "first_answer_s": 2.751
+        },
+        {
+          "number": 23,
+          "prompt": "我每天背电脑通勤，想买双肩包，但不知道应该选多大。请先问我电脑尺寸，用一个简短问题回答，暂时不要检索商品。",
+          "session_id": "capacity-808f42ab3a-8-23-f5b2e622",
+          "success": true,
+          "events": {
+            "answer_block": 1,
+            "done": 1
+          },
+          "answer": [
+            {
+              "type": "text",
+              "content": "请问您的电脑大概是什么尺寸？（例如：13 英寸、15 英寸、16 英寸或更大）"
+            }
+          ],
+          "errors": [],
+          "finish_reason": "FINAL_ANSWER",
+          "started_at": 1791538289.3943076,
+          "http_status": 200,
+          "latency_s": 2.546,
+          "first_event_s": 2.544,
+          "first_answer_s": 2.544
+        }
+      ],
+      "passes": true,
+      "gpu_process_count_peak": 1,
+      "shared_gpu_detected": false,
+      "started_at": 1791538282.0057254,
+      "finished_at": 1791538292.1826332,
+      "model_counter_deltas": {
+        "vllm:prefix_cache_queries_total": 239376.0,
+        "vllm:prefix_cache_hits_total": 162096.0,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:prompt_tokens_total": 161788.0,
+        "vllm:generation_tokens_total": 2244.0,
+        "vllm:request_success_total": 32.0
+      }
+    }
+  ],
+  "instance": {
+    "pid": 384542,
+    "jar_sha256": "12f21aaabde344bf2d8484c88a21828951b4a84cc55d9735ee3c1e6a0e1f0677",
+    "streams": 256,
+    "loops": 256,
+    "model_wait_ms": 200,
+    "max_tokens": 1024,
+    "command": [
+      "java",
+      "-Xms256m",
+      "-Xmx2g",
+      "-jar",
+      "/tmp/rs-agent-quantization-20261009/agent.jar",
+      "--spring.profiles.active=local-qwen",
+      "--server.port=18204",
+      "--server.address=127.0.0.1",
+      "--spring.cloud.nacos.discovery.enabled=false",
+      "--spring.cloud.nacos.config.enabled=false",
+      "--spring.ai.openai.chat.completions-path=/chat/completions",
+      "--spring.mvc.async.request-timeout=180000"
+    ],
+    "scope": "isolated-memory-agent",
+    "log": "/tmp/rs-agent-quantization-20261009/agent-streams-256-loops-256-wait-200-tokens-1024.log"
+  },
+  "host_cpu_count": 128,
+  "samples": [
+    {
+      "time": 1791538281.996097,
+      "gpu_index": 1,
+      "memory_mib": 20157,
+      "utilization_pct": 0,
+      "temperature_c": 52,
+      "gpu_processes": [
+        {
+          "pid": 371246,
+          "memory_mib": 20134
+        }
+      ],
+      "agent_rss_mib": 619.26,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 43341.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 16896.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 43341.0,
+        "vllm:generation_tokens_total": 2016.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 27982.0,
+        "vllm:iteration_tokens_total_count": 2016.0,
+        "vllm:iteration_tokens_total_sum": 28461.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      }
+    },
+    {
+      "time": 1791538284.1144645,
+      "gpu_index": 1,
+      "memory_mib": 20157,
+      "utilization_pct": 0,
+      "temperature_c": 53,
+      "gpu_processes": [
+        {
+          "pid": 371246,
+          "memory_mib": 20134
+        }
+      ],
+      "agent_rss_mib": 620.25,
+      "model_metrics": {
+        "vllm:num_requests_running": 6.0,
+        "vllm:num_requests_waiting": 2.0,
+        "vllm:num_requests_waiting_by_reason": 2.0,
+        "vllm:kv_cache_usage_perc": 0.07237813884785815,
+        "vllm:prefix_cache_queries_total": 86976.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 46992.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 57886.0,
+        "vllm:generation_tokens_total": 2020.0,
+        "vllm:request_success_total": 31.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 27992.0,
+        "vllm:iteration_tokens_total_count": 2018.0,
+        "vllm:iteration_tokens_total_sum": 31922.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      }
+    },
+    {
+      "time": 1791538286.2222238,
+      "gpu_index": 1,
+      "memory_mib": 20157,
+      "utilization_pct": 51,
+      "temperature_c": 57,
+      "gpu_processes": [
+        {
+          "pid": 371246,
+          "memory_mib": 20134
+        }
+      ],
+      "agent_rss_mib": 661.09,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0901033973412112,
+        "vllm:prefix_cache_queries_total": 118533.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 69168.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 99142.0,
+        "vllm:generation_tokens_total": 2569.0,
+        "vllm:request_success_total": 34.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 28878.0,
+        "vllm:iteration_tokens_total_count": 2090.0,
+        "vllm:iteration_tokens_total_sum": 45215.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      }
+    },
+    {
+      "time": 1791538288.3241713,
+      "gpu_index": 1,
+      "memory_mib": 20157,
+      "utilization_pct": 67,
+      "temperature_c": 58,
+      "gpu_processes": [
+        {
+          "pid": 371246,
+          "memory_mib": 20134
+        }
+      ],
+      "agent_rss_mib": 643.77,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.09896602658788778,
+        "vllm:prefix_cache_queries_total": 197782.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 121968.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 137940.0,
+        "vllm:generation_tokens_total": 3084.0,
+        "vllm:request_success_total": 44.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 29829.0,
+        "vllm:iteration_tokens_total_count": 2168.0,
+        "vllm:iteration_tokens_total_sum": 59184.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      }
+    },
+    {
+      "time": 1791538290.4247212,
+      "gpu_index": 1,
+      "memory_mib": 20157,
+      "utilization_pct": 100,
+      "temperature_c": 68,
+      "gpu_processes": [
+        {
+          "pid": 371246,
+          "memory_mib": 20134
+        }
+      ],
+      "agent_rss_mib": 649.88,
+      "model_metrics": {
+        "vllm:num_requests_running": 8.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.09158050221565728,
+        "vllm:prefix_cache_queries_total": 265689.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 166320.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 188101.0,
+        "vllm:generation_tokens_total": 3633.0,
+        "vllm:request_success_total": 52.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 30855.0,
+        "vllm:iteration_tokens_total_count": 2253.0,
+        "vllm:iteration_tokens_total_sum": 76102.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      }
+    },
+    {
+      "time": 1791538292.5302236,
+      "gpu_index": 1,
+      "memory_mib": 20157,
+      "utilization_pct": 85,
+      "temperature_c": 56,
+      "gpu_processes": [
+        {
+          "pid": 371246,
+          "memory_mib": 20134
+        }
+      ],
+      "agent_rss_mib": 650.46,
+      "model_metrics": {
+        "vllm:num_requests_running": 0.0,
+        "vllm:num_requests_waiting": 0.0,
+        "vllm:num_requests_waiting_by_reason": 0.0,
+        "vllm:kv_cache_usage_perc": 0.0,
+        "vllm:prefix_cache_queries_total": 282717.0,
+        "vllm:prefix_cache_queries_created": 1791538191.6900282,
+        "vllm:prefix_cache_hits_total": 178992.0,
+        "vllm:prefix_cache_hits_created": 1791538191.6900506,
+        "vllm:external_prefix_cache_queries_total": 0.0,
+        "vllm:external_prefix_cache_queries_created": 1791538191.6900754,
+        "vllm:external_prefix_cache_hits_total": 0.0,
+        "vllm:external_prefix_cache_hits_created": 1791538191.6900997,
+        "vllm:num_preemptions_total": 0.0,
+        "vllm:num_preemptions_created": 1791538191.6901608,
+        "vllm:prompt_tokens_total": 205129.0,
+        "vllm:generation_tokens_total": 4260.0,
+        "vllm:request_success_total": 63.0,
+        "vllm:request_success_created": 8957690958.451677,
+        "vllm:iteration_tokens_total_bucket": 32015.0,
+        "vllm:iteration_tokens_total_count": 2344.0,
+        "vllm:iteration_tokens_total_sum": 81085.0,
+        "vllm:iteration_tokens_total_created": 1791538191.690592
+      }
+    }
+  ],
+  "finished_at": 1791538294.1844695
+}

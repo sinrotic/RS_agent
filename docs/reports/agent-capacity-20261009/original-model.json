@@ -1,0 +1,28 @@
+{
+  "original_pid": 3406660,
+  "script": "/home/luo/RS_agent_java/model_deploy/start_qwen35_4b_vllm.sh",
+  "environment": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.85",
+    "VLLM_READY_FILE": "/tmp/rs_agent_latency/vllm_qwen35_4b.ready",
+    "VLLM_DELAY_AFTER_WARMUP_SEC": "2",
+    "VLLM_TOOL_CALL_PARSER": "qwen3_xml",
+    "VLLM_READY_INTERVAL_SEC": "2",
+    "SERVED_MODEL_NAME": "qwen35-4b",
+    "VLLM_PREFIX_KEEPALIVE": "true",
+    "VLLM_MAX_MODEL_LEN": "4096",
+    "MODEL_PATH": "/mnt/data/luo/models/Qwen3.5-4B",
+    "VLLM_WARMUP_MAX_TOKENS": "1",
+    "VLLM_USE_FLASHINFER_SAMPLER": "0",
+    "VLLM_KEEPALIVE_INTERVAL_SEC": "300",
+    "VLLM_WARMUP_PROFILES": "rs_agent rag_agent",
+    "CUDA_VISIBLE_DEVICES": "1",
+    "VLLM_STRUCTURED_OUTPUT_PROBE": "true",
+    "VLLM_HOST": "127.0.0.1",
+    "VLLM_ENABLE_AUTO_TOOL_CHOICE": "true",
+    "VLLM_READY_TIMEOUT_SEC": "300",
+    "VLLM_VENV": "/mnt/data/luo/venvs/rsagent-vllm",
+    "VLLM_STRUCTURED_OUTPUTS_BACKEND": "xgrammar",
+    "VLLM_PORT": "18082",
+    "VLLM_ENFORCE_STRICT_TOOL_CALLING": "true"
+  }
+}

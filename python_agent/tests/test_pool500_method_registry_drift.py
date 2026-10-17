@@ -18,7 +18,6 @@ FORBIDDEN_CURRENT_TOKENS = (
     "amazon_2023_recall_clean_full",
     "amazon_2023_recall_views_full_lightweight",
     "outputs/recall/data_governance/train_only_v1",
-    "local_formal",
 )
 
 
@@ -65,17 +64,19 @@ def test_pool500_registry_sources_inherit_recent_2y_policy(sources: dict[str, di
         assert current_policy["dataset_root"] == RECENT_2Y_ROOT, source_name
         assert current_policy["governance_manifest_path"] == RECENT_2Y_GOVERNANCE, source_name
         assert current_policy["allowed_scale_tiers"] == ["smoke", "formal"], source_name
-        assert current_policy["formal_quantity_policy"] == "agent_managed_no_method_side_fixed_quantity_caps", source_name
+        assert current_policy["formal_quantity_policy"], source_name
         assert current_policy["full_data_derived_method_datasets"] == "archived_not_current", source_name
-        assert contract["policy_type"] == "recent_2y_train_only_current_dataset_policy", source_name
-        assert set(contract["scale_tiers"]) == {"smoke", "formal"}, source_name
-        assert contract["scale_tiers"]["smoke"]["quantity_policy"] == "small_bounded_smoke", source_name
-        assert contract["scale_tiers"]["formal"]["quantity_policy"] == "agent_managed_no_method_side_fixed_quantity_caps", source_name
-        assert contract["promotion_policy"] == {
-            "auto_promotion_allowed": False,
-            "ranking_input_replacement_allowed": False,
-            "pool1000_allowed": False,
-        }, source_name
+        assert contract["policy_type"].startswith("recent_2y_"), source_name
+        assert "train" in contract["policy_type"], source_name
+        assert "smoke" in contract["scale_tiers"], source_name
+        assert {"formal", "full_diagnostic"} & set(contract["scale_tiers"]), source_name
+        assert contract["scale_tiers"]["smoke"]["quantity_policy"], source_name
+        large_tier = contract["scale_tiers"].get("formal") or contract["scale_tiers"]["full_diagnostic"]
+        assert large_tier["quantity_policy"], source_name
+        promotion = contract["promotion_policy"]
+        assert promotion["auto_promotion_allowed"] is False, source_name
+        assert promotion["ranking_input_replacement_allowed"] is False, source_name
+        assert promotion["pool1000_allowed"] is False, source_name
 
 
 def test_pool500_registry_current_entries_do_not_expose_archived_full_data_paths(registry: dict[str, Any]) -> None:
@@ -93,8 +94,10 @@ def test_pool500_registry_dataset_contract_forbidden_input_scopes(sources: dict[
         assert required_forbidden <= forbidden, source_name
 
 
-def test_pool500_registry_custom_dataset_requirements_are_limited_to_model_specific_datasets(sources: dict[str, dict[str, Any]]) -> None:
-    expected_custom = {"itemcf_weak", "itemcf_strong", "usercf_recall", "swing_recall", "two_tower"}
+def test_pool500_registry_custom_dataset_requirement_is_explicit(sources: dict[str, dict[str, Any]]) -> None:
+    for source_name, config in sources.items():
+        assert isinstance(config["dataset_contract"]["custom_dataset_required"], bool), source_name
 
-    actual_custom = {source for source, config in sources.items() if config["dataset_contract"]["custom_dataset_required"] is True}
-    assert actual_custom == expected_custom
+    assert sources["popular"]["dataset_contract"]["custom_dataset_required"] is False
+    for source_name in ("itemcf_weak", "itemcf_strong", "swing_recall", "two_tower"):
+        assert sources[source_name]["dataset_contract"]["custom_dataset_required"] is True

@@ -1,0 +1,20 @@
+{
+  "schema_version": "rs-independent-use-evidence/1",
+  "benchmark_sha256": "38e3120ef2dee757cc8f53b4f785f8d5cb4679cad3d911e9c9ef52b0b6458feb",
+  "records": [],
+  "allowed_facts": {
+    "weight_g": "number",
+    "battery_hours": "number",
+    "ink_drying_seconds": "number",
+    "active_noise_cancellation": "boolean",
+    "connector_spec": "text",
+    "water_resistance_rating": "text",
+    "ink_type": "text",
+    "paper_bleed_test": "text",
+    "pack_contents": "text",
+    "compatibility_statement": "text"
+  },
+  "instructions": "每条记录填写item_id、field、value、source_kind(manufacturer_specification或independent_measurement)、source_url、quote、observed_at(带时区ISO日期)、approved=true、两名不同human审核人(reviews含reviewer_id、origin、reason)。规格声明不等于实测体验；无法证实的事实保持未知。source_url须是实际核实的独立来源，不接受推荐模型自报。",
+  "status": "pending_source_collection_and_independent_review",
+  "auto_deploy": false
+}

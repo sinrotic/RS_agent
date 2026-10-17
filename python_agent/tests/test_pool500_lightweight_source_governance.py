@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from rs_core.common.io import read_json, write_json, write_jsonl
 from rs_lab.experiments.recall.pool500.common.lightweight_source_builder import build_lightweight_governance_source
+
+pytestmark = pytest.mark.unit
 
 
 def test_category_lightweight_governance_outputs_required_audits(tmp_path: Path) -> None:

@@ -1,0 +1,23 @@
+{
+  "state": "RUNNING",
+  "train_prefixes": 1308253,
+  "screen_steps_each": 4000,
+  "frozen": [
+    "BGE",
+    "item",
+    "query",
+    "user.layers"
+  ],
+  "trainable": "user.pool_* (196737 parameters)",
+  "runs": {
+    "pool_low_random": 5e-05,
+    "pool_high_random": 0.0002,
+    "pool_low_soft_hard": 5e-05
+  },
+  "soft_hard_weight": 0.1,
+  "evaluation": "existing_dev1485, fresh_dev1500, future_dev1000; new sealed1000 after freezing; historical1632 already seen",
+  "limitations": "new sealed covers short histories only; no unseen long-history users remain",
+  "runtime_port": 18128,
+  "candidate_port": 18236,
+  "online_modified": false
+}

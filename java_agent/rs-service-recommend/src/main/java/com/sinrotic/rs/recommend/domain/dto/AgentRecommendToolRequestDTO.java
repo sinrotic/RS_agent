@@ -27,8 +27,19 @@ public record AgentRecommendToolRequestDTO(
         @JsonProperty("diversity_required")
         Boolean diversityRequired,
         String scene,
-        Map<String, Object> constraints
+        Map<String, Object> constraints,
+        @JsonProperty("account_id")
+        String accountId
 ) {
+
+    public AgentRecommendToolRequestDTO(
+            String agentId, String taskId, String sessionId, String profileUserId, String query,
+            List<String> candidateItemIds, Integer recallLimit, Integer returnCount,
+            Boolean diversityRequired, String scene, Map<String, Object> constraints
+    ) {
+        this(agentId, taskId, sessionId, profileUserId, query, candidateItemIds, recallLimit,
+                returnCount, diversityRequired, scene, constraints, profileUserId);
+    }
 
     private static final String DEFAULT_SCENE = "agent";
     private static final int DEFAULT_RECALL_LIMIT = 100;
@@ -76,7 +87,8 @@ public record AgentRecommendToolRequestDTO(
                 normalizedReturnCount,
                 diversityRequired == null ? defaultDiversityRequired : diversityRequired,
                 scene == null || scene.isBlank() ? DEFAULT_SCENE : scene,
-                constraints == null ? Map.of() : Map.copyOf(constraints)
+                constraints == null ? Map.of() : Map.copyOf(constraints),
+                accountId == null || accountId.isBlank() ? profileUserId : accountId
         );
     }
 }

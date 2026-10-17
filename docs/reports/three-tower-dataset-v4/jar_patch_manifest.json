@@ -1,0 +1,14 @@
+{
+  "method": "patch running release classes for product user/query recall; all unrelated entries retained",
+  "source_sha256": "aaf8140158f3d8c3def2af14d1fc9f1d34b69f1ceb1ceba7a16c08bc5cafb2d8",
+  "patched_sha256": "1bd8e034e96df53cdf7cdb7bf95d8b17190069c87f587a04b438eaccc6a353a7",
+  "changed_entries": [
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/RestUserTowerModelClient.class",
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/DefaultTwoTowerRecallProvider.class",
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/PersonalizedHomeCandidatePipeline$Selection.class",
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/PersonalizedHomeCandidatePipeline.class",
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/config/TwoTowerRecallConfiguration.class",
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/RestProductQueryTowerClient.class",
+    "BOOT-INF/classes/com/sinrotic/rs/recommend/service/impl/DefaultSemanticItemRecallProvider.class"
+  ]
+}

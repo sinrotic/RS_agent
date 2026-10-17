@@ -1,0 +1,9 @@
+{
+  "command": "mvn -pl rs-service-agent -am '-Dtest=CapabilityToolOrchestrationTest#capabilityCallsOverlapAndResultsKeepSubmissionOrder' '-Dsurefire.failIfNoSpecifiedTests=false' test -q",
+  "tests": 1,
+  "failures": 1,
+  "errors": 0,
+  "symptom": "前一个能力工具等待期间，第二个独立能力工具未能启动",
+  "failure_message": "[两个独立能力工具都应在前一个完成前启动] \nExpecting value to be true but was false",
+  "test": "capabilityCallsOverlapAndResultsKeepSubmissionOrder"
+}

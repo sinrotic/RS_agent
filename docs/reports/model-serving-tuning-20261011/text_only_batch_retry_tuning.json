@@ -1,0 +1,102 @@
+{
+  "started_at": "2026-10-11T02:56:47.438732+00:00",
+  "variants": {
+    "text_only_batch_retry": {
+      "artifact": "text_only_batch_retry.json",
+      "extra_samples": 20,
+      "summaries": {
+        "decode_128": {
+          "samples": 4,
+          "first_content_median_ms": 69.77,
+          "e2e_median_ms": 1315.64,
+          "e2e_max_ms": 1317.58,
+          "completion_tokens_median": 128.0
+        },
+        "long_prefix_first_0": {
+          "samples": 1,
+          "first_content_median_ms": 184.67,
+          "e2e_median_ms": 777.38,
+          "e2e_max_ms": 777.38,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_first_1": {
+          "samples": 1,
+          "first_content_median_ms": 183.22,
+          "e2e_median_ms": 775.86,
+          "e2e_max_ms": 775.86,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_first_2": {
+          "samples": 1,
+          "first_content_median_ms": 186.96,
+          "e2e_median_ms": 785.65,
+          "e2e_max_ms": 785.65,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_repeat_0": {
+          "samples": 1,
+          "first_content_median_ms": 76.93,
+          "e2e_median_ms": 669.23,
+          "e2e_max_ms": 669.23,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_repeat_1": {
+          "samples": 1,
+          "first_content_median_ms": 80.49,
+          "e2e_median_ms": 672.61,
+          "e2e_max_ms": 672.61,
+          "completion_tokens_median": 60
+        },
+        "long_prefix_repeat_2": {
+          "samples": 1,
+          "first_content_median_ms": 79.56,
+          "e2e_median_ms": 671.89,
+          "e2e_max_ms": 671.89,
+          "completion_tokens_median": 60
+        },
+        "named_tool": {
+          "samples": 6,
+          "first_content_median_ms": 220.34,
+          "e2e_median_ms": 783.87,
+          "e2e_max_ms": 785.8,
+          "completion_tokens_median": 73.0
+        },
+        "named_tool_concurrency4": {
+          "samples": 8,
+          "first_content_median_ms": 305.12,
+          "e2e_median_ms": 936.95,
+          "e2e_max_ms": 950.38,
+          "completion_tokens_median": 73.0
+        },
+        "named_tool_warmup": {
+          "samples": 1,
+          "first_content_median_ms": 329.01,
+          "e2e_median_ms": 891.32,
+          "e2e_max_ms": 891.32,
+          "completion_tokens_median": 73
+        },
+        "short_json": {
+          "samples": 6,
+          "first_content_median_ms": 74.24,
+          "e2e_median_ms": 633.38,
+          "e2e_max_ms": 640.09,
+          "completion_tokens_median": 58.0
+        },
+        "short_json_warmup": {
+          "samples": 1,
+          "first_content_median_ms": 143.29,
+          "e2e_median_ms": 705.45,
+          "e2e_max_ms": 705.45,
+          "completion_tokens_median": 58
+        }
+      },
+      "options": {
+        "VLLM_LANGUAGE_MODEL_ONLY": "true",
+        "VLLM_MAX_NUM_SEQS": "16",
+        "VLLM_MAX_NUM_BATCHED_TOKENS": "4096"
+      },
+      "gpu_memory_mib": 19849
+    }
+  },
+  "finished_at": "2026-10-11T02:58:48.146658+00:00"
+}

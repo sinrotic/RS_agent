@@ -1,0 +1,33 @@
+{
+  "sources": {
+    "itemcf_weak": {
+      "count": 16454229,
+      "sample_score_parity": "PASS"
+    },
+    "itemcf_strong": {
+      "count": 514216,
+      "sample_score_parity": "PASS"
+    },
+    "swing_recall": {
+      "count": 457372,
+      "sample_score_parity": "PASS"
+    },
+    "usercf_recall": {
+      "count": 64327024,
+      "sample_score_parity": "PASS"
+    },
+    "category": {
+      "count": 107942,
+      "sample_score_parity": "PASS"
+    },
+    "popular": {
+      "count": 762622,
+      "sample_score_parity": "PASS"
+    }
+  },
+  "checks": [
+    "完整导入数量与产物计数一致",
+    "原始产物样本 ID/分数与检索结果一致"
+  ],
+  "status": "PASS"
+}

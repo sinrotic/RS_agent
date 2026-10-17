@@ -13,6 +13,10 @@ x-common-env: &common-env
   SPRING_DATASOURCE_PASSWORD: ${RS_MYSQL_PASSWORD:-rs_agent_dev_password}
   RS_ELASTICSEARCH_URI: http://elasticsearch:9200
   RS_MINIO_ENDPOINT: http://minio:9000
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics,prometheus
+  MANAGEMENT_ENDPOINT_HEALTH_GROUP_READINESS_INCLUDE: "*"
+  MANAGEMENT_ENDPOINT_HEALTH_GROUP_LIVENESS_INCLUDE: livenessState
 
 x-java-service: &java-service
   image: eclipse-temurin:21-jre
@@ -23,8 +27,70 @@ x-java-service: &java-service
   volumes:
     - ../services:/app:ro
     - ../logs:/logs
+  depends_on:
+    mysql-migrate:
+      condition: service_completed_successfully
+    scylla-migrate:
+      condition: service_completed_successfully
+  healthcheck:
+    test: ["CMD-SHELL", "bash -ec 'exec 3<>/dev/tcp/127.0.0.1/$${SERVER_PORT}; printf \"GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n\" >&3; grep -q \"200\" <&3'"]
+    interval: 10s
+    start_period: 30s
+    timeout: 5s
+    retries: 12
 
 services:
+  mysql-migrate:
+    image: mysql:8.0
+    restart: "no"
+    networks:
+      - rs-agent-java
+    environment:
+      MYSQL_PWD: ${RS_MYSQL_PASSWORD:-rs_agent_dev_password}
+      MYSQL_DATABASE: ${RS_MYSQL_DATABASE:-rs_agent}
+      MYSQL_USER: ${RS_MYSQL_USER:-rs_agent}
+    volumes:
+      - ${RS_SCHEMA_DIR:-../../../sql}:/schema:ro
+    command:
+      - bash
+      - -ec
+      - |
+        for attempt in {1..60}; do
+          mysqladmin ping -h mysql -u"$$MYSQL_USER" --silent && break
+          sleep 2
+        done
+        mysqladmin ping -h mysql -u"$$MYSQL_USER" --silent
+        for schema in \
+          rs_service_user_schema.sql \
+          rs_service_catalog_schema.sql \
+          rs_service_trade_schema.sql \
+          rs_service_commerce_v1_schema.sql \
+          rs_service_recommend_schema.sql \
+          rs_home_recommendation_indexes.sql \
+          rs_service_agent_mysql_projection_schema.sql \
+          rs_agent_session_projection_upgrade.sql; do
+          mysql -h mysql -u"$$MYSQL_USER" "$$MYSQL_DATABASE" < "/schema/$$schema"
+        done
+        mysql -h mysql -u"$$MYSQL_USER" "$$MYSQL_DATABASE" \
+          -e "SELECT component, version, applied_at FROM rs_schema_version ORDER BY component"
+
+  scylla-migrate:
+    image: scylladb/scylla:6.2
+    restart: "no"
+    networks:
+      - rs-agent-java
+    volumes:
+      - ${RS_SCHEMA_DIR:-../../../sql}:/schema:ro
+    command:
+      - bash
+      - -ec
+      - |
+        for attempt in {1..60}; do
+          cqlsh scylla 9042 -e "SELECT release_version FROM system.local" && break
+          sleep 2
+        done
+        cqlsh scylla 9042 -f /schema/rs_service_agent_scylla_session_schema.cql
+
   rs-service-model:
     <<: *java-service
     container_name: rs-agent-java-service-model
@@ -32,6 +98,8 @@ services:
       <<: *common-env
       SPRING_APPLICATION_NAME: rs-service-model
       SERVER_PORT: 18105
+      RS_MODEL_RUNTIME_EMBEDDING_BASE_URL: ${RS_MODEL_RUNTIME_EMBEDDING_BASE_URL:-}
+      RS_MODEL_RUNTIME_RERANK_BASE_URL: ${RS_MODEL_RUNTIME_RERANK_BASE_URL:-}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-model.jar"]
     ports:
       - "127.0.0.1:${RS_MODEL_HOST_PORT:-18105}:18105"
@@ -42,6 +110,7 @@ services:
     environment:
       <<: *common-env
       SPRING_APPLICATION_NAME: rs-service-recommend
+      RS_RECOMMEND_PROFILE_HALF_LIFE_DAYS: ${RS_RECOMMEND_PROFILE_HALF_LIFE_DAYS:-30}
       SERVER_PORT: 18103
       RS_CATALOG_BASE_URL: ${RS_CATALOG_BASE_URL:-http://rs-service-catalog:18102}
       RS_MODEL_BASE_URL: ${RS_MODEL_BASE_URL:-http://rs-service-model:18105}
@@ -49,12 +118,38 @@ services:
       RS_MILVUS_BASE_URL: ${RS_MILVUS_BASE_URL:-http://milvus-standalone:19530}
       RS_MILVUS_TOKEN: ${RS_MILVUS_TOKEN:-}
       RS_RECOMMEND_EMBEDDING_MODEL_KEY: ${RS_RECOMMEND_EMBEDDING_MODEL_KEY:-bge-m3}
+      RS_RECOMMEND_PERFORMANCE_OBSERVATION_ENABLED: ${RS_RECOMMEND_PERFORMANCE_OBSERVATION_ENABLED:-false}
+      RS_RECOMMEND_INFERENCE_CACHE_EMBEDDING_VERSION: ${RS_RECOMMEND_INFERENCE_CACHE_EMBEDDING_VERSION:-}
+      RS_RECOMMEND_INFERENCE_CACHE_RERANKER_VERSION: ${RS_RECOMMEND_INFERENCE_CACHE_RERANKER_VERSION:-}
+      RS_RECOMMEND_INFERENCE_CACHE_MAX_BYTES: ${RS_RECOMMEND_INFERENCE_CACHE_MAX_BYTES:-33554432}
+      RS_RECOMMEND_INFERENCE_CACHE_TTL_SECONDS: ${RS_RECOMMEND_INFERENCE_CACHE_TTL_SECONDS:-300}
+      RS_RECOMMEND_TWO_TOWER_ENABLED: ${RS_RECOMMEND_TWO_TOWER_ENABLED:-false}
+      RS_RECOMMEND_MULTI_RECALL_ENABLED: ${RS_RECOMMEND_MULTI_RECALL_ENABLED:-false}
+      RS_RECOMMEND_TRAINED_RANKING_ENABLED: ${RS_RECOMMEND_TRAINED_RANKING_ENABLED:-false}
+      RS_RECOMMEND_TRAINED_RANKING_BASE_URL: ${RS_RECOMMEND_TRAINED_RANKING_BASE_URL:-http://172.21.0.1:18119}
+      RS_RECOMMEND_TRAINED_RANKING_VERSION: ${RS_RECOMMEND_TRAINED_RANKING_VERSION:-cold_deepfm_20260914}
+      RS_RECOMMEND_MULTI_RECALL_BASE_URL: ${RS_RECOMMEND_MULTI_RECALL_BASE_URL:-http://172.21.0.1:18118}
+      RS_RECOMMEND_MULTI_RECALL_VERSION: ${RS_RECOMMEND_MULTI_RECALL_VERSION:-multi_recall_20260913}
+      RS_RECOMMEND_TWO_TOWER_BASE_URL: ${RS_RECOMMEND_TWO_TOWER_BASE_URL:-http://172.21.0.1:18117}
+      RS_RECOMMEND_TWO_TOWER_MODEL_KEY: ${RS_RECOMMEND_TWO_TOWER_MODEL_KEY:-two_tower_sparse_aware_epoch5_queryv2}
+      RS_RECOMMEND_TWO_TOWER_COLLECTION: ${RS_RECOMMEND_TWO_TOWER_COLLECTION:-rs_agent_two_tower_epoch5_20260913}
+      RS_RECOMMEND_TWO_TOWER_DIMENSION: ${RS_RECOMMEND_TWO_TOWER_DIMENSION:-64}
+      RS_RECOMMEND_TWO_TOWER_PRIMARY_SHARE: ${RS_RECOMMEND_TWO_TOWER_PRIMARY_SHARE:-0}
+      RS_RECOMMEND_QUERY_TOWER_ENABLED: ${RS_RECOMMEND_QUERY_TOWER_ENABLED:-false}
       RS_RECOMMEND_SEMANTIC_INDEX_COLLECTION: ${RS_RECOMMEND_SEMANTIC_INDEX_COLLECTION:-rs_agent_semantic_items_bge_m3_v1}
       RS_RECOMMEND_RAG_ELASTICSEARCH_INDEX: ${RS_RECOMMEND_RAG_ELASTICSEARCH_INDEX:-rs_agent_rag_bm25_v1}
-      RS_RECOMMEND_RAG_MILVUS_COLLECTION: ${RS_RECOMMEND_RAG_MILVUS_COLLECTION:-rs_agent_rag_chunks_milvus_v1}
+      RS_RECOMMEND_RAG_MILVUS_COLLECTION: ${RS_RECOMMEND_RAG_MILVUS_COLLECTION:-rs_agent_rag_chunks_milvus_v2}
       RS_RECOMMEND_RAG_EMBEDDING_MODEL_KEY: ${RS_RECOMMEND_RAG_EMBEDDING_MODEL_KEY:-bge-m3}
       RS_RECOMMEND_RAG_RERANK_MODEL_KEY: ${RS_RECOMMEND_RAG_RERANK_MODEL_KEY:-bge-reranker-v2-m3}
       RS_RECOMMEND_RAG_RRF_K: ${RS_RECOMMEND_RAG_RRF_K:-60}
+      RS_RECOMMEND_FEEDBACK_PERSISTENCE: jdbc
+      RS_RECOMMEND_FEEDBACK_PROJECTION: redis
+      RS_RECOMMEND_FEEDBACK_JDBC_URL: jdbc:mysql://mysql:3306/${RS_MYSQL_DATABASE:-rs_agent}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      RS_RECOMMEND_FEEDBACK_JDBC_USERNAME: ${RS_MYSQL_USER:-rs_agent}
+      RS_RECOMMEND_FEEDBACK_JDBC_PASSWORD: ${RS_MYSQL_PASSWORD:-rs_agent_dev_password}
+      RS_RECOMMEND_FEEDBACK_JDBC_MAXIMUM_POOL_SIZE: ${RS_RECOMMEND_FEEDBACK_JDBC_MAXIMUM_POOL_SIZE:-8}
+      RS_RECOMMEND_FEEDBACK_JDBC_MINIMUM_IDLE: ${RS_RECOMMEND_FEEDBACK_JDBC_MINIMUM_IDLE:-2}
+      RS_RECOMMEND_FEEDBACK_JDBC_CONNECTION_TIMEOUT_MS: ${RS_RECOMMEND_FEEDBACK_JDBC_CONNECTION_TIMEOUT_MS:-3000}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-recommend.jar"]
     ports:
       - "127.0.0.1:${RS_RECOMMEND_HOST_PORT:-18103}:18103"
@@ -69,12 +164,44 @@ services:
       RS_AGENT_TRACE_ENABLED: ${RS_AGENT_TRACE_ENABLED:-true}
       RS_AGENT_RECOMMENDATION_TYPE: http
       RS_AGENT_RECOMMENDATION_BASE_URL: http://rs-service-recommend:18103
-      RS_AGENT_SESSION_STORE_TYPE: redis
+      RS_RECOMMEND_BASE_URL: http://rs-service-recommend:18103
       RS_PLATFORM_TRACE_SERVICE_URL: http://rs-service-platform-trace:18108
+      RS_AGENT_SESSION_STORE_TYPE: redis
+      RS_AGENT_SESSION_STORE_TTL: 24h
+      RS_AGENT_SESSION_PERSISTENCE_ENABLED: ${RS_AGENT_SESSION_PERSISTENCE_ENABLED:-true}
+      RS_AGENT_SESSION_SCHEMA_VERSION: ${RS_AGENT_SESSION_SCHEMA_VERSION:-agent_session_v1}
+      RS_SCYLLA_HOST: scylla
+      RS_SCYLLA_PORT: 9042
+      RS_SCYLLA_LOCAL_DATACENTER: datacenter1
+      RS_SCYLLA_KEYSPACE: rs_agent
+      RS_MYSQL_JDBC_URL: jdbc:mysql://mysql:3306/${RS_MYSQL_DATABASE:-rs_agent}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      RS_MYSQL_USER: ${RS_MYSQL_USER:-rs_agent}
+      RS_MYSQL_PASSWORD: ${RS_MYSQL_PASSWORD:-rs_agent_dev_password}
+      RS_AGENT_MYSQL_MAXIMUM_POOL_SIZE: ${RS_AGENT_MYSQL_MAXIMUM_POOL_SIZE:-8}
+      RS_AGENT_MYSQL_MINIMUM_IDLE: ${RS_AGENT_MYSQL_MINIMUM_IDLE:-2}
+      RS_AGENT_MYSQL_CONNECTION_TIMEOUT_MS: ${RS_AGENT_MYSQL_CONNECTION_TIMEOUT_MS:-3000}
       RS_AGENT_OPENAI_BASE_URL: ${RS_AGENT_OPENAI_BASE_URL:-https://cpa2api.sinrotic233.com/v1}
       RS_AGENT_OPENAI_MODEL: ${RS_AGENT_OPENAI_MODEL:-gpt-5.3-codex-spark}
       RS_AGENT_OPENAI_TEMPERATURE: ${RS_AGENT_OPENAI_TEMPERATURE:-0.55}
       RS_AGENT_OPENAI_MAX_TOKENS: ${RS_AGENT_OPENAI_MAX_TOKENS:-1200}
+      RS_AGENT_FINAL_ANSWER_MAX_TOKENS: ${RS_AGENT_FINAL_ANSWER_MAX_TOKENS:-0}
+      RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED: ${RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED:-false}
+      RS_AGENT_STREAM_REQUEST_TIMEOUT: ${RS_AGENT_STREAM_REQUEST_TIMEOUT:-120s}
+      RS_AGENT_MAX_ACTIVE_LOOPS: ${RS_AGENT_MAX_ACTIVE_LOOPS:-32}
+      RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS: ${RS_AGENT_ACTIVE_LOOP_ACQUIRE_TIMEOUT_MS:-300}
+      RS_AGENT_MAX_MODEL_STREAMS: ${RS_AGENT_MAX_MODEL_STREAMS:-8}
+      RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS: ${RS_AGENT_MODEL_STREAM_ACQUIRE_TIMEOUT_MS:-200}
+      RS_AGENT_MAX_RECOMMENDATION_CALLS: ${RS_AGENT_MAX_RECOMMENDATION_CALLS:-8}
+      RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS: ${RS_AGENT_RECOMMENDATION_ACQUIRE_TIMEOUT_MS:-15000}
+      RS_AGENT_MAX_TOOL_CALLS: ${RS_AGENT_MAX_TOOL_CALLS:-64}
+      RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS: ${RS_AGENT_TOOL_ACQUIRE_TIMEOUT_MS:-300}
+      RS_AGENT_MAX_SESSION_QUEUE_SIZE: ${RS_AGENT_MAX_SESSION_QUEUE_SIZE:-2}
+      RS_AGENT_SESSION_QUEUE_TIMEOUT_MS: ${RS_AGENT_SESSION_QUEUE_TIMEOUT_MS:-500}
+      RS_AGENT_LLM_SYNTHESIS_ENABLED: ${RS_AGENT_LLM_SYNTHESIS_ENABLED:-false}
+      RS_AGENT_CONSTRAINED_DECODING_ENABLED: ${RS_AGENT_CONSTRAINED_DECODING_ENABLED:-false}
+      RS_AGENT_DIRECT_RECOMMENDATION_ENABLED: ${RS_AGENT_DIRECT_RECOMMENDATION_ENABLED:-false}
+      RS_AGENT_CATALOG_CURRENCY: ${RS_AGENT_CATALOG_CURRENCY:-}
+      RS_AGENT_PERFORMANCE_OBSERVATION_ENABLED: ${RS_AGENT_PERFORMANCE_OBSERVATION_ENABLED:-false}
       RS_AGENT_API_KEY: ${RS_AGENT_API_KEY:-}
       RS_agent: ${RS_agent:-}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-agent.jar"]
@@ -90,6 +217,7 @@ services:
       SERVER_PORT: 18108
       RS_PLATFORM_TRACE_CLIENTS_ENABLED: ${RS_PLATFORM_TRACE_CLIENTS_ENABLED:-true}
       RS_USER_SERVICE_URL: http://rs-service-user:18101
+      RS_AGENT_SESSION_LIFECYCLE_ENABLED: "true"
       RS_RECOMMEND_SERVICE_URL: http://rs-service-recommend:18103
       RS_AGENT_SERVICE_URL: http://rs-service-agent:18104
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-platform-trace.jar"]
@@ -103,6 +231,8 @@ services:
       <<: *common-env
       SPRING_APPLICATION_NAME: rs-service-user
       SERVER_PORT: 18101
+      RS_AUTH_TOKEN_STORE_TYPE: redis
+      RS_AUTH_REFRESH_COOKIE_SECURE: ${RS_AUTH_REFRESH_COOKIE_SECURE:-true}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-user.jar"]
     ports:
       - "127.0.0.1:${RS_USER_HOST_PORT:-18101}:18101"
@@ -116,9 +246,119 @@ services:
       SERVER_PORT: 18102
       RS_CATALOG_CACHE_ENABLED: ${RS_CATALOG_CACHE_ENABLED:-true}
       RS_CATALOG_CACHE_ITEM_TTL_SECONDS: ${RS_CATALOG_CACHE_ITEM_TTL_SECONDS:-86400}
+      RS_CATALOG_CACHE_ITEM_TTL_JITTER_SECONDS: ${RS_CATALOG_CACHE_ITEM_TTL_JITTER_SECONDS:-3600}
+      RS_CATALOG_LOCAL_CACHE_ENABLED: ${RS_CATALOG_LOCAL_CACHE_ENABLED:-true}
+      RS_CATALOG_LOCAL_CACHE_MAX_ITEMS: ${RS_CATALOG_LOCAL_CACHE_MAX_ITEMS:-10000}
+      RS_CATALOG_LOCAL_CACHE_ITEM_TTL_SECONDS: ${RS_CATALOG_LOCAL_CACHE_ITEM_TTL_SECONDS:-300}
+      RS_CATALOG_LOCAL_CACHE_NEGATIVE_TTL_SECONDS: ${RS_CATALOG_LOCAL_CACHE_NEGATIVE_TTL_SECONDS:-30}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-catalog.jar"]
     ports:
       - "127.0.0.1:${RS_CATALOG_HOST_PORT:-18102}:18102"
+
+  rs-service-inventory:
+    <<: *java-service
+    profiles: ["full-commerce"]
+    container_name: rs-agent-java-service-inventory
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-inventory
+      SERVER_PORT: 8092
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-inventory.jar"]
+    ports:
+      - "127.0.0.1:${RS_INVENTORY_HOST_PORT:-18092}:8092"
+
+  rs-service-order:
+    <<: *java-service
+    profiles: ["full-commerce"]
+    container_name: rs-agent-java-service-order
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-order
+      RS_COMMERCE_OPERATIONS_READ_TOKEN: ${RS_COMMERCE_OPS_READ_TOKEN:-}
+      RS_COMMERCE_OPERATIONS_WRITE_TOKEN: ${RS_COMMERCE_OPS_WRITE_TOKEN:-}
+      RS_COMMERCE_OPERATIONS_OPERATOR_ID: ${RS_COMMERCE_OPS_OPERATOR_ID:-commerce-operator}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SERVER_PORT: 8091
+      RS_INVENTORY_BASE_URL: http://rs-service-inventory:8092
+      RS_PROMOTION_BASE_URL: http://rs-service-promotion:8095
+      RS_CHECKOUT_MOCK_PAYMENT_ENABLED: ${RS_CHECKOUT_MOCK_PAYMENT_ENABLED:-false}
+      RS_CHECKOUT_LEGACY_SECKILL_CONSUMER_ENABLED: "false"
+      RS_CHECKOUT_MAX_ATTEMPTS: ${RS_CHECKOUT_MAX_ATTEMPTS:-20}
+      RS_CHECKOUT_WORKER_BATCH_SIZE: ${RS_CHECKOUT_WORKER_BATCH_SIZE:-100}
+      RS_CHECKOUT_WORKER_CONCURRENCY: ${RS_CHECKOUT_WORKER_CONCURRENCY:-4}
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-order.jar"]
+    ports:
+      - "127.0.0.1:${RS_ORDER_HOST_PORT:-18091}:8091"
+    depends_on:
+      mysql-migrate:
+        condition: service_completed_successfully
+      scylla-migrate:
+        condition: service_completed_successfully
+      rs-service-inventory:
+        condition: service_healthy
+
+  rs-service-payment:
+    <<: *java-service
+    profiles: ["full-commerce"]
+    container_name: rs-agent-java-service-payment
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-payment
+      RS_COMMERCE_OPERATIONS_READ_TOKEN: ${RS_COMMERCE_OPS_READ_TOKEN:-}
+      RS_COMMERCE_OPERATIONS_WRITE_TOKEN: ${RS_COMMERCE_OPS_WRITE_TOKEN:-}
+      RS_COMMERCE_OPERATIONS_OPERATOR_ID: ${RS_COMMERCE_OPS_OPERATOR_ID:-commerce-operator}
+      SERVER_PORT: 8093
+      RS_ORDER_BASE_URL: http://rs-service-order:8091
+      RS_CHECKOUT_MOCK_PAYMENT_ENABLED: ${RS_CHECKOUT_MOCK_PAYMENT_ENABLED:-false}
+      RS_PAYMENT_MOCK_CALLBACK_SECRET: ${RS_PAYMENT_MOCK_CALLBACK_SECRET:-}
+      RS_PAYMENT_MOCK_REFUND_ENABLED: ${RS_PAYMENT_MOCK_REFUND_ENABLED:-false}
+      RS_PAYMENT_NOTIFICATION_MAX_ATTEMPTS: ${RS_PAYMENT_NOTIFICATION_MAX_ATTEMPTS:-20}
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-payment.jar"]
+    ports:
+      - "127.0.0.1:${RS_PAYMENT_HOST_PORT:-18093}:8093"
+    depends_on:
+      mysql-migrate:
+        condition: service_completed_successfully
+      scylla-migrate:
+        condition: service_completed_successfully
+      rs-service-order:
+        condition: service_healthy
+
+  rs-service-promotion:
+    <<: *java-service
+    profiles: ["full-commerce"]
+    container_name: rs-agent-java-service-promotion
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-promotion
+      SERVER_PORT: 8095
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-promotion.jar"]
+    ports:
+      - "127.0.0.1:${RS_PROMOTION_HOST_PORT:-18095}:8095"
+
+  rs-service-seckill:
+    <<: *java-service
+    profiles: ["full-commerce"]
+    container_name: rs-agent-java-service-seckill
+    environment:
+      <<: *common-env
+      SPRING_APPLICATION_NAME: rs-service-seckill
+      RS_COMMERCE_OPERATIONS_READ_TOKEN: ${RS_COMMERCE_OPS_READ_TOKEN:-}
+      RS_COMMERCE_OPERATIONS_WRITE_TOKEN: ${RS_COMMERCE_OPS_WRITE_TOKEN:-}
+      RS_COMMERCE_OPERATIONS_OPERATOR_ID: ${RS_COMMERCE_OPS_OPERATOR_ID:-commerce-operator}
+      RS_ORDER_BASE_URL: http://rs-service-order:8091
+      RS_INVENTORY_BASE_URL: http://rs-service-inventory:8092
+      RS_SECKILL_MAX_REDRIVES: ${RS_SECKILL_MAX_REDRIVES:-10}
+      RS_SECKILL_WORKER_BATCH_SIZE: ${RS_SECKILL_WORKER_BATCH_SIZE:-100}
+      RS_SECKILL_WORKER_PUBLISH_CONCURRENCY: ${RS_SECKILL_WORKER_PUBLISH_CONCURRENCY:-4}
+      RS_SECKILL_WORKER_RECONCILE_CONCURRENCY: ${RS_SECKILL_WORKER_RECONCILE_CONCURRENCY:-4}
+      RS_SECKILL_WORKER_PUBLISH_DELAY_MS: ${RS_SECKILL_WORKER_PUBLISH_DELAY_MS:-100}
+      RS_SECKILL_WORKER_RECONCILE_DELAY_MS: ${RS_SECKILL_WORKER_RECONCILE_DELAY_MS:-1000}
+      SERVER_PORT: 8094
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-service-seckill.jar"]
+    ports:
+      - "127.0.0.1:${RS_SECKILL_HOST_PORT:-18094}:8094"
 
   rs-api-gateway:
     <<: *java-service
@@ -127,6 +367,9 @@ services:
       <<: *common-env
       SPRING_APPLICATION_NAME: rs-api-gateway
       SERVER_PORT: 18088
+      SPRING_PROFILES_ACTIVE: ${RS_DEPLOYMENT_PROFILE:-recommend}
+      RS_GATEWAY_AUTH_TOKEN_VALIDATION: redis
+      RS_GATEWAY_TRUSTED_PROXIES: ${RS_GATEWAY_TRUSTED_PROXIES:-rs-frontend}
     command: ["sh", "-c", "java $$JAVA_OPTS -jar /app/rs-api-gateway.jar"]
     ports:
       - "127.0.0.1:${RS_GATEWAY_HOST_PORT:-18088}:18088"

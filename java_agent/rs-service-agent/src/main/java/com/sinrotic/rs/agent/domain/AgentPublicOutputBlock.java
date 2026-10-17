@@ -4,5 +4,6 @@ public enum AgentPublicOutputBlock {
     TEXT,
     PRODUCT_CARDS,
     COMPARISON_TABLE,
-    FOLLOWUP_QUESTION
+    FOLLOWUP_QUESTION,
+    A2UI
 }

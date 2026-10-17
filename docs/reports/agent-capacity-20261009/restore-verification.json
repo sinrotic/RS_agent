@@ -1,0 +1,57 @@
+{
+  "verified_at_utc": "2026-10-09T04:03:42.138085+00:00",
+  "model": {
+    "object": "list",
+    "data": [
+      {
+        "id": "qwen35-4b",
+        "object": "model",
+        "created": 1791518622,
+        "owned_by": "vllm",
+        "root": "/mnt/data/luo/models/Qwen3.5-4B",
+        "parent": null,
+        "max_model_len": 4096,
+        "permission": [
+          {
+            "id": "modelperm-bc4659cea559738c",
+            "object": "model_permission",
+            "created": 1791518622,
+            "allow_create_engine": false,
+            "allow_sampling": true,
+            "allow_logprobs": true,
+            "allow_search_indices": false,
+            "allow_view": true,
+            "allow_fine_tuning": false,
+            "organization": "*",
+            "group": null,
+            "is_blocking": false
+          }
+        ]
+      }
+    ]
+  },
+  "wrapper_pid": 3630368,
+  "environment": {
+    "VLLM_PREFIX_KEEPALIVE": "true",
+    "VLLM_MAX_MODEL_LEN": "4096",
+    "CUDA_VISIBLE_DEVICES": "1"
+  },
+  "test_agent_port_open": false,
+  "ready_exists": true,
+  "gpu": "index, uuid, name, memory.total [MiB], memory.used [MiB]\n1, GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9, NVIDIA GeForce RTX 4090, 24564 MiB, 20257 MiB\n",
+  "structured_output_probe": {
+    "status": "PASS",
+    "model": "qwen35-4b",
+    "cases": [
+      "json_schema",
+      "named_tool",
+      "named_stream",
+      "required_tool",
+      "required_stream",
+      "auto_tool",
+      "auto_stream"
+    ],
+    "checked_at": "2026-10-09T04:02:42.467878+00:00",
+    "elapsed_seconds": 9.564
+  }
+}

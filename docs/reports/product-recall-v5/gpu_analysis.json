@@ -1,0 +1,322 @@
+{
+  "scope": "开发集1000用户、固定seed42、统一第3轮；区间未校正多重比较，不能代替独立测试或线上收益",
+  "online_modified": false,
+  "runs": {
+    "replacement32_gpu_control": {
+      "metrics": {
+        "count": 1000,
+        "hit@10": 0.008,
+        "hit@50": 0.038,
+        "hit@100": 0.047,
+        "target_coverage": 0.617,
+        "mrr": 0.005286132375235594,
+        "ndcg@100": 0.012408563278649446
+      },
+      "history_groups": {
+        "history_le3": {
+          "count": 421,
+          "hit@10": 0.014251781472684086,
+          "hit@50": 0.047505938242280284,
+          "hit@100": 0.06175771971496437,
+          "target_coverage": 0.6460807600950119,
+          "mrr": 0.010091718102303329,
+          "ndcg@100": 0.019048666369868555
+        },
+        "history_4_9": {
+          "count": 455,
+          "hit@10": 0.004395604395604396,
+          "hit@50": 0.03296703296703297,
+          "hit@100": 0.03956043956043956,
+          "target_coverage": 0.6329670329670329,
+          "mrr": 0.0019339770479962278,
+          "ndcg@100": 0.008168267071734027
+        },
+        "history_ge10": {
+          "count": 124,
+          "hit@10": 0.0,
+          "hit@50": 0.024193548387096774,
+          "hit@100": 0.024193548387096774,
+          "target_coverage": 0.4596774193548387,
+          "mrr": 0.0012706411074807234,
+          "ndcg@100": 0.0054234937039984105
+        }
+      },
+      "epoch_hit100": [
+        0.044,
+        0.046,
+        0.047
+      ],
+      "epoch_unique_fraction": [
+        0.6330593296576114,
+        0.6321571538673698,
+        0.6318839234851824
+      ],
+      "training_seconds": 136.73340749181807,
+      "peak_cuda_gib": 2.3888626098632812,
+      "best_epoch": 3
+    },
+    "shuffle32": {
+      "metrics": {
+        "count": 1000,
+        "hit@10": 0.01,
+        "hit@50": 0.035,
+        "hit@100": 0.048,
+        "target_coverage": 0.617,
+        "mrr": 0.004884657807711574,
+        "ndcg@100": 0.012251185068908576
+      },
+      "history_groups": {
+        "history_le3": {
+          "count": 421,
+          "hit@10": 0.019002375296912115,
+          "hit@50": 0.04275534441805225,
+          "hit@100": 0.05938242280285035,
+          "target_coverage": 0.6460807600950119,
+          "mrr": 0.009208906085395334,
+          "ndcg@100": 0.018066528914608783
+        },
+        "history_4_9": {
+          "count": 455,
+          "hit@10": 0.004395604395604396,
+          "hit@50": 0.03296703296703297,
+          "hit@100": 0.04395604395604396,
+          "target_coverage": 0.6329670329670329,
+          "mrr": 0.0019250584210628173,
+          "ndcg@100": 0.008842638084570349
+        },
+        "history_ge10": {
+          "count": 124,
+          "hit@10": 0.0,
+          "hit@50": 0.016129032258064516,
+          "hit@100": 0.024193548387096774,
+          "target_coverage": 0.4596774193548387,
+          "mrr": 0.0010629577756173924,
+          "ndcg@100": 0.005014323124022324
+        }
+      },
+      "epoch_hit100": [
+        0.044,
+        0.044,
+        0.048
+      ],
+      "epoch_unique_fraction": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "training_seconds": 137.034748358652,
+      "peak_cuda_gib": 2.390796184539795,
+      "best_epoch": 3
+    },
+    "shuffle127": {
+      "metrics": {
+        "count": 1000,
+        "hit@10": 0.008,
+        "hit@50": 0.039,
+        "hit@100": 0.048,
+        "target_coverage": 0.617,
+        "mrr": 0.0048689082133167895,
+        "ndcg@100": 0.01233154025578704
+      },
+      "history_groups": {
+        "history_le3": {
+          "count": 421,
+          "hit@10": 0.014251781472684086,
+          "hit@50": 0.0498812351543943,
+          "hit@100": 0.05938242280285035,
+          "target_coverage": 0.6460807600950119,
+          "mrr": 0.00893854771372676,
+          "ndcg@100": 0.01784388635438883
+        },
+        "history_4_9": {
+          "count": 455,
+          "hit@10": 0.004395604395604396,
+          "hit@50": 0.03296703296703297,
+          "hit@100": 0.04395604395604396,
+          "target_coverage": 0.6329670329670329,
+          "mrr": 0.002126515755875461,
+          "ndcg@100": 0.00917459715097832
+        },
+        "history_ge10": {
+          "count": 124,
+          "hit@10": 0.0,
+          "hit@50": 0.024193548387096774,
+          "hit@100": 0.024193548387096774,
+          "target_coverage": 0.4596774193548387,
+          "mrr": 0.0011146367493103885,
+          "ndcg@100": 0.005200180620114553
+        }
+      },
+      "epoch_hit100": [
+        0.044,
+        0.048,
+        0.048
+      ],
+      "epoch_unique_fraction": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "training_seconds": 270.702033855021,
+      "peak_cuda_gib": 2.4239683151245117,
+      "best_epoch": 2
+    },
+    "mixed127": {
+      "metrics": {
+        "count": 1000,
+        "hit@10": 0.015,
+        "hit@50": 0.039,
+        "hit@100": 0.046,
+        "target_coverage": 0.617,
+        "mrr": 0.007310426017128567,
+        "ndcg@100": 0.014281140915402385
+      },
+      "history_groups": {
+        "history_le3": {
+          "count": 421,
+          "hit@10": 0.026128266033254157,
+          "hit@50": 0.052256532066508314,
+          "hit@100": 0.057007125890736345,
+          "target_coverage": 0.6460807600950119,
+          "mrr": 0.012174391860398022,
+          "ndcg@100": 0.02063490682580604
+        },
+        "history_4_9": {
+          "count": 455,
+          "hit@10": 0.008791208791208791,
+          "hit@50": 0.035164835164835165,
+          "hit@100": 0.04395604395604396,
+          "target_coverage": 0.6329670329670329,
+          "mrr": 0.004635271214848,
+          "ndcg@100": 0.011429857095574598
+        },
+        "history_ge10": {
+          "count": 124,
+          "hit@10": 0.0,
+          "hit@50": 0.008064516129032258,
+          "hit@100": 0.016129032258064516,
+          "target_coverage": 0.4596774193548387,
+          "mrr": 0.0006125696866545183,
+          "ndcg@100": 0.003171452929448402
+        }
+      },
+      "epoch_hit100": [
+        0.042,
+        0.044,
+        0.046
+      ],
+      "epoch_unique_fraction": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "training_seconds": 260.217483824119,
+      "peak_cuda_gib": 2.41525936126709,
+      "best_epoch": 3
+    },
+    "attention_mixed127": {
+      "metrics": {
+        "count": 1000,
+        "hit@10": 0.011,
+        "hit@50": 0.04,
+        "hit@100": 0.047,
+        "target_coverage": 0.617,
+        "mrr": 0.005910083004785247,
+        "ndcg@100": 0.013207725417528605
+      },
+      "history_groups": {
+        "history_le3": {
+          "count": 421,
+          "hit@10": 0.021377672209026127,
+          "hit@50": 0.0498812351543943,
+          "hit@100": 0.05938242280285035,
+          "target_coverage": 0.6460807600950119,
+          "mrr": 0.01053532020796215,
+          "ndcg@100": 0.019343631497226146
+        },
+        "history_4_9": {
+          "count": 455,
+          "hit@10": 0.004395604395604396,
+          "hit@50": 0.03956043956043956,
+          "hit@100": 0.04395604395604396,
+          "target_coverage": 0.6329670329670329,
+          "mrr": 0.0031297745092142156,
+          "ndcg@100": 0.010377909244278206
+        },
+        "history_ge10": {
+          "count": 124,
+          "hit@10": 0.0,
+          "hit@50": 0.008064516129032258,
+          "hit@100": 0.016129032258064516,
+          "target_coverage": 0.4596774193548387,
+          "mrr": 0.0004085951253283444,
+          "ndcg@100": 0.0027589342826597977
+        }
+      },
+      "epoch_hit100": [
+        0.043,
+        0.045,
+        0.047
+      ],
+      "epoch_unique_fraction": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "training_seconds": 276.0891943247989,
+      "peak_cuda_gib": 2.4162635803222656,
+      "best_epoch": 3
+    }
+  },
+  "effects": {
+    "full_traversal": {
+      "control": "replacement32_gpu_control",
+      "treatment": "shuffle32",
+      "hit100_delta": 0.001,
+      "paired_user_95pct": [
+        -0.003,
+        0.005
+      ],
+      "note": "development, one fixed seed, unadjusted for multiple comparisons; no promotion claim",
+      "mrr_delta": -0.0004014745675240197,
+      "ndcg_delta": -0.0001573782097408702
+    },
+    "negative_count": {
+      "control": "shuffle32",
+      "treatment": "shuffle127",
+      "hit100_delta": 0.0,
+      "paired_user_95pct": [
+        0.0,
+        0.0
+      ],
+      "note": "development, one fixed seed, unadjusted for multiple comparisons; no promotion claim",
+      "mrr_delta": -1.5749594394784926e-05,
+      "ndcg_delta": 8.035518687846306e-05
+    },
+    "negative_mix": {
+      "control": "shuffle127",
+      "treatment": "mixed127",
+      "hit100_delta": -0.002,
+      "paired_user_95pct": [
+        -0.01,
+        0.006
+      ],
+      "note": "development, one fixed seed, unadjusted for multiple comparisons; no promotion claim",
+      "mrr_delta": 0.0024415178038117774,
+      "ndcg_delta": 0.001949600659615346
+    },
+    "user_attention": {
+      "control": "mixed127",
+      "treatment": "attention_mixed127",
+      "hit100_delta": 0.001,
+      "paired_user_95pct": [
+        -0.005,
+        0.008
+      ],
+      "note": "development, one fixed seed, unadjusted for multiple comparisons; no promotion claim",
+      "mrr_delta": -0.00140034301234332,
+      "ndcg_delta": -0.0010734154978737798
+    }
+  },
+  "coverage_limit": "候选集仅覆盖61.7%的开发集目标；完整遍历指现有387951条训练样本，不代表全部原始用户或全商品目录"
+}

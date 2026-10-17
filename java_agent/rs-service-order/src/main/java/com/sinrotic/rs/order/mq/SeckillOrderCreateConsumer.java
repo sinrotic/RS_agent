@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
 @Component
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name="rs.checkout.legacy-seckill-consumer-enabled",havingValue="true")
 public class SeckillOrderCreateConsumer {
 
     private final OrderService orderService;

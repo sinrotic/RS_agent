@@ -1,0 +1,758 @@
+{
+  "scope": "用户授权的 Java 首页多路召回接入；原离线实验门禁状态保留",
+  "version": "multi_recall_20260913",
+  "sources": {
+    "itemcf_weak": {
+      "candidate_count": 16454229,
+      "manifest": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/source_index_manifest.json",
+      "manifest_sha256": "b130be59482e73f9c9f8aa5429c3e91ba00c1e0becf605a6704981eee1670937",
+      "original_status": "DIAGNOSTIC_ONLY",
+      "files": [
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00000.jsonl",
+          "sha256": "2f6d54233711202aad665a59282d54c7fa28f293cbe1187759d44672b093974c",
+          "bytes": 300788814
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00001.jsonl",
+          "sha256": "332f9ae0ddf87e7e3103b2f58a3a94ea1e750a4d734ee4df664adf15713878ed",
+          "bytes": 287618765
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00002.jsonl",
+          "sha256": "560cb8e2f32b388bb01bcf8be585ca49e7bfae103abe1a5f291777e34d408a13",
+          "bytes": 301338464
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00003.jsonl",
+          "sha256": "3715bf6cb203a8e3c96b90428e39a88c3b942839dbd9337d88f435b4112f7cf1",
+          "bytes": 294431731
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00004.jsonl",
+          "sha256": "17ef9df05ef420b34e9c1f48d4be99cf0563c35bb818acfac94284eccecce70a",
+          "bytes": 303240819
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00005.jsonl",
+          "sha256": "05842d382249124c7081c46f1764d5e9ca2e83459697da0e74c2238c1edee732",
+          "bytes": 290581507
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00006.jsonl",
+          "sha256": "472f7df2a82e00331e6bd2b66969fa5a29babc2627ede9eedf7283de636f9cf2",
+          "bytes": 297853670
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00007.jsonl",
+          "sha256": "3b77719f20c67d10f57acb628d5c5e5ec2012ed2031f3a7037db4caaddae01bc",
+          "bytes": 294112273
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00008.jsonl",
+          "sha256": "e1031869388e220d71b68f4b85904b2d7d5e2ad2d08d944270687d6c684b3dae",
+          "bytes": 308067610
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00009.jsonl",
+          "sha256": "03ca308df75109a90d671a13e292dd6a48e42746a96b8497b4edd5b28b1061c1",
+          "bytes": 287163400
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00010.jsonl",
+          "sha256": "9c17eafe59a2698aa068908a708834a60fe58cea89d53a65120a0bbd106432db",
+          "bytes": 290397545
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00011.jsonl",
+          "sha256": "291ce7e5b945f9c80e152566c5a490e1d0fd12fe8ed7085d098065b380fa1126",
+          "bytes": 294387224
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00012.jsonl",
+          "sha256": "27e98cc611f0408cb7dccd2edf3cadf48a021cc3d6b968ac994bfe2880f32d44",
+          "bytes": 302724923
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00013.jsonl",
+          "sha256": "96c89a94aa02a2832f48907e266455bc229c5092ae35640f8aea188b75394cdc",
+          "bytes": 301973998
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00014.jsonl",
+          "sha256": "c1e0e5b4fd7418c8e993236cef384a0ac5dae03db9ca414c73e0259be2659b35",
+          "bytes": 294276741
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00015.jsonl",
+          "sha256": "7c05a7bb80d12a11c58c69963fe39d98a6dc028b060eb7c3294f8ef5543229cf",
+          "bytes": 279684582
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00016.jsonl",
+          "sha256": "206110a56f7ba5b5fa33dc058c6eb76c4d27c1cf6c0522c4b3d09b7c729d616b",
+          "bytes": 296419569
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00017.jsonl",
+          "sha256": "2a9e7c1053fb6bfa54b8b3a03323501a2a0b01f7c4334d17d5ae257e9dfc98b1",
+          "bytes": 305571907
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00018.jsonl",
+          "sha256": "c40cc64f37359fe57c15c1be032fb8e42e85ebf9817d1ddd0145c12ef74ca05e",
+          "bytes": 300872758
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00019.jsonl",
+          "sha256": "02456cd1ddfb49f2c5c1740de45d80ee81f3a0db88d303d2d87a8721a552a484",
+          "bytes": 299990038
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00020.jsonl",
+          "sha256": "14367d22b076732e200405dd5a83d9c05b96c7eaca3a587a5b1d42f72259f4e4",
+          "bytes": 298288591
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00021.jsonl",
+          "sha256": "0e55f8bb78511407f30e0b4f67455dcb30e9dedcce61482a8958802f5ddd062e",
+          "bytes": 301451738
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00022.jsonl",
+          "sha256": "a8a2a2ff0d7d97cc0012cfbcc688ede4dc1494fec679025045f3148ede1e034c",
+          "bytes": 297768304
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00023.jsonl",
+          "sha256": "32694d6ee844644277ccc744ad3f95f7d1445bf11d3691440d9fdbc310a6b765",
+          "bytes": 301182111
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00024.jsonl",
+          "sha256": "13cfea136a1e9015d58f40702830d8f246892a1ba1275cdd723958855a0fe488",
+          "bytes": 300092330
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00025.jsonl",
+          "sha256": "5fd8f96c2bfceb2c1b5ccb0c6d0d440239c06dc7a465adf5c522818974973cf3",
+          "bytes": 307149073
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00026.jsonl",
+          "sha256": "aeaccfcd15940ac3c25a9ee15cffb3f6c590cd8a2c34f49bd8de158f7f6ec3a5",
+          "bytes": 298755231
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00027.jsonl",
+          "sha256": "47c4d446cc0f9b7b3ede8a39b04a4a11cbe05fba9efa68579796b1586d590981",
+          "bytes": 285305794
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00028.jsonl",
+          "sha256": "862aef67fc7cc72282f1a66ce51e9bb71a74fc319b4ae68c488f5a9dd2f2f9c8",
+          "bytes": 305600067
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00029.jsonl",
+          "sha256": "087517db07523fd01f0d8fa49559d5081e5c63163c8d88698fb0c8bc5fe4774b",
+          "bytes": 298609533
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00030.jsonl",
+          "sha256": "1f7832583d20c8a302e4cc33c96a5164c2d27660bf7f478d6b755667ec5146b3",
+          "bytes": 279785628
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00031.jsonl",
+          "sha256": "0bf96553b49f0a554e050533f06ce48a11619cbcf543e5104641a6c20bd6ae00",
+          "bytes": 295714719
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00032.jsonl",
+          "sha256": "7e36e53cbe7389083ae10b5c325a2eeba0aa790c9736fa4d60cbaf3d8687510d",
+          "bytes": 301745643
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00033.jsonl",
+          "sha256": "5c1fcfbb8d5b39ed6d60b7b3c210daf3d61b0f5b4e7db21f62c2d6ccf41d05c9",
+          "bytes": 293688809
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00034.jsonl",
+          "sha256": "9a66ab5269064e26b8c489e076815c6a40a08d3fa38bb38e7054c33b2e0e9d41",
+          "bytes": 290793036
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00035.jsonl",
+          "sha256": "2b375a105bafb9743a509915a01a3df0acfac2904da6fbc21e9efcf8428a42f1",
+          "bytes": 294630178
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00036.jsonl",
+          "sha256": "f4ba13ad6face2f7d5b132e2a75cd1fc9e7f4e0b18913b72080bd245192ff601",
+          "bytes": 285530436
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00037.jsonl",
+          "sha256": "15ec707eb8942b1145b761863e7b699a65c8de366903e700fb4852c61702b9a6",
+          "bytes": 297331385
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00038.jsonl",
+          "sha256": "63a1294f9c33c468ec5dde7759b21c28b4652d12389245a351556c16849acf08",
+          "bytes": 310736183
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00039.jsonl",
+          "sha256": "8f7b86c6ee4d43967c2048b95ab2a4ace2b8fdbdef649ad68e02dbf7e272b54c",
+          "bytes": 304292892
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00040.jsonl",
+          "sha256": "0ef69f23358d3a450db9b051e614adce32232e20f6afb27db0407119aea90f2d",
+          "bytes": 301289831
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00041.jsonl",
+          "sha256": "a33c57ea5619b45f36cb9724be9fa8359fe2bbfd520c7e0942d0314439e61025",
+          "bytes": 297285854
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00042.jsonl",
+          "sha256": "46c1de5c06f16b5d9913532ec32772484ba631cd17c8692a425eede24bb669d6",
+          "bytes": 303422634
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00043.jsonl",
+          "sha256": "85cbef10d2c88462f5ddec355a769b9f642708d8e15a49aacdaa30f5888bca08",
+          "bytes": 311792423
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00044.jsonl",
+          "sha256": "4098924cf2399707b69fde794152e78b54b1ef6991341253c86f085855942ba2",
+          "bytes": 298633685
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00045.jsonl",
+          "sha256": "fe06585ed6fc7c5327fa7aa59a5b9144cac52270b5c416fca83bd712fec19529",
+          "bytes": 292190767
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00046.jsonl",
+          "sha256": "72b55329a7bdd13894dc6fe2230b27fe15f20d7eb5134b48bc0d8eff49612f94",
+          "bytes": 293389014
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00047.jsonl",
+          "sha256": "28f52519eabc6f26bb56a5797d0fc096f6d6b971bef2613129f957315bd84f17",
+          "bytes": 291990422
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00048.jsonl",
+          "sha256": "f6ebd964fbaa42a683c94a7898bccd34dba414532b9318b67b5ec72e74ab8976",
+          "bytes": 309928190
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00049.jsonl",
+          "sha256": "69b380015dfa4f59642a4b87ed7dfd6ad3df3dca05489f70abf15378a1e07f0f",
+          "bytes": 291696102
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00050.jsonl",
+          "sha256": "0cd40c94a7ef7fc8eeecacd15f69105dc6e79b91391ce3733a24b5ea46c75217",
+          "bytes": 299759010
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00051.jsonl",
+          "sha256": "f4e871cb024b86214237c1669bf4d71b0b0e2dd4ff03b2c7fa1ce79ece705c76",
+          "bytes": 288227392
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00052.jsonl",
+          "sha256": "878801dadcc4e21aaa36e985704d18f54bb0f6f3641881012fd02030ef6eb7b5",
+          "bytes": 296454626
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00053.jsonl",
+          "sha256": "cb9fadfbcaae2108bc01d6d8042a3c2e0a0d231427ba690a950e10aff066c8e7",
+          "bytes": 292536437
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00054.jsonl",
+          "sha256": "a3ea5e2fa5f4e1caec095ff944f075b36089dffc0cf408965eac8289a39b313c",
+          "bytes": 304523808
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00055.jsonl",
+          "sha256": "b2815839e71fbda5358dec80059fbe14c435211d50238efa5ccdc5020c75427a",
+          "bytes": 311245596
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00056.jsonl",
+          "sha256": "d8bf617f51a14aa1b4deedcf1e82c6677b70d485c40bb3d39d2b6a158acf9ddc",
+          "bytes": 299334688
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00057.jsonl",
+          "sha256": "26e4fa272621b859ce59566a145e5cc173618cb303be1ae915ec38a5699a6fec",
+          "bytes": 301906370
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00058.jsonl",
+          "sha256": "5b2751446e57dd661e896fabe0e553e4e3b979268cead87f1c272f8a9a638dcf",
+          "bytes": 299345100
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00059.jsonl",
+          "sha256": "5866183bf566bd31e0cb8bf6ab6015b8bce03b8cb27c0113cc820e50055fbce1",
+          "bytes": 287138847
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00060.jsonl",
+          "sha256": "55dc5c6b43866ab23f9814d38de59c0abed40dd27f868b7f6d56c31ccce96b18",
+          "bytes": 296221556
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00061.jsonl",
+          "sha256": "779b9dcbd839e47730af74e005003029be0ffa757c572777c7b08f5fa4faed51",
+          "bytes": 296502135
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00062.jsonl",
+          "sha256": "c715422708db85c5698495de8313dc43e846386c4c3e7e32e483f8d1497e3435",
+          "bytes": 301838364
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/itemcf_weak/src3_dst3_user2_keep_hot_cosine_v1/edges_shards/itemcf_weak_edges_shard_00063.jsonl",
+          "sha256": "3852e3482bfd4e6e696393067d09a29dfb2e2160a5a1edaab971561d27a773fa",
+          "bytes": 289271725
+        }
+      ]
+    },
+    "itemcf_strong": {
+      "candidate_count": 514216,
+      "manifest": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/source_index_manifest.json",
+      "manifest_sha256": "ce7dac0329345254a02cea62df70105848c86176b5307c9804a5800cdb817bd2",
+      "original_status": "DIAGNOSTIC_ONLY",
+      "files": [
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00000.jsonl",
+          "sha256": "bfe0c78d57a51d34e4396a37a6c718718baa43741eb455e32f445b6840eedb13",
+          "bytes": 52416147
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00001.jsonl",
+          "sha256": "eaa2ecb8ac06f947417bc1225c8df7cda356d8910d52eef2cc250e3ecd7b7b50",
+          "bytes": 50535715
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00002.jsonl",
+          "sha256": "727e83f919b77d6547fa497391517ebd4cd174c9590faf944045fdd126cc1b3f",
+          "bytes": 52790578
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00003.jsonl",
+          "sha256": "ed6fe64a12c4798d0a625bab75d625bc0a581401410fca58796ac6b23c69f8e4",
+          "bytes": 51109053
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00004.jsonl",
+          "sha256": "1bc79aa9df25800853244cf80aa2fbfa9702ab387218328e833fe4c8e7b0aaf6",
+          "bytes": 51715167
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00005.jsonl",
+          "sha256": "12756a19f4e091eb13a70d6b8ab84643dd49d61ccb58593bafff76e9b026cf9c",
+          "bytes": 51693393
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00006.jsonl",
+          "sha256": "fcf8a68efad0a74d04551a59e3a22a5fad5564150768588fddc5d214c17d6f85",
+          "bytes": 52147380
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources_newdata/itemcf_strong_relaxed_supplemental_v1/itemcf_strong/formal_relaxed_from_recent2y/edges_shards/itemcf_strong_edges_shard_00007.jsonl",
+          "sha256": "0742bac4c0afe25e6981ceceadb2807d22c463b27f0d5c47ed7f2f56d691c283",
+          "bytes": 50875655
+        }
+      ]
+    },
+    "swing_recall": {
+      "candidate_count": 457372,
+      "manifest": "/home/luo/RS_agent_java/releases/20260913-multi-recall/artifacts/swing/source_index_manifest.json",
+      "manifest_sha256": "982eb733c54560225b750d85e4afb3c8287aec62cbab54f9ee3a3d7a1afb5f13",
+      "original_status": "PASS",
+      "files": [
+        {
+          "file": "/home/luo/RS_agent_java/releases/20260913-multi-recall/artifacts/swing/swing_recall_edges.jsonl",
+          "sha256": "6f804f28923c1a550a38b259c7c65c25da4a413e7559a9e9219910867e47b653",
+          "bytes": 50008239
+        }
+      ]
+    },
+    "usercf_recall": {
+      "candidate_count": 64327024,
+      "manifest": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/source_index_manifest.json",
+      "manifest_sha256": "58ef6bd5e97fc9a1a38850055e25c8354bbb5fd4a8f07b068298e522c330f690",
+      "original_status": "DIAGNOSTIC_ONLY",
+      "files": [
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00000.jsonl",
+          "sha256": "3f78c8462a866b8a2cae680fda795891a2da5aeac3a9b169777cc6df9e4cf191",
+          "bytes": 85760846
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00001.jsonl",
+          "sha256": "296d59d7f25eaa5361419ed1cdc68bbfb98108433b0c4f1e066b0beb8cf337a5",
+          "bytes": 86371273
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00002.jsonl",
+          "sha256": "5b439fe1001fab1a7502df028bebd310148b312e34fbc7520b7351ef0967c5d0",
+          "bytes": 85397764
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00003.jsonl",
+          "sha256": "7408b8e8c374eff31d1a6e49f2ef2c47f3e6d58ceb3d17c3969723364a440f0f",
+          "bytes": 87543925
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00004.jsonl",
+          "sha256": "e1d567923abe603c691e72e8b5bf5b04fcb381d72a8654726b1a23bc72209bdc",
+          "bytes": 85142660
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00005.jsonl",
+          "sha256": "2073fac7cebacd91667ece73b495fa06612f8367171416e0f40f3c2244e94e4f",
+          "bytes": 85850822
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00006.jsonl",
+          "sha256": "b79cffa76fc66b6db67d6fa5e5b4b6da944814d0c7e86a4296f29f12802a7bf2",
+          "bytes": 86431008
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00007.jsonl",
+          "sha256": "c77245c8abe6c7c94bfb9f2d6bf544e7a19d11c05a0b8cc5445e215a5e6b8f97",
+          "bytes": 86084989
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00008.jsonl",
+          "sha256": "0c4343706b6fba4cbb0ab88174317831baef7563a9899011c2ae4472ac3e2a82",
+          "bytes": 87337879
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00009.jsonl",
+          "sha256": "f8a8c9d2bf19c7ae8b87871fcbc9827e590abbb40e0b61c29b1fe30d0f45d331",
+          "bytes": 84964996
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00010.jsonl",
+          "sha256": "6b8866f7c6290c8974d90e9a7e58273c16be6178ec30718b6ec131de71054b7b",
+          "bytes": 85974329
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00011.jsonl",
+          "sha256": "4cadf4da325138b8237c55cf4d478b637bb5ff29fed384c7db524434b477d8b9",
+          "bytes": 85454955
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00012.jsonl",
+          "sha256": "97a5731d6085a991bab702037202ffebf540828d9abad32c3334b5964395d4df",
+          "bytes": 86388710
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00013.jsonl",
+          "sha256": "cf5422ac08c92b6f72ac6e85b88d4318c53142a085795c75e6c83f175e21bcf1",
+          "bytes": 87252446
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00014.jsonl",
+          "sha256": "0d2fb9dfb5211346e41c924bce4cbab68101a11c9d1eb21a22c7481034fc93fd",
+          "bytes": 85795436
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00015.jsonl",
+          "sha256": "000bf06fa0d8f05d2757ad8333c45234467d11e24976f1436ec2f4bf9e096edf",
+          "bytes": 85716770
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00016.jsonl",
+          "sha256": "6845769dbc2b5600a2691c7327bc4ed3e8b7371fe76cf872d8fc2027ff86046a",
+          "bytes": 87035872
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00017.jsonl",
+          "sha256": "88de9d93189989e0c02b14c6f1f96fbb78ba4bf626e0699ee0b30001ea898341",
+          "bytes": 84211232
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00018.jsonl",
+          "sha256": "5f5e74f3120af51b108f4387d8aacdf61417ea012f4429ef4ab67c00c200c48e",
+          "bytes": 86219251
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00019.jsonl",
+          "sha256": "5514586a20fb0ee5096066b0d90a5967f63321fa78493a4cfe4a27d9a5b0196e",
+          "bytes": 86856369
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00020.jsonl",
+          "sha256": "41d5adf310004847e53ade2ccb0aed2ffb40cdd77751b4906cab468977f18bfa",
+          "bytes": 84915501
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00021.jsonl",
+          "sha256": "90693d530518dc0a302844be9272a105c59824cca32bccea2079c212c9cd1d9c",
+          "bytes": 85521105
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00022.jsonl",
+          "sha256": "e78f6193b0aa5dcca96b325fc2ee0d7e363d2b40ba912a7d4a6c3dce6e9d96b9",
+          "bytes": 87163169
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00023.jsonl",
+          "sha256": "72d6e121658c0ef36f45151460545b2c944b8b793f616bc3544d1c8bbe1e49fb",
+          "bytes": 84703894
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00024.jsonl",
+          "sha256": "e855d3628f0734ef69995acb319cbaa124c5035720afbd0d29ae7ccf5bf98a46",
+          "bytes": 85828256
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00025.jsonl",
+          "sha256": "4e463cb77762126738772a7a059f362f78c343253112fdbf4519af349c9c6526",
+          "bytes": 85833831
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00026.jsonl",
+          "sha256": "585fa631215a42dca3030d15ec7d9e653610c16a30fe2a54f82b5be1db042dd9",
+          "bytes": 86099520
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00027.jsonl",
+          "sha256": "46879af0021bef735b43004f3cf37b22a00a374a6fe46b7a87d05d63c5be2214",
+          "bytes": 85357489
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00028.jsonl",
+          "sha256": "c948ebc4b7279feb9694a390b82575b1eb69e3e4caf540766b7e2de7a5f55632",
+          "bytes": 84913019
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00029.jsonl",
+          "sha256": "32ec4323f5869b6a5f8bf909f348fb336e270e44aeafc5f04e63c1c9349fab8f",
+          "bytes": 84614405
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00030.jsonl",
+          "sha256": "35832522905973776468b7eba87173034cfc9f3c9b2ace68a5fad18df0e5b02f",
+          "bytes": 85318526
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00031.jsonl",
+          "sha256": "4f956a90b7c6b4007c0840bebe7de507304b47b6226dc29d158fe6d1d89178ba",
+          "bytes": 84619867
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00032.jsonl",
+          "sha256": "b0d83fa2ce46485dd346425d1168674320159c688586b74c31001b7c70421db5",
+          "bytes": 86465279
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00033.jsonl",
+          "sha256": "a5b3f6f44dfa13d630379990dfea986f4435acdfcd24d5c38af0f91190805431",
+          "bytes": 85903630
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00034.jsonl",
+          "sha256": "e98f6fd0e8868e8d807835cc00ae94343e917eb9b9bb80f436b3d769bc128256",
+          "bytes": 85784778
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00035.jsonl",
+          "sha256": "c9c028a155869bd4f7107c2e670b5fb3cb4f5fc7cb187d77030c08008a607d37",
+          "bytes": 86501843
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00036.jsonl",
+          "sha256": "051ffcd541e623fa1c10e764628062814cd1ced233697acc2a87fcbd823e1b01",
+          "bytes": 86725236
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00037.jsonl",
+          "sha256": "a9fac5cb00ad2075be52d0985b3e7df6cf98c5851c9125a01d4261a000d8e094",
+          "bytes": 86201799
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00038.jsonl",
+          "sha256": "f25eb88402087a3202c023c9b73a875ed32c3cb4c50e16b2f570d5296abd4e2e",
+          "bytes": 85476625
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00039.jsonl",
+          "sha256": "6c3c49a8b5387c3184efb424e435e029c5bd7b5d641fb5f5aa7844a696b7f60c",
+          "bytes": 84751011
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00040.jsonl",
+          "sha256": "af800961ddfbe12cefed96bbaf9aed6c85c7495a125fcb3559b4f34ec69f9075",
+          "bytes": 86400662
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00041.jsonl",
+          "sha256": "0ce798acfc56c4231641ab98c01dd7e3163c5a5b66da25540af6c2504c32788f",
+          "bytes": 85850560
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00042.jsonl",
+          "sha256": "f6542f0efd2bbdec981bc6b419791de9b4a6ed5a86692f70fc193ecba7fd2dc8",
+          "bytes": 86676775
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00043.jsonl",
+          "sha256": "ee970ec378e524506af18dcdc711fb7bf48dcccb12fed29d835c9796c7d66331",
+          "bytes": 85481583
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00044.jsonl",
+          "sha256": "200da849c141c034a0757193bdda022636dc2f725da8a79c216e62f1e9517eec",
+          "bytes": 84942165
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00045.jsonl",
+          "sha256": "34945a136ea7b2275a3c75d9443c82b2c3e109a96d441fe6876f0a7c57ef2c5e",
+          "bytes": 85504134
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00046.jsonl",
+          "sha256": "cfd2f32d9a2ff05d91be8836f5c87d1a7549343dcc9bdc639ce269f0715be42e",
+          "bytes": 86246644
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00047.jsonl",
+          "sha256": "52e391640290ec329cf729f14a0439dcdb0dada1038c9beb91db694a1a4b76f6",
+          "bytes": 86843804
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00048.jsonl",
+          "sha256": "fa29f119e92225fdc09ef3ce0b3c4d458627a7428a40ebf240d25ae9ac1fa9a2",
+          "bytes": 87888328
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00049.jsonl",
+          "sha256": "bcfaa34fc06294f8cc93a0e474b7dc9c145900753dd18b7100b345c63db93727",
+          "bytes": 86569087
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00050.jsonl",
+          "sha256": "f46428609ddf7c265ee64e2ba683e977daa11ba2ade24420b71967be41047805",
+          "bytes": 86187125
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00051.jsonl",
+          "sha256": "88818be41ce3b8a058a221f877a9bdf1aa962f1265b960cb524b054abe4b588e",
+          "bytes": 86656500
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00052.jsonl",
+          "sha256": "adc518094369f539069304e84f5a5ad2ad2d9ac242021236713029c5da150efc",
+          "bytes": 85536221
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00053.jsonl",
+          "sha256": "9c6560564b2c54cd95ba68933a7ea131e0880cbc5b6dd85d1e53bad9cede4dda",
+          "bytes": 85693752
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00054.jsonl",
+          "sha256": "cd31db326f63f0bd0be46d3a98c33629071f9c06420c0229cb3ce2ed573deb33",
+          "bytes": 85360788
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00055.jsonl",
+          "sha256": "7f5774852f081d86353706b805723201756d59e2bf66986a9644b9442fb021b9",
+          "bytes": 86133610
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00056.jsonl",
+          "sha256": "466b10a416649c59ae74ffe8c5f636cf0db737090fcca3b99d90781cf6b75c3a",
+          "bytes": 84770322
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00057.jsonl",
+          "sha256": "752c2f048b69e34e37fe3b5bb3b3cbf86e2ade3dc1a90d6f0395c70ecefe2e56",
+          "bytes": 85421122
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00058.jsonl",
+          "sha256": "57a9fa40f42dabf8b8917af23c8bf4d6c0bb920617d790ae295da0f5313b91e3",
+          "bytes": 86250058
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00059.jsonl",
+          "sha256": "371f4000a8472446ec69c664d1f2da40d2132257b7054c32fce9dfa137be0dca",
+          "bytes": 85581384
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00060.jsonl",
+          "sha256": "18c7e2389000b3482b9adab9e0d448bd1752cec6964d99e4dd24024f9480c83a",
+          "bytes": 84693448
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00061.jsonl",
+          "sha256": "3bb92d84ce709e0ba74f9d10e9cd8c068acf496125c90e86c3f66b4b1f231a94",
+          "bytes": 84443216
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00062.jsonl",
+          "sha256": "c84b914dca026781f611f90da554f4bdf0ffaf05514118445039ba59fb7b3e79",
+          "bytes": 84444308
+        },
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/usercf_recall/usercf_itemfirst_src2_dst3_user3_keep_hot_full_diagnostic_v1/shards/usercf_recall_shard_00063.jsonl",
+          "sha256": "e777822318ea034410bc9b2a55e065072cc50091a6a920721c68b43d6226ffa6",
+          "bytes": 86512712
+        }
+      ]
+    },
+    "category": {
+      "candidate_count": 107942,
+      "manifest": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/source_index_manifest.json",
+      "manifest_sha256": "462adccecdae6ee1e0313a9b82db6e045a51cefefb0fc42331bd8964a14fd850",
+      "original_status": "READY_RECENT2Y_TRAIN_ONLY_CATEGORY_INDEX_FORMAL",
+      "files": [
+        {
+          "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/category_top_items_index.jsonl",
+          "sha256": "c26a7fe276a48e0b342286690735b980ff042733f765aaab735e637bdd3e1214",
+          "bytes": 7424921
+        }
+      ]
+    },
+    "popular": {
+      "candidate_count": 762622,
+      "manifest": "/home/luo/RS_agent_java/releases/20260913-multi-recall/artifacts/popular/source_index_manifest.json",
+      "manifest_sha256": "e89dbf844f8dd1f5ae84163a905df61444f84d857708ca89c5d488db27bfe129",
+      "original_status": "READY",
+      "files": [
+        {
+          "file": "/home/luo/RS_agent_java/releases/20260913-multi-recall/artifacts/popular/candidates.jsonl",
+          "sha256": "b65565f03ab8be99e4936cf58ddf04db08287a469aaab65f1f6416ff0d2e3ef1",
+          "bytes": 288186613
+        }
+      ]
+    }
+  },
+  "ranking_input_replacement_allowed": false,
+  "offline_pool500_promotion_claimed": false,
+  "status": "PASS",
+  "category_profiles": {
+    "file": "/mnt/data/luo/RS_agent_remote_storage/outputs/recall/pool500_method_sources/recent_2y/category/category_recent2y_all_eligible_index_v1/user_category_profile.jsonl",
+    "sha256": "c70bb3d1ce9f5d284eaa428289f92dd89713e22bab1c3152ec3d953c06bdaca5",
+    "bytes": 1329708962,
+    "users": 1558964
+  }
+}

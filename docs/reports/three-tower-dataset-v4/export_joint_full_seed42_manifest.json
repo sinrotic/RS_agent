@@ -1,0 +1,38 @@
+{
+  "status": "OFFLINE_EXPORT_VERIFIED_NOT_DEPLOYED",
+  "model_type": "product_residual_no_id_v4",
+  "training_mode": "joint",
+  "dimension": 1024,
+  "candidate_count": 203887,
+  "checkpoint_step": 6000,
+  "seed": 42,
+  "user_forward": "normalize(mean(exported item vectors of ordered last <=50 positive items) + user_adapter(mean))",
+  "history_weighting": "uniform; no queryv2 time decay",
+  "unknown_history": "skip unknown IDs; empty known history requires existing fallback",
+  "item_forward": "normalize(normalized BGE vector + item_adapter(normalized BGE vector))",
+  "query_forward": "normalize(normalized BGE query + query_adapter(normalized BGE query))",
+  "query_task_trained": true,
+  "bge": "local BAAI/bge-m3; max_seq_length=256; fp16 encoding, normalized float32 cache",
+  "similarity": "inner product of unit vectors",
+  "route_limitations": [
+    "203887-candidate experimental library, not full catalog",
+    "1024 dimensions require separate index from old 64-dimensional queryv2 route",
+    "must not apply item adapter twice to exported history vectors",
+    "development-selected candidate requires independent test and serving replay before main-route promotion"
+  ],
+  "verification": {
+    "users": 128,
+    "max_user_vector_error": 3.725290298461914e-08,
+    "max_score_error": 1.1920928955078125e-07
+  },
+  "input_hashes": {
+    "checkpoint": "6ef562560eca3c292a06b5c8000e4103daefe4283e7c8aa84d440fb5f85c6e53",
+    "bge_features": "0afa1bcc5e62ead30053be5a9f50b4465df94ee4c72934b776a1072b45875b96"
+  },
+  "output_hashes": {
+    "item_vectors.npy": "c55fe3c344720b342d327e6658d39bf5d8d239620dae29370ad15d39a85188a7",
+    "item_ids.jsonl": "02446b6cc476cfdea50dbf53688ff231e7520393d0949b87d9acf5ebdaa5b99b",
+    "model.pt": "6ef562560eca3c292a06b5c8000e4103daefe4283e7c8aa84d440fb5f85c6e53",
+    "model_definition.py": "54a604095ad3df3b24e3ae19f35745eb7392866daf736911b7ca5f4f8596efa5"
+  }
+}

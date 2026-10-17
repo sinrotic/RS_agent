@@ -1,0 +1,251 @@
+{
+  "name": "post-switch-smoke",
+  "agent_sha256": "4bc94fc6894a65fb933071ac91c2506c5964542c68d464f59155967c027c1c76",
+  "model_before": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml",
+    "1215570 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18092 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-batched-tokens 4096 --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "scope": "现有网关 18288 → 已升级单活 Agent 18214 → 真实模型/推荐/目录/持久历史",
+  "queries": [
+    "推荐一款适合办公的鼠标，最好静音，说明理由",
+    "推荐适合编程使用的键盘，说明各自的区别"
+  ],
+  "stages": [],
+  "quality_scope": "完整流程属性与工具状态，不替代语义质量评测",
+  "timing_scope": "Session 预先创建；请求计时包含网关/SSE/目录，整批吞吐包含后置历史及追踪核验",
+  "cases": [
+    {
+      "index": 0,
+      "query_index": null,
+      "complete_ms": 4378.64,
+      "agent_ms": 4373.05,
+      "items": 5,
+      "answer_chars": 140,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 0,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 1,
+      "final_blocks": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 4442.31
+    },
+    {
+      "index": 1,
+      "query_index": 0,
+      "complete_ms": 11237.41,
+      "agent_ms": 11232.74,
+      "items": 5,
+      "answer_chars": 21,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "load_skill",
+        "rag_support",
+        "rag_evidence_search",
+        "load_skill",
+        "rag_support",
+        "rag_evidence_search"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 7,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 1,
+      "final_blocks": [
+        "text"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 11267.6
+    },
+    {
+      "index": 2,
+      "query_index": 1,
+      "complete_ms": 18440.59,
+      "agent_ms": 18430.95,
+      "items": 5,
+      "answer_chars": 41,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates",
+        "load_skill",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "load_skill",
+        "load_skill",
+        "load_skill"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 7,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 1,
+      "final_blocks": [
+        "text"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 18467.51
+    },
+    {
+      "index": 3,
+      "query_index": null,
+      "complete_ms": 1977.28,
+      "agent_ms": 1971.72,
+      "items": 5,
+      "answer_chars": 54,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 0,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 1,
+      "final_blocks": [
+        "text",
+        "product_cards"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 1998.26
+    },
+    {
+      "index": 3,
+      "query_index": null,
+      "complete_ms": 11226.48,
+      "agent_ms": 11221.81,
+      "items": 5,
+      "answer_chars": 49,
+      "finish_reason": "FINAL_ANSWER",
+      "error_code": null,
+      "error_status": null,
+      "tool_names": [
+        "recommend_candidates",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search",
+        "rag_evidence_search"
+      ],
+      "failed_tools": 0,
+      "advanced_tool_count": 7,
+      "stage_counts": {
+        "final": 5,
+        "bge_reranked": 96,
+        "fine_rank": 96,
+        "cold_scored": 100,
+        "recall": 100,
+        "coarse_rank": 100,
+        "deepfm_scored": 100
+      },
+      "degradation_reasons": [],
+      "history_turns": 2,
+      "final_blocks": [
+        "text",
+        "product_cards",
+        "text"
+      ],
+      "checks": {
+        "complete": true,
+        "five_real_unique_items": true,
+        "answer_and_history": true,
+        "tools_without_failure": true,
+        "deepfm_bge": true,
+        "no_degradation": true
+      },
+      "passed": true,
+      "audit_wall_ms": 11249.23
+    }
+  ],
+  "passed": 5,
+  "model_after": [
+    "806733 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml",
+    "1215570 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18092 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-batched-tokens 4096 --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "model_process_unchanged": true,
+  "agent_container_unchanged": true
+}

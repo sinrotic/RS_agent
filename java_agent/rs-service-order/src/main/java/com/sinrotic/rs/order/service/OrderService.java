@@ -144,9 +144,7 @@ public class OrderService {
             throw new OrderServiceException("request is required");
         }
         String requestId = requireText(request.requestId(), "requestId");
-        if (request.accountId() == null) {
-            throw new OrderServiceException("accountId is required");
-        }
+        String accountId = requireText(request.accountId(), "accountId");
         String itemId = requireText(request.itemId(), "itemId");
         String skuId = requireText(request.skuId(), "skuId");
         String itemTitle = requireText(request.itemTitle(), "itemTitle");
@@ -158,7 +156,7 @@ public class OrderService {
         }
         return new CreateOrderRequestDTO(
                 requestId,
-                request.accountId(),
+                accountId,
                 trimToNull(request.profileUserId()),
                 trimToNull(request.sessionId()),
                 trimToNull(request.recommendRequestId()),
@@ -175,9 +173,7 @@ public class OrderService {
             throw new OrderServiceException("message is required");
         }
         String requestId = requireText(message.requestId(), "requestId");
-        if (message.accountId() == null) {
-            throw new OrderServiceException("accountId is required");
-        }
+        String accountId = requireText(message.accountId(), "accountId");
         requireText(message.activityId(), "activityId");
         String itemId = requireText(message.itemId(), "itemId");
         String skuId = requireText(message.skuId(), "skuId");
@@ -186,7 +182,7 @@ public class OrderService {
         }
         return new SeckillOrderCreateMessageDTO(
                 requestId,
-                message.accountId(),
+                accountId,
                 message.activityId().trim(),
                 itemId,
                 skuId,

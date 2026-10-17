@@ -16,8 +16,17 @@ public record AgentRecommendCandidatesRequestDTO(
         String profileUserId,
         String scene,
         Integer limit,
-        Map<String, Object> constraints
+        Map<String, Object> constraints,
+        @JsonProperty("account_id")
+        String accountId
 ) {
+
+    public AgentRecommendCandidatesRequestDTO(
+            String agentId, String taskId, String profileUserId, String scene, Integer limit,
+            Map<String, Object> constraints
+    ) {
+        this(agentId, taskId, profileUserId, scene, limit, constraints, profileUserId);
+    }
 
     private static final String DEFAULT_SCENE = "home";
     private static final int DEFAULT_LIMIT = 20;
@@ -31,7 +40,8 @@ public record AgentRecommendCandidatesRequestDTO(
                 profileUserId,
                 scene == null || scene.isBlank() ? DEFAULT_SCENE : scene,
                 normalizedLimit,
-                constraints == null ? Map.of() : constraints
+                constraints == null ? Map.of() : constraints,
+                accountId == null || accountId.isBlank() ? profileUserId : accountId
         );
     }
 }

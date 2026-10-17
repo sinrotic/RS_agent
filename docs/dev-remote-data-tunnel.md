@@ -13,6 +13,7 @@ This project can use remote data services from local development through an SSH 
 | MinIO | `127.0.0.1:19000` | `127.0.0.1:19000` |
 | Scylla | `127.0.0.1:19042` | `127.0.0.1:19042` |
 | Milvus | `127.0.0.1:19530` | `127.0.0.1:19530` |
+| vLLM (Qwen3.5-4B) | `127.0.0.1:18082` | `127.0.0.1:18082` |
 
 ## Manual Tunnel
 
@@ -28,7 +29,8 @@ ssh -N server `
   -L 19200:127.0.0.1:19200 `
   -L 19000:127.0.0.1:19000 `
   -L 19042:127.0.0.1:19042 `
-  -L 19530:127.0.0.1:19530
+  -L 19530:127.0.0.1:19530 `
+  -L 18082:127.0.0.1:18082
 ```
 
 Keep that terminal open while developing. Closing the terminal closes the tunnel.
@@ -74,7 +76,8 @@ function Ensure-RsRemoteDataTunnel {
     "-L", "19200:127.0.0.1:19200",
     "-L", "19000:127.0.0.1:19000",
     "-L", "19042:127.0.0.1:19042",
-    "-L", "19530:127.0.0.1:19530"
+    "-L", "19530:127.0.0.1:19530",
+    "-L", "18082:127.0.0.1:18082"
   )
 
   for ($i = 0; $i -lt 20; $i++) {
@@ -119,6 +122,9 @@ SCYLLA_HOST=127.0.0.1
 SCYLLA_PORT=19042
 MILVUS_HOST=127.0.0.1
 MILVUS_PORT=19530
+RS_AGENT_OPENAI_BASE_URL=http://127.0.0.1:18082/v1
+RS_AGENT_OPENAI_MODEL=qwen35-4b
+RS_AGENT_OPENAI_TEMPERATURE=0
 ```
 
 ## Notes

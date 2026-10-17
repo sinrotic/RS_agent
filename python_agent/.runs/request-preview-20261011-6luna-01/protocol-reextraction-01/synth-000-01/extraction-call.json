@@ -1,0 +1,138 @@
+{
+  "request_payload": {
+    "customer_message": "家里有台台式机放在路由器旁边不太方便拉网线，最近无线连接也不太稳定，想添个 USB 网络适配器改善一下。比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠；电脑是 Windows，但具体接口和兼容要求我还得确认。能帮我看看哪种更合适吗？"
+  },
+  "instruction_sha256": "52755f2665287949d218aeab7ba60d5452156bc5f29f1e3f22c43e98f49a32eb",
+  "requested_model": "gpt-6-luna",
+  "started_at": "2026-10-11T12:13:11.619646+00:00",
+  "response_metadata": {
+    "id": "resp_07904b801d824d69016acb7d5810e487d194d8198b4826fb81",
+    "model": "gpt-6-luna",
+    "usage": {
+      "completion_tokens": 1215,
+      "total_tokens": 2330,
+      "prompt_tokens": 1115,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_creation_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 399
+      }
+    },
+    "finish_reason": "stop"
+  },
+  "raw_content": "{\n  \"schema_version\": \"rs-shopping-request/2\",\n  \"intent\": {\n    \"primary\": \"recommendation\",\n    \"actions\": [\"recommend\"],\n    \"evidence\": [\"想添个 USB 网络适配器改善一下。\", \"能帮我看看哪种更合适吗？\"]\n  },\n  \"context_facts\": [\n    {\n      \"name\": \"使用环境\",\n      \"value\": \"台式机放在路由器旁边，不太方便拉网线\",\n      \"quote\": \"家里有台台式机放在路由器旁边不太方便拉网线\"\n    },\n    {\n      \"name\": \"现有连接情况\",\n      \"value\": \"最近无线连接不太稳定\",\n      \"quote\": \"最近无线连接也不太稳定\"\n    },\n    {\n      \"name\": \"操作系统\",\n      \"value\": \"Windows\",\n      \"quote\": \"电脑是 Windows\"\n    },\n    {\n      \"name\": \"比较维度\",\n      \"value\": \"相较于特别高的速度，更看重安装省事和日常可靠\",\n      \"quote\": \"比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠\"\n    }\n  ],\n  \"answer_requirements\": [\n    {\n      \"need\": \"推荐较合适的 USB 网络适配器类型\",\n      \"quote\": \"能帮我看看哪种更合适吗？\"\n    }\n  ],\n  \"requirements\": [\n    {\n      \"id\": \"r1\",\n      \"kind\": \"strict\",\n      \"field\": \"product_type\",\n      \"relation\": \"eq\",\n      \"value\": \"USB 网络适配器\",\n      \"unit\": null,\n      \"quote\": \"想添个 USB 网络适配器改善一下。\"\n    },\n    {\n      \"id\": \"r2\",\n      \"kind\": \"preference\",\n      \"field\": \"installation_complexity\",\n      \"relation\": \"minimize\",\n      \"value\": \"安装别太折腾\",\n      \"unit\": null,\n      \"quote\": \"我更在意安装别太折腾\"\n    },\n    {\n      \"id\": \"r3\",\n      \"kind\": \"preference\",\n      \"field\": \"reliability\",\n      \"relation\": \"maximize\",\n      \"value\": \"日常用着可靠\",\n      \"unit\": null,\n      \"quote\": \"日常用着可靠\"\n    }\n  ],\n  \"unknowns\": [\n    {\n      \"slot\": \"usb_interface\",\n      \"reason\": \"顾客表示具体接口还需确认，当前无法核实具体型号的接口适配情况。\",\n      \"needed_for\": [\"recommend\"],\n      \"blocking_level\": \"needed_for_specific_item\"\n    },\n    {\n      \"slot\": \"compatibility_details\",\n      \"reason\": \"顾客表示兼容要求还需确认，当前无法保证具体型号与电脑兼容。\",\n      \"needed_for\": [\"recommend\"],\n      \"blocking_level\": \"needed_for_specific_item\"\n    }\n  ],\n  \"clarification\": {\n    \"mode\": \"answer_then_optional_question\",\n    \"safe_answer_before_clarification\": true,\n    \"unresolved_actions\": [],\n    \"questions\": [\n      {\n        \"question\": \"如果希望进一步筛到具体型号，可以补充电脑的 USB 接口类型和 Windows 版本吗？\",\n        \"slots\": [\"usb_interface\", \"compatibility_details\"],\n        \"necessity\": \"optional\",\n        \"reason\": \"这些信息有助于核实具体型号兼容性，但不妨碍先给出通用类型建议。\"\n      }\n    ]\n  },\n  \"recipient\": {\n    \"target\": \"self\",\n    \"quote\": \"家里有台台式机\",\n    \"profile_policy\": \"weak_reference_if_self\"\n  }\n}",
+  "parsed_json": {
+    "schema_version": "rs-shopping-request/2",
+    "intent": {
+      "primary": "recommendation",
+      "actions": [
+        "recommend"
+      ],
+      "evidence": [
+        "想添个 USB 网络适配器改善一下。",
+        "能帮我看看哪种更合适吗？"
+      ]
+    },
+    "context_facts": [
+      {
+        "name": "使用环境",
+        "value": "台式机放在路由器旁边，不太方便拉网线",
+        "quote": "家里有台台式机放在路由器旁边不太方便拉网线"
+      },
+      {
+        "name": "现有连接情况",
+        "value": "最近无线连接不太稳定",
+        "quote": "最近无线连接也不太稳定"
+      },
+      {
+        "name": "操作系统",
+        "value": "Windows",
+        "quote": "电脑是 Windows"
+      },
+      {
+        "name": "比较维度",
+        "value": "相较于特别高的速度，更看重安装省事和日常可靠",
+        "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠"
+      }
+    ],
+    "answer_requirements": [
+      {
+        "need": "推荐较合适的 USB 网络适配器类型",
+        "quote": "能帮我看看哪种更合适吗？"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "r1",
+        "kind": "strict",
+        "field": "product_type",
+        "relation": "eq",
+        "value": "USB 网络适配器",
+        "unit": null,
+        "quote": "想添个 USB 网络适配器改善一下。"
+      },
+      {
+        "id": "r2",
+        "kind": "preference",
+        "field": "installation_complexity",
+        "relation": "minimize",
+        "value": "安装别太折腾",
+        "unit": null,
+        "quote": "我更在意安装别太折腾"
+      },
+      {
+        "id": "r3",
+        "kind": "preference",
+        "field": "reliability",
+        "relation": "maximize",
+        "value": "日常用着可靠",
+        "unit": null,
+        "quote": "日常用着可靠"
+      }
+    ],
+    "unknowns": [
+      {
+        "slot": "usb_interface",
+        "reason": "顾客表示具体接口还需确认，当前无法核实具体型号的接口适配情况。",
+        "needed_for": [
+          "recommend"
+        ],
+        "blocking_level": "needed_for_specific_item"
+      },
+      {
+        "slot": "compatibility_details",
+        "reason": "顾客表示兼容要求还需确认，当前无法保证具体型号与电脑兼容。",
+        "needed_for": [
+          "recommend"
+        ],
+        "blocking_level": "needed_for_specific_item"
+      }
+    ],
+    "clarification": {
+      "mode": "answer_then_optional_question",
+      "safe_answer_before_clarification": true,
+      "unresolved_actions": [],
+      "questions": [
+        {
+          "question": "如果希望进一步筛到具体型号，可以补充电脑的 USB 接口类型和 Windows 版本吗？",
+          "slots": [
+            "usb_interface",
+            "compatibility_details"
+          ],
+          "necessity": "optional",
+          "reason": "这些信息有助于核实具体型号兼容性，但不妨碍先给出通用类型建议。"
+        }
+      ]
+    },
+    "recipient": {
+      "target": "self",
+      "quote": "家里有台台式机",
+      "profile_policy": "weak_reference_if_self"
+    }
+  },
+  "call_succeeded": true,
+  "completed_at": "2026-10-11T12:13:36.646408+00:00"
+}

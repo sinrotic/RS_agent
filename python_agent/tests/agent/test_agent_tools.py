@@ -149,6 +149,9 @@ def test_agent_tool_planner_system_prompt_payload_contains_hidden_tool_boundarie
     prompt = build_agent_tool_planner_system_prompt()
 
     assert prompt.startswith(AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT)
+    for section in ("# Identity", "# Instructions", "# Examples", "# Context"):
+        assert section in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
+    assert "<Role_And_Duty>" not in AGENT_TOOL_BOUNDARY_SYSTEM_PROMPT
     assert "retrieve_candidates" in prompt
     assert "call_rag_agent" in prompt
     assert "query_rag" not in prompt
@@ -161,6 +164,7 @@ def test_agent_tool_planner_system_prompt_payload_contains_hidden_tool_boundarie
     assert "tool traces" in prompt
     assert "public_payload_allowed" in prompt
     assert "public_output" in prompt
+    assert "## Hidden tool manifest summary:" in prompt
 
 
 def test_retrieve_candidates_declares_business_mode_boundaries():

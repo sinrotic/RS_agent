@@ -35,7 +35,7 @@ class RedisCatalogItemCacheTest {
         valueOperations = mock(ValueOperations.class);
         objectMapper = new ObjectMapper();
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        cache = new RedisCatalogItemCache(redisTemplate, objectMapper, 3600);
+        cache = new RedisCatalogItemCache(redisTemplate, objectMapper, 3600, 0);
     }
 
     @Test

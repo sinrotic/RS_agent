@@ -1,0 +1,70 @@
+商品三塔 v10：MRR诊断与负样本/用户表示对照结果
+
+综合验收：FAIL；发布状态：NOT_DEPLOYED
+冻结候选：initial_cohesion
+检查点：/mnt/data/luo/remote_runs/product_v10_training/initial_cohesion.pt
+模型SHA256：654ef0e6dbf386297e0bce10ab54a58d35f73f2c73532ff10b9f58b8a5fe589a
+远程目录：/mnt/data/luo/remote_runs/product_v10_training
+
+结论按综合门槛执行，不以训练完成、单个开发点或只改善Top100代替头部验收。
+MRR下降主要来自扩库竞争及补全历史；同库同历史的候选权重改善了一部分MRR。
+历史样本集中损失在4-10项历史和原库已覆盖目标；少量同文本商品形成并列竞争，
+更明显的失败是跨品类新增历史拉偏用户向量。历史区间较宽，不宣称点估计具有显著性。
+
+训练：GPU2，batch128，用户MLP lr5e-7，商品/BGE/查询塔冻结。
+八组筛选各4000步，同一2656780训练前缀样本的固定乱序。合格配置可继续同一epoch。
+开发集：已有1485、训练期新用户1500、新未来短历史1000；未使用封存选型。
+负例：127随机，或96随机+31共享4096池挖掘；困难项允许超过正商品得分；
+排除已知训练正例、空文本、同文本、正商品余弦>=0.97近重复。soft_hard权重0.1。
+表示：均值、0.8位置衰减、75%均值+25%最近3项、一致性降权（温度0.15）。
+一致性聚合在<=2项历史严格保持均值；没有以目标商品或验证标签计算注意力。
+
+各训练配置末次开发MRR（实际选型可能选较早检查点或未续训候选）：
+配置 / 步数 / 已有开发 / 训练期新用户 / 未来短历史
+mean_random / 4000 / 0.00296591 / 0.00781285 / 0.00816272
+mean_hard / 4000 / 0.00325961 / 0.00832605 / 0.00486982
+decay_random / 4000 / 0.00349304 / 0.00890537 / 0.00874474
+decay_hard / 4000 / 0.00367003 / 0.00850367 / 0.00499877
+decay_hard_head / 4000 / 0.00371500 / 0.00855914 / 0.00495586
+mean_soft_hard / 4000 / 0.00310673 / 0.00808486 / 0.00650898
+blend_soft_hard / 4000 / 0.00332298 / 0.00806311 / 0.00650916
+cohesion_soft_hard / 4000 / 0.00354139 / 0.00859266 / 0.00606139
+
+冻结后历史回归（1632用户；已见测试，不宣称独立）：
+模型 / Hit10 / Hit100 / MRR
+online_actual / 1.1029% / 3.4314% / 0.00558264
+online_expanded / 0.9191% / 3.1250% / 0.00375550
+candidate / 1.0417% / 3.7377% / 0.00555404
+
+冻结后新未来封存（2000用户；未见标签，均两项已知历史）：
+模型 / Hit10 / Hit100 / MRR
+candidate / 1.5000% / 5.4500% / 0.00905237
+initial / 1.5000% / 5.4500% / 0.00905237
+online_expanded / 1.7000% / 5.2000% / 0.00749466
+online_actual / 1.1000% / 4.1000% / 0.00595711
+
+配对MRR差值与95%区间（未校正模型选择；历史样本已重复使用）：
+{"historical": {"mrr_delta": -2.8600516206596752e-05, "paired_ci95": [-0.003077726613135184, 0.0030779930331741104], "selection_adjusted": false}, "sealed_future": {"mrr_delta": 0.00309526226866129, "paired_ci95": [0.0003592764965733612, 0.006138063890521231], "selection_adjusted": false}}
+
+工程验收：
+frozen_test_regression: False
+ann: True
+candidate_replay: True
+semantic_type_smoke_vs_online: True
+home_latency: True
+sealed_snapshot_integrity: True
+sealed_hit100: True
+sealed_hit10: True
+sealed_mrr: True
+user_fault_fallback: True
+query_fault_fallback: True
+old_service_healthy: True
+concurrency8: True
+ANN Top100平均重叠：99.2109%，Milvus REST P95 9.62ms。
+5项训练/负例/聚合测试及实际CPU前向一致性测试通过；既有Java6项参数和服务测试通过。
+隔离候选服务18235、CPU运行时18126，模型维度1024，有效候选商品763080。
+
+限制：未来封存只覆盖短历史；尚未使用的>=3历史测试用户已不存在，扫描尝试得到0。
+较长历史只有已见回归证据；不能据短历史改善宣称全用户泛化改善。
+候选及元数据沿用训练期快照；正序列来自评分评论，非实际购买完成事件。
+合成语义查询源商品恢复与标题关键词检查均为代理，不代表真实相关性或线上收益。

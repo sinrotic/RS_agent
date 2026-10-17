@@ -17,6 +17,7 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -36,8 +37,8 @@ class RedisAgentHotSessionStoreTest {
         new RedisAgentHotSessionStore(redisTemplate, new ObjectMapper().findAndRegisterModules(), properties)
                 .append(event("event-1"));
 
-        verify(listOperations).rightPush(eq("rs:test:session-1:events"), anyString());
-        verify(redisTemplate).expire("rs:test:session-1:events", Duration.ofMinutes(10));
+        verify(redisTemplate).execute(any(org.springframework.data.redis.core.script.RedisScript.class),
+                eq(List.of("rs:test:session-1:events")), anyString(), eq("600000"));
     }
 
     @Test

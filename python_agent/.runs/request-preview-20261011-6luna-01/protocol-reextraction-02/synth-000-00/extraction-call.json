@@ -1,0 +1,111 @@
+{
+  "request_payload": {
+    "customer_message": "家里台式机的无线网卡不太稳定，想换个USB Wi‑Fi适配器，最好支持双频。主要是Windows 11用，预算三十左右，有合适的吗？"
+  },
+  "instruction_sha256": "543aac9bd5e506262f8a42079698cb8fdad2f16e54eef88cd859c6c6bfc1ca14",
+  "requested_model": "gpt-6-luna",
+  "started_at": "2026-10-11T12:43:13.224606+00:00",
+  "response_metadata": {
+    "id": "resp_0653b1bb60aef4d2016acb84616f8087d1847f17a771cdeec0",
+    "model": "gpt-6-luna",
+    "usage": {
+      "completion_tokens": 910,
+      "total_tokens": 2591,
+      "prompt_tokens": 1681,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_creation_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 341
+      }
+    },
+    "finish_reason": "stop"
+  },
+  "raw_content": "{\n  \"schema_version\": \"rs-shopping-request/3\",\n  \"intent\": {\n    \"primary\": \"recommendation\",\n    \"actions\": [\"recommend\"],\n    \"evidence\": [\"有合适的吗？\"]\n  },\n  \"context_facts\": [\n    {\n      \"name\": \"current_device_issue\",\n      \"value\": \"家里的台式机无线网卡不太稳定\",\n      \"quote\": \"家里台式机的无线网卡不太稳定\"\n    },\n    {\n      \"name\": \"considered_replacement\",\n      \"value\": \"USB Wi‑Fi适配器\",\n      \"quote\": \"想换个USB Wi‑Fi适配器\"\n    }\n  ],\n  \"answer_requirements\": [\n    {\n      \"kind\": \"recommendation\",\n      \"need\": \"推荐符合所述使用系统、预算和双频偏好的USB Wi‑Fi适配器。\",\n      \"quote\": \"有合适的吗？\"\n    }\n  ],\n  \"requirements\": [\n    {\n      \"id\": \"r1\",\n      \"kind\": \"strict\",\n      \"field\": \"product_type\",\n      \"relation\": \"eq\",\n      \"value\": \"USB Wi‑Fi适配器\",\n      \"unit\": null,\n      \"quote\": \"USB Wi‑Fi适配器\"\n    },\n    {\n      \"id\": \"r2\",\n      \"kind\": \"strict\",\n      \"field\": \"operating_system\",\n      \"relation\": \"eq\",\n      \"value\": \"Windows 11\",\n      \"unit\": null,\n      \"quote\": \"主要是Windows 11用\"\n    },\n    {\n      \"id\": \"r3\",\n      \"kind\": \"approximate\",\n      \"field\": \"price\",\n      \"relation\": \"about\",\n      \"value\": 30,\n      \"unit\": null,\n      \"quote\": \"预算三十左右\"\n    },\n    {\n      \"id\": \"r4\",\n      \"kind\": \"preference\",\n      \"field\": \"dual_band\",\n      \"relation\": \"prefer\",\n      \"value\": true,\n      \"unit\": null,\n      \"quote\": \"最好支持双频\"\n    }\n  ],\n  \"unknowns\": [],\n  \"clarification\": {\n    \"mode\": \"not_needed\",\n    \"safe_answer_before_clarification\": true,\n    \"unresolved_actions\": [],\n    \"questions\": []\n  },\n  \"recipient\": {\n    \"target\": \"unknown\",\n    \"quote\": null,\n    \"profile_policy\": \"weak_reference_if_self\",\n    \"profile_reason\": \"原话提到家里的台式机，但未明确设备使用者；本轮仅按已提供条件推荐。\"\n  }\n}",
+  "parsed_json": {
+    "schema_version": "rs-shopping-request/3",
+    "intent": {
+      "primary": "recommendation",
+      "actions": [
+        "recommend"
+      ],
+      "evidence": [
+        "有合适的吗？"
+      ]
+    },
+    "context_facts": [
+      {
+        "name": "current_device_issue",
+        "value": "家里的台式机无线网卡不太稳定",
+        "quote": "家里台式机的无线网卡不太稳定"
+      },
+      {
+        "name": "considered_replacement",
+        "value": "USB Wi‑Fi适配器",
+        "quote": "想换个USB Wi‑Fi适配器"
+      }
+    ],
+    "answer_requirements": [
+      {
+        "kind": "recommendation",
+        "need": "推荐符合所述使用系统、预算和双频偏好的USB Wi‑Fi适配器。",
+        "quote": "有合适的吗？"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "r1",
+        "kind": "strict",
+        "field": "product_type",
+        "relation": "eq",
+        "value": "USB Wi‑Fi适配器",
+        "unit": null,
+        "quote": "USB Wi‑Fi适配器"
+      },
+      {
+        "id": "r2",
+        "kind": "strict",
+        "field": "operating_system",
+        "relation": "eq",
+        "value": "Windows 11",
+        "unit": null,
+        "quote": "主要是Windows 11用"
+      },
+      {
+        "id": "r3",
+        "kind": "approximate",
+        "field": "price",
+        "relation": "about",
+        "value": 30,
+        "unit": null,
+        "quote": "预算三十左右"
+      },
+      {
+        "id": "r4",
+        "kind": "preference",
+        "field": "dual_band",
+        "relation": "prefer",
+        "value": true,
+        "unit": null,
+        "quote": "最好支持双频"
+      }
+    ],
+    "unknowns": [],
+    "clarification": {
+      "mode": "not_needed",
+      "safe_answer_before_clarification": true,
+      "unresolved_actions": [],
+      "questions": []
+    },
+    "recipient": {
+      "target": "unknown",
+      "quote": null,
+      "profile_policy": "weak_reference_if_self",
+      "profile_reason": "原话提到家里的台式机，但未明确设备使用者；本轮仅按已提供条件推荐。"
+    }
+  },
+  "call_succeeded": true,
+  "completed_at": "2026-10-11T12:43:32.552464+00:00"
+}

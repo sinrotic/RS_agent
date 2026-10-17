@@ -1,0 +1,29 @@
+{
+  "candidate": "int4_autoround_restart2",
+  "case": "推荐适合编程使用的键盘，说明各自的区别",
+  "failed_tools": [
+    {
+      "tool_name": "rag_support",
+      "status": "FAILED",
+      "available_fields": [
+        "metadata",
+        "service",
+        "status",
+        "tool_call_id",
+        "tool_name"
+      ],
+      "metadata_fields": [
+        "capability_id",
+        "error_code",
+        "payload",
+        "status"
+      ],
+      "failure_details": {
+        "error_code": "CAPABILITY_EXECUTION_FAILED"
+      },
+      "payload_fields": [],
+      "failure_payload": {}
+    }
+  ],
+  "public_response_present": true
+}

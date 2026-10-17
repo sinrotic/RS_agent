@@ -1,0 +1,13 @@
+{
+  "variant": "w8a16_middle",
+  "repeat": 1,
+  "configuration": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_QUANTIZATION": "fp8_per_block",
+    "VLLM_QUANTIZATION_CONFIG": "{\"ignore\":[\"lm_head\",\"re:.*visual.*\",\"re:.*linear_attn.*\",\"re:.*self_attn.*\",\"re:.*layers\\\\.(?:0|1|2|3|4|5|6|7|24|25|26|27|28|29|30|31)\\\\..*\"]}",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "1",
+    "VLLM_CACHE_ROOT": "/tmp/rs-agent-quantization-retry-20261011/cache/w8a16_middle"
+  },
+  "passed": false,
+  "error": "Command '['/mnt/data/luo/venvs/rsagent-vllm/bin/python', '/tmp/rs-agent-quantization-retry-20261011/benchmark.py', '--base-url', 'http://127.0.0.1:18092/v1', '--output', '/tmp/rs-agent-quantization-retry-20261011/w8a16_middle.json']' returned non-zero exit status 1."
+}

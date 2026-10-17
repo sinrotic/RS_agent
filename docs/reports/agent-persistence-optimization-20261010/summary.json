@@ -1,0 +1,56 @@
+{
+  "before_warm": {
+    "n": 8,
+    "min_ms": 1155.23,
+    "median_ms": 1205.3000000000002,
+    "max_ms": 1331.91
+  },
+  "after_warm": {
+    "n": 8,
+    "min_ms": 689.48,
+    "median_ms": 766.15,
+    "max_ms": 961.44
+  },
+  "before_concurrent_8": {
+    "n": 8,
+    "min_ms": 1896.16,
+    "median_ms": 2109.505,
+    "max_ms": 2206.98
+  },
+  "after_concurrent_8": {
+    "n": 8,
+    "min_ms": 1141.98,
+    "median_ms": 1240.625,
+    "max_ms": 1389.11
+  },
+  "final_agent_jvm_first": {
+    "n": 1,
+    "min_ms": 1928.24,
+    "median_ms": 1928.24,
+    "max_ms": 1928.24
+  },
+  "final_warm": {
+    "n": 4,
+    "min_ms": 775.19,
+    "median_ms": 787.185,
+    "max_ms": 801.6
+  },
+  "final_concurrent_8": {
+    "n": 8,
+    "min_ms": 1179.2,
+    "median_ms": 1343.74,
+    "max_ms": 1347.29
+  },
+  "browser_final": {
+    "n": 3,
+    "min_ms": 870.4000000953674,
+    "median_ms": 1358.0999999046326,
+    "max_ms": 1362.5
+  },
+  "storage_warm_median_reduction_pct": 36.434912469924505,
+  "storage_concurrent_median_reduction_pct": 41.188809697061636,
+  "excluded_startup_failure": {
+    "count": 1,
+    "reason": "final Agent replacement was called before health readiness; gateway returned HTTP 500; harness now awaits readiness"
+  }
+}

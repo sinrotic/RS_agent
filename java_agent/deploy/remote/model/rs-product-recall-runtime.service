@@ -1,0 +1,15 @@
+[Unit]
+Description=Product three tower v4 CPU recall runtime
+After=network.target
+
+[Service]
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OMP_NUM_THREADS=1
+ExecStart=/home/luo/RS_agent_remote/.venv/bin/python /mnt/data/luo/remote_runs/three_tower_dataset_v4/product_residual_runtime.py --directory /mnt/data/luo/remote_runs/three_tower_dataset_v4/export_joint_full_seed42 --model-key product_three_tower_v4_seed42_step6000 --host 172.21.0.1 --port 18120
+Restart=on-failure
+RestartSec=5
+MemoryMax=2G
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

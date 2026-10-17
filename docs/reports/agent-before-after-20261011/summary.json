@@ -1,0 +1,663 @@
+{
+  "same_quant_model_agent_comparison": {
+    "before_report": "original-latency-r1",
+    "after_report": "current-latency-r1",
+    "groups": {
+      "ordinary": {
+        "before": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 0,
+          "delivered_mean_ms": 8818.97,
+          "quality_passed_mean_ms": null,
+          "delivered_first_text_mean_ms": 8786.92,
+          "first_model_call_ttft_mean_ms": 450.567,
+          "model_calls_per_turn": [
+            4.0,
+            4.0,
+            4.0
+          ],
+          "mean_answer_chars": 21,
+          "failed_tool_counts": [
+            2,
+            2,
+            2
+          ]
+        },
+        "after": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 3,
+          "delivered_mean_ms": 2313.11,
+          "quality_passed_mean_ms": 2313.11,
+          "delivered_first_text_mean_ms": 2237.42,
+          "first_model_call_ttft_mean_ms": 171.437,
+          "model_calls_per_turn": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "mean_answer_chars": 211.67,
+          "failed_tool_counts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "quality_passed_pairs": 0,
+        "quality_passed_mean_reduction_percent": null
+      },
+      "complex-office": {
+        "before": {
+          "samples": 1,
+          "delivered": 1,
+          "quality_passed": 0,
+          "delivered_mean_ms": 5631.33,
+          "quality_passed_mean_ms": null,
+          "delivered_first_text_mean_ms": 5597.63,
+          "first_model_call_ttft_mean_ms": 462.33,
+          "model_calls_per_turn": [
+            4.0
+          ],
+          "mean_answer_chars": 21,
+          "failed_tool_counts": [
+            2
+          ]
+        },
+        "after": {
+          "samples": 1,
+          "delivered": 1,
+          "quality_passed": 1,
+          "delivered_mean_ms": 20392.42,
+          "quality_passed_mean_ms": 20392.42,
+          "delivered_first_text_mean_ms": 20361.86,
+          "first_model_call_ttft_mean_ms": 1322.245,
+          "model_calls_per_turn": [
+            8.0
+          ],
+          "mean_answer_chars": 23,
+          "failed_tool_counts": [
+            0
+          ]
+        },
+        "quality_passed_pairs": 0,
+        "quality_passed_mean_reduction_percent": null
+      },
+      "complex-keyboard": {
+        "before": {
+          "samples": 1,
+          "delivered": 1,
+          "quality_passed": 0,
+          "delivered_mean_ms": 7260.0,
+          "quality_passed_mean_ms": null,
+          "delivered_first_text_mean_ms": 7230.11,
+          "first_model_call_ttft_mean_ms": 466.475,
+          "model_calls_per_turn": [
+            4.0
+          ],
+          "mean_answer_chars": 37,
+          "failed_tool_counts": [
+            2
+          ]
+        },
+        "after": {
+          "samples": 1,
+          "delivered": 1,
+          "quality_passed": 0,
+          "delivered_mean_ms": 11737.27,
+          "quality_passed_mean_ms": null,
+          "delivered_first_text_mean_ms": 11708.6,
+          "first_model_call_ttft_mean_ms": 501.749,
+          "model_calls_per_turn": [
+            8.0
+          ],
+          "mean_answer_chars": 43,
+          "failed_tool_counts": [
+            0
+          ]
+        },
+        "quality_passed_pairs": 0,
+        "quality_passed_mean_reduction_percent": null
+      },
+      "multi": {
+        "before": {
+          "samples": 1,
+          "delivered": 1,
+          "quality_passed": 0,
+          "delivered_mean_ms": 6328.76,
+          "quality_passed_mean_ms": null,
+          "delivered_first_text_mean_ms": 6275.18,
+          "first_model_call_ttft_mean_ms": 466.425,
+          "model_calls_per_turn": [
+            4.0
+          ],
+          "mean_answer_chars": 29,
+          "failed_tool_counts": [
+            2
+          ]
+        },
+        "after": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 3,
+          "delivered_mean_ms": 11834.17,
+          "quality_passed_mean_ms": 11834.17,
+          "delivered_first_text_mean_ms": 11788.05,
+          "first_model_call_ttft_mean_ms": 405.815,
+          "model_calls_per_turn": [
+            1.0,
+            8.0,
+            8.0
+          ],
+          "mean_answer_chars": 78.67,
+          "failed_tool_counts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "quality_passed_pairs": 0,
+        "quality_passed_mean_reduction_percent": null
+      }
+    }
+  },
+  "overall_same_gpu2_comparison": {
+    "before_report": "original-bf16-gpu2",
+    "after_report": "current-quant-gpu2",
+    "groups": {
+      "ordinary": {
+        "before": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 0,
+          "delivered_mean_ms": 9609.73,
+          "quality_passed_mean_ms": null,
+          "delivered_first_text_mean_ms": 9563.19,
+          "first_model_call_ttft_mean_ms": 488.104,
+          "model_calls_per_turn": [
+            4.0,
+            4.0,
+            4.0
+          ],
+          "mean_answer_chars": 30,
+          "failed_tool_counts": [
+            2,
+            2,
+            2
+          ]
+        },
+        "after": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 3,
+          "delivered_mean_ms": 2410.81,
+          "quality_passed_mean_ms": 2410.81,
+          "delivered_first_text_mean_ms": 2337.25,
+          "first_model_call_ttft_mean_ms": 176.014,
+          "model_calls_per_turn": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "mean_answer_chars": 225.33,
+          "failed_tool_counts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "quality_passed_pairs": 0,
+        "quality_passed_mean_reduction_percent": null
+      }
+    }
+  },
+  "same_gpu2_current_agent_model_service_comparison": {
+    "before_report": "current-bf16-gpu2",
+    "after_report": "current-quant-gpu2",
+    "groups": {
+      "ordinary": {
+        "before": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 3,
+          "delivered_mean_ms": 3417.22,
+          "quality_passed_mean_ms": 3417.22,
+          "delivered_first_text_mean_ms": 3342.62,
+          "first_model_call_ttft_mean_ms": 176.55,
+          "model_calls_per_turn": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "mean_answer_chars": 203.67,
+          "failed_tool_counts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "after": {
+          "samples": 3,
+          "delivered": 3,
+          "quality_passed": 3,
+          "delivered_mean_ms": 2410.81,
+          "quality_passed_mean_ms": 2410.81,
+          "delivered_first_text_mean_ms": 2337.25,
+          "first_model_call_ttft_mean_ms": 176.014,
+          "model_calls_per_turn": [
+            1.0,
+            1.0,
+            1.0
+          ],
+          "mean_answer_chars": 225.33,
+          "failed_tool_counts": [
+            0,
+            0,
+            0
+          ]
+        },
+        "quality_passed_pairs": 3,
+        "quality_passed_mean_reduction_percent": 29.45
+      }
+    }
+  },
+  "capacity": {
+    "before_report": "pre-concurrency-capacity",
+    "after_report": "current-capacity",
+    "levels": [
+      {
+        "concurrent_requests": 8,
+        "before": {
+          "samples": 16,
+          "delivered": 16,
+          "quality_passed": 16,
+          "delivered_mean_ms": 7748.54,
+          "quality_passed_mean_ms": 7748.54,
+          "delivered_first_text_mean_ms": 7665.04,
+          "first_model_call_ttft_mean_ms": null,
+          "model_calls_per_turn": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mean_answer_chars": 184.12,
+          "failed_tool_counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "repeats": 2,
+          "completed_requests_per_second": 0.9207,
+          "batch_median_ms": [
+            8148.49,
+            7491.59
+          ],
+          "error_codes": {},
+          "successful_first_text_mean_ms": 7665.04,
+          "model_timing_windows": [
+            {
+              "valid": true,
+              "model_calls": 8.0,
+              "ttft_sum_seconds": 5.551019668579102,
+              "ttft_mean_ms": 693.877
+            },
+            {
+              "valid": true,
+              "model_calls": 8.0,
+              "ttft_sum_seconds": 4.3874897956848145,
+              "ttft_mean_ms": 548.436
+            }
+          ],
+          "model_window_mean_ttft_ms": [
+            693.877,
+            548.436
+          ],
+          "model_window_weighted_mean_ttft_ms": 621.157
+        },
+        "after": {
+          "samples": 16,
+          "delivered": 16,
+          "quality_passed": 16,
+          "delivered_mean_ms": 7385.11,
+          "quality_passed_mean_ms": 7385.11,
+          "delivered_first_text_mean_ms": 7317.19,
+          "first_model_call_ttft_mean_ms": null,
+          "model_calls_per_turn": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mean_answer_chars": 195,
+          "failed_tool_counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "repeats": 2,
+          "completed_requests_per_second": 0.983,
+          "batch_median_ms": [
+            7507.56,
+            7878.51
+          ],
+          "error_codes": {},
+          "successful_first_text_mean_ms": 7317.19,
+          "model_timing_windows": [
+            {
+              "valid": true,
+              "model_calls": 8.0,
+              "ttft_sum_seconds": 4.612917423248291,
+              "ttft_mean_ms": 576.615
+            },
+            {
+              "valid": true,
+              "model_calls": 8.0,
+              "ttft_sum_seconds": 4.119726896286011,
+              "ttft_mean_ms": 514.966
+            }
+          ],
+          "model_window_mean_ttft_ms": [
+            576.615,
+            514.966
+          ],
+          "model_window_weighted_mean_ttft_ms": 545.79
+        },
+        "completion_throughput_change_percent": 6.77
+      },
+      {
+        "concurrent_requests": 16,
+        "before": {
+          "samples": 32,
+          "delivered": 16,
+          "quality_passed": 16,
+          "delivered_mean_ms": 7335.07,
+          "quality_passed_mean_ms": 7335.07,
+          "delivered_first_text_mean_ms": 7260.06,
+          "first_model_call_ttft_mean_ms": null,
+          "model_calls_per_turn": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mean_answer_chars": 190.19,
+          "failed_tool_counts": [
+            null,
+            0,
+            null,
+            0,
+            null,
+            0,
+            0,
+            null,
+            null,
+            null,
+            null,
+            null,
+            0,
+            0,
+            0,
+            0,
+            null,
+            null,
+            null,
+            0,
+            0,
+            null,
+            0,
+            0,
+            0,
+            null,
+            0,
+            null,
+            null,
+            0,
+            0,
+            null
+          ],
+          "repeats": 2,
+          "completed_requests_per_second": 1.0268,
+          "batch_median_ms": [
+            7620.82,
+            7391.62
+          ],
+          "error_codes": {
+            "AGENT_BUSY": 16
+          },
+          "successful_first_text_mean_ms": 7260.06,
+          "model_timing_windows": [
+            {
+              "valid": true,
+              "model_calls": 8.0,
+              "ttft_sum_seconds": 4.440655946731567,
+              "ttft_mean_ms": 555.082
+            },
+            {
+              "valid": true,
+              "model_calls": 8.0,
+              "ttft_sum_seconds": 4.336360454559326,
+              "ttft_mean_ms": 542.045
+            }
+          ],
+          "model_window_mean_ttft_ms": [
+            555.082,
+            542.045
+          ],
+          "model_window_weighted_mean_ttft_ms": 548.564
+        },
+        "after": {
+          "samples": 32,
+          "delivered": 32,
+          "quality_passed": 32,
+          "delivered_mean_ms": 9573.2,
+          "quality_passed_mean_ms": 9573.2,
+          "delivered_first_text_mean_ms": 9505.89,
+          "first_model_call_ttft_mean_ms": null,
+          "model_calls_per_turn": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "mean_answer_chars": 172.41,
+          "failed_tool_counts": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "repeats": 2,
+          "completed_requests_per_second": 1.4727,
+          "batch_median_ms": [
+            8802.33,
+            10879.88
+          ],
+          "error_codes": {},
+          "successful_first_text_mean_ms": 9505.89,
+          "model_timing_windows": [
+            {
+              "valid": true,
+              "model_calls": 16.0,
+              "ttft_sum_seconds": 12.94446086883545,
+              "ttft_mean_ms": 809.029
+            },
+            {
+              "valid": true,
+              "model_calls": 16.0,
+              "ttft_sum_seconds": 12.536289930343628,
+              "ttft_mean_ms": 783.518
+            }
+          ],
+          "model_window_mean_ttft_ms": [
+            809.029,
+            783.518
+          ],
+          "model_window_weighted_mean_ttft_ms": 796.273
+        },
+        "completion_throughput_change_percent": 43.43
+      }
+    ]
+  },
+  "limitations": [
+    "两次全流程采用相同当前推荐资产，不复原历史数据与依赖版本",
+    "BF16与量化服务的预算、并发上限和紧凑结构化输出也不同，不能将业务收益全归因于量化",
+    "旧版含失败工具的交付不计合格完成，不能据此声称等质量加速",
+    "模型指标是窗口累计值；首模型调用TTFT未按request_id关联；包含共享服务干扰的可能性",
+    "并发为独立Session突发，16请求使用8账号，不代表16不同用户或持续最大容量",
+    "小样本不代表生产SLA，也不替代解释语义回归"
+  ],
+  "same_gpu2_fixed_128_tokens": {
+    "before": {
+      "samples": 10,
+      "mean_ms": 1361.914,
+      "median_ms": 1361.867,
+      "mean_model_ttft_ms": 49.096,
+      "model": "bf16",
+      "gpu": 2
+    },
+    "after": {
+      "samples": 10,
+      "mean_ms": 915.253,
+      "median_ms": 915.08,
+      "mean_model_ttft_ms": 46.083,
+      "model": "quant",
+      "gpu": 2
+    },
+    "mean_duration_reduction_percent": 32.8
+  }
+}

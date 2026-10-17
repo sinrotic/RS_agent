@@ -103,13 +103,13 @@ def test_feedback_style_changes_action_for_weak_match():
 def test_simulation_model_config_reads_local_json(tmp_path):
     config_path = tmp_path / "simulation_model.local.json"
     config_path.write_text(
-        '{"api_base":"https://api.sinrotic233.com/","api_key":"secret-key","model":"sim-model","timeout_seconds":12}',
+        '{"api_base":"https://cpa2api.sinrotic233.com/","api_key":"secret-key","model":"sim-model","timeout_seconds":12}',
         encoding="utf-8",
     )
 
     config = SimulationModelConfig.from_file(config_path)
 
-    assert config.api_base == "https://api.sinrotic233.com"
+    assert config.api_base == "https://cpa2api.sinrotic233.com"
     assert config.api_key == "secret-key"
     assert config.model == "sim-model"
     assert config.timeout_seconds == 12

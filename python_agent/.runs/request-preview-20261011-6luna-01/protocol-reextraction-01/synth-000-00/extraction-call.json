@@ -1,0 +1,109 @@
+{
+  "request_payload": {
+    "customer_message": "家里台式机的无线网卡不太稳定，想换个USB Wi‑Fi适配器，最好支持双频。主要是Windows 11用，预算三十左右，有合适的吗？"
+  },
+  "instruction_sha256": "52755f2665287949d218aeab7ba60d5452156bc5f29f1e3f22c43e98f49a32eb",
+  "requested_model": "gpt-6-luna",
+  "started_at": "2026-10-11T12:13:11.619104+00:00",
+  "response_metadata": {
+    "id": "resp_0b69c59d10c758b5016acb7d58311087d18c1c53e0223aa91a",
+    "model": "gpt-6-luna",
+    "usage": {
+      "completion_tokens": 956,
+      "total_tokens": 2026,
+      "prompt_tokens": 1070,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "cache_write_tokens": 0,
+        "cached_creation_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 447
+      }
+    },
+    "finish_reason": "stop"
+  },
+  "raw_content": "{\n  \"schema_version\": \"rs-shopping-request/2\",\n  \"intent\": {\n    \"primary\": \"recommendation\",\n    \"actions\": [\"recommend\"],\n    \"evidence\": [\"有合适的吗？\"]\n  },\n  \"context_facts\": [\n    {\n      \"name\": \"computer_type\",\n      \"value\": \"台式机\",\n      \"quote\": \"家里台式机\"\n    },\n    {\n      \"name\": \"current_wireless_issue\",\n      \"value\": \"无线网卡不太稳定\",\n      \"quote\": \"无线网卡不太稳定\"\n    },\n    {\n      \"name\": \"intended_use\",\n      \"value\": \"主要是Windows 11用\",\n      \"quote\": \"主要是Windows 11用\"\n    }\n  ],\n  \"answer_requirements\": [],\n  \"requirements\": [\n    {\n      \"id\": \"r1\",\n      \"kind\": \"strict\",\n      \"field\": \"product_type\",\n      \"relation\": \"eq\",\n      \"value\": \"USB Wi‑Fi适配器\",\n      \"unit\": null,\n      \"quote\": \"想换个USB Wi‑Fi适配器\"\n    },\n    {\n      \"id\": \"r2\",\n      \"kind\": \"strict\",\n      \"field\": \"operating_system\",\n      \"relation\": \"eq\",\n      \"value\": \"Windows 11\",\n      \"unit\": null,\n      \"quote\": \"主要是Windows 11用\"\n    },\n    {\n      \"id\": \"r3\",\n      \"kind\": \"preference\",\n      \"field\": \"wireless_band_support\",\n      \"relation\": \"prefer\",\n      \"value\": \"双频\",\n      \"unit\": null,\n      \"quote\": \"最好支持双频\"\n    },\n    {\n      \"id\": \"r4\",\n      \"kind\": \"approximate\",\n      \"field\": \"budget\",\n      \"relation\": \"about\",\n      \"value\": 30,\n      \"unit\": null,\n      \"quote\": \"预算三十左右\"\n    }\n  ],\n  \"unknowns\": [],\n  \"clarification\": {\n    \"mode\": \"not_needed\",\n    \"safe_answer_before_clarification\": true,\n    \"unresolved_actions\": [],\n    \"questions\": []\n  },\n  \"recipient\": {\n    \"target\": \"unknown\",\n    \"quote\": null,\n    \"profile_policy\": \"weak_reference_if_self\"\n  }\n}",
+  "parsed_json": {
+    "schema_version": "rs-shopping-request/2",
+    "intent": {
+      "primary": "recommendation",
+      "actions": [
+        "recommend"
+      ],
+      "evidence": [
+        "有合适的吗？"
+      ]
+    },
+    "context_facts": [
+      {
+        "name": "computer_type",
+        "value": "台式机",
+        "quote": "家里台式机"
+      },
+      {
+        "name": "current_wireless_issue",
+        "value": "无线网卡不太稳定",
+        "quote": "无线网卡不太稳定"
+      },
+      {
+        "name": "intended_use",
+        "value": "主要是Windows 11用",
+        "quote": "主要是Windows 11用"
+      }
+    ],
+    "answer_requirements": [],
+    "requirements": [
+      {
+        "id": "r1",
+        "kind": "strict",
+        "field": "product_type",
+        "relation": "eq",
+        "value": "USB Wi‑Fi适配器",
+        "unit": null,
+        "quote": "想换个USB Wi‑Fi适配器"
+      },
+      {
+        "id": "r2",
+        "kind": "strict",
+        "field": "operating_system",
+        "relation": "eq",
+        "value": "Windows 11",
+        "unit": null,
+        "quote": "主要是Windows 11用"
+      },
+      {
+        "id": "r3",
+        "kind": "preference",
+        "field": "wireless_band_support",
+        "relation": "prefer",
+        "value": "双频",
+        "unit": null,
+        "quote": "最好支持双频"
+      },
+      {
+        "id": "r4",
+        "kind": "approximate",
+        "field": "budget",
+        "relation": "about",
+        "value": 30,
+        "unit": null,
+        "quote": "预算三十左右"
+      }
+    ],
+    "unknowns": [],
+    "clarification": {
+      "mode": "not_needed",
+      "safe_answer_before_clarification": true,
+      "unresolved_actions": [],
+      "questions": []
+    },
+    "recipient": {
+      "target": "unknown",
+      "quote": null,
+      "profile_policy": "weak_reference_if_self"
+    }
+  },
+  "call_succeeded": true,
+  "completed_at": "2026-10-11T12:13:31.925951+00:00"
+}

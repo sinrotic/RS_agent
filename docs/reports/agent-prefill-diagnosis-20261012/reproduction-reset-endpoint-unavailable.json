@@ -1,0 +1,109 @@
+{
+  "started_at_utc": "2026-10-11T16:09:56.498403+00:00",
+  "cases": [],
+  "shared_model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "scope": "合成 token 输入；长输入无缓存、首次部分命中、再次部分命中；同输入重复三轮，非业务质量评测",
+  "completed": false,
+  "error_type": "HTTPError",
+  "shared_model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "gpu_after": {
+    "gpus": [
+      {
+        "index": 0,
+        "uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 17793,
+        "utilization": 99
+      },
+      {
+        "index": 1,
+        "uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 14333,
+        "utilization": 0
+      },
+      {
+        "index": 2,
+        "uuid": "GPU-21919ff1-a1be-83c1-7be5-8f7765f5e3ad",
+        "name": "NVIDIA GeForce RTX 4090",
+        "total_mib": 24564,
+        "used_mib": 15,
+        "utilization": 0
+      }
+    ],
+    "processes": [
+      {
+        "gpu_uuid": "GPU-04bb7e45-f875-e5a9-d694-94c465db00cb",
+        "pid": 3975157,
+        "used_mib": 17770,
+        "script": "train_highh_native_1m.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 3417056,
+        "used_mib": 3028,
+        "script": "bge_m3_embedding_server.py"
+      },
+      {
+        "gpu_uuid": "GPU-7ac5e4a5-0bff-2a00-cf26-a1586c3e90b9",
+        "pid": 1616131,
+        "used_mib": 11276,
+        "script": "(非脚本入口)"
+      }
+    ]
+  },
+  "finished_at_utc": "2026-10-11T16:13:58.995916+00:00",
+  "shared_model_unchanged": true,
+  "dependencies_unchanged": true,
+  "temporary_model_stopped": true
+}

@@ -1,0 +1,78 @@
+{
+  "started_at_utc": "2026-10-11T16:36:00.081749+00:00",
+  "model_before": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_before": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "api_pid": 1614322,
+  "launcher_pid": 1614314,
+  "keepalive_pid": 1622545,
+  "payload_sha256": "007f7e32689a8ecc2b560b1a6aa4c301d548da1cdb2a38541f6323b632cc092a",
+  "ready_before": true,
+  "installed": true,
+  "hot_warmup_completed": true,
+  "launcher_checks_passed": true,
+  "before_sha256": {
+    "vllm_prefix_warmup.py": "ebcf099f6a9762def0f813726932f7625dde7193983cf8662fbe99e392c206a5",
+    "start_qwen35_4b_vllm.sh": "f68e91475b1a2fd5c17af8800547773363cf4377b792147eb9122d5c5b342432",
+    ".env": "e81fbfbbcf30b95ef5bde02f95ec75f78a48f04ae420edb06e6753bf3ffdbb9c"
+  },
+  "hot_warmup_exit_code": 0,
+  "after_sha256": {
+    "vllm_prefix_warmup.py": "a925ae528b7db8c2dcbeb77ab12ad85d6e5fe9954136bbc27e9c8b9a610af454",
+    "start_qwen35_4b_vllm.sh": "2dd84895faffb204737bc719e43426cec275ad35bd680d541292c169f1f75029",
+    ".env": "8c098e69d805f15e2faa694578b5ba5075e25ce2321b6442b18bdfa49dcfd8a6"
+  },
+  "model_after": [
+    "1614322 /mnt/data/luo/venvs/rsagent-vllm/bin/python /mnt/data/luo/venvs/rsagent-vllm/bin/vllm serve /mnt/data/luo/models/Qwen3.5-4B-INT4-MLP-BF16-sensitive-20261011 --host 127.0.0.1 --port 18082 --served-model-name qwen35-4b --trust-remote-code --enable-prefix-caching --max-model-len 16384 --gpu-memory-utilization 0.50 --structured-outputs-config {\"backend\":\"xgrammar\",\"disable_any_whitespace\":true} --max-num-seqs 128 --enable-auto-tool-choice --tool-call-parser qwen3_xml"
+  ],
+  "dependencies_after": {
+    "rs-e2e-857e8b14-agent-fast": {
+      "id": "ea19ac1859600057116306b2cbf7f3474daf5359127fb081c293af02d4611c0d",
+      "started": "2026-10-11T11:50:40.298028851Z"
+    },
+    "rs-e2e-857e8b14-recommend-fast": {
+      "id": "2c96c2ffb07782b4f9f7a566a0bab2a86b76815b56b039b3e1969108a747ccac",
+      "started": "2026-10-11T12:02:49.824810909Z"
+    },
+    "rs-e2e-857e8b14-model": {
+      "id": "044870ee4ddf13d54823a213f183b26d36569009fea47f832d00bfffdce1e3a7",
+      "started": "2026-10-11T03:08:14.399383994Z"
+    },
+    "rs-e2e-857e8b14-gateway": {
+      "id": "9bb01522bc400213a8b0d4564fda83ef8dec6bee23a53f98d2603fde8e348a05",
+      "started": "2026-10-11T01:46:47.23908999Z"
+    },
+    "rs-e2e-857e8b14-catalog": {
+      "id": "5d38047c2348ea19acce59540261aad7c5fd8390d335f9a155cb7dc4f2741309",
+      "started": "2026-10-11T01:46:44.668616381Z"
+    }
+  },
+  "ready_after": true,
+  "payload_unchanged": true,
+  "existing_keepalive_unchanged": true,
+  "model_unchanged": true,
+  "dependencies_unchanged": true,
+  "keepalive_note": "现有保温进程保留原轻量逻辑；模型已用新脚本补热，下一次正常启动加载新预热流程"
+}

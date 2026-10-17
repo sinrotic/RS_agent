@@ -11,6 +11,10 @@ public class AgentInterruptContext {
 
     private final String sessionId;
 
+    private final String profileUserId;
+
+    private final String accountId;
+
     private final AtomicBoolean interrupted = new AtomicBoolean(false);
 
     private final AtomicReference<String> reason = new AtomicReference<>("");
@@ -18,9 +22,21 @@ public class AgentInterruptContext {
     private final List<Runnable> callbacks = new CopyOnWriteArrayList<>();
 
     public AgentInterruptContext(String requestId, String sessionId) {
+        this(requestId, sessionId, "");
+    }
+
+    public AgentInterruptContext(String requestId, String sessionId, String profileUserId) {
+        this(requestId, sessionId, "", profileUserId);
+    }
+
+    public AgentInterruptContext(String requestId, String sessionId, String accountId, String profileUserId) {
         this.requestId = requestId;
         this.sessionId = sessionId;
+        this.accountId = accountId == null ? "" : accountId;
+        this.profileUserId = profileUserId == null ? "" : profileUserId;
     }
+
+    public String accountId() { return accountId; }
 
     public String requestId() {
         return requestId;
@@ -28,6 +44,10 @@ public class AgentInterruptContext {
 
     public String sessionId() {
         return sessionId;
+    }
+
+    public String profileUserId() {
+        return profileUserId;
     }
 
     public boolean interrupted() {

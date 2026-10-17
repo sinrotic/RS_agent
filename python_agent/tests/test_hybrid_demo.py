@@ -4245,16 +4245,11 @@ def _sha256_file(path: Path) -> str:
 
 
 def test_config_loads_json_compatible_yaml():
-    config = load_config("D:/sinrotic_code/python_project/summer/RS_agent/configs/demo/hybrid_demo/hybrid_demo_small.yaml")
+    config = load_config(Path(__file__).resolve().parents[1] / "configs/demo/hybrid_demo/hybrid_demo_small.yaml")
     assert config["top_k"] == 5
 
 
-def test_config_rejects_yaml_sequence_syntax(tmp_path: Path):
-    config_path = tmp_path / "bad.yaml"
+def test_config_supports_yaml_sequence_syntax(tmp_path: Path):
+    config_path = tmp_path / "list.yaml"
     config_path.write_text("sources:\n  - popular\n", encoding="utf-8")
-    try:
-        load_config(config_path)
-    except ValueError as error:
-        assert "supports maps and scalars only" in str(error)
-    else:
-        raise AssertionError("Expected unsupported YAML sequence syntax to raise ValueError")
+    assert load_config(config_path) == {"sources": ["popular"]}

@@ -1,0 +1,25 @@
+{
+  "qwen": {
+    "attempted": 40,
+    "json_parseable": 39,
+    "automatic_pass": 36,
+    "overlong_evidence": 16,
+    "review_keep_before_quote_length": 22,
+    "review_keep": 13
+  },
+  "luna": {
+    "attempted": 40,
+    "json_parseable": 40,
+    "automatic_pass": 39,
+    "overlong_evidence": 0,
+    "review_keep_before_quote_length": 37,
+    "review_keep": 37
+  },
+  "limitations": [
+    "同一代理非盲审，20 商品小样本，无人工黄金标注",
+    "通用需求约束会排除事实正确的品牌/型号查询，不代表这些查询在真实搜索中无效",
+    "引用长度在本轮对两个模型统一检查；与历史保留 26 条不是同一筛选口径",
+    "生成质量不是召回收益；未测训练和独立搜索相关性",
+    "相同可见提示词和输出上限，模型分词器、模板、运行环境不同"
+  ]
+}

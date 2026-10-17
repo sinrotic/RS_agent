@@ -1,0 +1,25 @@
+{
+  "version": "cold_deepfm_20260914",
+  "feature_version": "cold_deepfm_training_features_v2",
+  "feature_policy": "train_only_snapshot_at_end_of_train",
+  "scope": "用户授权的 Java 首页及对话排序接入",
+  "ranking_effect_conclusion_allowed": false,
+  "models": {
+    "cold_model.json": {
+      "sha256": "27239f7bbbf121ce025606e9c792141a4df40c425c834e00f6e40484ca181e3a",
+      "source": "/home/luo/RS_agent_remote/outputs/ranking/cold_full_formal_20260620_existing_deepfm/cold_model.json"
+    },
+    "deepfm_model.json": {
+      "sha256": "8260e6ca51d3b80990f9a1842c36c863ae5f2716f2ea4bac46423cedea51029f",
+      "source": "/home/luo/RS_agent_remote/outputs/ranking/cold_full_formal_20260620_existing_deepfm/deepfm_model.json"
+    }
+  },
+  "train_file": "/mnt/data/luo/RS_agent_remote_storage/data/processed/amazon_2023_recall_recent_2y_1m_3m/canonical_interactions.train.jsonl",
+  "train_sha256": "7a4ce652fb3cd4801f5078e18c4cd0826d75f81ddf4a89305ddce6b77d71d527",
+  "train_rows": 11538991,
+  "positive_events": 9131157,
+  "feature_cutoff_epoch_ms": 1684108779231,
+  "users": 5375378,
+  "items": 762622,
+  "status": "PASS"
+}

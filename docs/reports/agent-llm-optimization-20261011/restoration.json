@@ -1,0 +1,96 @@
+{
+  "verified_at": "2026-10-11T03:12:16.248351+00:00",
+  "qa_retained_for_existing_frontend": true,
+  "frontend_healthy": true,
+  "frontend": "rs-e2e-857e8b14-a2ui-frontend",
+  "retained_qa_containers": [
+    "rs-e2e-857e8b14-redis",
+    "rs-e2e-857e8b14-catalog",
+    "rs-e2e-857e8b14-trace",
+    "rs-e2e-857e8b14-gateway",
+    "rs-e2e-857e8b14-a2ui-frontend",
+    "rs-e2e-857e8b14-model",
+    "rs-e2e-857e8b14-user",
+    "rs-e2e-857e8b14-recommend-fast",
+    "rs-e2e-857e8b14-agent-fast"
+  ],
+  "retained_infra": [
+    "rs-agent-java-mysql",
+    "rs-agent-java-scylla",
+    "rs-agent-java-milvus-etcd",
+    "rs-agent-java-milvus-minio",
+    "rs-agent-java-elasticsearch",
+    "rs-agent-java-milvus-standalone"
+  ],
+  "retained_qa_database": "rs_e2e_857e8b14",
+  "bge_retained_as_active_qa_dependency": true,
+  "wire_probe_stopped": true,
+  "agent_uses_model_directly": true,
+  "private_prompt_and_model_environment_backups_removed": true,
+  "required_qa_credentials_retained_with_mode_600": true,
+  "business_jar_sha256": {
+    "rs-service-agent": "8a8385f3ee802ed38333ffc49bd43a6306b97b5d829e013b433ce75a9179fa03",
+    "rs-service-recommend": "aaf8140158f3d8c3def2af14d1fc9f1d34b69f1ceb1ceba7a16c08bc5cafb2d8",
+    "rs-service-model": "a0e49d54bbd141f2efdf17b9464103bc830b3b4e70e9bd156edd9b501793aa36"
+  },
+  "mtp_experiment_rolled_back": true,
+  "current_model": {
+    "pid": 3530958,
+    "command": [
+      "/mnt/data/luo/venvs/rsagent-vllm/bin/python",
+      "/mnt/data/luo/venvs/rsagent-vllm/bin/vllm",
+      "serve",
+      "/mnt/data/luo/models/Qwen3.5-4B",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "18082",
+      "--served-model-name",
+      "qwen35-4b",
+      "--trust-remote-code",
+      "--enable-prefix-caching",
+      "--max-model-len",
+      "16384",
+      "--gpu-memory-utilization",
+      "0.78",
+      "--structured-outputs-config",
+      "{\"backend\":\"xgrammar\",\"disable_any_whitespace\":true}",
+      "--enable-auto-tool-choice",
+      "--tool-call-parser",
+      "qwen3_xml"
+    ]
+  },
+  "original_launcher_sha256": "2b0171472af7a7f6a418431be26acca7907745056131c4c84682eab12e3ba73f",
+  "current_launcher_sha256": "f68e91475b1a2fd5c17af8800547773363cf4377b792147eb9122d5c5b342432",
+  "formal_model_files_may_have_external_changes": true,
+  "local_qwen": [
+    {
+      "id": "qwen35-4b",
+      "object": "model",
+      "created": 1791688323,
+      "owned_by": "vllm",
+      "root": "/mnt/data/luo/models/Qwen3.5-4B",
+      "parent": null,
+      "max_model_len": 16384,
+      "permission": [
+        {
+          "id": "modelperm-a913abc39bf2684a",
+          "object": "model_permission",
+          "created": 1791688323,
+          "allow_create_engine": false,
+          "allow_sampling": true,
+          "allow_logprobs": true,
+          "allow_search_indices": false,
+          "allow_view": true,
+          "allow_fine_tuning": false,
+          "organization": "*",
+          "group": null,
+          "is_blocking": false
+        }
+      ]
+    }
+  ],
+  "gpu_0_and_2_processes_not_modified": true,
+  "gpu": "0, 17793, 24564, 95\n1, 21655, 24564, 0\n2, 15, 24564, 0",
+  "cold_backup_retained": true
+}

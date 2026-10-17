@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sinrotic.rs.payment.mapper.PaymentNotificationMapper">
+    <insert id="enqueue">
+        INSERT INTO payment_order_notifications (order_id, provider, provider_transaction_id)
+        VALUES (#{orderId}, #{provider}, #{transactionId})
+        ON DUPLICATE KEY UPDATE order_id = order_id
+    </insert>
+    <select id="dueOrderIds" resultType="long">
+        SELECT order_id FROM payment_order_notifications
+        WHERE (status = 'PENDING' AND next_attempt_at &lt;= CURRENT_TIMESTAMP(6))
+           OR (status = 'PROCESSING' AND lease_until &lt;= CURRENT_TIMESTAMP(6))
+        ORDER BY next_attempt_at, order_id LIMIT 50
+    </select>
+    <update id="claim">
+        UPDATE payment_order_notifications SET status = 'PROCESSING', claim_token = #{token},
+            lease_until = TIMESTAMPADD(SECOND, 60, CURRENT_TIMESTAMP(6)), attempts = attempts + 1
+        WHERE order_id = #{orderId} AND (
+            (status = 'PENDING' AND next_attempt_at &lt;= CURRENT_TIMESTAMP(6))
+            OR (status = 'PROCESSING' AND lease_until &lt;= CURRENT_TIMESTAMP(6)))
+    </update>
+    <select id="findByOrderId" resultType="com.sinrotic.rs.payment.domain.entity.PaymentNotification">
+        SELECT order_id, provider, provider_transaction_id, attempts
+        FROM payment_order_notifications WHERE order_id = #{orderId}
+    </select>
+    <update id="complete">
+        UPDATE payment_order_notifications SET status = 'DONE', notified_at = CURRENT_TIMESTAMP(6),
+            claim_token = NULL, lease_until = NULL, last_error = NULL
+        WHERE order_id = #{orderId} AND status = 'PROCESSING' AND claim_token = #{token}
+    </update>
+    <update id="retry">
+        UPDATE payment_order_notifications SET status = #{status}, claim_token = NULL, lease_until = NULL,
+            next_attempt_at = TIMESTAMPADD(SECOND, #{delaySeconds}, CURRENT_TIMESTAMP(6)), last_error = #{error}
+        WHERE order_id = #{orderId} AND status = 'PROCESSING' AND claim_token = #{token}
+    </update>
+</mapper>

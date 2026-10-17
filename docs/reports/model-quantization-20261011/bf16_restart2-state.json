@@ -1,0 +1,13 @@
+{
+  "variant": "bf16",
+  "repeat": 2,
+  "configuration": {
+    "VLLM_GPU_MEMORY_UTILIZATION": "0.78",
+    "VLLM_QUANTIZATION": "auto",
+    "VLLM_QUANTIZATION_CONFIG": "",
+    "VLLM_TEST_FORCE_FP8_MARLIN": "0",
+    "VLLM_CACHE_ROOT": "/tmp/rs-agent-quantization-retry-20261011/cache/bf16"
+  },
+  "passed": false,
+  "error": "Command '['/mnt/data/luo/venvs/rsagent-vllm/bin/python', '-c', 'from pathlib import Path; import sys; from business import append_business; append_business(Path(sys.argv[1]))', '/tmp/rs-agent-quantization-retry-20261011/bf16_restart2.json']' returned non-zero exit status 1."
+}

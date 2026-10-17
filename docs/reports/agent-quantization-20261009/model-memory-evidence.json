@@ -1,0 +1,51 @@
+[
+  {
+    "label": "bf16",
+    "signals": [
+      "(EngineCore pid=235729) INFO 10-09 16:44:28 [gpu_model_runner.py:5255] Model loading took 8.61 GiB memory and 4.064100 seconds",
+      "(EngineCore pid=235729) INFO 10-09 16:44:38 [gpu_worker.py:508] Available KV cache memory: 9.03 GiB",
+      "(EngineCore pid=235729) INFO 10-09 16:44:38 [kv_cache_utils.py:2146] GPU KV cache size: 241,448 tokens",
+      "(EngineCore pid=235729) INFO 10-09 16:44:38 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 14.74x"
+    ]
+  },
+  {
+    "label": "fp8-attention",
+    "signals": [
+      "(EngineCore pid=261764) INFO 10-09 16:52:21 [__init__.py:594] Selected CutlassFP8ScaledMMLinearKernel for Fp8PtpcOnlineLinearMethod",
+      "(EngineCore pid=261764) INFO 10-09 16:52:27 [gpu_model_runner.py:5255] Model loading took 6.3 GiB memory and 4.645272 seconds",
+      "(EngineCore pid=261764) INFO 10-09 16:55:40 [gpu_worker.py:508] Available KV cache memory: 11.16 GiB",
+      "(EngineCore pid=261764) INFO 10-09 16:55:40 [kv_cache_utils.py:2146] GPU KV cache size: 298,361 tokens",
+      "(EngineCore pid=261764) INFO 10-09 16:55:40 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 18.21x"
+    ]
+  },
+  {
+    "label": "fp8-mlp",
+    "signals": [
+      "(EngineCore pid=295155) INFO 10-09 17:02:38 [__init__.py:594] Selected CutlassFP8ScaledMMLinearKernel for Fp8PtpcOnlineLinearMethod",
+      "(EngineCore pid=295155) INFO 10-09 17:02:43 [gpu_model_runner.py:5255] Model loading took 6.55 GiB memory and 3.951057 seconds",
+      "(EngineCore pid=295155) INFO 10-09 17:05:46 [gpu_worker.py:508] Available KV cache memory: 10.88 GiB",
+      "(EngineCore pid=295155) INFO 10-09 17:05:46 [kv_cache_utils.py:2146] GPU KV cache size: 291,031 tokens",
+      "(EngineCore pid=295155) INFO 10-09 17:05:46 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 17.76x"
+    ]
+  },
+  {
+    "label": "fp8-w8a16",
+    "signals": [
+      "(EngineCore pid=371246) INFO 10-09 17:26:59 [__init__.py:563] Selected MarlinFP8ScaledMMLinearKernel for Fp8PerBlockOnlineLinearMethod",
+      "(EngineCore pid=371246) INFO 10-09 17:27:07 [gpu_model_runner.py:5255] Model loading took 6.58 GiB memory and 7.175034 seconds",
+      "(EngineCore pid=371246) INFO 10-09 17:29:44 [gpu_worker.py:508] Available KV cache memory: 10.94 GiB",
+      "(EngineCore pid=371246) INFO 10-09 17:29:44 [kv_cache_utils.py:2146] GPU KV cache size: 292,325 tokens",
+      "(EngineCore pid=371246) INFO 10-09 17:29:44 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 17.84x"
+    ]
+  },
+  {
+    "label": "fp8-middle",
+    "signals": [
+      "(EngineCore pid=396561) INFO 10-09 17:34:50 [__init__.py:563] Selected MarlinFP8ScaledMMLinearKernel for Fp8PerBlockOnlineLinearMethod",
+      "(EngineCore pid=396561) INFO 10-09 17:34:57 [gpu_model_runner.py:5255] Model loading took 7.6 GiB memory and 7.244768 seconds",
+      "(EngineCore pid=396561) INFO 10-09 17:35:45 [gpu_worker.py:508] Available KV cache memory: 9.16 GiB",
+      "(EngineCore pid=396561) INFO 10-09 17:35:45 [kv_cache_utils.py:2146] GPU KV cache size: 244,897 tokens",
+      "(EngineCore pid=396561) INFO 10-09 17:35:45 [kv_cache_utils.py:2147] Maximum concurrency for 16,384 tokens per request: 14.95x"
+    ]
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "scope": "BOUNDED_TRAIN_CANDIDATES_OFFICIAL_TIME_VALID_NOT_FULL_CATALOG",
+  "source": "/home/luo/RS_agent_remote/data/processed/amazon_2023_recall_recent_2y_1m_3m",
+  "train_user_selection": "bottom stable hash of train users with >=3 retained positive events; no valid information",
+  "eval_user_selection": "bottom stable hash among train-eligible users with >=1 positive event in official valid; does not use target identity or coverage",
+  "candidate_selection": "training-period histories of train/eval cohorts plus hash subset of train catalog; no validation targets added",
+  "train_eval_user_overlap": 64,
+  "train_sequence_rows": 6826801,
+  "eligible_train_users": 687556,
+  "sampled_users": 10000,
+  "candidate_count": 45032,
+  "train_examples": 38756,
+  "valid_users": 1000,
+  "covered_valid_targets": 327,
+  "target_policy": "first positive in official valid among selected users; others outside this positive-event estimand",
+  "train_cutoff": 1684108800000,
+  "valid_end": 1686787200000,
+  "limitations": [
+    "bounded candidate universe, missing targets retained as misses",
+    "eval cohort requires a positive validation event; not all-user traffic",
+    "source sequence truncation max50 means older positives unavailable for masking",
+    "metadata retrospective snapshot",
+    "source user-item dedup inherits upstream policy",
+    "not production queryv2 comparison"
+  ],
+  "seconds": 88.71608439181,
+  "artifact_sha256": {
+    "rec_valid.jsonl": "786a36d8693ee654cd0d3f4eadaaefe60c5d58090696ee9179dff43ebe7ab11f",
+    "items.jsonl": "694a7ee36ffd7f95125a61b0ee5aa8f8b97d9a9ad06570ed775db8261fac5a56",
+    "rec_train.jsonl": "695d2e9f6432bd471cbd411a671c81f1f392d0e9cf242efefefb8ab57331bcac"
+  }
+}

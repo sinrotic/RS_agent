@@ -98,3 +98,9 @@ old_dic/
 
 # Local git worktrees
 .worktrees/
+
+# Local brainstorm process state
+.superpowers/**/state/
+
+# Raw trace exceeds GitHub's file limit; lossless gzip archive is versioned
+docs/reports/agent-storage-optimization-20261010/profiled-spans.json

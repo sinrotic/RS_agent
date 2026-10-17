@@ -1,24 +1,60 @@
 import { RegisterRequest, LoginRequest, AuthTokenVO, CurrentAccountVO } from '../types/auth';
-import { isMockMode, postJson, getJson, saveTokens, saveStoredProfileUserId, clearTokens, mockDelay } from './shared';
+import {
+  clearTokens,
+  getJson,
+  isMockMode,
+  mockDelay,
+  postJson,
+  saveMockAccessToken,
+  saveRealAccessToken,
+  saveStoredProfileUserId,
+  saveAccountId,
+  captureAuthSession,
+  assertCurrentAuthSession,
+  invalidateAuthSession,
+  isCurrentAuthSession,
+} from './shared';
 
 // For local mockup mock-users databases
 const MOCK_USER_KEY = 'rs_mock_users';
 const CURRENT_MOCK_USER_KEY = 'rs_current_mock_user';
+type MockUser = Omit<AuthTokenVO, 'accessToken' | 'refreshToken'>;
 
-function getMockUsers(): Record<string, AuthTokenVO> {
+function getMockUsers(): Record<string, MockUser> {
   const users = localStorage.getItem(MOCK_USER_KEY);
   return users ? JSON.parse(users) : {};
 }
 
+function safeMockUser(user: AuthTokenVO): MockUser {
+  return {
+    accountId: user.accountId,
+    username: user.username,
+    nickname: user.nickname,
+    profileUserId: user.profileUserId,
+    profileSummary: user.profileSummary,
+    expiresIn: user.expiresIn,
+  };
+}
+
 function saveMockUser(username: string, user: AuthTokenVO) {
   const users = getMockUsers();
-  users[username] = user;
+  users[username] = safeMockUser(user);
   localStorage.setItem(MOCK_USER_KEY, JSON.stringify(users));
 }
 
+function issueMockToken(user: MockUser): AuthTokenVO {
+  return {
+    ...user,
+    accessToken: `mock-access-token-${user.username}-${Date.now()}`,
+  };
+}
+
 export async function register(req: RegisterRequest): Promise<AuthTokenVO> {
+  clearTokens();
+  const session = captureAuthSession();
   if (isMockMode()) {
     await mockDelay(500);
+    assertCurrentAuthSession(session);
     const username = req.username.trim();
     if (!username) throw new Error('用户名不能为空');
     const users = getMockUsers();
@@ -33,26 +69,31 @@ export async function register(req: RegisterRequest): Promise<AuthTokenVO> {
       profileUserId,
       profileSummary: `画像分配策略: ${req.bindStrategy || 'random'}, 人群分组: ${req.segment || 'default'}`,
       accessToken: `mock-access-token-${username}-${Date.now()}`,
-      refreshToken: `mock-refresh-token-${username}-${Date.now()}`,
       expiresIn: 1800,
     };
     saveMockUser(username, tokenVO);
-    saveTokens(tokenVO.accessToken, tokenVO.refreshToken);
+    saveMockAccessToken(tokenVO.accessToken);
+    saveAccountId(tokenVO.accountId);
     saveStoredProfileUserId(tokenVO.profileUserId);
-    localStorage.setItem(CURRENT_MOCK_USER_KEY, JSON.stringify(tokenVO));
+    localStorage.setItem(CURRENT_MOCK_USER_KEY, JSON.stringify(safeMockUser(tokenVO)));
     return tokenVO;
   }
 
   // Real request to Java Endpoint: rs-service-user -> /api/auth/register
   const res = await postJson<AuthTokenVO>('/auth/register', req);
-  saveTokens(res.accessToken, res.refreshToken);
+  assertCurrentAuthSession(session);
+  saveRealAccessToken(res.accessToken);
+  saveAccountId(res.accountId);
   saveStoredProfileUserId(res.profileUserId);
   return res;
 }
 
 export async function login(req: LoginRequest): Promise<AuthTokenVO> {
+  clearTokens();
+  const session = captureAuthSession();
   if (isMockMode()) {
     await mockDelay(500);
+    assertCurrentAuthSession(session);
     const username = req.username.trim();
     const users = getMockUsers();
     const user = users[username];
@@ -66,34 +107,41 @@ export async function login(req: LoginRequest): Promise<AuthTokenVO> {
         profileUserId,
         profileSummary: '自动生成的临时画像账户',
         accessToken: `mock-access-token-${username}-${Date.now()}`,
-        refreshToken: `mock-refresh-token-${username}-${Date.now()}`,
         expiresIn: 1800,
       };
       saveMockUser(username, tokenVO);
-      saveTokens(tokenVO.accessToken, tokenVO.refreshToken);
+      saveMockAccessToken(tokenVO.accessToken);
+      saveAccountId(tokenVO.accountId);
       saveStoredProfileUserId(tokenVO.profileUserId);
-      localStorage.setItem(CURRENT_MOCK_USER_KEY, JSON.stringify(tokenVO));
+      localStorage.setItem(CURRENT_MOCK_USER_KEY, JSON.stringify(safeMockUser(tokenVO)));
       return tokenVO;
     }
-    saveTokens(user.accessToken, user.refreshToken);
-    saveStoredProfileUserId(user.profileUserId);
+    const tokenVO = issueMockToken(user);
+    saveMockAccessToken(tokenVO.accessToken);
+    saveAccountId(tokenVO.accountId);
+    saveStoredProfileUserId(tokenVO.profileUserId);
     localStorage.setItem(CURRENT_MOCK_USER_KEY, JSON.stringify(user));
-    return user;
+    return tokenVO;
   }
 
   // Real request to Java Endpoint: rs-service-user -> /api/auth/login
   const res = await postJson<AuthTokenVO>('/auth/login', req);
-  saveTokens(res.accessToken, res.refreshToken);
+  assertCurrentAuthSession(session);
+  saveRealAccessToken(res.accessToken);
+  saveAccountId(res.accountId);
   saveStoredProfileUserId(res.profileUserId);
   return res;
 }
 
 export async function getMe(): Promise<CurrentAccountVO> {
+  const session = captureAuthSession();
   if (isMockMode()) {
     await mockDelay(200);
+    assertCurrentAuthSession(session);
     const current = localStorage.getItem(CURRENT_MOCK_USER_KEY);
     if (!current) throw new Error('未登录');
-    const user = JSON.parse(current) as AuthTokenVO;
+    const user = JSON.parse(current) as MockUser;
+    saveAccountId(user.accountId);
     return {
       accountId: user.accountId,
       username: user.username,
@@ -112,7 +160,10 @@ export async function getMe(): Promise<CurrentAccountVO> {
   }
 
   // Real request to Java Endpoint: rs-service-user -> /api/auth/me
-  return getJson<CurrentAccountVO>('/auth/me');
+  const user = await getJson<CurrentAccountVO>('/auth/me');
+  assertCurrentAuthSession(session);
+  saveAccountId(user.accountId);
+  return user;
 }
 
 export async function logout(): Promise<void> {
@@ -122,10 +173,11 @@ export async function logout(): Promise<void> {
     return;
   }
 
+  const session = invalidateAuthSession();
   // Real request to Java Endpoint: rs-service-user -> /api/auth/logout
   try {
     await postJson('/auth/logout', {});
   } finally {
-    clearTokens();
+    if (isCurrentAuthSession(session)) clearTokens();
   }
 }

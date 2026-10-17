@@ -9,6 +9,8 @@ import numpy as np
 from rs_core.agent.rag.chunking import RagItemChunk
 from rs_core.agent.rag.vector_index import TextEmbeddingBackend
 
+ZERO_NORM_EPSILON = 1e-12
+
 
 def encode_chunks(
     chunks: list[RagItemChunk],
@@ -38,6 +40,9 @@ def validate_chunk_vectors(chunks: list[RagItemChunk], vectors: list[list[float]
             raise ValueError(f"RAG embedding dimension mismatch at chunk {index}: expected {vector_size}, got {len(vector)}")
         if any(not math.isfinite(value) for value in vector):
             raise ValueError(f"RAG embedding contains non-finite value at chunk {index}")
+        vector_norm = math.sqrt(math.fsum(value * value for value in vector))
+        if vector_norm <= ZERO_NORM_EPSILON:
+            raise ValueError(f"RAG embedding contains zero-norm vector at chunk {index}")
 
 
 def manifest_token_sources(value: Any) -> list[str]:

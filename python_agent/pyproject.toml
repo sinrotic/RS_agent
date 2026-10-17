@@ -58,7 +58,7 @@ training = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["rs_core*", "services*"]
+include = ["rs_core*", "rs_lab*", "services*"]
 
 [tool.pytest.ini_options]
 markers = [

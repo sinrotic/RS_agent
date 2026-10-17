@@ -1,0 +1,78 @@
+{
+  "schema_version": "rs-quality-coverage/1",
+  "splits": {
+    "train": {
+      "tasks": 1735,
+      "profile_users": 90,
+      "independent_clusters": 83,
+      "scenarios": {
+        "ordinary": 1195,
+        "no_supply": 90,
+        "unknown_price": 90,
+        "short_supply": 90,
+        "tool_outage": 90,
+        "transient_failure": 90,
+        "untrusted_tool_text": 90
+      },
+      "actions": {
+        "recommend": 1875,
+        "clarify": 220,
+        "defer": 40,
+        "recommend_or_clarify": 54
+      },
+      "labelled_turns": 0,
+      "profile_contrast_groups": 38,
+      "independent_contrast_pairs": 7
+    },
+    "dev": {
+      "tasks": 562,
+      "profile_users": 30,
+      "independent_clusters": 29,
+      "scenarios": {
+        "ordinary": 382,
+        "no_supply": 30,
+        "unknown_price": 30,
+        "short_supply": 30,
+        "tool_outage": 30,
+        "transient_failure": 30,
+        "untrusted_tool_text": 30
+      },
+      "actions": {
+        "recommend": 612,
+        "clarify": 70,
+        "defer": 10,
+        "recommend_or_clarify": 6
+      },
+      "labelled_turns": 0,
+      "profile_contrast_groups": 4,
+      "independent_contrast_pairs": 1
+    },
+    "test": {
+      "tasks": 602,
+      "profile_users": 30,
+      "independent_clusters": 26,
+      "scenarios": {
+        "ordinary": 422,
+        "no_supply": 30,
+        "unknown_price": 30,
+        "short_supply": 30,
+        "tool_outage": 30,
+        "transient_failure": 30,
+        "untrusted_tool_text": 30
+      },
+      "actions": {
+        "recommend": 640,
+        "clarify": 82,
+        "defer": 22,
+        "recommend_or_clarify": 30
+      },
+      "labelled_turns": 0,
+      "profile_contrast_groups": 22,
+      "independent_contrast_pairs": 4
+    }
+  },
+  "population_scope": "original_mid_upper_popularity; cold_start_and_long_tail_not_certified",
+  "product_experience_attributes": "unknown_unless_independently_evidenced",
+  "human_labels_complete": false,
+  "auto_deploy": false
+}

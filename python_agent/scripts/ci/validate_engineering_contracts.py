@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import sys
 from pathlib import Path
 
@@ -44,7 +45,7 @@ def main() -> None:
     config_paths = args.configs or _workspace_paths(root, "configs/**/*.yaml")
     script_paths = args.scripts or [
         *_workspace_paths(root, "scripts/**/*.py", exclude_parts={"archive"}),
-        *_workspace_paths(root, "rs_lab/experiments/**/*.py", exclude_parts={"archive"}),
+        *_entrypoint_paths(root, "rs_lab/experiments/**/*.py", exclude_parts={"archive"}),
     ]
     test_paths = args.tests or _workspace_paths(root, "tests/test_*.py")
     route_registry_path = root / "configs" / "governance" / "current_route_registry.yaml"
@@ -68,6 +69,22 @@ def _workspace_paths(root: Path, pattern: str, exclude_parts: set[str] | None = 
         for path in sorted(root.glob(pattern))
         if path.is_file() and path.name != "__init__.py" and not (set(path.relative_to(root).parts) & excluded)
     ]
+
+
+def _entrypoint_paths(root: Path, pattern: str, exclude_parts: set[str] | None = None) -> list[str]:
+    return [
+        path
+        for path in _workspace_paths(root, pattern, exclude_parts)
+        if _contains_top_level_execution(root / path)
+    ]
+
+
+def _contains_top_level_execution(path: Path) -> bool:
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    for node in tree.body:
+        if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
+            return True
+    return False
 
 
 if __name__ == "__main__":

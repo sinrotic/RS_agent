@@ -1,0 +1,2177 @@
+{
+  "joint_adjusted_joint_seed43": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_joint_seed43",
+      "mode": "joint",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": 2e-06,
+      "seed": 43,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5561413764953613,
+    "seconds": 2.448469025082886,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.004,
+            "hit@50": 0.028,
+            "hit@100": 0.035,
+            "target_coverage": 0.327,
+            "mrr": 0.003212194838591213,
+            "ndcg@100": 0.008731903096411335
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.6,
+            "hit@50": 0.8,
+            "hit@100": 0.9,
+            "target_coverage": 1.0,
+            "mrr": 0.36725733917728165,
+            "ndcg@100": 0.4703798998498504
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            -0.001,
+            0.012
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.156534433364868,
+          "semantic": 0.509982705116272
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_adjusted_joint_seed44": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_joint_seed44",
+      "mode": "joint",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": 2e-06,
+      "seed": 44,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5561413764953613,
+    "seconds": 2.3182949125766754,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.004,
+            "hit@50": 0.029,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.0032537251656175243,
+            "ndcg@100": 0.008659280653213395
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.6,
+            "hit@50": 0.8,
+            "hit@100": 0.9,
+            "target_coverage": 1.0,
+            "mrr": 0.3676316015216452,
+            "ndcg@100": 0.4711641238151028
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.004,
+          "paired_95pct": [
+            -0.001,
+            0.01
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.0029754638671875,
+          "semantic": 0.5666712522506714
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_adjusted_rec_seed43": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_rec_seed43",
+      "mode": "rec",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": null,
+      "seed": 43,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5502676963806152,
+    "seconds": 1.9268765356391668,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.004,
+            "hit@50": 0.028,
+            "hit@100": 0.035,
+            "target_coverage": 0.327,
+            "mrr": 0.003238128949373102,
+            "ndcg@100": 0.008762783220369667
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.6,
+            "hit@50": 0.9,
+            "hit@100": 0.9,
+            "target_coverage": 1.0,
+            "mrr": 0.4337903471962331,
+            "ndcg@100": 0.5205913704474293
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            -0.001,
+            0.012
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.1600911617279053
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_adjusted_rec_seed44": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_rec_seed44",
+      "mode": "rec",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": null,
+      "seed": 44,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5502676963806152,
+    "seconds": 1.879881671629846,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.003,
+            "hit@50": 0.029,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.003253713474245429,
+            "ndcg@100": 0.008657384317440644
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.5,
+            "hit@50": 0.9,
+            "hit@100": 0.9,
+            "target_coverage": 1.0,
+            "mrr": 0.3829105381053055,
+            "ndcg@100": 0.48269105420760117
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.004,
+          "paired_95pct": [
+            -0.001,
+            0.01
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.003173828125
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_adjusted_semantic_seed42": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_semantic_seed42",
+      "mode": "semantic",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": 2e-06,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.551048755645752,
+    "seconds": 1.3955204524099827,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.017,
+            "hit@100": 0.031,
+            "target_coverage": 0.327,
+            "mrr": 0.0023357929693887374,
+            "ndcg@100": 0.007194798798349636
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.3,
+            "hit@50": 0.7,
+            "hit@100": 0.7,
+            "target_coverage": 1.0,
+            "mrr": 0.14585320306651905,
+            "ndcg@100": 0.264122631262296
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.001,
+          "paired_95pct": [
+            -0.002,
+            0.004024999999999864
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "semantic": 0.050890617072582245
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_adjusted_semantic_seed43": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_semantic_seed43",
+      "mode": "semantic",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": 2e-06,
+      "seed": 43,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.551048755645752,
+    "seconds": 1.2897021071985364,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.019,
+            "hit@100": 0.031,
+            "target_coverage": 0.327,
+            "mrr": 0.0025342869160394307,
+            "ndcg@100": 0.007383741118642675
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.3,
+            "hit@50": 0.7,
+            "hit@100": 0.7,
+            "target_coverage": 1.0,
+            "mrr": 0.12346260180917239,
+            "ndcg@100": 0.24367038510260927
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.001,
+          "paired_95pct": [
+            -0.002,
+            0.004024999999999864
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "semantic": 0.04274994879961014
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_adjusted_semantic_seed44": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_adjusted_semantic_seed44",
+      "mode": "semantic",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": 2e-06,
+      "seed": 44,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.551048755645752,
+    "seconds": 1.2904586736112833,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.018,
+            "hit@100": 0.031,
+            "target_coverage": 0.327,
+            "mrr": 0.0028694563038761016,
+            "ndcg@100": 0.0076205655429182504
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.3,
+            "hit@50": 0.7,
+            "hit@100": 0.8,
+            "target_coverage": 1.0,
+            "mrr": 0.13248411409189145,
+            "ndcg@100": 0.2651513737530948
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.001,
+          "paired_95pct": [
+            -0.002,
+            0.004024999999999864
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "semantic": 0.050608791410923004
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_control_joint": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_control_joint",
+      "mode": "joint",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5561413764953613,
+    "seconds": 3.901171394623816,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.0032166037126748065,
+            "ndcg@100": 0.008563778942148432
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.3,
+            "hit@50": 0.7,
+            "hit@100": 0.8,
+            "target_coverage": 1.0,
+            "mrr": 0.12188076580082052,
+            "ndcg@100": 0.2564983132094484
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.004,
+          "paired_95pct": [
+            -0.001,
+            0.01
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.0190091133117676,
+          "semantic": 0.04690700024366379
+        }
+      }
+    ],
+    "code_sha256": "0ef0b91f56ed92fed953c91cc27434bdee6144a280748f6cd0115027cb9e65c5"
+  },
+  "joint_control_rec": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_control_rec",
+      "mode": "rec",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5502676963806152,
+    "seconds": 4.366243946366012,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.033,
+            "target_coverage": 0.327,
+            "mrr": 0.003178898501369575,
+            "ndcg@100": 0.00837346459443034
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.5,
+            "hit@50": 0.9,
+            "hit@100": 0.9,
+            "target_coverage": 1.0,
+            "mrr": 0.38213117720291767,
+            "ndcg@100": 0.4818016786155182
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.003,
+          "paired_95pct": [
+            -0.003,
+            0.009
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.985604763031006
+        }
+      }
+    ],
+    "code_sha256": "0ef0b91f56ed92fed953c91cc27434bdee6144a280748f6cd0115027cb9e65c5"
+  },
+  "joint_control_semantic": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_control_semantic",
+      "mode": "semantic",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "semantic_eval": true,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.551048755645752,
+    "seconds": 4.020863093435764,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.019,
+            "hit@100": 0.031,
+            "target_coverage": 0.327,
+            "mrr": 0.0028401773920975347,
+            "ndcg@100": 0.007583621805905139
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.3,
+            "hit@50": 0.7,
+            "hit@100": 0.7,
+            "target_coverage": 1.0,
+            "mrr": 0.11918603517692652,
+            "ndcg@100": 0.23755553224261083
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.001,
+          "paired_95pct": [
+            0.0,
+            0.003
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "semantic": 0.02268759161233902
+        }
+      }
+    ],
+    "code_sha256": "0ef0b91f56ed92fed953c91cc27434bdee6144a280748f6cd0115027cb9e65c5"
+  },
+  "joint_weight01": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_weight01",
+      "mode": "joint",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": null,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": false,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5561413764953613,
+    "seconds": 2.276735804975033,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.032,
+            "target_coverage": 0.327,
+            "mrr": 0.0036756686604147736,
+            "ndcg@100": 0.00858536125310597
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.3,
+            "hit@50": 0.7,
+            "hit@100": 0.8,
+            "target_coverage": 1.0,
+            "mrr": 0.13227553399548284,
+            "ndcg@100": 0.26589215662180454
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.002,
+          "paired_95pct": [
+            -0.003,
+            0.008
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.9889936447143555,
+          "semantic": 0.09963029623031616
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "joint_weight01_qlr": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_proxy_data",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/joint_weight01_qlr",
+      "mode": "joint",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "query_lr": 2e-06,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 0.1,
+      "semantic_eval": false,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384211447521797,
+        "ndcg@100": 0.0073180379830144575
+      },
+      "semantic_source_proxy": {
+        "count": 10,
+        "hit@10": 0.5,
+        "hit@50": 0.9,
+        "hit@100": 0.9,
+        "target_coverage": 1.0,
+        "mrr": 0.38076150322257296,
+        "ndcg@100": 0.48005575617776064
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5561413764953613,
+    "seconds": 2.2985125351697206,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.033,
+            "target_coverage": 0.327,
+            "mrr": 0.0031739898715182615,
+            "ndcg@100": 0.008367665793282414
+          },
+          "semantic_source_proxy": {
+            "count": 10,
+            "hit@10": 0.6,
+            "hit@50": 0.8,
+            "hit@100": 0.9,
+            "target_coverage": 1.0,
+            "mrr": 0.36601507004216366,
+            "ndcg@100": 0.4692505946850888
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.003,
+          "paired_95pct": [
+            -0.003,
+            0.009
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.9928855895996094,
+          "semantic": 0.530753493309021
+        }
+      }
+    ],
+    "code_sha256": "161b3cbb2b787c30189e4b615dfda8ad1bc8ca9df526f2ca824f4974092663bc"
+  },
+  "pilot_id64": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_data_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_id64",
+      "mode": "rec",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 64,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384511302731214,
+        "ndcg@100": 0.0073180379830144575
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5940451622009277,
+    "seconds": 1.6890994161367416,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.026,
+            "hit@100": 0.036,
+            "target_coverage": 0.327,
+            "mrr": 0.003191938308226322,
+            "ndcg@100": 0.008831344306277137
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.006,
+          "paired_95pct": [
+            0.001,
+            0.012
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.272243022918701
+        }
+      }
+    ],
+    "code_sha256": "7cf44047f4dbe941cba86ea31e61c013c27fe16c5251a7c27eba77ca21910a09"
+  },
+  "pilot_rec_seed42": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_data_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_rec_seed42",
+      "mode": "rec",
+      "steps": 600,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384511302731214,
+        "ndcg@100": 0.0073180379830144575
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5501227378845215,
+    "seconds": 5.394243025220931,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.026,
+            "hit@100": 0.036,
+            "target_coverage": 0.327,
+            "mrr": 0.003193137342098904,
+            "ndcg@100": 0.008833447825526374
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.006,
+          "paired_95pct": [
+            0.001,
+            0.012
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.2720675468444824
+        }
+      },
+      {
+        "step": 300,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.003934742812943763,
+            "ndcg@100": 0.009210944886198395
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.004,
+          "paired_95pct": [
+            -0.002,
+            0.01
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.9171500205993652
+        }
+      },
+      {
+        "step": 450,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.028,
+            "hit@100": 0.035,
+            "target_coverage": 0.327,
+            "mrr": 0.0033722278209721047,
+            "ndcg@100": 0.00893442086575683
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            0.0,
+            0.011
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.194246530532837
+        }
+      },
+      {
+        "step": 600,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.026,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.003915606598773482,
+            "ndcg@100": 0.009176907275050496
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.004,
+          "paired_95pct": [
+            -0.002,
+            0.01
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.892263412475586
+        }
+      }
+    ],
+    "code_sha256": "7cf44047f4dbe941cba86ea31e61c013c27fe16c5251a7c27eba77ca21910a09"
+  },
+  "pilot_rec_seed43": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_data_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_rec_seed43",
+      "mode": "rec",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 43,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384511302731214,
+        "ndcg@100": 0.0073180379830144575
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5501227378845215,
+    "seconds": 1.5462181251496077,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.009,
+            "hit@50": 0.026,
+            "hit@100": 0.032,
+            "target_coverage": 0.327,
+            "mrr": 0.0035800493211187545,
+            "ndcg@100": 0.008665617809283613
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.002,
+          "paired_95pct": [
+            -0.003,
+            0.008
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.931426525115967
+        }
+      }
+    ],
+    "code_sha256": "7cf44047f4dbe941cba86ea31e61c013c27fe16c5251a7c27eba77ca21910a09"
+  },
+  "pilot_rec_seed44": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_data_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_rec_seed44",
+      "mode": "rec",
+      "steps": 150,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 44,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384511302731214,
+        "ndcg@100": 0.0073180379830144575
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5501227378845215,
+    "seconds": 1.582095455378294,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.026,
+            "hit@100": 0.035,
+            "target_coverage": 0.327,
+            "mrr": 0.0027089137057891687,
+            "ndcg@100": 0.008351326155895589
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            0.0,
+            0.011
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.120443105697632
+        }
+      }
+    ],
+    "code_sha256": "7cf44047f4dbe941cba86ea31e61c013c27fe16c5251a7c27eba77ca21910a09"
+  },
+  "pilot_recency180": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_data_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_recency180",
+      "mode": "rec",
+      "steps": 600,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "freeze_item": false,
+      "history_half_life_days": 180.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.013,
+        "hit@100": 0.029,
+        "target_coverage": 0.327,
+        "mrr": 0.002449440395574436,
+        "ndcg@100": 0.0066874146199892666
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 6,
+    "peak_cuda_allocated_gib": 0.5501227378845215,
+    "seconds": 5.91514306794852,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.024,
+            "hit@100": 0.032,
+            "target_coverage": 0.327,
+            "mrr": 0.003145627944561321,
+            "ndcg@100": 0.008090927969480117
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.003,
+          "paired_95pct": [
+            -0.002,
+            0.008
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.2749276161193848
+        }
+      },
+      {
+        "step": 300,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.026,
+            "hit@100": 0.032,
+            "target_coverage": 0.327,
+            "mrr": 0.0037892655391792564,
+            "ndcg@100": 0.008725472910059396
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.003,
+          "paired_95pct": [
+            -0.004,
+            0.01
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.9086811542510986
+        }
+      },
+      {
+        "step": 450,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.026,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.0032655441752760146,
+            "ndcg@100": 0.008631784318666414
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            -0.002,
+            0.013
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.17608380317688
+        }
+      },
+      {
+        "step": 600,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.003808315550810972,
+            "ndcg@100": 0.009050463614308675
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            -0.003,
+            0.013
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.919065475463867
+        }
+      }
+    ],
+    "code_sha256": "7cba66ec2e26887097e22578d5ab71f14ca72115f415616c331f01114bab0170"
+  },
+  "pilot_user_only": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_data_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/pilot_user_only",
+      "mode": "rec",
+      "steps": 600,
+      "eval_every": 150,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "freeze_item": true,
+      "history_half_life_days": 0.0,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.006,
+        "hit@50": 0.015,
+        "hit@100": 0.03,
+        "target_coverage": 0.327,
+        "mrr": 0.0028384511302731214,
+        "ndcg@100": 0.0073180379830144575
+      }
+    },
+    "initial_score_error": 3.5762786865234375e-07,
+    "initial_rank_differences": 1,
+    "peak_cuda_allocated_gib": 0.5460019111633301,
+    "seconds": 4.608831626363099,
+    "checkpoints": [
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.036,
+            "target_coverage": 0.327,
+            "mrr": 0.003184708584609714,
+            "ndcg@100": 0.008828308052770312
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.006,
+          "paired_95pct": [
+            0.001,
+            0.012
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.277595043182373
+        }
+      },
+      {
+        "step": 300,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.027,
+            "hit@100": 0.035,
+            "target_coverage": 0.327,
+            "mrr": 0.003968506544819938,
+            "ndcg@100": 0.009404909780183426
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            -0.001,
+            0.012
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.928144931793213
+        }
+      },
+      {
+        "step": 450,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.005,
+            "hit@50": 0.029,
+            "hit@100": 0.035,
+            "target_coverage": 0.327,
+            "mrr": 0.003409457666732532,
+            "ndcg@100": 0.00899639333853069
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.005,
+          "paired_95pct": [
+            0.0,
+            0.011
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.223848342895508
+        }
+      },
+      {
+        "step": 600,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.006,
+            "hit@50": 0.026,
+            "hit@100": 0.034,
+            "target_coverage": 0.327,
+            "mrr": 0.003896664872270351,
+            "ndcg@100": 0.009170753176934842
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.004,
+          "paired_95pct": [
+            -0.003,
+            0.011
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.9122965335845947
+        }
+      }
+    ],
+    "code_sha256": "7cba66ec2e26887097e22578d5ab71f14ca72115f415616c331f01114bab0170"
+  },
+  "smoke_id64": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_20261011_smoke_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/smoke_id64",
+      "mode": "rec",
+      "steps": 200,
+      "eval_every": 50,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 64,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.049,
+        "hit@50": 0.109,
+        "hit@100": 0.147,
+        "target_coverage": 1.0,
+        "mrr": 0.03086220462933891,
+        "ndcg@100": 0.05078309357823036
+      }
+    },
+    "initial_score_error": 2.980232238769531e-07,
+    "initial_rank_differences": 2,
+    "peak_cuda_allocated_gib": 0.11035537719726562,
+    "seconds": 2.580015193670988,
+    "checkpoints": [
+      {
+        "step": 50,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.049,
+            "hit@50": 0.108,
+            "hit@100": 0.155,
+            "target_coverage": 1.0,
+            "mrr": 0.031961157455039774,
+            "ndcg@100": 0.05300660487866648
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.008,
+          "paired_95pct": [
+            0.001,
+            0.016
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.034248113632202
+        }
+      },
+      {
+        "step": 100,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.056,
+            "hit@50": 0.112,
+            "hit@100": 0.161,
+            "target_coverage": 1.0,
+            "mrr": 0.03183762987267673,
+            "ndcg@100": 0.05411499750512236
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.014,
+          "paired_95pct": [
+            0.002,
+            0.025
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.0215868949890137
+        }
+      },
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.062,
+            "hit@50": 0.114,
+            "hit@100": 0.163,
+            "target_coverage": 1.0,
+            "mrr": 0.032468435782027315,
+            "ndcg@100": 0.05516680969776275
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.016,
+          "paired_95pct": [
+            0.001,
+            0.03
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.1374974250793457
+        }
+      },
+      {
+        "step": 200,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.058,
+            "hit@50": 0.115,
+            "hit@100": 0.157,
+            "target_coverage": 1.0,
+            "mrr": 0.03308237724118767,
+            "ndcg@100": 0.05477009125188586
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.01,
+          "paired_95pct": [
+            -0.004024999999999999,
+            0.023
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.2422256469726562
+        }
+      }
+    ],
+    "code_sha256": "0a844647c5c547c0e7b5323cd2887b754f0b743e0189b43ded872117bf474cce"
+  },
+  "smoke_rec_v2": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_20261011_smoke_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/smoke_rec_v2",
+      "mode": "rec",
+      "steps": 200,
+      "eval_every": 50,
+      "lr": 2e-05,
+      "seed": 42,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.049,
+        "hit@50": 0.109,
+        "hit@100": 0.147,
+        "mrr": 0.03086220462933891,
+        "ndcg@100": 0.05078309357823036
+      }
+    },
+    "initial_score_error": 2.980232238769531e-07,
+    "initial_rank_differences": 2,
+    "peak_cuda_allocated_gib": 0.10562992095947266,
+    "seconds": 2.438417660072446,
+    "checkpoints": [
+      {
+        "step": 50,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.049,
+            "hit@50": 0.108,
+            "hit@100": 0.155,
+            "mrr": 0.03198867767209624,
+            "ndcg@100": 0.05303393584850177
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.008,
+          "paired_95pct": [
+            0.001,
+            0.016
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.03476619720459
+        }
+      },
+      {
+        "step": 100,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.056,
+            "hit@50": 0.112,
+            "hit@100": 0.161,
+            "mrr": 0.03180975309151245,
+            "ndcg@100": 0.05408642379551226
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.014,
+          "paired_95pct": [
+            0.002,
+            0.025
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.023007869720459
+        }
+      },
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.062,
+            "hit@50": 0.114,
+            "hit@100": 0.163,
+            "mrr": 0.032378153853143334,
+            "ndcg@100": 0.05509467197746659
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.016,
+          "paired_95pct": [
+            0.001,
+            0.03
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.140838623046875
+        }
+      },
+      {
+        "step": 200,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.058,
+            "hit@50": 0.113,
+            "hit@100": 0.158,
+            "mrr": 0.0329544892535738,
+            "ndcg@100": 0.054859158819741294
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.011,
+          "paired_95pct": [
+            -0.004,
+            0.024
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.2471632957458496
+        }
+      }
+    ],
+    "code_sha256": "1303bfe98b2607ad32a2ea0103b09933a971349d823d0d1ba5612e5a1d315892"
+  },
+  "smoke_seed43": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_20261011_smoke_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/smoke_seed43",
+      "mode": "rec",
+      "steps": 200,
+      "eval_every": 50,
+      "lr": 2e-05,
+      "seed": 43,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.049,
+        "hit@50": 0.109,
+        "hit@100": 0.147,
+        "target_coverage": 1.0,
+        "mrr": 0.03086220462933891,
+        "ndcg@100": 0.05078309357823036
+      }
+    },
+    "initial_score_error": 2.980232238769531e-07,
+    "initial_rank_differences": 2,
+    "peak_cuda_allocated_gib": 0.10567760467529297,
+    "seconds": 2.4808587320148945,
+    "checkpoints": [
+      {
+        "step": 50,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.051,
+            "hit@50": 0.107,
+            "hit@100": 0.156,
+            "target_coverage": 1.0,
+            "mrr": 0.031771669137864604,
+            "ndcg@100": 0.05296267590611262
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.009,
+          "paired_95pct": [
+            0.001,
+            0.017
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.0596179962158203
+        }
+      },
+      {
+        "step": 100,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.053,
+            "hit@50": 0.111,
+            "hit@100": 0.166,
+            "target_coverage": 1.0,
+            "mrr": 0.03129916313840092,
+            "ndcg@100": 0.054377217527106086
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.019,
+          "paired_95pct": [
+            0.007,
+            0.031
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.2199530601501465
+        }
+      },
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.058,
+            "hit@50": 0.115,
+            "hit@100": 0.162,
+            "target_coverage": 1.0,
+            "mrr": 0.03246298812484929,
+            "ndcg@100": 0.05491769223683986
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.015,
+          "paired_95pct": [
+            0.002,
+            0.028
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.0880608558654785
+        }
+      },
+      {
+        "step": 200,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.06,
+            "hit@50": 0.116,
+            "hit@100": 0.161,
+            "target_coverage": 1.0,
+            "mrr": 0.03328196571069812,
+            "ndcg@100": 0.055539997118626304
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.014,
+          "paired_95pct": [
+            -0.001,
+            0.028
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.094550132751465
+        }
+      }
+    ],
+    "code_sha256": "0a844647c5c547c0e7b5323cd2887b754f0b743e0189b43ded872117bf474cce"
+  },
+  "smoke_seed44": {
+    "config": {
+      "data": "/mnt/data/luo/remote_runs/three_tower_20261011_smoke_v2",
+      "output": "/mnt/data/luo/remote_runs/three_tower_product_v3/smoke_seed44",
+      "mode": "rec",
+      "steps": 200,
+      "eval_every": 50,
+      "lr": 2e-05,
+      "seed": 44,
+      "hidden": 256,
+      "id_dim": 0,
+      "batch_size": 64,
+      "negatives": 32,
+      "semantic_weight": 1.0,
+      "explicit_negatives": false,
+      "device": "cuda"
+    },
+    "baseline": {
+      "rec": {
+        "count": 1000,
+        "hit@10": 0.049,
+        "hit@50": 0.109,
+        "hit@100": 0.147,
+        "target_coverage": 1.0,
+        "mrr": 0.03086220462933891,
+        "ndcg@100": 0.05078309357823036
+      }
+    },
+    "initial_score_error": 2.980232238769531e-07,
+    "initial_rank_differences": 2,
+    "peak_cuda_allocated_gib": 0.1058206558227539,
+    "seconds": 2.5369171909987926,
+    "checkpoints": [
+      {
+        "step": 50,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.05,
+            "hit@50": 0.109,
+            "hit@100": 0.153,
+            "target_coverage": 1.0,
+            "mrr": 0.03185200976306402,
+            "ndcg@100": 0.05257431848457598
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.006,
+          "paired_95pct": [
+            -0.002,
+            0.014
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.1921334266662598
+        }
+      },
+      {
+        "step": 100,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.057,
+            "hit@50": 0.11,
+            "hit@100": 0.162,
+            "target_coverage": 1.0,
+            "mrr": 0.03188854177898581,
+            "ndcg@100": 0.054291728456962646
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.015,
+          "paired_95pct": [
+            0.003,
+            0.027
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 2.865800142288208
+        }
+      },
+      {
+        "step": 150,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.06,
+            "hit@50": 0.118,
+            "hit@100": 0.162,
+            "target_coverage": 1.0,
+            "mrr": 0.03275918235332521,
+            "ndcg@100": 0.05527786346648688
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.015,
+          "paired_95pct": [
+            0.001,
+            0.028
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.256927967071533
+        }
+      },
+      {
+        "step": 200,
+        "evaluation": {
+          "rec": {
+            "count": 1000,
+            "hit@10": 0.062,
+            "hit@50": 0.12,
+            "hit@100": 0.159,
+            "target_coverage": 1.0,
+            "mrr": 0.03348476576447227,
+            "ndcg@100": 0.05549869404461021
+          }
+        },
+        "vs_baseline": {
+          "hit@100_delta": 0.012,
+          "paired_95pct": [
+            -0.003,
+            0.027
+          ],
+          "unit": "one target per user",
+          "selection_adjusted": false
+        },
+        "loss": {
+          "rec": 3.2106528282165527
+        }
+      }
+    ],
+    "code_sha256": "0a844647c5c547c0e7b5323cd2887b754f0b743e0189b43ded872117bf474cce"
+  }
+}

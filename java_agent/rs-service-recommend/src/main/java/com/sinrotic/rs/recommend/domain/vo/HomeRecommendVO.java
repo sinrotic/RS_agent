@@ -20,6 +20,36 @@ public record HomeRecommendVO(
         boolean hasMore,
         @JsonProperty("next_cursor")
         String nextCursor,
-        HomeRecommendConfigVO config
+        HomeRecommendConfigVO config,
+        @JsonProperty("preference_version")
+        long preferenceVersion,
+        @JsonProperty("applied_feedback_event_ids")
+        List<String> appliedFeedbackEventIds,
+        @JsonProperty("recommendation_mode") String recommendationMode,
+        @JsonProperty("degradation_reasons") List<String> degradationReasons
 ) {
+    public HomeRecommendVO(String requestId, String sessionId, String scene, String profileUserId,
+            List<RecommendItemVO> items, boolean hasMore, String nextCursor, HomeRecommendConfigVO config,
+            long preferenceVersion, List<String> appliedFeedbackEventIds) {
+        this(requestId, sessionId, scene, profileUserId, items, hasMore, nextCursor, config,
+                preferenceVersion, appliedFeedbackEventIds, "catalog_cold_start", List.of());
+    }
+
+    public HomeRecommendVO(
+            String requestId,
+            String sessionId,
+            String scene,
+            String profileUserId,
+            List<RecommendItemVO> items,
+            boolean hasMore,
+            String nextCursor,
+            HomeRecommendConfigVO config
+    ) {
+        this(requestId, sessionId, scene, profileUserId, items, hasMore, nextCursor, config, 0L, List.of());
+    }
+
+    public HomeRecommendVO {
+        appliedFeedbackEventIds = appliedFeedbackEventIds == null ? List.of() : List.copyOf(appliedFeedbackEventIds);
+        degradationReasons = degradationReasons == null ? List.of() : List.copyOf(degradationReasons);
+    }
 }

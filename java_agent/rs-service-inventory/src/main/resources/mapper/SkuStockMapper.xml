@@ -5,6 +5,19 @@
 
 <mapper namespace="com.sinrotic.rs.inventory.mapper.SkuStockMapper">
 
+    <select id="lockSkuForUpdate" resultType="String">
+        SELECT sku_id FROM sku_stock WHERE sku_id = #{skuId} FOR UPDATE
+    </select>
+
+    <select id="findItemAvailability" resultType="com.sinrotic.rs.inventory.domain.vo.ItemAvailabilityVO">
+        SELECT item_id,
+               COUNT(*) AS sku_count,
+               COALESCE(SUM(available_stock), 0) AS available_stock
+        FROM sku_stock
+        WHERE item_id = #{itemId}
+        GROUP BY item_id
+    </select>
+
     <update id="lockStock">
         UPDATE sku_stock
         SET available_stock = available_stock - #{quantity},

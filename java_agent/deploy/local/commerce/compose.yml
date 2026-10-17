@@ -1,0 +1,117 @@
+# 隔离联调：独立 Compose project/网络/卷，全部端口仅绑定回环，总容器内存上限约 5GB。
+x-app: &app
+  image: eclipse-temurin:21-jre
+  mem_limit: 384m
+  volumes:
+    - type: bind
+      source: ${RS_IT_JAR_DIR:?由运行器复制固定版本产物}
+      target: /app
+      read_only: true
+  environment: &env
+    JAVA_TOOL_OPTIONS: -Xms64m -Xmx192m
+    SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+    SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rs_agent?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    SPRING_DATASOURCE_USERNAME: root
+    SPRING_DATASOURCE_PASSWORD: ${RS_IT_DB_PASSWORD:?由运行器生成}
+    SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "8"
+    SPRING_DATA_REDIS_HOST: redis
+    SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    RS_INVENTORY_BASE_URL: http://inventory:8092
+    RS_PROMOTION_BASE_URL: http://promotion:8095
+    RS_ORDER_BASE_URL: http://order:8091
+    RS_COMMERCE_OPERATIONS_READ_TOKEN: ${RS_COMMERCE_OPS_READ_TOKEN:?由运行器生成}
+    RS_COMMERCE_OPERATIONS_WRITE_TOKEN: ${RS_COMMERCE_OPS_WRITE_TOKEN:?由运行器生成}
+    RS_COMMERCE_OPERATIONS_OPERATOR_ID: integration-operator
+    RS_CHECKOUT_MOCK_PAYMENT_ENABLED: "true"
+    RS_CHECKOUT_WORKER_CONCURRENCY: "2"
+    RS_SECKILL_WORKER_PUBLISH_CONCURRENCY: "2"
+    RS_SECKILL_WORKER_RECONCILE_CONCURRENCY: "2"
+    RS_SECKILL_WORKER_ALLOCATION_DELAY_MS: "1000"
+    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus
+  depends_on:
+    mysql: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    kafka-init: { condition: service_completed_successfully }
+services:
+  mysql:
+    image: mysql:8.0
+    mem_limit: 768m
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=128M"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${RS_IT_DB_PASSWORD:?由运行器生成}
+      MYSQL_DATABASE: rs_agent
+    volumes:
+      - ../../../sql/rs_service_trade_schema.sql:/docker-entrypoint-initdb.d/01-trade.sql:ro
+      - ../../../sql/rs_service_commerce_v1_schema.sql:/docker-entrypoint-initdb.d/02-commerce.sql:ro
+      - ./fixture.sql:/docker-entrypoint-initdb.d/03-fixture.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -Drs_agent -e 'SELECT COUNT(*) FROM checkout_offer' >/dev/null 2>&1"]
+      interval: 3s
+      timeout: 3s
+      retries: 50
+  redis:
+    image: redis:7.2-alpine
+    mem_limit: 128m
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  kafka:
+    image: apache/kafka:3.9.1
+    mem_limit: 768m
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: -Xms128m -Xmx384m
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list >/dev/null"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+  kafka-init:
+    image: apache/kafka:3.9.1
+    mem_limit: 256m
+    entrypoint: ["/bin/bash", "/scripts/init-commerce-topics.sh"]
+    volumes: ["../../remote/infra/init-commerce-topics.sh:/scripts/init-commerce-topics.sh:ro"]
+    environment:
+      RS_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      RS_COMMERCE_KAFKA_PARTITIONS: 3
+      RS_COMMERCE_KAFKA_REPLICAS: 1
+    depends_on:
+      kafka: { condition: service_healthy }
+  inventory:
+    <<: *app
+    command: ["java", "-jar", "/app/rs-service-inventory.jar"]
+    ports: ["127.0.0.1:24292:8092"]
+  promotion:
+    <<: *app
+    command: ["java", "-jar", "/app/rs-service-promotion-exec.jar"]
+    ports: ["127.0.0.1:24295:8095"]
+  order:
+    <<: *app
+    command: ["java", "-jar", "/app/rs-service-order.jar"]
+    ports: ["127.0.0.1:24291:8091"]
+  order-b:
+    <<: *app
+    command: ["java", "-jar", "/app/rs-service-order.jar"]
+    ports: ["127.0.0.1:24391:8091"]
+  seckill:
+    <<: *app
+    command: ["java", "-jar", "/app/rs-service-seckill.jar"]
+    ports: ["127.0.0.1:24294:8094"]
+  seckill-b:
+    <<: *app
+    command: ["java", "-jar", "/app/rs-service-seckill.jar"]
+    ports: ["127.0.0.1:24394:8094"]

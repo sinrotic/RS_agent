@@ -33,4 +33,7 @@ public interface CatalogService {
     List<CatalogCategoryVO> listCategories();
 
     List<VirtualStoreVO> listStores();
+
+    default List<CatalogItemEmbeddingTextVO> discoverEmbeddingTexts(String seed, int limit) { return List.of(); }
+    default List<CatalogItemEmbeddingTextVO> categoryEmbeddingTexts(String category, String seed, int limit) { return List.of(); }
 }

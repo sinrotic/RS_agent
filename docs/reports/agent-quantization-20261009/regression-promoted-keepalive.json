@@ -1,0 +1,192 @@
+{
+  "label": "promoted",
+  "passed": false,
+  "results": [
+    {
+      "number": 0,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-027ac935b5-1-0-988c9da9",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "content": "选购通勤双肩包时，建议重点关注以下三个方面：1. 容量与尺寸：选择能容纳日常电脑、笔记本和文件，但不过于臃肿的款式，确保放入后背包仍保持轻便。2. 背负舒适度：关注肩带宽度、背部透气设计以及是否有可调节的胸带和腰带，以减轻长时间背负的负担。3. 耐用性与防护：优选耐磨面料，并确认背包具备防水或防泼水功能，以应对通勤途中的意外潮湿环境。",
+          "type": "text"
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791539049.3181593,
+      "http_status": 200,
+      "latency_s": 7.552,
+      "first_event_s": 7.545,
+      "first_answer_s": 7.545,
+      "model_calls": 8.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 1,
+      "answer_complete": true,
+      "passed": false
+    },
+    {
+      "number": 1,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-027ac935b5-1-1-660957d5",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "content": "选购通勤双肩包时，建议重点关注以下三个方面：1. 容量与尺寸：根据日常携带物品（如笔记本电脑、文件、水杯等）选择合适容量，确保能轻松装下且不过于臃肿。2. 背负舒适度：关注肩带宽度、背板设计和透气性，长时间背负时能减少肩膀和背部的压力。3. 耐用性与功能性：选择材质耐磨、结构稳固的产品，并确认是否有实用的功能设计，如防盗拉链、多隔层或可调节背带等。",
+          "type": "text"
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791539056.9105303,
+      "http_status": 200,
+      "latency_s": 6.002,
+      "first_event_s": 6.0,
+      "first_answer_s": 6.0,
+      "model_calls": 8.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 1,
+      "answer_complete": true,
+      "passed": false
+    },
+    {
+      "number": 2,
+      "prompt": "选购通勤双肩包时，应该考虑哪些方面？请给出三条简短的一般建议，不推荐具体商品，不查询商品或用户历史。",
+      "session_id": "capacity-027ac935b5-1-2-da63bb5f",
+      "success": true,
+      "events": {
+        "answer_block": 1,
+        "done": 1
+      },
+      "answer": [
+        {
+          "content": "选购通勤双肩包时，建议重点关注以下三个方面：1. 容量与尺寸：根据日常携带物品（如笔记本电脑、文件、水杯）选择合适容量，确保能轻松放入且不影响日常活动。2. 背负舒适度：关注肩带宽度、背垫厚度和腰部支撑设计，长时间背负时能减少肩膀和背部的压力。3. 耐用性与功能性：选择材质耐磨、防水性能好的产品，并确认是否有实用的功能设计，如防盗拉链、多隔层收纳等。",
+          "type": "text"
+        }
+      ],
+      "errors": [],
+      "finish_reason": "FINAL_ANSWER",
+      "started_at": 1791539062.9370534,
+      "http_status": 200,
+      "latency_s": 5.901,
+      "first_event_s": 5.899,
+      "first_answer_s": 5.899,
+      "model_calls": 8.0,
+      "tools": [
+        {
+          "name": "recommend_candidates",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "load_skill",
+          "status": "SUCCESS"
+        },
+        {
+          "name": "call_agent",
+          "status": "FAILED"
+        }
+      ],
+      "trace_available": true,
+      "failed_tools": 1,
+      "answer_complete": true,
+      "passed": false
+    }
+  ]
+}

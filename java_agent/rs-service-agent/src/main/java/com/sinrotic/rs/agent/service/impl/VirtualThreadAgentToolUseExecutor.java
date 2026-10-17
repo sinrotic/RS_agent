@@ -2,6 +2,7 @@ package com.sinrotic.rs.agent.service.impl;
 
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 import com.sinrotic.rs.agent.service.AgentDelegateService;
+import com.sinrotic.rs.agent.service.AgentExecutionLimiter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.AgentToolResultStore;
 
@@ -21,6 +22,12 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
     private final ExecutorService executorService;
 
     private final Function<AgentModelStreamEvent, Map<String, Object>> toolHandler;
+
+    private final AgentToolResultStore toolResultStore;
+
+    private final AgentToolResultExternalizer toolResultExternalizer;
+
+    private final AgentExecutionLimiter executionLimiter;
 
     public VirtualThreadAgentToolUseExecutor() {
         this(event -> Map.of(
@@ -42,9 +49,10 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
     public VirtualThreadAgentToolUseExecutor(
             AgentRuntimeConfigurationService runtimeConfigurationService,
             AgentDelegateService agentDelegateService,
-            AgentToolResultStore toolResultStore
+            AgentToolResultStore toolResultStore,
+            AgentExecutionLimiter executionLimiter
     ) {
-        this(runtimeConfigurationService, (TriFunction<String, String, Map<String, Object>, Map<String, Object>>) agentDelegateService::callAgent, toolResultStore);
+        this(runtimeConfigurationService, (TriFunction<String, String, Map<String, Object>, Map<String, Object>>) agentDelegateService::callAgent, toolResultStore, executionLimiter);
     }
 
     public VirtualThreadAgentToolUseExecutor(
@@ -59,7 +67,20 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
             TriFunction<String, String, Map<String, Object>, Map<String, Object>> agentCaller,
             AgentToolResultStore toolResultStore
     ) {
-        this(event -> {
+        this(runtimeConfigurationService, agentCaller, toolResultStore, null);
+    }
+
+    public VirtualThreadAgentToolUseExecutor(
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            TriFunction<String, String, Map<String, Object>, Map<String, Object>> agentCaller,
+            AgentToolResultStore toolResultStore,
+            AgentExecutionLimiter executionLimiter
+    ) {
+        this.executorService = Executors.newVirtualThreadPerTaskExecutor();
+        this.toolResultStore = toolResultStore == null ? new InMemoryAgentToolResultStore() : toolResultStore;
+        this.toolResultExternalizer = new AgentToolResultExternalizer(this.toolResultStore);
+        this.executionLimiter = executionLimiter;
+        this.toolHandler = event -> {
             if ("load_skill".equals(event.toolName())) {
                 String skillName = String.valueOf(event.arguments().getOrDefault("skill_name", ""));
                 var skill = runtimeConfigurationService.skill(skillName);
@@ -121,7 +142,7 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
                 String resultRef = String.valueOf(event.arguments().getOrDefault("result_ref", ""));
                 int offset = intArgument(event.arguments().get("offset"), 0);
                 int limit = intArgument(event.arguments().get("limit"), 20);
-                var segment = toolResultStore.readLines(resultRef, offset, limit);
+                var segment = this.toolResultStore.readLines(resultRef, offset, limit);
                 return Map.of(
                         "status", "SUCCESS",
                         "tool_type", "tool_result_lines",
@@ -141,7 +162,7 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
                     "arguments", event.arguments(),
                     "thread_virtual", Thread.currentThread().isVirtual()
             );
-        });
+        };
     }
 
     private static int intArgument(Object value, int fallback) {
@@ -160,17 +181,32 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
     }
 
     public VirtualThreadAgentToolUseExecutor(Function<AgentModelStreamEvent, Map<String, Object>> toolHandler) {
+        this(toolHandler, new InMemoryAgentToolResultStore());
+    }
+
+    public VirtualThreadAgentToolUseExecutor(Function<AgentModelStreamEvent, Map<String, Object>> toolHandler, AgentToolResultStore toolResultStore) {
         this.executorService = Executors.newVirtualThreadPerTaskExecutor();
         this.toolHandler = toolHandler;
+        this.toolResultStore = toolResultStore == null ? new InMemoryAgentToolResultStore() : toolResultStore;
+        this.toolResultExternalizer = new AgentToolResultExternalizer(this.toolResultStore);
+        this.executionLimiter = null;
     }
 
     @Override
     public CompletableFuture<Map<String, Object>> execute(AgentModelStreamEvent event) {
+        return execute(event, toolHandler);
+    }
+
+    // 能力注册器与内部工具共用同一执行资源、并发许可和可中断 Future。
+    CompletableFuture<Map<String, Object>> execute(
+            AgentModelStreamEvent event,
+            Function<AgentModelStreamEvent, Map<String, Object>> handler
+    ) {
         InterruptibleCompletableFuture<Map<String, Object>> result = new InterruptibleCompletableFuture<>();
         Future<?> task = executorService.submit(() -> {
             try {
                 if (!result.isCancelled()) {
-                    result.complete(toolHandler.apply(event));
+                    result.complete(executeWithPermit(event, handler));
                 }
             } catch (Throwable error) {
                 result.completeExceptionally(error);
@@ -180,6 +216,26 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
         });
         result.attach(task);
         return result;
+    }
+
+    private Map<String, Object> executeWithPermit(
+            AgentModelStreamEvent event,
+            Function<AgentModelStreamEvent, Map<String, Object>> handler
+    ) {
+        if (executionLimiter == null) {
+            return toolResultExternalizer.externalizeLargeNestedResult(event, handler.apply(event));
+        }
+        return executionLimiter.callWithToolPermit(
+                () -> toolResultExternalizer.externalizeLargeNestedResult(event, handler.apply(event))
+        );
+    }
+
+    CompletableFuture<Map<String, Object>> executeRecommendation(
+            AgentModelStreamEvent event,
+            Function<AgentModelStreamEvent, Map<String, Object>> handler
+    ) {
+        return execute(event, current -> executionLimiter == null ? handler.apply(current)
+                : executionLimiter.callWithRecommendationPermit(() -> handler.apply(current)));
     }
 
     @Override

@@ -12,6 +12,7 @@ from rs_lab.experiments.recall.build_train_only_data_governance import DERIVED_D
 from rs_lab.experiments.recall.validate_pool500_method_dataset_audit_evidence import validate_pool500_method_dataset_audit_evidence
 
 pytestmark = pytest.mark.unit
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_method_dataset_audit_is_diagnostic_only_and_does_not_require_candidates(tmp_path: Path) -> None:
@@ -22,6 +23,7 @@ def test_method_dataset_audit_is_diagnostic_only_and_does_not_require_candidates
         governance_manifest_path=paths["governance_manifest"],
         output_dir=collab_dir,
         source_method="itemcf_weak",
+        strict_recent_2y_manifest=False,
         overwrite=True,
         enforce_venv=False,
     )
@@ -68,6 +70,7 @@ def test_method_dataset_audit_uses_manifest_upstream_governance_path(tmp_path: P
         governance_manifest_path=paths["governance_manifest"],
         output_dir=collab_dir,
         source_method="itemcf_weak",
+        strict_recent_2y_manifest=False,
         overwrite=True,
         enforce_venv=False,
     )
@@ -93,6 +96,7 @@ def test_itemcf_edge_feature_audit_remains_method_dataset_only(tmp_path: Path) -
         governance_manifest_path=paths["governance_manifest"],
         output_dir=weak_dir,
         source_method="itemcf_weak",
+        strict_recent_2y_manifest=False,
         overwrite=True,
         enforce_venv=False,
     )
@@ -101,6 +105,7 @@ def test_itemcf_edge_feature_audit_remains_method_dataset_only(tmp_path: Path) -
         output_dir=strong_dir,
         source_method="itemcf_strong",
         scale_tier="smoke",
+        strict_recent_2y_manifest=False,
         overwrite=True,
         enforce_venv=False,
     )
@@ -192,6 +197,7 @@ def test_method_dataset_audit_blocks_ready_promotion_and_source_artifact_semanti
         governance_manifest_path=paths["governance_manifest"],
         output_dir=collab_dir,
         source_method="itemcf_weak",
+        strict_recent_2y_manifest=False,
         overwrite=True,
         enforce_venv=False,
     )
@@ -604,7 +610,7 @@ def test_two_tower_audit_blocks_target_metadata_incomplete(tmp_path: Path) -> No
 
 
 def test_method_dataset_audit_does_not_use_shadow_ranking_gate() -> None:
-    source_path = Path("D:/sinrotic_code/python_project/summer/RS_agent/rs_lab/experiments/recall/validate_pool500_method_dataset_audit_evidence.py")
+    source_path = ROOT / "rs_lab/experiments/recall/validate_pool500_method_dataset_audit_evidence.py"
     source = source_path.read_text(encoding="utf-8")
 
     assert "validate_pool500_shadow_ranking_evidence" not in source
@@ -648,8 +654,25 @@ def _write_fixture(tmp_path: Path) -> dict[str, Path]:
             for item_id in ["cf_mid", "pos_a", "pos_b", "pos_c", "neg_a", "neg_b", "neg_c"]
         ],
     )
+    canonical_train = clean_dir / "canonical_interactions.train.jsonl"
+    _write_jsonl(
+        canonical_train,
+        [
+            {"user_id": "u_heavy", "parent_asin": "cf_mid", "timestamp": 10, "label_binary": True},
+            {"user_id": "u_heavy", "parent_asin": "pos_a", "timestamp": 20, "label_binary": True},
+            {"user_id": "u_medium", "parent_asin": "cf_mid", "timestamp": 30, "label_binary": True},
+            {"user_id": "u_medium", "parent_asin": "pos_b", "timestamp": 40, "label_binary": True},
+        ],
+    )
     clean_manifest = clean_dir / "manifest.json"
-    _write_json(clean_manifest, {"train_user_sequences_path": str(train_sequences), "canonical_items_path": str(canonical_items)})
+    _write_json(
+        clean_manifest,
+        {
+            "train_user_sequences_path": str(train_sequences),
+            "canonical_items_path": str(canonical_items),
+            "split_paths": {"train": str(canonical_train)},
+        },
+    )
 
     user_quality_profile = governance_dir / "user_quality_profile.jsonl"
     _write_jsonl(

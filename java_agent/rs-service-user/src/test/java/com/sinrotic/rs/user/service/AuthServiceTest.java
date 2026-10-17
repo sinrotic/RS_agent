@@ -242,6 +242,7 @@ class AuthServiceTest {
                         "active"
                 ));
 
+        when(authSessionMapper.revokeSession("authsess_old", "refresh")).thenReturn(1);
         AuthTokenVO response = authService.refresh(new RefreshTokenRequestDTO("old-refresh-token"));
 
         assertThat(response.accountId()).isEqualTo("acc_001");
@@ -293,9 +294,10 @@ class AuthServiceTest {
                         "active"
                 ));
 
+        when(authSessionMapper.revokeSession("authsess_old", "refresh")).thenReturn(1);
         authService.refresh(new RefreshTokenRequestDTO("old-refresh-token"));
 
-        verify(tokenSessionStore).revokeSession("authsess_old");
+        verify(tokenSessionStore).revokeSession(eq("authsess_old"),eq(null),org.mockito.ArgumentMatchers.matches("[0-9a-f]{64}"));
         verify(tokenSessionStore).save(any(TokenSession.class));
     }
 
@@ -397,7 +399,7 @@ class AuthServiceTest {
 
         authService.logout("Bearer access-token");
 
-        verify(tokenSessionStore).revokeSession("authsess_001");
+        verify(tokenSessionStore).revokeSession(eq("authsess_001"),org.mockito.ArgumentMatchers.matches("[0-9a-f]{64}"),eq(null));
         verify(authSessionMapper).revokeSession("authsess_001", "logout");
     }
 }

@@ -466,6 +466,84 @@ def _enforce_recent_2y_governance_manifest(governance_manifest_path: Path) -> No
         raise ValueError(f"Current method datasets must use recent 2y train-only governance manifest: {required}")
 
 
+def _apply_itemcf_recent_2y_profile(source_method: str, resource_policy: dict[str, Any]) -> dict[str, Any]:
+    if source_method not in {"itemcf_weak", "itemcf_strong"}:
+        raise ValueError("recent_2y profile is only supported for ItemCF methods")
+    policy = dict(resource_policy)
+    scale_tier = str(policy.get("scale_tier") or policy.get("default_tier") or "formal")
+    policy.update(
+        {
+            "dataset_variant": f"{source_method}_recent_2y_{scale_tier}_v1",
+            "coverage_profile": "recent_2y",
+            "item_quality_buckets": ["cf_ready", "embedding_ready"],
+            "preprocessing_policy": "sciomc_recent_2y_train_only_v1",
+        }
+    )
+    selection_strategy = dict(policy.get("selection_strategy") or {})
+    if source_method == "itemcf_weak":
+        policy.update(
+            {
+                "score_policy": ITEMCF_RECENT_2Y_WEAK_SCORE_POLICY,
+                "weighting_policy": "bm25_tfidf_idf_weighted_cooc_cosine_v1",
+                "allow_over_hot": False,
+            }
+        )
+        selection_strategy.update(
+            {
+                "policy_name": "itemcf_weak_recent_2y_edges_v1",
+                "eligible_user_buckets": ["medium_behavior", "sequence_sufficient", "collaborative_rich"],
+                "eligible_item_buckets": ["cf_ready", "embedding_ready"],
+                "weighting_policy": "bm25_tfidf_idf_weighted_cooc_cosine_v1",
+            }
+        )
+    else:
+        policy.update(
+            {
+                "score_policy": ITEMCF_RECENT_2Y_STRONG_SCORE_POLICY,
+                "weighting_policy": "directed_strong_seed_weighted_cooc_cosine_shrinkage_v1",
+                "src_item_quality_buckets": ["cf_ready", "embedding_ready"],
+                "dst_item_quality_buckets": ["cf_ready", "embedding_ready"],
+                "src_allow_over_hot": True,
+                "allow_over_hot": False,
+                "src_sequence_key": "recent_strong_positive_item_sequence",
+                "dst_sequence_key": "recent_positive_item_sequence",
+                "directed_seed_to_candidate_only": True,
+            }
+        )
+        selection_strategy.update(
+            {
+                "policy_name": "itemcf_strong_recent_2y_directed_edges_v1",
+                "eligible_user_buckets": ["sequence_sufficient", "collaborative_rich"],
+                "eligible_src_item_buckets": ["cf_ready", "embedding_ready"],
+                "eligible_dst_item_buckets": ["cf_ready", "embedding_ready"],
+                "pair_direction": "strong_seed_to_recent_positive_candidate",
+            }
+        )
+    policy["selection_strategy"] = selection_strategy
+    return policy
+
+
+def _apply_itemcf_recent_2y_selection_policy(policy: dict[str, Any], source_method: str) -> dict[str, Any]:
+    updated = dict(policy)
+    if source_method == "itemcf_weak":
+        updated["eligible_user_buckets"] = ["medium_behavior", "sequence_sufficient", "collaborative_rich"]
+        updated["eligible_user_policy"] = "sequence_sufficient_or_above_for_recent_2y_weak_itemcf"
+        updated["eligible_item_policy"] = "cf_ready_or_embedding_ready_with_bm25_tfidf_idf_weighting"
+    elif source_method == "itemcf_strong":
+        updated["eligible_user_buckets"] = ["sequence_sufficient", "collaborative_rich"]
+        updated["eligible_user_policy"] = "sequence_sufficient_or_collaborative_rich_for_recent_2y_strong_itemcf"
+        updated["eligible_item_policy"] = "strong_seed_to_cf_ready_or_embedding_ready_recent_candidate"
+    else:
+        raise ValueError("recent_2y selection policy is only supported for ItemCF methods")
+    updated["acceptance_checks"] = [
+        "train_only_inputs",
+        "recent_2y_governance_manifest",
+        "active_user_penalty_applied",
+        "item_user_frequency_normalization_applied",
+    ]
+    return updated
+
+
 def _apply_itemcf_weak_coverage_profile(source_method: str, resource_policy: dict[str, Any]) -> dict[str, Any]:
     if source_method != "itemcf_weak":
         raise ValueError("weak_coverage profile is only supported for itemcf_weak")

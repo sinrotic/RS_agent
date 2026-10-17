@@ -4,6 +4,8 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from scripts.data.import_amazon_base_to_mysql import (
     _insert_sql,
     import_amazon_base_to_mysql,
@@ -11,6 +13,8 @@ from scripts.data.import_amazon_base_to_mysql import (
     ms_to_mysql_datetime,
     review_row,
 )
+
+pytestmark = pytest.mark.unit
 
 
 def test_amazon_base_row_transforms_use_raw_mysql_shape(tmp_path: Path) -> None:

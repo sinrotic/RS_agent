@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.sinrotic.rs.user.mapper.UserSessionMapper">
+
+    <update id="admitSession">
+        UPDATE rs_user_session SET last_active_at = GREATEST(last_active_at, #{now}), last_user_query = #{query}
+        WHERE session_id = #{sessionId} AND account_id = #{accountId} AND profile_user_id = #{profileUserId}
+          AND status = 'ACTIVE' AND last_active_at > #{cutoff}
+    </update>
+
+    <update id="touchSession">
+        UPDATE rs_user_session SET last_active_at = GREATEST(last_active_at, #{now})
+        WHERE session_id = #{sessionId} AND account_id = #{accountId} AND profile_user_id = #{profileUserId}
+          AND status = 'ACTIVE' AND last_active_at > #{cutoff}
+    </update>
+
+    <update id="expireOwnedSession">
+        UPDATE rs_user_session SET status = 'ENDED', end_reason = 'inactivity', ended_at = CURRENT_TIMESTAMP
+        WHERE session_id = #{sessionId} AND account_id = #{accountId} AND profile_user_id = #{profileUserId}
+          AND status = 'ACTIVE' AND last_active_at &lt;= #{cutoff}
+    </update>
+
+    <resultMap id="userSessionMap" type="com.sinrotic.rs.user.domain.entity.UserSession">
+        <id property="sessionId" column="session_id"/>
+        <result property="accountId" column="account_id"/>
+        <result property="profileUserId" column="profile_user_id"/>
+        <result property="entryScene" column="entry_scene"/>
+        <result property="activePreferencesJson" column="active_preferences_json"/>
+        <result property="lastUserQuery" column="last_user_query"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="lastActiveAt" column="last_active_at"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <insert id="insert">
+        INSERT INTO rs_user_session (
+            session_id, account_id, profile_user_id, entry_scene,
+            active_preferences_json, last_user_query, started_at, last_active_at, status
+        ) VALUES (
+            #{sessionId}, #{accountId}, #{profileUserId}, #{entryScene},
+            #{activePreferencesJson}, #{lastUserQuery}, #{startedAt}, #{lastActiveAt}, #{status}
+        )
+    </insert>
+
+    <select id="findBySessionId" resultMap="userSessionMap">
+        SELECT session_id,
+               account_id,
+               profile_user_id,
+               entry_scene,
+               active_preferences_json,
+               last_user_query,
+               started_at,
+               last_active_at,
+               status
+        FROM rs_user_session
+        WHERE session_id = #{sessionId}
+        LIMIT 1
+    </select>
+
+    <select id="findByOwner" resultMap="userSessionMap">
+        SELECT session_id, account_id, profile_user_id, entry_scene,
+               active_preferences_json, last_user_query, started_at, last_active_at, status
+        FROM rs_user_session
+        WHERE account_id = #{accountId} AND profile_user_id = #{profileUserId}
+        <if test="entryScene != null and entryScene != ''">AND entry_scene = #{entryScene}</if>
+        ORDER BY started_at DESC, session_id DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findActiveSessions" resultMap="userSessionMap">
+        SELECT session_id, account_id, profile_user_id, entry_scene,
+               active_preferences_json, last_user_query, started_at, last_active_at, status
+        FROM rs_user_session
+        WHERE status = 'ACTIVE' AND last_active_at > #{cutoff} AND session_id > #{afterSessionId}
+        ORDER BY session_id LIMIT #{limit}
+    </select>
+
+    <update id="endSession">
+        UPDATE rs_user_session
+        SET status = 'ENDED',
+            end_reason = #{reason},
+            ended_at = CURRENT_TIMESTAMP,
+            last_active_at = CURRENT_TIMESTAMP
+        WHERE session_id = #{sessionId}
+          AND status = 'ACTIVE'
+    </update>
+</mapper>

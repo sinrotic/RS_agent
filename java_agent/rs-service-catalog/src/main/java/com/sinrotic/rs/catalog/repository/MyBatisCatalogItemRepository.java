@@ -89,6 +89,11 @@ public class MyBatisCatalogItemRepository implements CatalogItemRepository {
         );
     }
 
+    @Override
+    public List<CatalogItem> findDiscoveryItems(String category, int offset, int limit) {
+        return catalogItemMapper.selectDiscoveryItems(category, offset, limit).stream().map(this::toEntity).toList();
+    }
+
     private Map<String, String> parseAttributes(String attributesJson) {
         if (attributesJson == null || attributesJson.isBlank()) {
             return Map.of();

@@ -1,0 +1,758 @@
+{
+  "candidate_id": "synth-003-01",
+  "customer_message": "我想把路由器接到另一间房的电脑，走线大概需要50英尺，但不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长。能帮我理一下该先确认哪些情况、分别需要什么吗？",
+  "source_task_id": "profile-family-096-customer-clear_purchase",
+  "profile_user_id": "AEAMS4FMMGB46RLY4BPMM66V2S7A",
+  "family_id": "profile-family-096",
+  "statistical_cluster_id": "profile-family-096",
+  "split": "dev",
+  "environment_sha256": "de8b40ddd6d4e51fc5b25bb69680fcca0facc2bd51191e47075d94a59ede2287",
+  "original_status": "quarantined",
+  "status": "pending_independent_human_review",
+  "model_calls": 2,
+  "human_reviews": [],
+  "is_gold": false,
+  "auto_deploy": false,
+  "extraction_call": {
+    "request_payload": {
+      "customer_message": "我想把路由器接到另一间房的电脑，走线大概需要50英尺，但不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长。能帮我理一下该先确认哪些情况、分别需要什么吗？"
+    },
+    "instruction_sha256": "543aac9bd5e506262f8a42079698cb8fdad2f16e54eef88cd859c6c6bfc1ca14",
+    "requested_model": "gpt-6-luna",
+    "started_at": "2026-10-11T12:45:06.460524+00:00",
+    "response_metadata": {
+      "id": "resp_0c881a95e8fa3a7a016acb84d1a18c87d1bc2cf7c443106796",
+      "model": "gpt-6-luna",
+      "usage": {
+        "completion_tokens": 1024,
+        "total_tokens": 2732,
+        "prompt_tokens": 1708,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cached_creation_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 373
+        }
+      },
+      "finish_reason": "stop"
+    },
+    "raw_content": "{\n  \"schema_version\": \"rs-shopping-request/3\",\n  \"intent\": {\n    \"primary\": \"mixed\",\n    \"actions\": [\n      \"compare\",\n      \"guide_verification\"\n    ],\n    \"evidence\": [\n      \"不太确定要买成品线还是散装线自己处理\",\n      \"能帮我理一下该先确认哪些情况、分别需要什么吗？\"\n    ]\n  },\n  \"context_facts\": [\n    {\n      \"name\": \"现有网线\",\n      \"value\": \"家里有现有网线，但能否用接头延长尚不确定\",\n      \"quote\": \"家里现有的网线能不能用接头延长\"\n    }\n  ],\n  \"answer_requirements\": [\n    {\n      \"kind\": \"comparison\",\n      \"need\": \"比较成品线与散装线自行处理所需的准备、操作和适用情形\",\n      \"quote\": \"不太确定要买成品线还是散装线自己处理\"\n    },\n    {\n      \"kind\": \"decision_support\",\n      \"need\": \"说明选择成品线或散装线的权衡与条件分支，不预设唯一选择\",\n      \"quote\": \"不太确定要买成品线还是散装线自己处理\"\n    },\n    {\n      \"kind\": \"verification_steps\",\n      \"need\": \"列出购买或延长前应先确认的情况，以及各自需要准备或核对的内容\",\n      \"quote\": \"能帮我理一下该先确认哪些情况、分别需要什么吗？\"\n    }\n  ],\n  \"requirements\": [\n    {\n      \"id\": \"r1\",\n      \"kind\": \"strict\",\n      \"field\": \"product_type\",\n      \"relation\": \"eq\",\n      \"value\": \"网线\",\n      \"unit\": null,\n      \"quote\": \"网线\"\n    },\n    {\n      \"id\": \"r2\",\n      \"kind\": \"strict\",\n      \"field\": \"use_case\",\n      \"relation\": \"eq\",\n      \"value\": \"连接路由器与另一间房的电脑\",\n      \"unit\": null,\n      \"quote\": \"把路由器接到另一间房的电脑\"\n    },\n    {\n      \"id\": \"r3\",\n      \"kind\": \"approximate\",\n      \"field\": \"length\",\n      \"relation\": \"about\",\n      \"value\": 50,\n      \"unit\": \"英尺\",\n      \"quote\": \"大概需要50英尺\"\n    }\n  ],\n  \"unknowns\": [],\n  \"clarification\": {\n    \"mode\": \"not_needed\",\n    \"safe_answer_before_clarification\": true,\n    \"unresolved_actions\": [],\n    \"questions\": []\n  },\n  \"recipient\": {\n    \"target\": \"unknown\",\n    \"quote\": null,\n    \"profile_policy\": \"not_relevant\",\n    \"profile_reason\": \"请求聚焦于布线选项的比较和核查方法，不涉及商品推荐或个人画像。\"\n  }\n}",
+    "parsed_json": {
+      "schema_version": "rs-shopping-request/3",
+      "intent": {
+        "primary": "mixed",
+        "actions": [
+          "compare",
+          "guide_verification"
+        ],
+        "evidence": [
+          "不太确定要买成品线还是散装线自己处理",
+          "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+        ]
+      },
+      "context_facts": [
+        {
+          "name": "现有网线",
+          "value": "家里有现有网线，但能否用接头延长尚不确定",
+          "quote": "家里现有的网线能不能用接头延长"
+        }
+      ],
+      "answer_requirements": [
+        {
+          "kind": "comparison",
+          "need": "比较成品线与散装线自行处理所需的准备、操作和适用情形",
+          "quote": "不太确定要买成品线还是散装线自己处理"
+        },
+        {
+          "kind": "decision_support",
+          "need": "说明选择成品线或散装线的权衡与条件分支，不预设唯一选择",
+          "quote": "不太确定要买成品线还是散装线自己处理"
+        },
+        {
+          "kind": "verification_steps",
+          "need": "列出购买或延长前应先确认的情况，以及各自需要准备或核对的内容",
+          "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+        }
+      ],
+      "requirements": [
+        {
+          "id": "r1",
+          "kind": "strict",
+          "field": "product_type",
+          "relation": "eq",
+          "value": "网线",
+          "unit": null,
+          "quote": "网线"
+        },
+        {
+          "id": "r2",
+          "kind": "strict",
+          "field": "use_case",
+          "relation": "eq",
+          "value": "连接路由器与另一间房的电脑",
+          "unit": null,
+          "quote": "把路由器接到另一间房的电脑"
+        },
+        {
+          "id": "r3",
+          "kind": "approximate",
+          "field": "length",
+          "relation": "about",
+          "value": 50,
+          "unit": "英尺",
+          "quote": "大概需要50英尺"
+        }
+      ],
+      "unknowns": [],
+      "clarification": {
+        "mode": "not_needed",
+        "safe_answer_before_clarification": true,
+        "unresolved_actions": [],
+        "questions": []
+      },
+      "recipient": {
+        "target": "unknown",
+        "quote": null,
+        "profile_policy": "not_relevant",
+        "profile_reason": "请求聚焦于布线选项的比较和核查方法，不涉及商品推荐或个人画像。"
+      }
+    },
+    "call_succeeded": true,
+    "completed_at": "2026-10-11T12:45:26.928147+00:00"
+  },
+  "evidence_validation": {
+    "offset_unit": "unicode_codepoint",
+    "range": "zero_based_half_open_first_occurrence",
+    "records": [
+      {
+        "path": "/intent/evidence/0",
+        "quote": "不太确定要买成品线还是散装线自己处理",
+        "valid": true,
+        "start": 28,
+        "end": 46
+      },
+      {
+        "path": "/intent/evidence/1",
+        "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？",
+        "valid": true,
+        "start": 67,
+        "end": 90
+      },
+      {
+        "path": "/context_facts/0/quote",
+        "quote": "家里现有的网线能不能用接头延长",
+        "valid": true,
+        "start": 51,
+        "end": 66
+      },
+      {
+        "path": "/answer_requirements/0/quote",
+        "quote": "不太确定要买成品线还是散装线自己处理",
+        "valid": true,
+        "start": 28,
+        "end": 46
+      },
+      {
+        "path": "/answer_requirements/1/quote",
+        "quote": "不太确定要买成品线还是散装线自己处理",
+        "valid": true,
+        "start": 28,
+        "end": 46
+      },
+      {
+        "path": "/answer_requirements/2/quote",
+        "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？",
+        "valid": true,
+        "start": 67,
+        "end": 90
+      },
+      {
+        "path": "/requirements/0/quote",
+        "quote": "网线",
+        "valid": true,
+        "start": 56,
+        "end": 58
+      },
+      {
+        "path": "/requirements/1/quote",
+        "quote": "把路由器接到另一间房的电脑",
+        "valid": true,
+        "start": 2,
+        "end": 15
+      },
+      {
+        "path": "/requirements/2/quote",
+        "quote": "大概需要50英尺",
+        "valid": true,
+        "start": 18,
+        "end": 26
+      }
+    ],
+    "errors": [],
+    "all_quotes_valid": true
+  },
+  "normalization": {
+    "changes": [
+      {
+        "path": "/requirements/2",
+        "before": {
+          "field": "length",
+          "value": 50,
+          "unit": "英尺"
+        },
+        "after": {
+          "field": "length",
+          "value": 15.24,
+          "unit": "m"
+        },
+        "policy": "registered_alias_or_exact_unit_conversion"
+      }
+    ],
+    "normalized_candidate": {
+      "schema_version": "rs-shopping-request/3",
+      "intent": {
+        "primary": "mixed",
+        "actions": [
+          "compare",
+          "guide_verification"
+        ],
+        "evidence": [
+          "不太确定要买成品线还是散装线自己处理",
+          "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+        ]
+      },
+      "context_facts": [
+        {
+          "name": "现有网线",
+          "value": "家里有现有网线，但能否用接头延长尚不确定",
+          "quote": "家里现有的网线能不能用接头延长"
+        }
+      ],
+      "answer_requirements": [
+        {
+          "kind": "comparison",
+          "need": "比较成品线与散装线自行处理所需的准备、操作和适用情形",
+          "quote": "不太确定要买成品线还是散装线自己处理"
+        },
+        {
+          "kind": "decision_support",
+          "need": "说明选择成品线或散装线的权衡与条件分支，不预设唯一选择",
+          "quote": "不太确定要买成品线还是散装线自己处理"
+        },
+        {
+          "kind": "verification_steps",
+          "need": "列出购买或延长前应先确认的情况，以及各自需要准备或核对的内容",
+          "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+        }
+      ],
+      "requirements": [
+        {
+          "id": "r1",
+          "kind": "strict",
+          "field": "product_type",
+          "relation": "eq",
+          "value": "网线",
+          "unit": null,
+          "quote": "网线"
+        },
+        {
+          "id": "r2",
+          "kind": "strict",
+          "field": "use_case",
+          "relation": "eq",
+          "value": "连接路由器与另一间房的电脑",
+          "unit": null,
+          "quote": "把路由器接到另一间房的电脑"
+        },
+        {
+          "id": "r3",
+          "kind": "approximate",
+          "field": "length",
+          "relation": "about",
+          "value": 15.24,
+          "unit": "m",
+          "quote": "大概需要50英尺"
+        }
+      ],
+      "unknowns": [],
+      "clarification": {
+        "mode": "not_needed",
+        "safe_answer_before_clarification": true,
+        "unresolved_actions": [],
+        "questions": []
+      },
+      "recipient": {
+        "target": "unknown",
+        "quote": null,
+        "profile_policy": "not_relevant",
+        "profile_reason": "请求聚焦于布线选项的比较和核查方法，不涉及商品推荐或个人画像。"
+      }
+    },
+    "raw_output_preserved": true,
+    "does_not_certify_semantics": true
+  },
+  "extraction": {
+    "schema_version": "rs-shopping-request/3",
+    "intent": {
+      "primary": "mixed",
+      "actions": [
+        "compare",
+        "guide_verification"
+      ],
+      "evidence": [
+        "不太确定要买成品线还是散装线自己处理",
+        "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+      ]
+    },
+    "context_facts": [
+      {
+        "name": "现有网线",
+        "value": "家里有现有网线，但能否用接头延长尚不确定",
+        "quote": "家里现有的网线能不能用接头延长"
+      }
+    ],
+    "answer_requirements": [
+      {
+        "kind": "comparison",
+        "need": "比较成品线与散装线自行处理所需的准备、操作和适用情形",
+        "quote": "不太确定要买成品线还是散装线自己处理"
+      },
+      {
+        "kind": "decision_support",
+        "need": "说明选择成品线或散装线的权衡与条件分支，不预设唯一选择",
+        "quote": "不太确定要买成品线还是散装线自己处理"
+      },
+      {
+        "kind": "verification_steps",
+        "need": "列出购买或延长前应先确认的情况，以及各自需要准备或核对的内容",
+        "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+      }
+    ],
+    "requirements": [
+      {
+        "id": "r1",
+        "kind": "strict",
+        "field": "product_type",
+        "relation": "eq",
+        "value": "网线",
+        "unit": null,
+        "quote": "网线"
+      },
+      {
+        "id": "r2",
+        "kind": "strict",
+        "field": "use_case",
+        "relation": "eq",
+        "value": "连接路由器与另一间房的电脑",
+        "unit": null,
+        "quote": "把路由器接到另一间房的电脑"
+      },
+      {
+        "id": "r3",
+        "kind": "approximate",
+        "field": "length",
+        "relation": "about",
+        "value": 15.24,
+        "unit": "m",
+        "quote": "大概需要50英尺"
+      }
+    ],
+    "unknowns": [],
+    "clarification": {
+      "mode": "not_needed",
+      "safe_answer_before_clarification": true,
+      "unresolved_actions": [],
+      "questions": []
+    },
+    "recipient": {
+      "target": "unknown",
+      "quote": null,
+      "profile_policy": "not_relevant",
+      "profile_reason": "请求聚焦于布线选项的比较和核查方法，不涉及商品推荐或个人画像。"
+    }
+  },
+  "extraction_protocol_valid": true,
+  "audit_call": {
+    "request_payload": {
+      "customer_message": "我想把路由器接到另一间房的电脑，走线大概需要50英尺，但不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长。能帮我理一下该先确认哪些情况、分别需要什么吗？",
+      "extraction": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification"
+          ],
+          "evidence": [
+            "不太确定要买成品线还是散装线自己处理",
+            "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "现有网线",
+            "value": "家里有现有网线，但能否用接头延长尚不确定",
+            "quote": "家里现有的网线能不能用接头延长"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "kind": "comparison",
+            "need": "比较成品线与散装线自行处理所需的准备、操作和适用情形",
+            "quote": "不太确定要买成品线还是散装线自己处理"
+          },
+          {
+            "kind": "decision_support",
+            "need": "说明选择成品线或散装线的权衡与条件分支，不预设唯一选择",
+            "quote": "不太确定要买成品线还是散装线自己处理"
+          },
+          {
+            "kind": "verification_steps",
+            "need": "列出购买或延长前应先确认的情况，以及各自需要准备或核对的内容",
+            "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "r1",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "网线",
+            "unit": null,
+            "quote": "网线"
+          },
+          {
+            "id": "r2",
+            "kind": "strict",
+            "field": "use_case",
+            "relation": "eq",
+            "value": "连接路由器与另一间房的电脑",
+            "unit": null,
+            "quote": "把路由器接到另一间房的电脑"
+          },
+          {
+            "id": "r3",
+            "kind": "approximate",
+            "field": "length",
+            "relation": "about",
+            "value": 50,
+            "unit": "英尺",
+            "quote": "大概需要50英尺"
+          }
+        ],
+        "unknowns": [],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "not_relevant",
+          "profile_reason": "请求聚焦于布线选项的比较和核查方法，不涉及商品推荐或个人画像。"
+        }
+      },
+      "catalog": [
+        {
+          "title": "NavePoint Cat6 (CCA), 1000ft, Black, Solid Bulk Ethernet Cable, 550MHz, 23AWG 4 Pair, Unshielded Twisted Pair (UTP)",
+          "category": "Cat 6 Cables",
+          "category_path": [
+            "Electronics",
+            "Computers & Accessories",
+            "Computer Accessories & Peripherals",
+            "Cables & Accessories",
+            "Cables & Interconnects",
+            "Ethernet Cables",
+            "Cat 6 Cables"
+          ],
+          "price": 96.66,
+          "currency": "SOURCE_UNIT",
+          "store": "NavePoint"
+        },
+        {
+          "title": "CAT6 Ethernet Cable 50FT with Shielded Gold Shell RJ45 Connector for modems, routers, LAN, Computers, Flat Network Cable, high Speed Cable Distribution Cable Clips - White 50FT",
+          "category": "Cat 6 Cables",
+          "category_path": [
+            "Electronics",
+            "Computers & Accessories",
+            "Computer Accessories & Peripherals",
+            "Cables & Accessories",
+            "Cables & Interconnects",
+            "Ethernet Cables",
+            "Cat 6 Cables"
+          ],
+          "price": 12.99,
+          "currency": "SOURCE_UNIT",
+          "store": "Sharoher"
+        },
+        {
+          "title": "Y.D.F RJ45 Coupler, Network Coupler, Ethernet Connectors, Hielded in-Line Coupler for Cat7/Cat6/Cat5e/Cat5 Ethernet Cable Extender Connector - Female to Female (Black-5 Pack)",
+          "category": "Cat 6 Cables",
+          "category_path": [
+            "Electronics",
+            "Computers & Accessories",
+            "Computer Accessories & Peripherals",
+            "Cables & Accessories",
+            "Cables & Interconnects",
+            "Ethernet Cables",
+            "Cat 6 Cables"
+          ],
+          "price": 10.49,
+          "currency": "SOURCE_UNIT",
+          "store": "Y.D.F"
+        }
+      ],
+      "profile": {
+        "history": [
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "USB Cable for Samsung Digital Camera PL21, PL210, PL211, PL22, PL50, PL51, PL55, PL5, PL60, PL65, PL80, PL81, PL90, PL91 Replacement for SUC-3 SUC-5 SUC-7 Data & Charge Cord",
+              "category": "USB Cables",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Computer Accessories & Peripherals",
+                "Cables & Accessories",
+                "Cables & Interconnects",
+                "USB Cables"
+              ],
+              "price": 9.99,
+              "currency": "SOURCE_UNIT",
+              "store": "Keple"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Blaupunkt 6.5-Inch 360W 4-Way Coaxial Car Audio Speaker, Set of 2",
+              "category": "Coaxial Speakers",
+              "category_path": [
+                "Electronics",
+                "Car & Vehicle Electronics",
+                "Car Electronics",
+                "Car Audio",
+                "Speakers",
+                "Coaxial Speakers"
+              ],
+              "price": null,
+              "currency": "SOURCE_UNIT",
+              "store": "BLAUPUNKT"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "Tram 1290 Rain Cap",
+              "category": "Antennas",
+              "category_path": [
+                "Electronics",
+                "Portable Audio & Video",
+                "CB & Two-Way Radios",
+                "Accessories",
+                "Antennas"
+              ],
+              "price": 7.32,
+              "currency": "SOURCE_UNIT",
+              "store": "Tram"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "Retevis 2 Pin 2 Way Radio USB Programming Cable Compatible with Retevis RT22 RT21 RT68 RT22S RT19 RT86 RT15 H-777 NR10 RT85 RB89 RB29 Baofeng UV-5R BF-888S Arcshell AR-5 TYT Walkie Talkie(1 Pack)",
+              "category": "Accessories",
+              "category_path": [
+                "Electronics",
+                "Portable Audio & Video",
+                "CB & Two-Way Radios",
+                "Accessories"
+              ],
+              "price": 12.99,
+              "currency": "SOURCE_UNIT",
+              "store": "Retevis"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "DHT Electronics 2PCS RF coaxial coax adapter N male to UHF female SO-239 SO239 connector",
+              "category": "Gender Changers",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Computer Accessories & Peripherals",
+                "Computer Cable Adapters",
+                "Gender Changers"
+              ],
+              "price": 6.8,
+              "currency": "SOURCE_UNIT",
+              "store": "DHT Electronics"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "XRDS -RF N Male to UHF Female Adapter N Connector to PL-259 SO-239 Coax RF Coaxial Cable Connectors Pack of 2 (NOT for TV)",
+              "category": "Connectors & Adapters",
+              "category_path": [
+                "Electronics",
+                "Home Audio",
+                "Home Audio Accessories",
+                "Connectors & Adapters"
+              ],
+              "price": 9.99,
+              "currency": "SOURCE_UNIT",
+              "store": "XRDS -RF"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "Tram Browning BR-6140 Fiberglass Omni UHF Base Antenna New BR6140 Omni UHF 450-470 MHz for Motorola Repeater GR500 GR300 GR1225 CDR700 GR1225 R1225 FR-6000",
+              "category": "Antennas",
+              "category_path": [
+                "Electronics",
+                "Portable Audio & Video",
+                "CB & Two-Way Radios",
+                "Accessories",
+                "Antennas"
+              ],
+              "price": 69.0,
+              "currency": "SOURCE_UNIT",
+              "store": "tram-browning"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "YOTENKO CB Coax Cable,RG58 Coaxial Cable 25Ft,UHF PL259 Male to Male Cable + 2PCS UHF Female to Female SO239 Adapter for CB Ham Radio,SWR Meter,Antenna Analyzer,HF Radio,Amateur Radio",
+              "category": "Coaxial",
+              "category_path": [
+                "Electronics",
+                "Home Audio",
+                "Home Audio Accessories",
+                "Cables",
+                "Coaxial"
+              ],
+              "price": 18.68,
+              "currency": "SOURCE_UNIT",
+              "store": "YOTENKO"
+            }
+          },
+          {
+            "rating": 4.0,
+            "item": {
+              "title": "Walkie Talkie Phones Zello PTT Button APP WiFi Mobile Radio 3G/4G Network 100 Miles Long Range Smartphone GPS Android KSUN ZL10",
+              "category": "Two-Way Radios",
+              "category_path": [
+                "Electronics",
+                "Portable Audio & Video",
+                "CB & Two-Way Radios",
+                "Two-Way Radios"
+              ],
+              "price": 59.99,
+              "currency": "SOURCE_UNIT",
+              "store": "KSUN"
+            }
+          }
+        ],
+        "history_meaning": "past_positive_reviews_not_purchases"
+      },
+      "price_unit": "original_listing_units; currency_unconfirmed"
+    },
+    "instruction_sha256": "f5bee76ab3d0bf4b4f140900835a01d119ab997b3efe1322bb470ea3314d5581",
+    "requested_model": "gpt-6-luna",
+    "started_at": "2026-10-11T12:45:26.929583+00:00",
+    "response_metadata": {
+      "id": "resp_0d4765f5e435b6b3016acb84e65b5087d19c53bd954e14be94",
+      "model": "gpt-6-luna",
+      "usage": {
+        "completion_tokens": 845,
+        "total_tokens": 3947,
+        "prompt_tokens": 3102,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cached_creation_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 388
+        }
+      },
+      "finish_reason": "stop"
+    },
+    "raw_content": "{\n  \"schema_version\": \"rs-shopping-audit/3\",\n  \"checks\": {\n    \"naturalness\": \"pass\",\n    \"extraction_fidelity\": \"pass\",\n    \"fact_boundary\": \"pass\",\n    \"clarification_policy\": \"pass\"\n  },\n  \"reasons\": {\n    \"naturalness\": \"顾客自然地询问约50英尺的路由器到异房电脑布线方案，以及成品线、散装线和接头延长的取舍与核查步骤。\",\n    \"extraction_fidelity\": \"提取覆盖了比较、决策支持、购买或延长前的核查步骤，以及用途和约略长度。所列 quote 与 intent.evidence 均为顾客原文中的逐字片段；约50英尺被正确记录为近似长度。\",\n    \"fact_boundary\": \"提取没有把目录商品信息或历史记录当作顾客当前要求，也没有凭历史补出设备兼容性或个人偏好；目录不足以证明实际库存、价格币种或顾客现有线材的兼容情况。\",\n    \"clarification_policy\": \"这是询问先确认什么、分别需要什么的流程咨询，并非要求判定某个已知接头能否连接某两根已知线材。可先说明通用核查方法，并把线材类型、端头和接头规格列作后续核实项，无需先追问才能回答。\"\n  },\n  \"evidence\": [\n    {\n      \"source\": \"customer\",\n      \"quote\": \"我想把路由器接到另一间房的电脑，走线大概需要50英尺\"\n    },\n    {\n      \"source\": \"customer\",\n      \"quote\": \"不太确定要买成品线还是散装线自己处理\"\n    },\n    {\n      \"source\": \"customer\",\n      \"quote\": \"也不清楚家里现有的网线能不能用接头延长。能帮我理一下该先确认哪些情况、分别需要什么吗？\"\n    }\n  ],\n  \"issues\": []\n}",
+    "parsed_json": {
+      "schema_version": "rs-shopping-audit/3",
+      "checks": {
+        "naturalness": "pass",
+        "extraction_fidelity": "pass",
+        "fact_boundary": "pass",
+        "clarification_policy": "pass"
+      },
+      "reasons": {
+        "naturalness": "顾客自然地询问约50英尺的路由器到异房电脑布线方案，以及成品线、散装线和接头延长的取舍与核查步骤。",
+        "extraction_fidelity": "提取覆盖了比较、决策支持、购买或延长前的核查步骤，以及用途和约略长度。所列 quote 与 intent.evidence 均为顾客原文中的逐字片段；约50英尺被正确记录为近似长度。",
+        "fact_boundary": "提取没有把目录商品信息或历史记录当作顾客当前要求，也没有凭历史补出设备兼容性或个人偏好；目录不足以证明实际库存、价格币种或顾客现有线材的兼容情况。",
+        "clarification_policy": "这是询问先确认什么、分别需要什么的流程咨询，并非要求判定某个已知接头能否连接某两根已知线材。可先说明通用核查方法，并把线材类型、端头和接头规格列作后续核实项，无需先追问才能回答。"
+      },
+      "evidence": [
+        {
+          "source": "customer",
+          "quote": "我想把路由器接到另一间房的电脑，走线大概需要50英尺"
+        },
+        {
+          "source": "customer",
+          "quote": "不太确定要买成品线还是散装线自己处理"
+        },
+        {
+          "source": "customer",
+          "quote": "也不清楚家里现有的网线能不能用接头延长。能帮我理一下该先确认哪些情况、分别需要什么吗？"
+        }
+      ],
+      "issues": []
+    },
+    "call_succeeded": true,
+    "completed_at": "2026-10-11T12:45:44.817940+00:00"
+  },
+  "model_audit": {
+    "schema_version": "rs-shopping-audit/3",
+    "checks": {
+      "naturalness": "pass",
+      "extraction_fidelity": "pass",
+      "fact_boundary": "pass",
+      "clarification_policy": "pass"
+    },
+    "reasons": {
+      "naturalness": "顾客自然地询问约50英尺的路由器到异房电脑布线方案，以及成品线、散装线和接头延长的取舍与核查步骤。",
+      "extraction_fidelity": "提取覆盖了比较、决策支持、购买或延长前的核查步骤，以及用途和约略长度。所列 quote 与 intent.evidence 均为顾客原文中的逐字片段；约50英尺被正确记录为近似长度。",
+      "fact_boundary": "提取没有把目录商品信息或历史记录当作顾客当前要求，也没有凭历史补出设备兼容性或个人偏好；目录不足以证明实际库存、价格币种或顾客现有线材的兼容情况。",
+      "clarification_policy": "这是询问先确认什么、分别需要什么的流程咨询，并非要求判定某个已知接头能否连接某两根已知线材。可先说明通用核查方法，并把线材类型、端头和接头规格列作后续核实项，无需先追问才能回答。"
+    },
+    "evidence": [
+      {
+        "source": "customer",
+        "quote": "我想把路由器接到另一间房的电脑，走线大概需要50英尺"
+      },
+      {
+        "source": "customer",
+        "quote": "不太确定要买成品线还是散装线自己处理"
+      },
+      {
+        "source": "customer",
+        "quote": "也不清楚家里现有的网线能不能用接头延长。能帮我理一下该先确认哪些情况、分别需要什么吗？"
+      }
+    ],
+    "issues": []
+  },
+  "audit_protocol_valid": true,
+  "model_audit_all_pass": true,
+  "returned_model_matches_request": true,
+  "completions_finished_normally": true
+}

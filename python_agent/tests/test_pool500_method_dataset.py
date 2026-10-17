@@ -152,6 +152,32 @@ def test_selection_uses_user_bucket_v2_and_item_cf_ready_non_over_hot(tmp_path: 
     assert weak["dropped_reason_counts"]["item_not_cf_ready"] == 1
 
 
+def test_recent_2y_itemcf_profile_configures_weak_and_strong_scoring(tmp_path: Path) -> None:
+    governance_manifest = _write_governance_fixture(tmp_path)
+
+    weak = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "recent_2y_weak",
+        source_method="itemcf_weak",
+        itemcf_coverage_profile="recent_2y",
+        overwrite=True,
+        enforce_venv=False,
+    )
+    strong = build_pool500_method_dataset(
+        governance_manifest_path=governance_manifest,
+        output_dir=tmp_path / "recent_2y_strong",
+        source_method="itemcf_strong",
+        itemcf_coverage_profile="recent_2y",
+        overwrite=True,
+        enforce_venv=False,
+    )
+
+    assert weak["resource_scale_policy"]["score_policy"] == method_dataset_builder.ITEMCF_RECENT_2Y_WEAK_SCORE_POLICY
+    assert strong["resource_scale_policy"]["score_policy"] == method_dataset_builder.ITEMCF_RECENT_2Y_STRONG_SCORE_POLICY
+    assert weak["selection_policy"]["eligible_user_buckets"] == ["medium_behavior", "sequence_sufficient", "collaborative_rich"]
+    assert strong["resource_scale_policy"]["directed_seed_to_candidate_only"] is True
+
+
 def test_itemcf_weak_coverage_profile_broadens_users_and_items_without_changing_layer(tmp_path: Path) -> None:
     governance_manifest = _write_governance_fixture(tmp_path)
 

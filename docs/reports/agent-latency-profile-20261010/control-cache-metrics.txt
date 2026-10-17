@@ -1,0 +1,12 @@
+cache_eviction_weight_total{cache="recommend_bge_scores"} 0.0
+cache_eviction_weight_total{cache="recommend_query_embedding"} 0.0
+cache_evictions_total{cache="recommend_bge_scores"} 0.0
+cache_evictions_total{cache="recommend_query_embedding"} 0.0
+cache_gets_total{cache="recommend_bge_scores",result="hit"} 24.0
+cache_gets_total{cache="recommend_bge_scores",result="miss"} 1.0
+cache_gets_total{cache="recommend_query_embedding",result="hit"} 24.0
+cache_gets_total{cache="recommend_query_embedding",result="miss"} 1.0
+cache_puts_total{cache="recommend_bge_scores"} 1.0
+cache_puts_total{cache="recommend_query_embedding"} 1.0
+cache_size{cache="recommend_bge_scores"} 1.0
+cache_size{cache="recommend_query_embedding"} 1.0

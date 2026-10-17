@@ -4,7 +4,11 @@ import json
 import subprocess
 from pathlib import Path
 
+import pytest
+
 from scripts.serving.import_candidate_store_to_mysql import _insert_sql, import_candidate_store_to_mysql
+
+pytestmark = pytest.mark.unit
 
 
 def test_importer_dry_run_classifies_pool500_usercf_rows(tmp_path: Path) -> None:

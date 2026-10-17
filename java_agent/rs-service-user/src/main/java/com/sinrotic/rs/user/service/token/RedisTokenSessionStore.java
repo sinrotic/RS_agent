@@ -50,22 +50,41 @@ public class RedisTokenSessionStore implements TokenSessionStore {
     @Override
     public Optional<TokenSession> findByAccessTokenHash(String accessTokenHash) {
         return readSession(ACCESS_KEY_PREFIX + accessTokenHash)
+                .filter(session -> accessTokenHash.equals(session.accessTokenHash()))
+                .filter(this::hasCanonicalSession)
                 .filter(session -> session.accessExpiresAt().isAfter(LocalDateTime.now()));
     }
 
     @Override
     public Optional<TokenSession> findByRefreshTokenHash(String refreshTokenHash) {
         return readSession(REFRESH_KEY_PREFIX + refreshTokenHash)
+                .filter(session -> refreshTokenHash.equals(session.refreshTokenHash()))
+                .filter(this::hasCanonicalSession)
                 .filter(session -> session.refreshExpiresAt().isAfter(LocalDateTime.now()));
     }
 
     @Override
     public void revokeSession(String sessionId) {
-        readSession(SESSION_KEY_PREFIX + sessionId).ifPresent(session -> {
+        revokeSession(sessionId, null, null);
+    }
+
+    @Override
+    public void revokeSession(String sessionId, String accessTokenHash, String refreshTokenHash) {
+        Optional<TokenSession> indexed = readSession(SESSION_KEY_PREFIX + sessionId);
+        if (indexed.isEmpty() && accessTokenHash != null) indexed = readSession(ACCESS_KEY_PREFIX + accessTokenHash);
+        if (indexed.isEmpty() && refreshTokenHash != null) indexed = readSession(REFRESH_KEY_PREFIX + refreshTokenHash);
+        // 先移除认证必须存在的规范会话；其余索引清理中断也不会继续认证旧令牌。
+        redisTemplate.delete(SESSION_KEY_PREFIX + sessionId);
+        indexed.filter(session -> sessionId.equals(session.sessionId())).ifPresent(session -> {
             redisTemplate.delete(ACCESS_KEY_PREFIX + session.accessTokenHash());
             redisTemplate.delete(REFRESH_KEY_PREFIX + session.refreshTokenHash());
-            redisTemplate.delete(SESSION_KEY_PREFIX + session.sessionId());
         });
+        if (accessTokenHash != null) redisTemplate.delete(ACCESS_KEY_PREFIX + accessTokenHash);
+        if (refreshTokenHash != null) redisTemplate.delete(REFRESH_KEY_PREFIX + refreshTokenHash);
+    }
+
+    private boolean hasCanonicalSession(TokenSession session) {
+        return readSession(SESSION_KEY_PREFIX + session.sessionId()).filter(session::equals).isPresent();
     }
 
     private Optional<TokenSession> readSession(String key) {

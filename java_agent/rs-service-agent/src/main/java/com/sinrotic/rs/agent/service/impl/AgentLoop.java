@@ -7,29 +7,61 @@ import com.sinrotic.rs.agent.domain.vo.AgentToolCallVO;
 import com.sinrotic.rs.agent.service.AgentModelStreamClient;
 import com.sinrotic.rs.agent.service.AgentLoopHookDispatcher;
 import com.sinrotic.rs.agent.service.AgentInterrupter;
+import com.sinrotic.rs.agent.service.AgentExecutionLimiter;
 import com.sinrotic.rs.agent.service.AgentRuntimeConfigurationService;
-import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 import com.sinrotic.rs.agent.service.PublicAgentResponseProjector;
+import com.sinrotic.rs.agent.service.A2uiMessageProjector;
+import com.sinrotic.rs.agent.service.AgentToolUseOrchestrator;
+import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
+import com.sinrotic.rs.agent.service.AgentToolUseResult;
+import com.sinrotic.rs.agent.config.AgentExecutionProperties;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 public abstract class AgentLoop {
 
+    static final String INTERNAL_REQUEST_ID_CONTEXT_KEY = "__agent_turn_request_id";
+    static final String INTERNAL_SKILL_REUSE_CONTEXT_KEY = "__agent_allow_loaded_skill_reuse";
+
+    private static final int DEFAULT_MAX_AGENT_LOOPS = 8;
+
+    private static final int MAX_FINAL_ANSWER_BLOCKS = 12;
+
+    private static final int MAX_FAILED_TOOLS_PER_TURN = 2;
+
+    private static final Set<String> FINAL_ANSWER_BLOCK_TYPES = Set.of(
+            "text",
+            "product_cards",
+            "comparison_table",
+            "followup_question"
+    );
+
+    private static final Set<String> FINAL_ANSWER_BLOCK_FIELDS = Set.of(
+            "type",
+            "content",
+            "card_set_id",
+            "item_ids",
+            "layout"
+    );
+
     private final AgentProfile profile;
 
     private final AgentRuntimeConfigurationService runtimeConfigurationService;
 
-    private final AgentToolUseExecutor toolUseExecutor;
+    private final AgentToolUseOrchestrator toolUseOrchestrator;
 
     private final AgentModelStreamClient modelStreamClient;
+
+    private final AgentExecutionLimiter executionLimiter;
 
     private final AgentLoopHookDispatcher hookDispatcher;
 
@@ -78,17 +110,58 @@ public abstract class AgentLoop {
             AgentLoopHookDispatcher hookDispatcher,
             AgentInterrupter interrupter
     ) {
+        this(
+                profile,
+                runtimeConfigurationService,
+                toolUseExecutor,
+                modelStreamClient,
+                hookDispatcher,
+                interrupter,
+                new AgentExecutionLimiter(new AgentExecutionProperties())
+        );
+    }
+
+    protected AgentLoop(
+            AgentProfile profile,
+            AgentRuntimeConfigurationService runtimeConfigurationService,
+            AgentToolUseExecutor toolUseExecutor,
+            AgentModelStreamClient modelStreamClient,
+            AgentLoopHookDispatcher hookDispatcher,
+            AgentInterrupter interrupter,
+            AgentExecutionLimiter executionLimiter
+    ) {
         this.profile = profile;
         this.runtimeConfigurationService = runtimeConfigurationService;
-        this.toolUseExecutor = toolUseExecutor;
+        this.toolUseOrchestrator = new StreamingAgentToolUseOrchestrator(toolUseExecutor);
         this.modelStreamClient = modelStreamClient;
+        this.executionLimiter = executionLimiter == null ? new AgentExecutionLimiter(new AgentExecutionProperties()) : executionLimiter;
         this.hookDispatcher = hookDispatcher == null ? new NoopAgentLoopHookDispatcher() : hookDispatcher;
         this.interrupter = interrupter == null ? new InMemoryAgentInterrupter() : interrupter;
     }
 
     public AgentLoopResult run(AgentChatRequestDTO request, Consumer<AgentStreamEventVO> consumer) {
-        String requestId = "agent_req_" + UUID.randomUUID().toString().substring(0, 8);
-        AgentInterruptContext interruptContext = interrupter.createTurn(requestId, request.sessionId());
+        return run(request, consumer, () -> { });
+    }
+
+    public AgentLoopResult run(AgentChatRequestDTO request, Consumer<AgentStreamEventVO> consumer, Runnable onReady) {
+        return run(request, consumer, onReady, ignored -> java.util.Optional.empty());
+    }
+
+    boolean supportsDirectRecommendation() {
+        return getClass() == RsAgentLoop.class && hookDispatcher.supportsDirectRecommendation();
+    }
+
+    public AgentLoopResult run(AgentChatRequestDTO request, Consumer<AgentStreamEventVO> consumer, Runnable onReady,
+            java.util.function.Function<AgentChatRequestDTO, java.util.Optional<Map<String, Object>>> directAnswer) {
+        String requestId = resolveRequestId(request);
+        request = withoutInternalRequestId(request);
+        A2uiMessageProjector.State uiState = new A2uiMessageProjector.State(request.resolvedContext().get("a2ui_state"));
+        AgentInterruptContext interruptContext = interrupter.createTurn(
+                requestId,
+                request.sessionId(),
+                String.valueOf(request.resolvedContext().getOrDefault("authenticated_account_id", "")),
+                request.profileUserId()
+        );
         List<AgentToolCallVO> toolCalls = new ArrayList<>();
         List<Map<String, Object>> toolResults = new ArrayList<>();
         Map<String, Object> modelUsage = new java.util.LinkedHashMap<>();
@@ -108,6 +181,7 @@ public abstract class AgentLoop {
                 null
         ));
         try {
+            onReady.run();
             AgentChatRequestDTO loopRequest = withRuntimeContext(request);
             state.set(state.get().withRequest(loopRequest).withPhase(AgentLoopPhase.SESSION_START_HOOK));
             loopRequest = applyHookContext(
@@ -125,6 +199,8 @@ public abstract class AgentLoop {
 
             for (int loop = 0; loop < maxLoops() && !completed; loop++) {
                 final int loopIndex = loop;
+                AgentToolUseOrchestrator.Run toolRun = toolUseOrchestrator.start();
+                interruptContext.onInterrupt(toolRun::cancel);
                 try {
                     state.set(state.get().withLoopIndex(loopIndex));
                     throwIfInterrupted(interruptContext);
@@ -134,20 +210,33 @@ public abstract class AgentLoop {
                         hook(AgentLoopHookEvent.BEFORE_MODEL_CALL, requestId, loopIndex, loopRequest)
                                 .dispatch(hookDispatcher)
                     );
+                    long failures = toolCalls.stream().filter(call -> Set.of("FAILED", "ERROR", "UNAVAILABLE")
+                            .contains(call.status())).count();
+                    if ((loopIndex == maxLoops() - 1 && !toolResults.isEmpty())
+                            || failures >= MAX_FAILED_TOOLS_PER_TURN) {
+                        var finalContext = new java.util.LinkedHashMap<String, Object>(loopRequest.resolvedContext());
+                        finalContext.put("final_answer_only", true);
+                        loopRequest = withContext(loopRequest, finalContext);
+                    }
                     state.set(state.get().withRequest(loopRequest).withPhase(AgentLoopPhase.MODEL_STREAMING));
                     AgentChatRequestDTO currentLoopRequest = loopRequest;
-                    modelStreamClient.streamAssistantEvents(requestId, loopRequest, modelEvent -> {
+                    AtomicBoolean toolUseSeenThisTurn = new AtomicBoolean(false);
+                    Consumer<AgentModelStreamEvent> modelConsumer = modelEvent -> {
                         throwIfInterrupted(interruptContext);
                         if (modelEvent.isToken()) {
+                            if (toolUseSeenThisTurn.get()) {
+                                return;
+                            }
                             assistantMessage.append(modelEvent.delta());
                             consumer.accept(new AgentStreamEventVO("token", requestId, Map.of("delta", modelEvent.delta())));
                             throwIfInterrupted(interruptContext);
                             return;
                         }
                         if (modelEvent.isToolUse()) {
+                            toolUseSeenThisTurn.set(true);
                             String toolCallId = resolveToolCallId(modelEvent);
                             if ("emit_final_answer".equals(modelEvent.toolName())) {
-                                String finalMessage = emitFinalAnswerBlocks(requestId, modelEvent.arguments(), consumer);
+                                String finalMessage = emitFinalAnswerBlocks(requestId, modelEvent.arguments(), consumer, uiState);
                                 state.set(state.get()
                                         .withTransition(AgentLoopTransition.complete(AgentFinishReason.FINAL_ANSWER))
                                         .withPhase(AgentLoopPhase.COMPLETED));
@@ -187,97 +276,68 @@ public abstract class AgentLoop {
                             throwIfInterrupted(interruptContext);
                             if (preToolHook.blocked()) {
                                 AgentToolCallVO toolCall = blockedToolCall(toolCallId, toolEvent, preToolHook.message());
-                                toolCalls.add(toolCall);
-                                toolResults.add(toolResultPayload(toolCall));
-                                consumer.accept(toolResultEvent(requestId, toolCall));
+                                toolRun.complete(toolCallId, toolEvent, toolCall.metadata());
                                 state.set(state.get()
                                         .clearPendingToolCall()
                                         .withPhase(AgentLoopPhase.TOOL_RESULT_READY)
                                         .withTransition(AgentLoopTransition.continueLoop()));
-                                throw new AgentLoopToolUseSignal();
+                                return;
                             }
                             state.set(state.get().withPhase(AgentLoopPhase.TOOL_EXECUTING));
-                            CompletableFuture<Map<String, Object>> toolFuture = toolUseExecutor.execute(toolEvent);
-                            CompletableFuture<AgentToolCallVO> future = toolFuture
-                                    .thenApply(result -> new AgentToolCallVO(
-                                            toolCallId,
-                                            toolEvent.toolName(),
-                                            profile.serviceForTool(toolEvent.toolName()),
-                                            String.valueOf(result.getOrDefault("status", "SUCCESS")),
-                                            result
-                                    ));
-                            interruptContext.onInterrupt(() -> {
-                                toolFuture.cancel(true);
-                                future.cancel(true);
-                            });
-                            AgentToolCallVO toolCall;
-                            try {
-                                toolCall = future.join();
-                                throwIfInterrupted(interruptContext);
-                            } catch (CancellationException error) {
-                                AgentToolCallVO interruptedToolCall = interruptedToolCall(toolCallId, toolEvent, interruptContext.reason());
-                                toolCalls.add(interruptedToolCall);
-                                toolResults.add(toolResultPayload(interruptedToolCall));
-                                consumer.accept(toolResultEvent(requestId, interruptedToolCall));
-                                state.set(state.get()
-                                        .clearPendingToolCall()
-                                        .withPhase(AgentLoopPhase.INTERRUPTED)
-                                        .withTransition(AgentLoopTransition.complete(AgentFinishReason.INTERRUPTED)));
-                                throw new AgentLoopInterruptedSignal(interruptContext.reason());
-                            } catch (CompletionException error) {
-                                AgentToolCallVO failedToolCall = interruptContext.interrupted()
-                                        ? interruptedToolCall(toolCallId, toolEvent, interruptContext.reason())
-                                        : failedToolCall(toolCallId, toolEvent, error);
-                                AgentLoopHookContext failureHook = hook(AgentLoopHookEvent.POST_TOOL_USE_FAILURE, requestId, loopIndex, currentLoopRequest);
-                                if (failedToolCall.status().equals("INTERRUPTED")) {
-                                    failureHook = hook(AgentLoopHookEvent.INTERRUPT, requestId, loopIndex, currentLoopRequest);
+                            if ("emit_ui".equals(toolEvent.toolName())) {
+                                try {
+                                    if (runtimeConfigurationService.tools().stream().noneMatch(tool ->
+                                            tool.enabled() && "emit_ui".equals(tool.name()))) {
+                                        throw new IllegalArgumentException("emit_ui is disabled");
+                                    }
+                                    Map<String, Object> rawBlock = new java.util.LinkedHashMap<>();
+                                    rawBlock.put("type", "a2ui");
+                                    rawBlock.put("messages", toolEvent.arguments().get("messages"));
+                                    Map<String, Object> block = responseProjector.projectBlock(rawBlock, runtimeProfile());
+                                    uiState.accept(block.get("messages"));
+                                    consumer.accept(new AgentStreamEventVO("answer_block", requestId, block));
+                                    toolRun.complete(toolCallId, toolEvent, Map.of("status", "SUCCESS", "published", true));
+                                } catch (IllegalArgumentException error) {
+                                    toolRun.complete(toolCallId, toolEvent, Map.of("status", "FAILED", "message", error.getMessage()));
                                 }
-                                failureHook
-                                        .withTool(toolCallId, toolEvent.toolName(), toolEvent.arguments())
-                                        .withToolResult(failedToolCall.metadata())
-                                        .withError(error.getMessage())
-                                        .dispatch(hookDispatcher);
-                                toolCalls.add(failedToolCall);
-                                toolResults.add(toolResultPayload(failedToolCall));
-                                consumer.accept(toolResultEvent(requestId, failedToolCall));
-                                if (interruptContext.interrupted()) {
-                                    state.set(state.get()
-                                            .clearPendingToolCall()
-                                            .withPhase(AgentLoopPhase.INTERRUPTED)
-                                            .withTransition(AgentLoopTransition.complete(AgentFinishReason.INTERRUPTED)));
-                                    throw new AgentLoopInterruptedSignal(interruptContext.reason());
-                                }
-                                state.set(state.get()
-                                        .clearPendingToolCall()
-                                        .withPhase(AgentLoopPhase.TOOL_RESULT_READY)
-                                        .withTransition(AgentLoopTransition.continueLoop()));
-                                throw new AgentLoopToolUseSignal();
+                                return;
                             }
-                            AgentLoopHookResult postToolHook = hook(AgentLoopHookEvent.POST_TOOL_USE, requestId, loopIndex, currentLoopRequest)
-                                    .withTool(toolCallId, toolEvent.toolName(), toolEvent.arguments())
-                                    .withToolResult(toolCall.metadata())
-                                    .dispatch(hookDispatcher);
-                            if (postToolHook.preventContinuation()) {
-                                state.set(state.get()
-                                        .clearPendingToolCall()
-                                        .withTransition(AgentLoopTransition.complete(AgentFinishReason.HOOK_STOPPED))
-                                        .withPhase(AgentLoopPhase.COMPLETED));
-                                throw new AgentLoopHookStoppedSignal(postToolHook.message());
-                            }
-                            toolCalls.add(toolCall);
-                            toolResults.add(toolResultPayload(toolCall));
-                            consumer.accept(toolResultEvent(requestId, toolCall));
-                            state.set(state.get()
-                                    .clearPendingToolCall()
-                                    .withPhase(AgentLoopPhase.TOOL_RESULT_READY)
-                                    .withTransition(AgentLoopTransition.continueLoop()));
-                            throw new AgentLoopToolUseSignal();
+                            toolRun.submit(toolCallId, toolEvent);
                         }
                         if (modelEvent.isUsage()) {
                             modelUsage.putAll(modelEvent.arguments());
                             consumer.accept(new AgentStreamEventVO("model_usage", requestId, modelEvent.arguments()));
                         }
-                    });
+                    };
+                    var preparedAnswer = loopIndex == 0 && supportsDirectRecommendation()
+                            ? directAnswer.apply(currentLoopRequest) : java.util.Optional.<Map<String, Object>>empty();
+                    if (preparedAnswer.isPresent()) {
+                        modelConsumer.accept(AgentModelStreamEvent.toolUse("emit_final_answer", preparedAnswer.get()));
+                    } else {
+                        streamAssistantEvents(requestId, currentLoopRequest, interruptContext, modelConsumer);
+                    }
+                    if (toolRun.hasSubmittedTools()) {
+                        state.set(state.get().withPhase(AgentLoopPhase.TOOL_EXECUTING));
+                        List<AgentToolUseResult> toolUseResults = toolRun.awaitResults();
+                        for (AgentToolUseResult toolUseResult : toolUseResults) {
+                            acceptToolUseResult(
+                                    requestId,
+                                    loopIndex,
+                                    currentLoopRequest,
+                                    toolUseResult,
+                                    toolCalls,
+                                    toolResults,
+                                    consumer,
+                                    interruptContext,
+                                    state
+                            );
+                        }
+                        state.set(state.get()
+                                .clearPendingToolCall()
+                                .withPhase(AgentLoopPhase.TOOL_RESULT_READY)
+                                .withTransition(AgentLoopTransition.continueLoop()));
+                        throw new AgentLoopToolUseSignal();
+                    }
                     throwIfInterrupted(interruptContext);
                     state.set(state.get().withPhase(AgentLoopPhase.POST_MODEL_STREAM_HOOK));
                     AgentLoopHookResult postModelHook = hook(AgentLoopHookEvent.POST_MODEL_STREAM, requestId, loopIndex, loopRequest)
@@ -318,6 +378,7 @@ public abstract class AgentLoop {
                             .withPhase(AgentLoopPhase.COMPLETED));
                     completed = true;
                 } catch (AgentLoopFinalAnswerSignal signal) {
+                    toolRun.cancel();
                     assistantMessage.append(signal.assistantMessage());
                     state.set(state.get()
                             .withTransition(AgentLoopTransition.complete(AgentFinishReason.FINAL_ANSWER))
@@ -329,6 +390,7 @@ public abstract class AgentLoop {
                             .withRequest(loopRequest)
                             .withTransition(AgentLoopTransition.continueLoop()));
                 } catch (AgentLoopInterruptedSignal signal) {
+                    toolRun.cancel();
                     hook(AgentLoopHookEvent.INTERRUPT, requestId, loopIndex, loopRequest)
                             .withAssistantMessage(assistantMessage.toString())
                             .withError(signal.reason())
@@ -339,6 +401,7 @@ public abstract class AgentLoop {
                             .withPhase(AgentLoopPhase.INTERRUPTED));
                     completed = true;
                 } catch (AgentLoopHookStoppedSignal signal) {
+                    toolRun.cancel();
                     if (!signal.message().isBlank()) {
                         consumer.accept(new AgentStreamEventVO("hook_stopped", requestId, Map.of("message", signal.message())));
                     }
@@ -347,6 +410,7 @@ public abstract class AgentLoop {
                             .withPhase(AgentLoopPhase.COMPLETED));
                     completed = true;
                 } catch (RuntimeException error) {
+                    toolRun.cancel();
                     state.set(state.get()
                             .withTransition(AgentLoopTransition.complete(AgentFinishReason.MODEL_ERROR))
                             .withPhase(AgentLoopPhase.FAILED));
@@ -411,6 +475,7 @@ public abstract class AgentLoop {
         Map<String, Object> context = new java.util.LinkedHashMap<>(request.resolvedContext());
         AgentRuntimeProfile runtimeProfile = runtimeProfile();
         context.put("agent_name", profile.name());
+        context.put(INTERNAL_SKILL_REUSE_CONTEXT_KEY, supportsDirectRecommendation());
         context.put("agent_description", profile.description());
         context.putAll(runtimeConfigurationService.modelContext());
         context.put("agent_profile_id", runtimeProfile.id());
@@ -450,6 +515,102 @@ public abstract class AgentLoop {
         );
     }
 
+    private String resolveRequestId(AgentChatRequestDTO request) {
+        Object configured = request.resolvedContext().get(INTERNAL_REQUEST_ID_CONTEXT_KEY);
+        if (configured instanceof String requestId && !requestId.isBlank()) {
+            return requestId;
+        }
+        return "agent_req_" + UUID.randomUUID().toString().substring(0, 8);
+    }
+
+    private AgentChatRequestDTO withoutInternalRequestId(AgentChatRequestDTO request) {
+        if (!request.resolvedContext().containsKey(INTERNAL_REQUEST_ID_CONTEXT_KEY)) {
+            return request;
+        }
+        Map<String, Object> context = new java.util.LinkedHashMap<>(request.resolvedContext());
+        context.remove(INTERNAL_REQUEST_ID_CONTEXT_KEY);
+        return new AgentChatRequestDTO(
+                request.sessionId(),
+                request.profileUserId(),
+                request.userMessage(),
+                request.limit(),
+                Map.copyOf(context)
+        );
+    }
+
+    private void acceptToolUseResult(
+            String requestId,
+            int loopIndex,
+            AgentChatRequestDTO currentLoopRequest,
+            AgentToolUseResult toolUseResult,
+            List<AgentToolCallVO> toolCalls,
+            List<Map<String, Object>> toolResults,
+            Consumer<AgentStreamEventVO> consumer,
+            AgentInterruptContext interruptContext,
+            AtomicReference<AgentTurnState> state
+    ) {
+        AgentModelStreamEvent toolEvent = toolUseResult.event();
+        String toolCallId = toolUseResult.toolCallId();
+        if (!toolUseResult.succeeded()) {
+            Throwable error = toolUseResult.error();
+            AgentToolCallVO failedToolCall = interruptContext.interrupted()
+                    ? interruptedToolCall(toolCallId, toolEvent, interruptContext.reason())
+                    : failedToolCall(toolCallId, toolEvent, error);
+            AgentLoopHookContext failureHook = hook(AgentLoopHookEvent.POST_TOOL_USE_FAILURE, requestId, loopIndex, currentLoopRequest);
+            if (failedToolCall.status().equals("INTERRUPTED")) {
+                failureHook = hook(AgentLoopHookEvent.INTERRUPT, requestId, loopIndex, currentLoopRequest);
+            }
+            failureHook
+                    .withTool(toolCallId, toolEvent.toolName(), toolEvent.arguments())
+                    .withToolResult(failedToolCall.metadata())
+                    .withError(errorMessage(error))
+                    .dispatch(hookDispatcher);
+            toolCalls.add(failedToolCall);
+            toolResults.add(toolResultPayload(failedToolCall));
+            consumer.accept(toolResultEvent(requestId, failedToolCall));
+            if (interruptContext.interrupted()) {
+                state.set(state.get()
+                        .clearPendingToolCall()
+                        .withPhase(AgentLoopPhase.INTERRUPTED)
+                        .withTransition(AgentLoopTransition.complete(AgentFinishReason.INTERRUPTED)));
+                throw new AgentLoopInterruptedSignal(interruptContext.reason());
+            }
+            return;
+        }
+
+        AgentToolCallVO toolCall = completedToolCall(toolCallId, toolEvent, toolUseResult.metadata());
+        if (!"BLOCKED".equals(toolCall.status())) {
+            AgentLoopHookResult postToolHook = hook(AgentLoopHookEvent.POST_TOOL_USE, requestId, loopIndex, currentLoopRequest)
+                    .withTool(toolCallId, toolEvent.toolName(), toolEvent.arguments())
+                    .withToolResult(toolCall.metadata())
+                    .dispatch(hookDispatcher);
+            if (postToolHook.preventContinuation()) {
+                state.set(state.get()
+                        .clearPendingToolCall()
+                        .withTransition(AgentLoopTransition.complete(AgentFinishReason.HOOK_STOPPED))
+                        .withPhase(AgentLoopPhase.COMPLETED));
+                throw new AgentLoopHookStoppedSignal(postToolHook.message());
+            }
+        }
+        toolCalls.add(toolCall);
+        toolResults.add(toolResultPayload(toolCall));
+        consumer.accept(toolResultEvent(requestId, toolCall));
+    }
+
+    private AgentToolCallVO completedToolCall(
+            String toolCallId,
+            AgentModelStreamEvent event,
+            Map<String, Object> metadata
+    ) {
+        return new AgentToolCallVO(
+                toolCallId,
+                event.toolName(),
+                profile.serviceForTool(event.toolName()),
+                String.valueOf(metadata.getOrDefault("status", "SUCCESS")),
+                metadata
+        );
+    }
+
     private AgentStreamEventVO toolResultEvent(String requestId, AgentToolCallVO toolCall) {
         return new AgentStreamEventVO("tool_result", requestId, Map.of(
                 "tool_call_id", toolCall.toolCallId(),
@@ -465,6 +626,24 @@ public abstract class AgentLoop {
                 "request_id", requestId,
                 "reason", reason == null || reason.isBlank() ? "interrupted" : reason
         ));
+    }
+
+    private void streamAssistantEvents(
+            String requestId,
+            AgentChatRequestDTO request,
+            AgentInterruptContext interruptContext,
+            Consumer<AgentModelStreamEvent> consumer
+    ) {
+        try {
+            executionLimiter.runWithModelStream(() -> modelStreamClient.streamAssistantEvents(
+                    requestId, request, consumer, interruptContext), interruptContext::interrupted);
+        } catch (RuntimeException error) {
+            if (error instanceof AgentLoopFinalAnswerSignal || error instanceof AgentLoopHookStoppedSignal) {
+                throw error;
+            }
+            throwIfInterrupted(interruptContext);
+            throw error;
+        }
     }
 
     private void throwIfInterrupted(AgentInterruptContext interruptContext) {
@@ -508,8 +687,8 @@ public abstract class AgentLoop {
         );
     }
 
-    private AgentToolCallVO failedToolCall(String toolCallId, AgentModelStreamEvent event, CompletionException error) {
-        Throwable cause = error.getCause() == null ? error : error.getCause();
+    private AgentToolCallVO failedToolCall(String toolCallId, AgentModelStreamEvent event, Throwable error) {
+        Throwable cause = unwrap(error);
         if (cause instanceof InterruptedException) {
             Thread.currentThread().interrupt();
         }
@@ -525,6 +704,18 @@ public abstract class AgentLoop {
                         "message", cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage()
                 )
         );
+    }
+
+    private String errorMessage(Throwable error) {
+        Throwable cause = unwrap(error);
+        return cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
+    }
+
+    private Throwable unwrap(Throwable error) {
+        if (error instanceof CompletionException completionException && completionException.getCause() != null) {
+            return completionException.getCause();
+        }
+        return error == null ? new IllegalStateException("tool use failed") : error;
     }
 
     private AgentToolCallVO interruptedToolCall(String toolCallId, AgentModelStreamEvent event, String reason) {
@@ -552,9 +743,14 @@ public abstract class AgentLoop {
     private String emitFinalAnswerBlocks(
             String requestId,
             Map<String, Object> arguments,
-            Consumer<AgentStreamEventVO> consumer
+            Consumer<AgentStreamEventVO> consumer,
+            A2uiMessageProjector.State uiState
     ) {
         List<Map<String, Object>> blocks = responseProjector.projectBlocks(arguments.get("blocks"), runtimeProfile());
+        for (Map<String, Object> block : blocks) {
+            if ("a2ui".equals(block.get("type"))) uiState.accept(block.get("messages"));
+        }
+        uiState.validateComplete();
         List<String> textBlocks = new ArrayList<>();
         for (Map<String, Object> block : blocks) {
             String type = String.valueOf(block.get("type"));

@@ -1,7 +1,13 @@
+CREATE TABLE IF NOT EXISTS rs_schema_version (
+    component VARCHAR(128) PRIMARY KEY,
+    version VARCHAR(128) NOT NULL,
+    applied_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS orders (
     order_id BIGINT PRIMARY KEY,
     request_id VARCHAR(64) NOT NULL,
-    account_id BIGINT NOT NULL,
+    account_id VARCHAR(64) NOT NULL,
     profile_user_id VARCHAR(64) NULL,
     session_id VARCHAR(64) NULL,
     recommend_request_id VARCHAR(64) NULL,
@@ -15,6 +21,8 @@ CREATE TABLE IF NOT EXISTS orders (
     KEY idx_orders_account_created (account_id, created_at DESC),
     KEY idx_orders_status_created (status, created_at DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+ALTER TABLE orders MODIFY COLUMN account_id VARCHAR(64) NOT NULL;
 
 CREATE TABLE IF NOT EXISTS order_items (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -74,6 +82,20 @@ CREATE TABLE IF NOT EXISTS payment_orders (
     KEY idx_payment_status_created (status, created_at DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 支付编号由持久数据库序列分配；升级时避开旧进程已经使用的编号。
+CREATE TABLE IF NOT EXISTS payment_id (
+    payment_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    marker INT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO payment_id (payment_id, marker)
+SELECT GREATEST(COALESCE(MAX(payment_id), 0), 1), 1 FROM payment_orders
+ON DUPLICATE KEY UPDATE marker = VALUES(marker);
+
+INSERT INTO rs_schema_version (component, version)
+VALUES ('rs-service-payment-id', 'database_id_v1')
+ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = CURRENT_TIMESTAMP(6);
+
 CREATE TABLE IF NOT EXISTS payment_callbacks (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     provider VARCHAR(32) NOT NULL,
@@ -93,3 +115,33 @@ CREATE TABLE IF NOT EXISTS consumer_message_log (
     processed_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uk_message_consumer (message_id, consumer_name)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO rs_schema_version (component, version)
+VALUES ('rs-service-trade', 'trade_schema_v2_string_account_id')
+ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = CURRENT_TIMESTAMP(6);
+
+CREATE TABLE IF NOT EXISTS payment_order_notifications (
+    order_id BIGINT PRIMARY KEY,
+    provider VARCHAR(32) NOT NULL,
+    provider_transaction_id VARCHAR(128) NOT NULL,
+    status VARCHAR(16) NOT NULL DEFAULT 'PENDING',
+    attempts INT NOT NULL DEFAULT 0,
+    next_attempt_at DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+    claim_token VARCHAR(64) NULL,
+    lease_until DATETIME(6) NULL,
+    last_error VARCHAR(255) NULL,
+    notified_at DATETIME(6) NULL,
+    UNIQUE KEY uk_payment_notify_transaction (provider, provider_transaction_id),
+    KEY idx_payment_notify_due (status, next_attempt_at),
+    KEY idx_payment_notify_lease (status, lease_until)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 既有已支付订单也补登记；重复迁移保留 DONE/REVIEW 以及当前重试状态。
+INSERT INTO payment_order_notifications (order_id, provider, provider_transaction_id)
+SELECT order_id, provider, provider_transaction_id FROM payment_orders
+WHERE status = 'PAID' AND provider_transaction_id IS NOT NULL
+ON DUPLICATE KEY UPDATE order_id = payment_order_notifications.order_id;
+
+INSERT INTO rs_schema_version (component, version)
+VALUES ('rs-service-payment-notification', 'payment_notification_v1')
+ON DUPLICATE KEY UPDATE version = VALUES(version), applied_at = CURRENT_TIMESTAMP(6);

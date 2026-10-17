@@ -1,0 +1,16 @@
+[Unit]
+Description=RS Agent trained epoch5 two-tower user projection
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=OPENBLAS_NUM_THREADS=1
+Environment=OMP_NUM_THREADS=1
+ExecStart=%h/RS_agent_remote/.venv/bin/python %h/RS_agent_java/model_deploy/two_tower_runtime.py --directory %h/RS_agent_java/data/models/two_tower_epoch5_20260913 --host 172.21.0.1 --port 18117
+Restart=always
+RestartSec=5
+MemoryMax=768M
+NoNewPrivileges=true
+
+[Install]
+WantedBy=default.target

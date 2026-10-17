@@ -3,8 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from rs_core.common.io import write_json, write_jsonl
 from rs_lab.experiments.recall.build_sciomc_twotower_recent2y_preprocess import build_sciomc_twotower_recent2y_preprocess
+
+pytestmark = pytest.mark.experiment
 
 
 def test_sciomc_twotower_recent2y_preprocess_builds_smoke_and_formal(tmp_path: Path) -> None:

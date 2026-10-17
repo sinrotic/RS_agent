@@ -1,0 +1,250 @@
+{
+  "label": "control",
+  "scope": "固定真实模型规划输入；不等同完整业务语义正确",
+  "samples": 16,
+  "schema_errors": 0,
+  "rag_missing_query": 2,
+  "incomplete_generations": 4,
+  "results": [
+    {
+      "case": 0,
+      "repeat": 0,
+      "input_sha256": "45d198629ff89adad33cad8ea25a15c08ac297983d5c2bfcb46719a00b4dbe11",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 94,
+      "elapsed_ms": 1357.73
+    },
+    {
+      "case": 0,
+      "repeat": 1,
+      "input_sha256": "45d198629ff89adad33cad8ea25a15c08ac297983d5c2bfcb46719a00b4dbe11",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 94,
+      "elapsed_ms": 621.05
+    },
+    {
+      "case": 1,
+      "repeat": 0,
+      "input_sha256": "7257133dfba9fb2c62622468fd43d9e63586dfb2cfe41e8e8c538f31a564c692",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "load_skill"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": false,
+      "completion_tokens": 1200,
+      "elapsed_ms": 6686.2
+    },
+    {
+      "case": 1,
+      "repeat": 1,
+      "input_sha256": "7257133dfba9fb2c62622468fd43d9e63586dfb2cfe41e8e8c538f31a564c692",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "load_skill"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 35,
+      "elapsed_ms": 312.27
+    },
+    {
+      "case": 2,
+      "repeat": 0,
+      "input_sha256": "2ff75c706148506759124249c2cb72de4b69b9026236b765628962b6431e79ba",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 228,
+      "elapsed_ms": 1398.02
+    },
+    {
+      "case": 2,
+      "repeat": 1,
+      "input_sha256": "2ff75c706148506759124249c2cb72de4b69b9026236b765628962b6431e79ba",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 228,
+      "elapsed_ms": 1330.53
+    },
+    {
+      "case": 3,
+      "repeat": 0,
+      "input_sha256": "08a57d4415bb0ab2239014c673af5055b512ba3b866624a83cda08bd8713a235",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_evidence_search"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": false,
+      "completion_tokens": 1200,
+      "elapsed_ms": 6584.77
+    },
+    {
+      "case": 3,
+      "repeat": 1,
+      "input_sha256": "08a57d4415bb0ab2239014c673af5055b512ba3b866624a83cda08bd8713a235",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 112,
+      "elapsed_ms": 719.81
+    },
+    {
+      "case": 4,
+      "repeat": 0,
+      "input_sha256": "39a87a7f4e57c4956600c2e19c56293f19ab4582978c05a1c865b2e29486698f",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "load_skill"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 33,
+      "elapsed_ms": 644.68
+    },
+    {
+      "case": 4,
+      "repeat": 1,
+      "input_sha256": "39a87a7f4e57c4956600c2e19c56293f19ab4582978c05a1c865b2e29486698f",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "load_skill"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 33,
+      "elapsed_ms": 295.33
+    },
+    {
+      "case": 5,
+      "repeat": 0,
+      "input_sha256": "ae2a30e9ca90b6a2c83f35d94a602ab8141a0ca5260b6f5afb4ba857d8468877",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 94,
+      "elapsed_ms": 1363.23
+    },
+    {
+      "case": 5,
+      "repeat": 1,
+      "input_sha256": "ae2a30e9ca90b6a2c83f35d94a602ab8141a0ca5260b6f5afb4ba857d8468877",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 94,
+      "elapsed_ms": 625.55
+    },
+    {
+      "case": 6,
+      "repeat": 0,
+      "input_sha256": "35bec6b49ab55956dcd4435c3dcdad2cbf89744e62aa1a57288b1b1a2730f35b",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 94,
+      "elapsed_ms": 717.75
+    },
+    {
+      "case": 6,
+      "repeat": 1,
+      "input_sha256": "35bec6b49ab55956dcd4435c3dcdad2cbf89744e62aa1a57288b1b1a2730f35b",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "rag_support"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 0,
+      "complete": true,
+      "completion_tokens": 94,
+      "elapsed_ms": 632.9
+    },
+    {
+      "case": 7,
+      "repeat": 0,
+      "input_sha256": "9a73fe11de3605ca0c7128e2756e48b630155b2103de64a1e7f5639894b108f9",
+      "sampling_seed": 0,
+      "temperature": 0.1,
+      "tool_names": [
+        "call_agent"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 1,
+      "complete": false,
+      "completion_tokens": 1200,
+      "elapsed_ms": 6771.8
+    },
+    {
+      "case": 7,
+      "repeat": 1,
+      "input_sha256": "9a73fe11de3605ca0c7128e2756e48b630155b2103de64a1e7f5639894b108f9",
+      "sampling_seed": 1,
+      "temperature": 0.1,
+      "tool_names": [
+        "call_agent"
+      ],
+      "schema_errors": 0,
+      "rag_missing_query": 1,
+      "complete": false,
+      "completion_tokens": 1200,
+      "elapsed_ms": 6429.28
+    }
+  ]
+}

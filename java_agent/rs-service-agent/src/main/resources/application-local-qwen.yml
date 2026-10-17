@@ -1,0 +1,23 @@
+spring:
+  ai:
+    openai:
+      base-url: ${RS_AGENT_LOCAL_MODEL_BASE_URL:http://127.0.0.1:18082/v1}
+      api-key: ${RS_AGENT_LOCAL_MODEL_API_KEY:local-unused}
+      chat:
+        options:
+          model: ${RS_AGENT_LOCAL_MODEL_NAME:qwen35-4b}
+          temperature: 0
+          max-tokens: ${RS_AGENT_LOCAL_MODEL_MAX_TOKENS:1024}
+          parallel-tool-calls: false
+
+rs:
+  agent:
+    direct-recommendation:
+      # 首轮且全部事实门禁通过时仍由 LLM 生成最终回答；其他输入保留完整工具流程。
+      llm-synthesis-enabled: ${RS_AGENT_LLM_SYNTHESIS_ENABLED:true}
+    model-provider:
+      type: spring_ai
+      constrained-decoding-enabled: true
+      compact-tool-schemas-enabled: ${RS_AGENT_COMPACT_TOOL_SCHEMAS_ENABLED:true}
+      # 16K 模型窗口内为完整结构化回答预留空间，避免 JSON 被普通工具预算截断。
+      final-answer-max-tokens: ${RS_AGENT_FINAL_ANSWER_MAX_TOKENS:4096}

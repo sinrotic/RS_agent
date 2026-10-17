@@ -13,6 +13,30 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class HttpAgentRecommendationClientTest {
 
     @Test
+    void keepsExactCatalogPriceAsAnInternalFactOnly() throws Exception {
+        var http = new CapturingHttpClient("""
+                {"request_id":"delivery","candidates":[{"item_id":"actual","title":"Headphones",
+                "category_path":"Headphones","price":89.50,"private_evidence":"hidden"}]}
+                """);
+        var delivery = new HttpAgentRecommendationClient(new AgentRecommendationProperties(), http)
+                .recommendDelivery(new AgentChatRequestDTO("session", "profile", "推荐耳机", 1, Map.of()));
+        assertThat(delivery.facts().get("actual").price()).isEqualByComparingTo("89.50");
+        String publicItems = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(delivery.items());
+        assertThat(publicItems).doesNotContain("price", "private_evidence", "hidden");
+    }
+
+    @Test
+    void carriesOnlyPublicDegradationReasonsEvenWhenCandidatesAreEmpty() {
+        var http = new CapturingHttpClient("""
+                {"candidates":[],"degradation_reasons":["trained_ranking_unavailable","internal_stack_trace","model_rank_unavailable"]}
+                """);
+        var result = new HttpAgentRecommendationClient(new AgentRecommendationProperties(), http)
+                .recommendDelivery(new AgentChatRequestDTO("session", "profile", "背包", 1, Map.of()));
+        assertThat(result.items()).isEmpty();
+        assertThat(result.degradationReasons()).containsExactly("trained_ranking_unavailable", "model_rank_unavailable");
+    }
+
+    @Test
     void mapsAgentRequestAndCandidateResponseWithoutLeakingRawFields() {
         CapturingHttpClient httpClient = new CapturingHttpClient("""
                 {"request_id":"req-1","candidates":[
@@ -41,6 +65,7 @@ class HttpAgentRecommendationClientTest {
             assertThat(item.category()).isEqualTo("Bags");
             assertThat(item.reason()).isEqualTo("commute match");
             assertThat(item.score()).isZero();
+            assertThat(item.cardSetId()).isEqualTo("req-1");
         });
     }
 

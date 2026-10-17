@@ -1,0 +1,9 @@
+{
+  "failed_repeat_queries": [
+    "推荐鼠标"
+  ],
+  "model_errors": [
+    "This model's maximum context length is 4096 tokens. However, you requested 1200 output tokens and your prompt contains at least 2897 input tokens, for a total of at least 4097 tokens. Please reduce the length of the input prompt or the number of requested output tokens. (parameter=input_tokens, value=2897)"
+  ],
+  "fallback_context_limit_failure_confirmed": true
+}

@@ -1,0 +1,606 @@
+{
+  "candidate_id": "synth-001-01",
+  "customer_message": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？",
+  "source_task_id": "profile-family-115-customer-clear_purchase",
+  "profile_user_id": "AGK4L5F5T5UFL6YYMKNPC5PQX5GQ",
+  "family_id": "profile-family-115",
+  "statistical_cluster_id": "profile-family-115",
+  "split": "dev",
+  "environment_sha256": "ec9721ba793ab5395157a9937e9fa3d35801e0907aab4a020210987d6fb892dd",
+  "original_status": "quarantined",
+  "status": "quarantined",
+  "model_calls": 2,
+  "human_reviews": [],
+  "is_gold": false,
+  "auto_deploy": false,
+  "extraction_call": {
+    "request_payload": {
+      "customer_message": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？"
+    },
+    "instruction_sha256": "52755f2665287949d218aeab7ba60d5452156bc5f29f1e3f22c43e98f49a32eb",
+    "requested_model": "gpt-6-luna",
+    "started_at": "2026-10-11T12:13:42.628503+00:00",
+    "response_metadata": {
+      "id": "resp_0f528d0741e733e2016acb7d76296887d193996a3ea4d31007",
+      "model": "gpt-6-luna",
+      "usage": {
+        "completion_tokens": 999,
+        "total_tokens": 2104,
+        "prompt_tokens": 1105,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cached_creation_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 348
+        }
+      },
+      "finish_reason": "stop"
+    },
+    "raw_content": "{\n  \"schema_version\": \"rs-shopping-request/2\",\n  \"intent\": {\n    \"primary\": \"recommendation\",\n    \"actions\": [\n      \"recommend\",\n      \"explain\"\n    ],\n    \"evidence\": [\n      \"有什么合适的选择吗？\",\n      \"续航和降噪效果我不太会看\"\n    ]\n  },\n  \"context_facts\": [\n    {\n      \"name\": \"use_case\",\n      \"value\": \"通勤时希望少受周围噪声影响\",\n      \"quote\": \"她平时通勤时想少受周围噪声影响\"\n    },\n    {\n      \"name\": \"listening_and_calling\",\n      \"value\": \"听音乐和接电话\",\n      \"quote\": \"也会用来听音乐和接电话\"\n    },\n    {\n      \"name\": \"budget_flexibility\",\n      \"value\": \"预算不必卡得特别严格\",\n      \"quote\": \"预算不用卡得特别死\"\n    }\n  ],\n  \"answer_requirements\": [\n    {\n      \"need\": \"说明如何看耳机续航\",\n      \"quote\": \"续航……我不太会看\"\n    },\n    {\n      \"need\": \"说明如何判断降噪效果\",\n      \"quote\": \"降噪效果我不太会看\"\n    }\n  ],\n  \"requirements\": [\n    {\n      \"id\": \"r1\",\n      \"kind\": \"strict\",\n      \"field\": \"product_type\",\n      \"relation\": \"eq\",\n      \"value\": \"头戴式耳机\",\n      \"unit\": null,\n      \"quote\": \"一副头戴式耳机\"\n    },\n    {\n      \"id\": \"r2\",\n      \"kind\": \"preference\",\n      \"field\": \"wearing_pressure\",\n      \"relation\": \"minimize\",\n      \"value\": \"夹耳感\",\n      \"unit\": null,\n      \"quote\": \"希望戴久了别太夹耳\"\n    },\n    {\n      \"id\": \"r3\",\n      \"kind\": \"preference\",\n      \"field\": \"wireless\",\n      \"relation\": \"prefer\",\n      \"value\": true,\n      \"unit\": null,\n      \"quote\": \"无线款优先\"\n    },\n    {\n      \"id\": \"r4\",\n      \"kind\": \"preference\",\n      \"field\": \"noise_cancellation\",\n      \"relation\": \"maximize\",\n      \"value\": \"减少周围噪声影响\",\n      \"unit\": null,\n      \"quote\": \"她平时通勤时想少受周围噪声影响\"\n    }\n  ],\n  \"unknowns\": [],\n  \"clarification\": {\n    \"mode\": \"not_needed\",\n    \"safe_answer_before_clarification\": true,\n    \"unresolved_actions\": [],\n    \"questions\": []\n  },\n  \"recipient\": {\n    \"target\": \"other\",\n    \"quote\": \"给朋友挑……当礼物\",\n    \"profile_policy\": \"do_not_transfer_to_recipient\"\n  }\n}",
+    "parsed_json": {
+      "schema_version": "rs-shopping-request/2",
+      "intent": {
+        "primary": "recommendation",
+        "actions": [
+          "recommend",
+          "explain"
+        ],
+        "evidence": [
+          "有什么合适的选择吗？",
+          "续航和降噪效果我不太会看"
+        ]
+      },
+      "context_facts": [
+        {
+          "name": "use_case",
+          "value": "通勤时希望少受周围噪声影响",
+          "quote": "她平时通勤时想少受周围噪声影响"
+        },
+        {
+          "name": "listening_and_calling",
+          "value": "听音乐和接电话",
+          "quote": "也会用来听音乐和接电话"
+        },
+        {
+          "name": "budget_flexibility",
+          "value": "预算不必卡得特别严格",
+          "quote": "预算不用卡得特别死"
+        }
+      ],
+      "answer_requirements": [
+        {
+          "need": "说明如何看耳机续航",
+          "quote": "续航……我不太会看"
+        },
+        {
+          "need": "说明如何判断降噪效果",
+          "quote": "降噪效果我不太会看"
+        }
+      ],
+      "requirements": [
+        {
+          "id": "r1",
+          "kind": "strict",
+          "field": "product_type",
+          "relation": "eq",
+          "value": "头戴式耳机",
+          "unit": null,
+          "quote": "一副头戴式耳机"
+        },
+        {
+          "id": "r2",
+          "kind": "preference",
+          "field": "wearing_pressure",
+          "relation": "minimize",
+          "value": "夹耳感",
+          "unit": null,
+          "quote": "希望戴久了别太夹耳"
+        },
+        {
+          "id": "r3",
+          "kind": "preference",
+          "field": "wireless",
+          "relation": "prefer",
+          "value": true,
+          "unit": null,
+          "quote": "无线款优先"
+        },
+        {
+          "id": "r4",
+          "kind": "preference",
+          "field": "noise_cancellation",
+          "relation": "maximize",
+          "value": "减少周围噪声影响",
+          "unit": null,
+          "quote": "她平时通勤时想少受周围噪声影响"
+        }
+      ],
+      "unknowns": [],
+      "clarification": {
+        "mode": "not_needed",
+        "safe_answer_before_clarification": true,
+        "unresolved_actions": [],
+        "questions": []
+      },
+      "recipient": {
+        "target": "other",
+        "quote": "给朋友挑……当礼物",
+        "profile_policy": "do_not_transfer_to_recipient"
+      }
+    },
+    "call_succeeded": true,
+    "completed_at": "2026-10-11T12:14:02.756124+00:00"
+  },
+  "extraction_protocol_valid": false,
+  "extraction_protocol_error": "条件证据不在顾客原话中",
+  "audit_call": {
+    "request_payload": {
+      "customer_message": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？",
+      "extraction": {
+        "schema_version": "rs-shopping-request/2",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend",
+            "explain"
+          ],
+          "evidence": [
+            "有什么合适的选择吗？",
+            "续航和降噪效果我不太会看"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "use_case",
+            "value": "通勤时希望少受周围噪声影响",
+            "quote": "她平时通勤时想少受周围噪声影响"
+          },
+          {
+            "name": "listening_and_calling",
+            "value": "听音乐和接电话",
+            "quote": "也会用来听音乐和接电话"
+          },
+          {
+            "name": "budget_flexibility",
+            "value": "预算不必卡得特别严格",
+            "quote": "预算不用卡得特别死"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "说明如何看耳机续航",
+            "quote": "续航……我不太会看"
+          },
+          {
+            "need": "说明如何判断降噪效果",
+            "quote": "降噪效果我不太会看"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "r1",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "头戴式耳机",
+            "unit": null,
+            "quote": "一副头戴式耳机"
+          },
+          {
+            "id": "r2",
+            "kind": "preference",
+            "field": "wearing_pressure",
+            "relation": "minimize",
+            "value": "夹耳感",
+            "unit": null,
+            "quote": "希望戴久了别太夹耳"
+          },
+          {
+            "id": "r3",
+            "kind": "preference",
+            "field": "wireless",
+            "relation": "prefer",
+            "value": true,
+            "unit": null,
+            "quote": "无线款优先"
+          },
+          {
+            "id": "r4",
+            "kind": "preference",
+            "field": "noise_cancellation",
+            "relation": "maximize",
+            "value": "减少周围噪声影响",
+            "unit": null,
+            "quote": "她平时通勤时想少受周围噪声影响"
+          }
+        ],
+        "unknowns": [],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "other",
+          "quote": "给朋友挑……当礼物",
+          "profile_policy": "do_not_transfer_to_recipient"
+        }
+      },
+      "catalog": [
+        {
+          "title": "Bose QuietComfort 15 Acoustic Noise Cancelling Headphones (Discontinued by Manufacturer)",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 114.95,
+          "currency": "SOURCE_UNIT",
+          "store": "Bose"
+        },
+        {
+          "title": "V-MODA XL Cushions for Over-Ear Headphones - Grey",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 19.99,
+          "currency": "SOURCE_UNIT",
+          "store": "V-MODA"
+        },
+        {
+          "title": "ATAIRSOFT Tactical Headset war Unlimited Power intercom with Microphone Waterproof Headphones, no Noise Reduction Function",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 38.98,
+          "currency": "SOURCE_UNIT",
+          "store": "ATAIRSOFT"
+        },
+        {
+          "title": "[Updated] AmoVee Acrylic Headphone Stand Gaming Headset Holder/Hanger, Extra Wide - Black, A Valentines Day Gifts for Him",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 14.99,
+          "currency": "SOURCE_UNIT",
+          "store": "AmoVee"
+        },
+        {
+          "title": "SVYHUOK Girls Pink Unicorn Wired Headphones,Cute Cat Ear Kids Game Headset for Boys Teens Tablet Laptop PC,Over Ear Children Headset withMic,for School Birthday Xmas Gifts",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 17.99,
+          "currency": "SOURCE_UNIT",
+          "store": "SVYHUOK",
+          "connection_type": "wired"
+        },
+        {
+          "title": "PurelySound E7 Pro Active Noise Cancelling Headphones, Over-Ear Bluetooth Headphones with Mic, Rich Deep Bass, Long Battery Life, Comfortable - Black",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 49.98,
+          "currency": "SOURCE_UNIT",
+          "store": "PurelySound",
+          "connection_type": "wireless"
+        },
+        {
+          "title": "ZVOX Noise Cancelling Headphones - Over Ear Bluetooth Headphones with AccuVoice Technology, Wireless Headphones with Microphone AV50 Wireless Over the Ear Headphones Hi-Res Audio & Deep Bass,Rose Gold",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 35.99,
+          "currency": "SOURCE_UNIT",
+          "store": "ZVOX",
+          "connection_type": "wireless"
+        },
+        {
+          "title": "Eonome-Active-Noise-Cancelling-Headphones - S3 ANC Headphones - Hybrid Wireless Over-Ear Bluetooth Headphones with Mic,Multiple Modes,40H Playtime,Comfortable Protein Earcups(Black)",
+          "category": "Over-Ear Headphones",
+          "category_path": [
+            "Electronics",
+            "Headphones, Earbuds & Accessories",
+            "Headphones & Earbuds",
+            "Over-Ear Headphones"
+          ],
+          "price": 69.99,
+          "currency": "SOURCE_UNIT",
+          "store": "Eonome",
+          "connection_type": "wireless"
+        }
+      ],
+      "profile": {
+        "history": [
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Anybay EUQQ Bluetooth Earpiece for Cellphone, Bluetooth V5.11 Headset Wireless Headphone with Noise Cancelin",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "price": null,
+              "currency": "SOURCE_UNIT",
+              "store": "EUQQ",
+              "connection_type": "wireless"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Wireless Earbud, Bluetooth 5.3 Headphones with Sport Earhooks Wireless Earphones in-Ear with HiFi Stereo Sound, Bluetooth Earbud Dual LED Display, 48H Playtime, IP7 Waterproof, Noise Cancelling, Sport",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "price": null,
+              "currency": "SOURCE_UNIT",
+              "store": "Rulefiss",
+              "connection_type": "wireless"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "EUQQ Wireless Bluetooth Earbuds 120H Playtime Bluetooth 5.3 Ear Buds for Sports, Hi-fi Stereo Earphones with LED Display Charging Case, Headphones for Running/Workout Audifonos Bluetooth inalambricos",
+              "category": "Earbud Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Earbud Headphones"
+              ],
+              "price": null,
+              "currency": "SOURCE_UNIT",
+              "store": "EUQQ",
+              "connection_type": "wireless"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "2023 Newest WiFi Range Extender Signal Booster Long Range",
+              "category": "Repeaters",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Networking Products",
+                "Repeaters"
+              ],
+              "price": null,
+              "currency": "SOURCE_UNIT",
+              "store": "BYGLO"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Wireless Keyboard Mouse Combo, Ultra Slim Backlit Wireless Keyboard and Mouse Set Multi-Device 2.4G USB Rechargeable Bluetooth Keyboard and Mouse for PC, Laptop, Windows, Desktop(Silver White)",
+              "category": "Keyboard & Mouse Combos",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Computer Accessories & Peripherals",
+                "Keyboards, Mice & Accessories",
+                "Keyboard & Mouse Combos"
+              ],
+              "price": 31.99,
+              "currency": "SOURCE_UNIT",
+              "store": "FENISIO"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "SABLUTE Wireless Keyboard with 7 Colored Backlits, Wrist Rest, 2.4G Computer Lighted Keyboard with Phone Holder, Rechargeable Full Size Ergonomic Keyboard with Silent Keys for MacBook, PC, Laptop",
+              "category": "Keyboards",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Computer Accessories & Peripherals",
+                "Keyboards, Mice & Accessories",
+                "Keyboards"
+              ],
+              "price": 39.99,
+              "currency": "SOURCE_UNIT",
+              "store": "SABLUTE"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Yottamaster USB 3.1 Hub 4 Ports, Powered USB Hub 5V/2A, Type C to USB 3.2 Gen2 10Gbps Data Hub with 2USB-A & 2USB-C for Laptop, iMac, Surface Pro, XPS, USB Flash Drives, Mobile HDD, and More(1.6ft)",
+              "category": "USB Hubs",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Computer Accessories & Peripherals",
+                "USB Hubs"
+              ],
+              "price": 29.99,
+              "currency": "SOURCE_UNIT",
+              "store": "Yottamaster"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "V8 Wireless Bluetooth Headphones Over Ear, 80 Hours Playtime Wireless Headphones with Deep Bass,Lightweight Foldable Headphones Built-in Mic,HiFi Stereo Sound for Travel Work Laptop PC Cellphone",
+              "category": "Over-Ear Headphones",
+              "category_path": [
+                "Electronics",
+                "Headphones, Earbuds & Accessories",
+                "Headphones & Earbuds",
+                "Over-Ear Headphones"
+              ],
+              "price": 28.99,
+              "currency": "SOURCE_UNIT",
+              "store": "fojep",
+              "connection_type": "wireless"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Magnetic Door Stop,Magnetic Door Stop with Strong Suction, Screws for Stronger Wall Hanging, Screws are Included, Keep The Door Open, and Better Protect The Wall（1 Pack）",
+              "category": "Door Stops",
+              "category_path": [
+                "Office Products",
+                "Office Furniture & Lighting",
+                "Furniture Accessories",
+                "Door Stops"
+              ],
+              "price": null,
+              "currency": "SOURCE_UNIT",
+              "store": "ZYZY"
+            }
+          },
+          {
+            "rating": 5.0,
+            "item": {
+              "title": "Compressed Air Duster - Keyboard Cleaner for Office - Reusable no Canned Air Duster - Good Replacement for Compressed Air Can - Electric air Duster 110000RPM - Car Duster - Compressed Air 7600mAh",
+              "category": "Compressed Air Dusters",
+              "category_path": [
+                "Electronics",
+                "Computers & Accessories",
+                "Computer Accessories & Peripherals",
+                "Cleaning & Repair",
+                "Compressed Air Dusters"
+              ],
+              "price": 29.99,
+              "currency": "SOURCE_UNIT",
+              "store": "NZACE"
+            }
+          }
+        ],
+        "history_meaning": "past_positive_reviews_not_purchases"
+      },
+      "price_unit": "original_listing_units; currency_unconfirmed"
+    },
+    "instruction_sha256": "1729172eb3f7929761dbe8e3da95950c4f8759b0e150d30427332644e424aa89",
+    "requested_model": "gpt-6-luna",
+    "started_at": "2026-10-11T12:14:02.757284+00:00",
+    "response_metadata": {
+      "id": "resp_02c43eb6c7597b97016acb7d8a885487d1bbd2bb676779d365",
+      "model": "gpt-6-luna",
+      "usage": {
+        "completion_tokens": 684,
+        "total_tokens": 4107,
+        "prompt_tokens": 3423,
+        "prompt_tokens_details": {
+          "cached_tokens": 0,
+          "cache_write_tokens": 0,
+          "cached_creation_tokens": 0
+        },
+        "completion_tokens_details": {
+          "reasoning_tokens": 244
+        }
+      },
+      "finish_reason": "stop"
+    },
+    "raw_content": "{\n  \"schema_version\": \"rs-shopping-audit/2\",\n  \"checks\": {\n    \"naturalness\": \"pass\",\n    \"extraction_fidelity\": \"pass\",\n    \"fact_boundary\": \"pass\",\n    \"clarification_policy\": \"pass\"\n  },\n  \"reasons\": {\n    \"naturalness\": \"顾客自然地描述了送礼场景、通勤用途、佩戴舒适度和选购困惑；提取结果整体对应这些表达。\",\n    \"extraction_fidelity\": \"提取保留了头戴式这一严格条件、无线优先和佩戴压力偏好，也涵盖通勤降噪、听音乐、接电话、预算灵活，以及解释续航和降噪指标的需求；没有把偏好强化为硬性条件。\",\n    \"fact_boundary\": \"提取没有把历史评分转成收礼人的偏好，也没有从目录或历史推导当前硬性要求。顾客未限定预算数额或币种，提取未补造。\",\n    \"clarification_policy\": \"可先提供续航与降噪指标的比较方法，并按现有条件推荐；型号未知并非回答这些内容的前置门槛，因此无需先澄清。\"\n  },\n  \"evidence\": [\n    {\n      \"source\": \"customer\",\n      \"quote\": \"想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？\"\n    },\n    {\n      \"source\": \"profile\",\n      \"quote\": \"\\\"history_meaning\\\": \\\"past_positive_reviews_not_purchases\\\"\"\n    },\n    {\n      \"source\": \"catalog\",\n      \"quote\": \"\\\"connection_type\\\": \\\"wireless\\\"\"\n    }\n  ],\n  \"issues\": []\n}",
+    "parsed_json": {
+      "schema_version": "rs-shopping-audit/2",
+      "checks": {
+        "naturalness": "pass",
+        "extraction_fidelity": "pass",
+        "fact_boundary": "pass",
+        "clarification_policy": "pass"
+      },
+      "reasons": {
+        "naturalness": "顾客自然地描述了送礼场景、通勤用途、佩戴舒适度和选购困惑；提取结果整体对应这些表达。",
+        "extraction_fidelity": "提取保留了头戴式这一严格条件、无线优先和佩戴压力偏好，也涵盖通勤降噪、听音乐、接电话、预算灵活，以及解释续航和降噪指标的需求；没有把偏好强化为硬性条件。",
+        "fact_boundary": "提取没有把历史评分转成收礼人的偏好，也没有从目录或历史推导当前硬性要求。顾客未限定预算数额或币种，提取未补造。",
+        "clarification_policy": "可先提供续航与降噪指标的比较方法，并按现有条件推荐；型号未知并非回答这些内容的前置门槛，因此无需先澄清。"
+      },
+      "evidence": [
+        {
+          "source": "customer",
+          "quote": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？"
+        },
+        {
+          "source": "profile",
+          "quote": "\"history_meaning\": \"past_positive_reviews_not_purchases\""
+        },
+        {
+          "source": "catalog",
+          "quote": "\"connection_type\": \"wireless\""
+        }
+      ],
+      "issues": []
+    },
+    "call_succeeded": true,
+    "completed_at": "2026-10-11T12:14:19.327563+00:00"
+  },
+  "model_audit": {
+    "schema_version": "rs-shopping-audit/2",
+    "checks": {
+      "naturalness": "pass",
+      "extraction_fidelity": "pass",
+      "fact_boundary": "pass",
+      "clarification_policy": "pass"
+    },
+    "reasons": {
+      "naturalness": "顾客自然地描述了送礼场景、通勤用途、佩戴舒适度和选购困惑；提取结果整体对应这些表达。",
+      "extraction_fidelity": "提取保留了头戴式这一严格条件、无线优先和佩戴压力偏好，也涵盖通勤降噪、听音乐、接电话、预算灵活，以及解释续航和降噪指标的需求；没有把偏好强化为硬性条件。",
+      "fact_boundary": "提取没有把历史评分转成收礼人的偏好，也没有从目录或历史推导当前硬性要求。顾客未限定预算数额或币种，提取未补造。",
+      "clarification_policy": "可先提供续航与降噪指标的比较方法，并按现有条件推荐；型号未知并非回答这些内容的前置门槛，因此无需先澄清。"
+    },
+    "evidence": [
+      {
+        "source": "customer",
+        "quote": "想给朋友挑一副头戴式耳机当礼物，她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话。希望戴久了别太夹耳，预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？"
+      },
+      {
+        "source": "profile",
+        "quote": "\"history_meaning\": \"past_positive_reviews_not_purchases\""
+      },
+      {
+        "source": "catalog",
+        "quote": "\"connection_type\": \"wireless\""
+      }
+    ],
+    "issues": []
+  },
+  "audit_protocol_valid": true,
+  "model_audit_all_pass": true,
+  "returned_model_matches_request": true,
+  "completions_finished_normally": true,
+  "quarantine_reason": "new_protocol_or_model_audit_or_model_identity_failed"
+}

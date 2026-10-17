@@ -1,0 +1,126 @@
+{
+  "author": "codex_assistant_post_run_analysis_not_independent_human_label",
+  "is_gold": false,
+  "human_reviewed": false,
+  "new_model_calls": 0,
+  "conclusion": "字段、单位、逐字证据和动作局部澄清已获得明确改善；但真实回归同时暴露了审核误判与用途强度解释分歧。不能把模型全pass当真值或宣布评测已校准。保留首次运行结果，程序的局部作用范围修复只对已有原响应离线回放，不追加调用、不扩量、不入正式集。",
+  "entries": [
+    {
+      "candidate_id": "synth-000-00",
+      "observed": "budget已统一为price；保留about/30和未知币种，Windows 11和双频条件均结构化，引用全部逐字；模型审核却将系统支持要求读成排他条件。",
+      "disputes": [
+        {
+          "issue": "审核混淆“必须支持Windows 11”和“只能支持Windows 11”",
+          "customer_quote": "主要是Windows 11用",
+          "assessment": "作为兼容条件，商品同时支持其他系统并不违反要求；审核以“没有排斥其他系统”为由否定strict并不成立。需要定义operating_system字段是required_support，不是排他产品属性。现阶段不自动推翻审核或升级样本。"
+        },
+        {
+          "issue": "画像理由还没有明确授权与相关性边界",
+          "customer_quote": "家里台式机",
+          "assessment": "unknown和条件式weak_reference_if_self可保守保留，但新模型理由只解释未确认使用者。若进入评分，必须由独立画像适用性层检查授权、证据及当前用途相关性，不能仅凭这段理由奖画像分。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "synth-000-01",
+      "observed": "Windows进入结构化条件，安装便利、可靠性与相对优先级均保留，也补了decision_support；但审核有可程序证伪的引文误报，并混淆方向性推荐与具体兼容结论。",
+      "disputes": [
+        {
+          "issue": "审核声称原话不存在末尾分号，程序证明该引文逐字存在",
+          "customer_quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠；",
+          "assessment": "evidence_validation中该quote有效且有准确位置。它不是拼接或伪引用；审核的这条fail依据错误。其他问题需各自判断，不能因此自动批准整条。"
+        },
+        {
+          "issue": "接口未知的适用动作仍有歧义",
+          "customer_quote": "具体接口和兼容要求我还得确认",
+          "assessment": "本轮只要求选择方向，缺接口不应阻塞一般解释；但具体适配判断的接口信息也不应永远标为optional_refinement。修订草案将它绑定未来verify_compatibility/needed_for_specific_item；审核直接要求把recommend暂缓，同样可能扩大了当前要求。"
+        },
+        {
+          "issue": "家庭设备不直接证明本人使用，背景转成“不追求高速”也可能强于相对偏好",
+          "customer_quote": "家里有台台式机",
+          "assessment": "self有解释空间，草案保留unknown；当前可靠和便利优先不表示拒绝高速。新模型requirements.priority更忠实，context中的“不追求”不应参与排他筛选。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "synth-001-01",
+      "observed": "上一轮两处拼接省略号引用已消失，所有引用逐字；用途进入结构化条件，续航/降噪解释目标保留，送礼do_not_transfer_to_recipient，不造购买或推荐数量。",
+      "disputes": [
+        {
+          "issue": "通勤用途与音乐/电话功能应该是门槛还是软偏好仍需独立裁决",
+          "customer_quote": "也会用来听音乐和接电话",
+          "assessment": "审核把r2/r3 strict全部判强，但顾客预期用途也可以隐含必要功能；不能机械要求每条都说“必须”。不支持通话的设备未必是合格推荐。需要定义用途适用性、功能能力与程度偏好，再做标注校准。"
+        },
+        {
+          "issue": "“不夹耳”和减少噪声的评价证据仍未构建",
+          "customer_quote": "希望戴久了别太夹耳",
+          "assessment": "新提取保持偏好是合理的，但真正给推荐打分还需产品性能/舒适证据或独立质量标注，标题不能证明戴久不夹耳。这轮没有执行推荐，不能计算用途匹配满分。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "synth-002-00",
+      "observed": "本轮只保留guide_verification，不再凭空加入现场verify动作，画像改为not_relevant；但将改装背景记成strict use_case，并没有独立保留显存/供电散热目标和未来组件缺口。",
+      "disputes": [
+        {
+          "issue": "改装背景不应自动成为必须购买某类商品的硬过滤",
+          "customer_quote": "我最近想给显卡改用一体式水冷",
+          "assessment": "当前问题是核查步骤；strict use_case容易被下游错误用于筛商品。审核对此拒绝有依据，应保留背景/回答目标而非必购条件。草案未设置必购类型。"
+        },
+        {
+          "issue": "显存/供电区域需求与未来具体兼容缺口未充分结构化",
+          "customer_quote": "主要担心显存和供电区域温度太高",
+          "assessment": "新结果只在背景记录顾虑、unknowns为空。不能阻塞当前方法，但未来要验证显卡/PCB、水冷本体、安装架与空间时必须核对信息，且核查清单应覆盖这部分散热而非只看冷排尺寸。草案已显式保留。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "synth-002-01",
+      "observed": "已补decision_support，比较安装难度、显卡/供电散热及型号确认方法均保留；不因缺型号强制拒答，画像not_relevant。模型审核四维全pass且无issues。",
+      "disputes": [
+        {
+          "issue": "recommend动作含义仍可能混合方案建议与商品推荐",
+          "customer_quote": "不太确定哪种改动更合适",
+          "assessment": "新模型加入recommend但理由又说不涉及商品推荐画像；作为条件式改装方案建议可以合理，但不能用这个动作迫使Agent报商品或使用购物历史。当前允许recommend配not_relevant，后续应区分方案建议和商品推荐动作。"
+        },
+        {
+          "issue": "通用比较过关不代表具体改装效果或兼容已核实",
+          "customer_quote": "对显卡和供电区域散热的影响",
+          "assessment": "仍不能凭目录安装架标题或历史评价承诺温降、风险或兼容性；待人审时要检查比较覆盖和证据边界。本轮仅提取/预审，不计算推荐质量。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "synth-003-00",
+      "observed": "50英尺结构化保留about并规范到15.24m；明确暂缓verify_compatibility，追问接头身份及两根线接口，不把必要追问标optional；纯技术咨询不使用画像。初次被v2全局阻塞假设误拒，修复后离线原响应结构通过。",
+      "disputes": [
+        {
+          "issue": "局部必要信息被旧校验误当成整条回答阻塞，已修复但不改旧运行状态",
+          "customer_quote": "那个转接头能用吗？",
+          "assessment": "模型已设answer_partially_then_clarify、unresolved verify和required_for_action，局部行为正确。required_for_requested_answer作用域由needed_for绑定，兼容结论必需不等于比较前必需。程序仅适配校验副本，原标签及首次隔离状态保持。"
+        },
+        {
+          "issue": "已有线与走线背景的strict use_case仍有下游误用风险",
+          "customer_quote": "想把路由器挪到另一间屋，得走一段网线",
+          "assessment": "与第4条一样，方法/现场背景转为strict用途的解释尚未统一。新审核此处全pass不证明语义没有分歧；维持原始隔离状态，由独立人审决定用途的评分参与方式。"
+        }
+      ]
+    },
+    {
+      "candidate_id": "synth-003-01",
+      "observed": "长度不再只藏于背景，50英尺/about规范为15.24m；明确compare、guide和decision_support，先答核查步骤而不盘问，画像not_relevant。模型审核四维全pass且无issues。",
+      "disputes": [
+        {
+          "issue": "strict用途在方法任务中的含义需统一，unknowns为空不证明现场兼容",
+          "customer_quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？",
+          "assessment": "顾客要核查分支而非现在判断某接头，not_needed合理，也不必把未来每个槽位都当必问。但下游不能据unknowns空认为现场条件已齐全；用途不能误作强制买成品线或散装线。草案保留未来信息缺口作为安全提示。"
+        },
+        {
+          "issue": "已有线延长分支是否充分覆盖仍需看真实Agent回答",
+          "customer_quote": "家里现有的网线能不能用接头延长",
+          "assessment": "新回答目标的比较与决策文字主要指成品/散装，核查目标较泛。独立人审和后续执行评分要确认延长分支也被覆盖，不把模型allpass当覆盖证明。"
+        }
+      ]
+    }
+  ]
+}

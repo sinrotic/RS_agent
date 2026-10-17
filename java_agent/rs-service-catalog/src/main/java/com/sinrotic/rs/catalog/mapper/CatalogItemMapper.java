@@ -20,5 +20,8 @@ public interface CatalogItemMapper {
 
     List<String> selectCategories();
 
+    List<CatalogItemRow> selectDiscoveryItems(@Param("category") String category,
+            @Param("offset") int offset, @Param("limit") int limit);
+
     List<String> selectStoreNames();
 }

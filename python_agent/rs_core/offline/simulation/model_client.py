@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 DEFAULT_MODEL_CONFIG_PATH = Path("configs/simulation_model.local.json")
-DEFAULT_API_BASE = "https://api.sinrotic233.com"
+DEFAULT_API_BASE = "https://cpa2api.sinrotic233.com"
 
 
 class SimulationModelUnavailableError(RuntimeError):

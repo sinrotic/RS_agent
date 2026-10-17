@@ -21,7 +21,14 @@ DEFAULT_GOVERNANCE_MANIFEST = ROOT / "outputs" / "recall" / "data_governance" / 
 DEFAULT_METHOD_DATASET_ROOT = ROOT / "outputs" / "recall" / "pool500_method_datasets"
 DEFAULT_OUTPUT_PATH = DEFAULT_METHOD_DATASET_ROOT / "audit_evidence_v1" / "diagnostic_audit_report.json"
 COLLAB_OUTPUT_WHITELIST = {"method_dataset_manifest.json", "method_dataset_rows.jsonl", "README.md", "TODO.md", "migration_punchlist.md"}
-TWO_TOWER_OUTPUT_WHITELIST = {"method_dataset_manifest.json", "two_tower_train_samples.jsonl", "negative_item_universe.jsonl", "training_item_universe.jsonl", "leakage_audit.json"}
+TWO_TOWER_OUTPUT_WHITELIST = {
+    "method_dataset_manifest.json",
+    "two_tower_train_samples.jsonl",
+    "negative_item_universe.jsonl",
+    "training_item_universe.jsonl",
+    "two_tower_dssm_item_vocab_manifest.json",
+    "leakage_audit.json",
+}
 LEGAL_METHOD_DATASET_SCHEMAS = {
     "pool500_method_dataset_v1",
     "pool500_two_tower_method_dataset_v1",
@@ -702,7 +709,7 @@ def _forbidden_payload_hits(value: Any, context: str) -> Iterable[str]:
                 yield key_context
             yield from _forbidden_payload_hits(nested, key_context)
     elif isinstance(value, list):
-        if context.endswith(".forbidden_scopes"):
+        if context.endswith((".forbidden_scopes", ".forbidden_sources", ".forbidden_uses", ".forbidden_input_scopes")):
             return
         for index, nested in enumerate(value):
             yield from _forbidden_payload_hits(nested, f"{context}[{index}]")

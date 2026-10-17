@@ -1,11 +1,13 @@
 package com.sinrotic.rs.recommend.controller.app;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sinrotic.rs.recommend.domain.delivery.RecommendationIdentity;
 import com.sinrotic.rs.recommend.domain.vo.HomeRecommendConfigVO;
 import com.sinrotic.rs.recommend.domain.vo.HomeRecommendVO;
 import com.sinrotic.rs.recommend.domain.vo.RecommendDisplayVO;
 import com.sinrotic.rs.recommend.domain.vo.RecommendItemVO;
 import com.sinrotic.rs.recommend.service.HomeRecommendService;
+import com.sinrotic.rs.recommend.service.RecommendationSessionValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -35,7 +37,7 @@ class HomeRecommendControllerTest {
     void setUp() {
         homeRecommendService = mock(HomeRecommendService.class);
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new HomeRecommendController(homeRecommendService))
+                .standaloneSetup(new HomeRecommendController(homeRecommendService, mock(RecommendationSessionValidator.class)))
                 .build();
     }
 
@@ -58,13 +60,18 @@ class HomeRecommendControllerTest {
                 "rec_req_001:20",
                 new HomeRecommendConfigVO(500, 100, 50, 20, 8)
         );
-        when(homeRecommendService.recommendHome(argThat(request ->
-                "sess_001".equals(request.sessionId())
+        when(homeRecommendService.recommendHome(argThat(identity ->
+                "account_001".equals(identity.accountId())
+                        && "A1XYZ".equals(identity.profileUserId())
+                        && "sess_001".equals(identity.sessionId())
+        ), argThat(request -> "sess_001".equals(request.sessionId())
                         && "home".equals(request.scene())
                         && request.pageSize() == 20
         ))).thenReturn(response);
 
         mockMvc.perform(post("/api/recommend/home")
+                        .header("X-Account-Id", "account_001")
+                        .header("X-Profile-User-Id", "A1XYZ")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "session_id", "sess_001",
@@ -83,8 +90,11 @@ class HomeRecommendControllerTest {
                 .andExpect(jsonPath("$.config.final_return_size").value(20))
                 .andExpect(jsonPath("$.config.first_screen_display_size").value(8));
 
-        verify(homeRecommendService).recommendHome(argThat(request ->
-                "sess_001".equals(request.sessionId())
+        verify(homeRecommendService).recommendHome(argThat(identity ->
+                "account_001".equals(identity.accountId())
+                        && "A1XYZ".equals(identity.profileUserId())
+                        && "sess_001".equals(identity.sessionId())
+        ), argThat(request -> "sess_001".equals(request.sessionId())
                         && "home".equals(request.scene())
                         && request.pageSize() == 20
                         && !request.debug()
@@ -110,14 +120,19 @@ class HomeRecommendControllerTest {
                 "rec_req_refresh_001:20",
                 new HomeRecommendConfigVO(500, 100, 50, 20, 8)
         );
-        when(homeRecommendService.recommendHome(argThat(request ->
-                "sess_001".equals(request.sessionId())
+        when(homeRecommendService.recommendHome(argThat(identity ->
+                "account_001".equals(identity.accountId())
+                        && "A1XYZ".equals(identity.profileUserId())
+                        && "sess_001".equals(identity.sessionId())
+        ), argThat(request -> "sess_001".equals(request.sessionId())
                         && "home".equals(request.scene())
                         && request.pageSize() == 20
                         && "rec_req_001:20".equals(request.cursor())
         ))).thenReturn(response);
 
         mockMvc.perform(post("/api/recommend/home/refresh")
+                        .header("X-Account-Id", "account_001")
+                        .header("X-Profile-User-Id", "A1XYZ")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "session_id", "sess_001",
@@ -130,8 +145,11 @@ class HomeRecommendControllerTest {
                 .andExpect(jsonPath("$.items[0].item_id").value("B002"))
                 .andExpect(jsonPath("$.next_cursor").value("rec_req_refresh_001:20"));
 
-        verify(homeRecommendService).recommendHome(argThat(request ->
-                "sess_001".equals(request.sessionId())
+        verify(homeRecommendService).recommendHome(argThat(identity ->
+                "account_001".equals(identity.accountId())
+                        && "A1XYZ".equals(identity.profileUserId())
+                        && "sess_001".equals(identity.sessionId())
+        ), argThat(request -> "sess_001".equals(request.sessionId())
                         && "rec_req_001:20".equals(request.cursor())
                         && request.pageSize() == 20
         ));

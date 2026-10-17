@@ -1,0 +1,20 @@
+{
+  "command": "mvn -pl rs-service-agent -am test -q",
+  "agent_module": {
+    "tests": 232,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 1
+  },
+  "new_boundary_tests": [
+    "serialCapabilityKeepsItsDependencyBarrier",
+    "cancellationInterruptsAnExecutingCapability",
+    "capabilitiesShareTheExistingToolConcurrencyLimit",
+    "capabilityCallsOverlapAndResultsKeepSubmissionOrder"
+  ],
+  "real_flow_passed": 5,
+  "real_flow_failed": 0,
+  "tested_jar_sha256": "01ca31c3fd82f22822fa55d8faecc0064387000469ffebf9b9b600a7a2166805",
+  "model_changed": false,
+  "shared_agent_replaced": false
+}

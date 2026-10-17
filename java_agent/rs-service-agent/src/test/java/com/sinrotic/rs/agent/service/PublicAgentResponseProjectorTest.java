@@ -38,6 +38,9 @@ class PublicAgentResponseProjectorTest {
                 .hasMessageContaining("unknown answer block type");
         assertThatThrownBy(() -> projector.projectBlock(Map.of("type", "product_cards", "card_set_id", "cards_1"), profile(AgentPublicOutputBlock.TEXT)))
                 .hasMessageContaining("not allowed by profile");
+        assertThatThrownBy(() -> projector.projectBlock(Map.of("type", "a2ui", "messages",
+                A2uiMessageProjectorTest.initialMessages()), profile(AgentPublicOutputBlock.TEXT)))
+                .hasMessageContaining("not allowed by profile");
     }
 
     @Test

@@ -1,0 +1,82 @@
+{
+  "optimized-mouse/single": {
+    "requests": 5,
+    "completed": 5,
+    "failed": 0,
+    "minimum_ms": 1236.43,
+    "median_ms": 1415.34,
+    "maximum_ms": 2568.7
+  },
+  "optimized-mouse/concurrent_8": {
+    "requests": 8,
+    "completed": 8,
+    "failed": 0,
+    "minimum_ms": 1714.19,
+    "median_ms": 2017.51,
+    "maximum_ms": 2021.25
+  },
+  "optimized-cold-warm/single": {
+    "requests": 5,
+    "completed": 5,
+    "failed": 0,
+    "minimum_ms": 1213.45,
+    "median_ms": 1446.59,
+    "maximum_ms": 2154.57
+  },
+  "optimized-cold-warm/concurrent_8": {
+    "requests": 8,
+    "completed": 8,
+    "failed": 0,
+    "minimum_ms": 1823.9,
+    "median_ms": 2257.64,
+    "maximum_ms": 2336.18
+  },
+  "optimized-cold-concurrent/concurrent_8": {
+    "requests": 8,
+    "completed": 8,
+    "failed": 0,
+    "minimum_ms": 3127.54,
+    "median_ms": 3317.03,
+    "maximum_ms": 3742.56
+  },
+  "baseline-concurrent/concurrent_8": {
+    "requests": 8,
+    "completed": 3,
+    "failed": 5,
+    "minimum_ms": 23001.6,
+    "median_ms": 29864.28,
+    "maximum_ms": 30136.95
+  },
+  "optimized-mouse/steady-single": {
+    "requests": 4,
+    "completed": 4,
+    "failed": 0,
+    "minimum_ms": 1236.43,
+    "median_ms": 1352.31,
+    "maximum_ms": 1424.67
+  },
+  "baseline/single": {
+    "requests": 2,
+    "completed": 2,
+    "failed": 0,
+    "minimum_ms": 9830.28,
+    "median_ms": 16427.39,
+    "maximum_ms": 23024.49
+  },
+  "browser-fast": {
+    "requests": 3,
+    "completed": 3,
+    "failed": 0,
+    "minimum_ms": 1369.9,
+    "median_ms": 1867.2,
+    "maximum_ms": 1898.1
+  },
+  "browser-baseline": {
+    "requests": 2,
+    "completed": 2,
+    "failed": 0,
+    "minimum_ms": 9075.2,
+    "median_ms": 17260.75,
+    "maximum_ms": 25446.3
+  }
+}

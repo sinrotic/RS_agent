@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
+@org.springframework.context.annotation.Profile("mock-models")
 public class MockModelHealthService implements ModelHealthService {
 
     @Override

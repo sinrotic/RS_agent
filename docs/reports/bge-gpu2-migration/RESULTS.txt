@@ -1,0 +1,15 @@
+BGE编码与排序服务迁移至GPU2（2026-10-13）
+
+结果：MIGRATED_VERIFIED
+原GPU1进程已停止，新GPU2进程：657113
+BGE及reranker权重、原半精度/批次/显存比例保持；CUDA_VISIBLE_DEVICES改为2。
+先在18216预热并验证，随后同一模型实例接管原18215端口，无重新加载；18216预热监听已关闭。
+向量最大误差：0.0
+排序分数最大误差：0.0
+排序顺序完全一致；网关6次主页与10种中英文语义回放通过。
+原rs-bge-runtime.service已禁用以避免重启时占用同一端口；新rs-bge-gpu2-runtime.service已启用。
+GPU1迁移后仅15MiB驱动占用；GPU2的LWE训练保留，新增BGE约3112MiB。
+Qwen保持停止。最终三塔模型product_three_tower_final_v1、CPU用户/查询塔和核心推荐均健康。
+模型与向量未改变，不需要重新训练或重建Milvus索引。
+配置私有快照仅保存在服务器private目录，未加入仓库；迁移异常时脚本自动恢复原GPU1服务。
+证据目录：/mnt/data/luo/remote_runs/bge_gpu2_migration_20261013

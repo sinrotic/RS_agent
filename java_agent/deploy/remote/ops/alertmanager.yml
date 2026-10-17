@@ -1,0 +1,9 @@
+# 初始配置仅保留告警供本地控制台查看；通知接收地址在明确配置后再启用。
+route:
+  receiver: local-console
+  group_by: [alertname, instance]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+receivers:
+  - name: local-console

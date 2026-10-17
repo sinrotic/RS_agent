@@ -133,8 +133,6 @@ def build_full_train_swing_sidecar(
     if output_dir.exists() and overwrite:
         shutil.rmtree(output_dir)
     output_dir.mkdir(parents=True, exist_ok=False)
-    disk_free_start = shutil.disk_usage(_existing_ancestor(output_dir.parent)).free
-
     sequences_by_user, load_audit = _load_train_positive_sequences(train_sequences_path, max_user_items, min_user_items)
     item_count_sequences_by_user = sequences_by_user
     if pre_filter_users_before_item_count:

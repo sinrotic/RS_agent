@@ -1,0 +1,2228 @@
+{
+  "source_pack_sha256": "852fc18d7b2d275b6f1d2148744b6c7ec08097ec38bc0648eceeaa1cf438d4a1",
+  "author": "codex_assistant_offline_v3_revision_not_model_extraction",
+  "is_gold": false,
+  "entries": [
+    {
+      "candidate_id": "synth-000-00",
+      "title": "无线适配器：近似预算不是硬上限",
+      "disputes": [
+        {
+          "issue": "三十左右被改成价格不超过30",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "预算三十左右",
+          "suggestion": "改为approximate/about/30，币种null；不造上下浮动范围，暂不计算预算命中。"
+        },
+        {
+          "issue": "家用设备不能直接证明购买对象，但对象未知不必追问",
+          "certainty": "interpretation_pending_human_review",
+          "quote": "家里台式机",
+          "suggestion": "保留recipient=unknown；仅在确认适用本人且画像已授权时弱参考历史，不用询问身份来阻塞推荐。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend"
+          ],
+          "evidence": [
+            "有合适的吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "existing_problem",
+            "value": "台式机无线连接不稳定",
+            "quote": "家里台式机的无线网卡不太稳定"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "给出适合Windows 11的USB Wi-Fi适配器参考，交代已知和待确认条件",
+            "quote": "想换个USB Wi‑Fi适配器，最好支持双频。主要是Windows 11用",
+            "kind": "recommendation"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "type",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "USB Wi-Fi适配器",
+            "unit": null,
+            "quote": "想换个USB Wi‑Fi适配器"
+          },
+          {
+            "id": "os",
+            "kind": "strict",
+            "field": "operating_system",
+            "relation": "eq",
+            "value": "Windows 11",
+            "unit": null,
+            "quote": "主要是Windows 11用"
+          },
+          {
+            "id": "budget",
+            "kind": "approximate",
+            "field": "price",
+            "relation": "about",
+            "value": 30,
+            "unit": null,
+            "quote": "预算三十左右"
+          },
+          {
+            "id": "dual-band",
+            "kind": "preference",
+            "field": "dual_band",
+            "relation": "prefer",
+            "value": true,
+            "unit": null,
+            "quote": "最好支持双频"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "currency",
+            "reason": "币种未知不能据目录原始标价认定符合实际预算；可先给带条件参考",
+            "needed_for": [
+              "recommend"
+            ],
+            "blocking_level": "optional_refinement"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "weak_reference_if_self",
+          "profile_reason": "只有购买对象确为本人、画像授权且与当前购物相关时才可弱参考；本轮提取看不到历史，不能确认相关性，当前需求优先。"
+        }
+      },
+      "response_guidance": [
+        "当前双频倾向优先于不相干历史；不要求顾客说出画像触发词。",
+        "不把26.99原始价格单位直接与顾客的30作同币种比较，不声称用户设备一定适配。",
+        "近似预算尚无人工校准容差，只检查是否忠实表达，不能据此造价格满分或扣分。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend"
+          ],
+          "evidence": [
+            "有合适的吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "existing_problem",
+            "value": "台式机无线连接不稳定",
+            "quote": "家里台式机的无线网卡不太稳定"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "给出适合Windows 11的USB Wi-Fi适配器参考，交代已知和待确认条件",
+            "quote": "想换个USB Wi‑Fi适配器，最好支持双频。主要是Windows 11用",
+            "kind": "recommendation"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "type",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "USB Wi-Fi适配器",
+            "unit": null,
+            "quote": "想换个USB Wi‑Fi适配器"
+          },
+          {
+            "id": "os",
+            "kind": "strict",
+            "field": "operating_system",
+            "relation": "eq",
+            "value": "Windows 11",
+            "unit": null,
+            "quote": "主要是Windows 11用"
+          },
+          {
+            "id": "budget",
+            "kind": "approximate",
+            "field": "price",
+            "relation": "about",
+            "value": 30,
+            "unit": null,
+            "quote": "预算三十左右"
+          },
+          {
+            "id": "dual-band",
+            "kind": "preference",
+            "field": "dual_band",
+            "relation": "prefer",
+            "value": true,
+            "unit": null,
+            "quote": "最好支持双频"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "currency",
+            "reason": "币种未知不能据目录原始标价认定符合实际预算；可先给带条件参考",
+            "needed_for": [
+              "recommend"
+            ],
+            "blocking_level": "optional_refinement"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "weak_reference_if_self",
+          "profile_reason": "只有购买对象确为本人、画像授权且与当前购物相关时才可弱参考；本轮提取看不到历史，不能确认相关性，当前需求优先。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "有合适的吗？",
+            "valid": true,
+            "start": 60,
+            "end": 66
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "家里台式机的无线网卡不太稳定",
+            "valid": true,
+            "start": 0,
+            "end": 14
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "想换个USB Wi‑Fi适配器，最好支持双频。主要是Windows 11用",
+            "valid": true,
+            "start": 15,
+            "end": 52
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "想换个USB Wi‑Fi适配器",
+            "valid": true,
+            "start": 15,
+            "end": 30
+          },
+          {
+            "path": "/requirements/1/quote",
+            "quote": "主要是Windows 11用",
+            "valid": true,
+            "start": 38,
+            "end": 52
+          },
+          {
+            "path": "/requirements/2/quote",
+            "quote": "预算三十左右",
+            "valid": true,
+            "start": 53,
+            "end": 59
+          },
+          {
+            "path": "/requirements/3/quote",
+            "quote": "最好支持双频",
+            "valid": true,
+            "start": 31,
+            "end": 37
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    },
+    {
+      "candidate_id": "synth-000-01",
+      "title": "无线适配器：安装便利、可靠性与可选追问",
+      "disputes": [
+        {
+          "issue": "添个是否严格限定购买数量存在解释空间",
+          "certainty": "interpretation_pending_human_review",
+          "quote": "想添个 USB 网络适配器改善一下",
+          "suggestion": "暂不设严格数量；即使人审认可买一个，也只影响purchase_quantity，不限定recommendation_count。"
+        },
+        {
+          "issue": "接口未知限制具体兼容结论，不应阻塞一般选择建议",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "具体接口和兼容要求我还得确认",
+          "suggestion": "先说明按安装便利和可靠性选择的方向，再合并追问USB接口与Windows版本；不知道时不保证具体型号兼容。"
+        },
+        {
+          "issue": "不追求最高速不等于拒绝高速产品",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠",
+          "suggestion": "保留可靠和便利的相对优先级；不添加网速硬上限或任意数字权重。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend"
+          ],
+          "evidence": [
+            "能帮我看看哪种更合适吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "network_problem",
+            "value": "不便拉网线且无线连接不稳定",
+            "quote": "不太方便拉网线，最近无线连接也不太稳定"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "解释选择时安装便利与可靠性应优先于追求极高速度",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠",
+            "kind": "explanation"
+          },
+          {
+            "kind": "recommendation",
+            "need": "给安装便利、日常可靠优先的适配器选择方向，不提前保证具体兼容。",
+            "quote": "能帮我看看哪种更合适吗？"
+          },
+          {
+            "kind": "decision_support",
+            "need": "解释为何便利和可靠性优先于最高速度，以及怎样按这些条件选择。",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "type",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "USB网络适配器",
+            "unit": null,
+            "quote": "想添个 USB 网络适配器"
+          },
+          {
+            "id": "os",
+            "kind": "strict",
+            "field": "operating_system",
+            "relation": "eq",
+            "value": "Windows",
+            "unit": null,
+            "quote": "电脑是 Windows"
+          },
+          {
+            "id": "installation",
+            "kind": "preference",
+            "field": "installation_difficulty",
+            "relation": "minimize",
+            "value": "安装便利",
+            "unit": null,
+            "quote": "安装别太折腾"
+          },
+          {
+            "id": "reliability",
+            "kind": "preference",
+            "field": "reliability",
+            "relation": "prefer",
+            "value": "日常可靠性优先于极高速度",
+            "unit": null,
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "usb_interface",
+            "reason": "接口影响具体商品连接条件，不阻塞方向性建议",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "windows_version",
+            "reason": "具体版本影响驱动支持；不从历史或目录补成Win11",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "answer_then_optional_question",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": [
+            {
+              "question": "你电脑上可用的USB接口是哪种、Windows是哪个版本？不确定的话，也可以先告诉我电脑型号。",
+              "slots": [
+                "usb_interface",
+                "windows_version"
+              ],
+              "necessity": "optional",
+              "reason": "用于后续核对具体适配器，不作为先解释选择方向的门槛"
+            }
+          ]
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "weak_reference_if_self",
+          "profile_reason": "只有购买对象确为本人、画像授权且与当前购物相关时才可弱参考；本轮提取看不到历史，不能确认相关性，当前需求优先。"
+        }
+      },
+      "response_guidance": [
+        "画像不能推断用户电脑接口、系统版本或网络故障原因；历史为正向评价而非购买记录。",
+        "如果历史倾向高性能，这次明确要求安装便利、可靠性优先，不能奖励迎合历史而违背当次需求。",
+        "问相关接口问题是合理的；扣分对象应是把可选追问当作拒答门槛，而不是凡提问就扣分。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。",
+        "接口/系统版本未知绑定未来具体兼容核查，不把本轮方向性推荐变成拒答门槛。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend"
+          ],
+          "evidence": [
+            "能帮我看看哪种更合适吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "network_problem",
+            "value": "不便拉网线且无线连接不稳定",
+            "quote": "不太方便拉网线，最近无线连接也不太稳定"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "解释选择时安装便利与可靠性应优先于追求极高速度",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠",
+            "kind": "explanation"
+          },
+          {
+            "kind": "recommendation",
+            "need": "给安装便利、日常可靠优先的适配器选择方向，不提前保证具体兼容。",
+            "quote": "能帮我看看哪种更合适吗？"
+          },
+          {
+            "kind": "decision_support",
+            "need": "解释为何便利和可靠性优先于最高速度，以及怎样按这些条件选择。",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "type",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "USB网络适配器",
+            "unit": null,
+            "quote": "想添个 USB 网络适配器"
+          },
+          {
+            "id": "os",
+            "kind": "strict",
+            "field": "operating_system",
+            "relation": "eq",
+            "value": "Windows",
+            "unit": null,
+            "quote": "电脑是 Windows"
+          },
+          {
+            "id": "installation",
+            "kind": "preference",
+            "field": "installation_difficulty",
+            "relation": "minimize",
+            "value": "安装便利",
+            "unit": null,
+            "quote": "安装别太折腾"
+          },
+          {
+            "id": "reliability",
+            "kind": "preference",
+            "field": "reliability",
+            "relation": "prefer",
+            "value": "日常可靠性优先于极高速度",
+            "unit": null,
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "usb_interface",
+            "reason": "接口影响具体商品连接条件，不阻塞方向性建议",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "windows_version",
+            "reason": "具体版本影响驱动支持；不从历史或目录补成Win11",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "answer_then_optional_question",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": [
+            {
+              "question": "你电脑上可用的USB接口是哪种、Windows是哪个版本？不确定的话，也可以先告诉我电脑型号。",
+              "slots": [
+                "usb_interface",
+                "windows_version"
+              ],
+              "necessity": "optional",
+              "reason": "用于后续核对具体适配器，不作为先解释选择方向的门槛"
+            }
+          ]
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "weak_reference_if_self",
+          "profile_reason": "只有购买对象确为本人、画像授权且与当前购物相关时才可弱参考；本轮提取看不到历史，不能确认相关性，当前需求优先。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "能帮我看看哪种更合适吗？",
+            "valid": true,
+            "start": 109,
+            "end": 121
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "不太方便拉网线，最近无线连接也不太稳定",
+            "valid": true,
+            "start": 14,
+            "end": 33
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠",
+            "valid": true,
+            "start": 52,
+            "end": 80
+          },
+          {
+            "path": "/answer_requirements/1/quote",
+            "quote": "能帮我看看哪种更合适吗？",
+            "valid": true,
+            "start": 109,
+            "end": 121
+          },
+          {
+            "path": "/answer_requirements/2/quote",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠",
+            "valid": true,
+            "start": 52,
+            "end": 80
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "想添个 USB 网络适配器",
+            "valid": true,
+            "start": 34,
+            "end": 47
+          },
+          {
+            "path": "/requirements/1/quote",
+            "quote": "电脑是 Windows",
+            "valid": true,
+            "start": 81,
+            "end": 92
+          },
+          {
+            "path": "/requirements/2/quote",
+            "quote": "安装别太折腾",
+            "valid": true,
+            "start": 67,
+            "end": 73
+          },
+          {
+            "path": "/requirements/3/quote",
+            "quote": "比起追求特别高的速度，我更在意安装别太折腾、日常用着可靠",
+            "valid": true,
+            "start": 52,
+            "end": 80
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    },
+    {
+      "candidate_id": "synth-001-01",
+      "title": "送朋友通勤耳机：收礼人需求独立于赠送者画像",
+      "disputes": [
+        {
+          "issue": "一副描述购买单位，不限定只展示一个推荐",
+          "certainty": "interpretation_pending_human_review",
+          "quote": "一副头戴式耳机",
+          "suggestion": "一副可能只是自然单数，暂不设严格购买数量；尤其不能推定只展示一个推荐，待独立人审。"
+        },
+        {
+          "issue": "预算宽松和不懂续航降噪不能改写成数值门槛",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "预算不用卡得特别死；无线款优先，不过续航和降噪效果我不太会看",
+          "suggestion": "无线和舒适保留偏好；不要求先报预算、续航小时数或降噪数值，可以解释选购指标。"
+        },
+        {
+          "issue": "审核全pass也不代表原输出协议有效",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "想给朋友挑一副头戴式耳机当礼物",
+          "suggestion": "保留原模型判断，但分维度reason兼容后仍有不逐字的profile证据；不能自动改写引用或批准样本。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend",
+            "explain"
+          ],
+          "evidence": [
+            "有什么合适的选择吗？",
+            "续航和降噪效果我不太会看"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "recipient_uses",
+            "value": [
+              "通勤",
+              "音乐",
+              "电话"
+            ],
+            "quote": "她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话"
+          },
+          {
+            "name": "budget_flexibility",
+            "value": "不严格卡预算，未提供金额",
+            "quote": "预算不用卡得特别死"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "给通勤耳机参考并解释续航、降噪的选购指标",
+            "quote": "无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？",
+            "kind": "recommendation"
+          },
+          {
+            "kind": "explanation",
+            "need": "解释耳机续航与降噪的选购指标。",
+            "quote": "续航和降噪效果我不太会看"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "type",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "头戴式耳机",
+            "unit": null,
+            "quote": "一副头戴式耳机"
+          },
+          {
+            "id": "noise",
+            "kind": "preference",
+            "field": "noise_control",
+            "relation": "prefer",
+            "value": "通勤时少受周围噪声影响",
+            "unit": null,
+            "quote": "她平时通勤时想少受周围噪声影响"
+          },
+          {
+            "id": "comfort",
+            "kind": "preference",
+            "field": "wearing_comfort",
+            "relation": "prefer",
+            "value": "长时间佩戴不夹耳",
+            "unit": null,
+            "quote": "希望戴久了别太夹耳"
+          },
+          {
+            "id": "wireless",
+            "kind": "preference",
+            "field": "wireless",
+            "relation": "prefer",
+            "value": true,
+            "unit": null,
+            "quote": "无线款优先"
+          },
+          {
+            "id": "calls",
+            "kind": "preference",
+            "field": "music_and_calls",
+            "relation": "prefer",
+            "value": "适合听音乐和接电话",
+            "unit": null,
+            "quote": "也会用来听音乐和接电话"
+          },
+          {
+            "id": "uses",
+            "kind": "preference",
+            "field": "use_case",
+            "relation": "prefer",
+            "value": "通勤",
+            "unit": null,
+            "quote": "她平时通勤时想少受周围噪声影响"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "price",
+            "reason": "没有数值预算，不自行推定赠送者历史价位为朋友预算",
+            "needed_for": [
+              "recommend"
+            ],
+            "blocking_level": "optional_refinement"
+          },
+          {
+            "slot": "battery_hours",
+            "reason": "未要求明确小时数，不把不会看指标当成必须提问",
+            "needed_for": [
+              "recommend",
+              "explain"
+            ],
+            "blocking_level": "optional_refinement"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "other",
+          "quote": "给朋友挑一副头戴式耳机当礼物",
+          "profile_policy": "do_not_transfer_to_recipient",
+          "profile_reason": "这是送给朋友的耳机，赠送者历史不代表朋友偏好，不迁移本人画像。"
+        }
+      },
+      "response_guidance": [
+        "不同赠送者画像不应导致朋友的耳机需求凭空改变；若想用历史，必须另有收礼人本人信息与授权。",
+        "实际舒适和降噪效果需要独立性能或测量证据，不能把营销标题当实测保证。",
+        "不给具体推荐件数设标准；评分应区分是否满足朋友用途与是否忠实使用画像。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。",
+        "撤掉草案中的严格购买数量1，保留原始解释争议；补通勤用途及指标解释目标，逐字引用不拼接。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "recommendation",
+          "actions": [
+            "recommend",
+            "explain"
+          ],
+          "evidence": [
+            "有什么合适的选择吗？",
+            "续航和降噪效果我不太会看"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "recipient_uses",
+            "value": [
+              "通勤",
+              "音乐",
+              "电话"
+            ],
+            "quote": "她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话"
+          },
+          {
+            "name": "budget_flexibility",
+            "value": "不严格卡预算，未提供金额",
+            "quote": "预算不用卡得特别死"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "给通勤耳机参考并解释续航、降噪的选购指标",
+            "quote": "无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？",
+            "kind": "recommendation"
+          },
+          {
+            "kind": "explanation",
+            "need": "解释耳机续航与降噪的选购指标。",
+            "quote": "续航和降噪效果我不太会看"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "type",
+            "kind": "strict",
+            "field": "product_type",
+            "relation": "eq",
+            "value": "头戴式耳机",
+            "unit": null,
+            "quote": "一副头戴式耳机"
+          },
+          {
+            "id": "noise",
+            "kind": "preference",
+            "field": "noise_control",
+            "relation": "prefer",
+            "value": "通勤时少受周围噪声影响",
+            "unit": null,
+            "quote": "她平时通勤时想少受周围噪声影响"
+          },
+          {
+            "id": "comfort",
+            "kind": "preference",
+            "field": "wearing_comfort",
+            "relation": "prefer",
+            "value": "长时间佩戴不夹耳",
+            "unit": null,
+            "quote": "希望戴久了别太夹耳"
+          },
+          {
+            "id": "wireless",
+            "kind": "preference",
+            "field": "wireless",
+            "relation": "prefer",
+            "value": true,
+            "unit": null,
+            "quote": "无线款优先"
+          },
+          {
+            "id": "calls",
+            "kind": "preference",
+            "field": "music_and_calls",
+            "relation": "prefer",
+            "value": "适合听音乐和接电话",
+            "unit": null,
+            "quote": "也会用来听音乐和接电话"
+          },
+          {
+            "id": "uses",
+            "kind": "preference",
+            "field": "use_case",
+            "relation": "prefer",
+            "value": "通勤",
+            "unit": null,
+            "quote": "她平时通勤时想少受周围噪声影响"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "price",
+            "reason": "没有数值预算，不自行推定赠送者历史价位为朋友预算",
+            "needed_for": [
+              "recommend"
+            ],
+            "blocking_level": "optional_refinement"
+          },
+          {
+            "slot": "battery_hours",
+            "reason": "未要求明确小时数，不把不会看指标当成必须提问",
+            "needed_for": [
+              "recommend",
+              "explain"
+            ],
+            "blocking_level": "optional_refinement"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "other",
+          "quote": "给朋友挑一副头戴式耳机当礼物",
+          "profile_policy": "do_not_transfer_to_recipient",
+          "profile_reason": "这是送给朋友的耳机，赠送者历史不代表朋友偏好，不迁移本人画像。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "有什么合适的选择吗？",
+            "valid": true,
+            "start": 85,
+            "end": 95
+          },
+          {
+            "path": "/intent/evidence/1",
+            "quote": "续航和降噪效果我不太会看",
+            "valid": true,
+            "start": 72,
+            "end": 84
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "她平时通勤时想少受周围噪声影响，也会用来听音乐和接电话",
+            "valid": true,
+            "start": 16,
+            "end": 43
+          },
+          {
+            "path": "/context_facts/1/quote",
+            "quote": "预算不用卡得特别死",
+            "valid": true,
+            "start": 54,
+            "end": 63
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "无线款优先，不过续航和降噪效果我不太会看，有什么合适的选择吗？",
+            "valid": true,
+            "start": 64,
+            "end": 95
+          },
+          {
+            "path": "/answer_requirements/1/quote",
+            "quote": "续航和降噪效果我不太会看",
+            "valid": true,
+            "start": 72,
+            "end": 84
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "一副头戴式耳机",
+            "valid": true,
+            "start": 5,
+            "end": 12
+          },
+          {
+            "path": "/requirements/1/quote",
+            "quote": "她平时通勤时想少受周围噪声影响",
+            "valid": true,
+            "start": 16,
+            "end": 31
+          },
+          {
+            "path": "/requirements/2/quote",
+            "quote": "希望戴久了别太夹耳",
+            "valid": true,
+            "start": 44,
+            "end": 53
+          },
+          {
+            "path": "/requirements/3/quote",
+            "quote": "无线款优先",
+            "valid": true,
+            "start": 64,
+            "end": 69
+          },
+          {
+            "path": "/requirements/4/quote",
+            "quote": "也会用来听音乐和接电话",
+            "valid": true,
+            "start": 32,
+            "end": 43
+          },
+          {
+            "path": "/requirements/5/quote",
+            "quote": "她平时通勤时想少受周围噪声影响",
+            "valid": true,
+            "start": 16,
+            "end": 31
+          },
+          {
+            "path": "/recipient/quote",
+            "quote": "给朋友挑一副头戴式耳机当礼物",
+            "valid": true,
+            "start": 1,
+            "end": 15
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    },
+    {
+      "candidate_id": "synth-002-00",
+      "title": "显卡水冷：核对方法不是强制购买安装架",
+      "disputes": [
+        {
+          "issue": "提到安装架被升格为必须购买安装架",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "看到有显卡水冷安装架",
+          "suggestion": "移入背景候选方案；主意图为兼容咨询，动作是guide_verification，不构造必购产品条件。"
+        },
+        {
+          "issue": "先问显卡和冷排型号不应阻塞核对清单",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "我该先核对哪些型号和尺寸？",
+          "suggestion": "先答需要查哪些信息；若后续判断某套组合，才核实显卡/PCB、水冷本体、安装架和空间条件。"
+        },
+        {
+          "issue": "缺水冷本体型号，不能仅以冷排尺寸判断安装架兼容",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "不确定它能不能配我手头的冷排和显卡",
+          "suggestion": "将水冷本体型号列为具体组合核对槽位，目录标题不能直接证明用户组合适配。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "compatibility_consultation",
+          "actions": [
+            "guide_verification"
+          ],
+          "evidence": [
+            "我该先核对哪些型号和尺寸？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "planned_solution",
+            "value": "考虑给显卡用一体式水冷",
+            "quote": "我最近想给显卡改用一体式水冷"
+          },
+          {
+            "name": "mentioned_accessory",
+            "value": "显卡水冷安装架是考虑对象，不是必须购买",
+            "quote": "看到有显卡水冷安装架"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "说明显卡、水冷本体、安装架及安装空间的型号和尺寸核对步骤",
+            "quote": "不确定它能不能配我手头的冷排和显卡；我该先核对哪些型号和尺寸？",
+            "kind": "verification_steps"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "thermal-purpose",
+            "kind": "preference",
+            "field": "thermal_coverage",
+            "relation": "prefer",
+            "value": "显存和供电区域降温",
+            "unit": null,
+            "quote": "主要担心显存和供电区域温度太高"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "gpu_model_pcb",
+            "reason": "只影响后续具体兼容判断，不阻塞介绍核查方法",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "aio_model",
+            "reason": "冷排尺寸不足以代表水冷本体兼容信息",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "mount_model",
+            "reason": "安装架型号尚未提供，不假定就是目录中的型号",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "case_space",
+            "reason": "核查具体组合时需要安装位、冷排尺寸与空间",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "self",
+          "quote": "我手头的冷排和显卡",
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "response_guidance": [
+        "先给核查清单；可说明用户拿到型号后能进一步核对，不要求先填完所有设备信息。",
+        "通用方法咨询中画像不计必用分；不使用无关历史也是合理行为。",
+        "后续若用户要求保证某具体组合可装，未知型号才可升级为该新动作的阻塞信息。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "compatibility_consultation",
+          "actions": [
+            "guide_verification"
+          ],
+          "evidence": [
+            "我该先核对哪些型号和尺寸？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "planned_solution",
+            "value": "考虑给显卡用一体式水冷",
+            "quote": "我最近想给显卡改用一体式水冷"
+          },
+          {
+            "name": "mentioned_accessory",
+            "value": "显卡水冷安装架是考虑对象，不是必须购买",
+            "quote": "看到有显卡水冷安装架"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "说明显卡、水冷本体、安装架及安装空间的型号和尺寸核对步骤",
+            "quote": "不确定它能不能配我手头的冷排和显卡；我该先核对哪些型号和尺寸？",
+            "kind": "verification_steps"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "thermal-purpose",
+            "kind": "preference",
+            "field": "thermal_coverage",
+            "relation": "prefer",
+            "value": "显存和供电区域降温",
+            "unit": null,
+            "quote": "主要担心显存和供电区域温度太高"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "gpu_model_pcb",
+            "reason": "只影响后续具体兼容判断，不阻塞介绍核查方法",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "aio_model",
+            "reason": "冷排尺寸不足以代表水冷本体兼容信息",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "mount_model",
+            "reason": "安装架型号尚未提供，不假定就是目录中的型号",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "case_space",
+            "reason": "核查具体组合时需要安装位、冷排尺寸与空间",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "self",
+          "quote": "我手头的冷排和显卡",
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "我该先核对哪些型号和尺寸？",
+            "valid": true,
+            "start": 61,
+            "end": 74
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "我最近想给显卡改用一体式水冷",
+            "valid": true,
+            "start": 0,
+            "end": 14
+          },
+          {
+            "path": "/context_facts/1/quote",
+            "quote": "看到有显卡水冷安装架",
+            "valid": true,
+            "start": 31,
+            "end": 41
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "不确定它能不能配我手头的冷排和显卡；我该先核对哪些型号和尺寸？",
+            "valid": true,
+            "start": 43,
+            "end": 74
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "主要担心显存和供电区域温度太高",
+            "valid": true,
+            "start": 15,
+            "end": 30
+          },
+          {
+            "path": "/recipient/quote",
+            "quote": "我手头的冷排和显卡",
+            "valid": true,
+            "start": 51,
+            "end": 60
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    },
+    {
+      "candidate_id": "synth-002-01",
+      "title": "显卡散热：比较维度和核查步骤不能漏提",
+      "disputes": [
+        {
+          "issue": "仅提未知型号，遗漏明确的方案比较与方法咨询",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "能帮我比较一下不同方案的安装难度、对显卡和供电区域散热的影响吗？",
+          "suggestion": "intent记录compare和guide_verification；answer_requirements分别记录安装难度、显卡与供电区域影响和核查步骤。"
+        },
+        {
+          "issue": "型号未知被视为回答通用比较前必须追问",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "显卡型号和冷排兼容性要怎么确认？",
+          "suggestion": "可先给一般性比较与核查方法，不要声称具体温降、风险或兼容性已核实。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification"
+          ],
+          "evidence": [
+            "能帮我比较一下不同方案的安装难度、对显卡和供电区域散热的影响吗？",
+            "显卡型号和冷排兼容性要怎么确认？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "alternative_solutions",
+            "value": [
+              "换风扇",
+              "加装水冷"
+            ],
+            "quote": "考虑过换风扇或加装水冷"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "比较不同散热方案的安装难度",
+            "quote": "比较一下不同方案的安装难度",
+            "kind": "comparison"
+          },
+          {
+            "need": "比较对显卡与供电区域散热的影响",
+            "quote": "对显卡和供电区域散热的影响",
+            "kind": "comparison"
+          },
+          {
+            "need": "说明显卡型号与冷排兼容性的确认方法",
+            "quote": "显卡型号和冷排兼容性要怎么确认？",
+            "kind": "verification_steps"
+          },
+          {
+            "kind": "decision_support",
+            "need": "给换风扇与加装水冷的条件式取舍建议，不虚构设备事实或唯一方案。",
+            "quote": "不太确定哪种改动更合适"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "cooling",
+            "kind": "preference",
+            "field": "cooling_goal",
+            "relation": "prefer",
+            "value": "改善显卡散热",
+            "unit": null,
+            "quote": "我想给显卡改善散热"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "gpu_model",
+            "reason": "用于后续具体组合验证，不阻塞通用比较",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "cooling_assembly_model",
+            "reason": "具体改装组件未知，不能推断具体性能与兼容",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "case_radiator_space",
+            "reason": "机箱安装空间用于进一步判断具体冷排组合",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "response_guidance": [
+        "当前应按比较和方法覆盖评分，而不是看是否产出推荐商品或强行用历史。",
+        "提取忠实度包括明确问题是否遗漏，不只是硬条件数量；没有硬条件不等于没有需求。",
+        "不能用目录中的安装架标题推导用户实际降温效果；未查证的性能判断应明确条件。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。",
+        "补回旧草案也遗漏的决策支持，不只罗列比较维度。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification"
+          ],
+          "evidence": [
+            "能帮我比较一下不同方案的安装难度、对显卡和供电区域散热的影响吗？",
+            "显卡型号和冷排兼容性要怎么确认？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "alternative_solutions",
+            "value": [
+              "换风扇",
+              "加装水冷"
+            ],
+            "quote": "考虑过换风扇或加装水冷"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "比较不同散热方案的安装难度",
+            "quote": "比较一下不同方案的安装难度",
+            "kind": "comparison"
+          },
+          {
+            "need": "比较对显卡与供电区域散热的影响",
+            "quote": "对显卡和供电区域散热的影响",
+            "kind": "comparison"
+          },
+          {
+            "need": "说明显卡型号与冷排兼容性的确认方法",
+            "quote": "显卡型号和冷排兼容性要怎么确认？",
+            "kind": "verification_steps"
+          },
+          {
+            "kind": "decision_support",
+            "need": "给换风扇与加装水冷的条件式取舍建议，不虚构设备事实或唯一方案。",
+            "quote": "不太确定哪种改动更合适"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "cooling",
+            "kind": "preference",
+            "field": "cooling_goal",
+            "relation": "prefer",
+            "value": "改善显卡散热",
+            "unit": null,
+            "quote": "我想给显卡改善散热"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "gpu_model",
+            "reason": "用于后续具体组合验证，不阻塞通用比较",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "cooling_assembly_model",
+            "reason": "具体改装组件未知，不能推断具体性能与兼容",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "case_radiator_space",
+            "reason": "机箱安装空间用于进一步判断具体冷排组合",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "not_needed",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": []
+        },
+        "recipient": {
+          "target": "unknown",
+          "quote": null,
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "能帮我比较一下不同方案的安装难度、对显卡和供电区域散热的影响吗？",
+            "valid": true,
+            "start": 35,
+            "end": 67
+          },
+          {
+            "path": "/intent/evidence/1",
+            "quote": "显卡型号和冷排兼容性要怎么确认？",
+            "valid": true,
+            "start": 76,
+            "end": 92
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "考虑过换风扇或加装水冷",
+            "valid": true,
+            "start": 10,
+            "end": 21
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "比较一下不同方案的安装难度",
+            "valid": true,
+            "start": 38,
+            "end": 51
+          },
+          {
+            "path": "/answer_requirements/1/quote",
+            "quote": "对显卡和供电区域散热的影响",
+            "valid": true,
+            "start": 52,
+            "end": 65
+          },
+          {
+            "path": "/answer_requirements/2/quote",
+            "quote": "显卡型号和冷排兼容性要怎么确认？",
+            "valid": true,
+            "start": 76,
+            "end": 92
+          },
+          {
+            "path": "/answer_requirements/3/quote",
+            "quote": "不太确定哪种改动更合适",
+            "valid": true,
+            "start": 23,
+            "end": 34
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "我想给显卡改善散热",
+            "valid": true,
+            "start": 0,
+            "end": 9
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    },
+    {
+      "candidate_id": "synth-003-00",
+      "title": "网线与接头：原提取缺失，修订只是草案",
+      "disputes": [
+        {
+          "issue": "提取失败且原响应未保存，不能展示为原模型提取",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "大概50英尺够用",
+          "suggestion": "original_validated_extraction=null，明确未恢复原响应；以下结构由Codex拟订，待人审。"
+        },
+        {
+          "issue": "近似长度与扁平线询问不能改成精确长度及必须扁平",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "大概50英尺够用。扁平线会不会更好从门边走？",
+          "suggestion": "长度about/50/ft；扁平与门边走线记录为比较问题，不设扁平线硬过滤。"
+        },
+        {
+          "issue": "那个转接头指代不明，通用解释不能替代具体兼容结论",
+          "certainty": "interpretation_pending_human_review",
+          "quote": "另外我有两根短网线想接起来，那个转接头能用吗？",
+          "suggestion": "先解释核查方法，但不肯定该接头能用；当前具体确认动作需要接头标识和两根线端口信息，可与前面的通用回答并行。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification",
+            "verify_compatibility"
+          ],
+          "evidence": [
+            "扁平线会不会更好从门边走？",
+            "那个转接头能用吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "routing_plan",
+            "value": "路由器换房间、考虑门边走线",
+            "quote": "想把路由器挪到另一间屋"
+          },
+          {
+            "name": "existing_cables",
+            "value": "已有两根短网线待连接，不是买两件",
+            "quote": "我有两根短网线想接起来"
+          },
+          {
+            "name": "specific_compatibility_question_unresolved",
+            "value": "具体接头能否使用尚未回答；需额外信息才能确认",
+            "quote": "那个转接头能用吗？"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "比较扁平线与其他线形在门边走线的适用条件",
+            "quote": "扁平线会不会更好从门边走？",
+            "kind": "comparison"
+          },
+          {
+            "need": "说明两根线连接时如何核对接头，并明确当前不能确认该接头兼容",
+            "quote": "我有两根短网线想接起来，那个转接头能用吗？",
+            "kind": "verification_steps"
+          },
+          {
+            "kind": "compatibility_verdict",
+            "need": "具体转接头能否连接两根现有线暂不能确认，明确待取得接头身份与两端接口后再核查。",
+            "quote": "那个转接头能用吗？"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "route-length",
+            "kind": "approximate",
+            "field": "length",
+            "relation": "about",
+            "value": 15.24,
+            "unit": "m",
+            "quote": "大概50英尺够用"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "connector_identity",
+            "reason": "那个接头没有可识别型号；可先说明方法，但不能确认其能用",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "existing_cable_ends",
+            "reason": "两根线端口与规格未知，用于具体接头核对",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "answer_partially_then_clarify",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [
+            "verify_compatibility"
+          ],
+          "questions": [
+            {
+              "question": "你说的转接头是什么型号或接口，两根网线的两端是什么插头？发清晰照片也可以。",
+              "slots": [
+                "connector_identity",
+                "existing_cable_ends"
+              ],
+              "necessity": "required_for_action",
+              "reason": "先回答走线和核查方法；具体接头能否用必须等信息补齐才能确认"
+            }
+          ]
+        },
+        "recipient": {
+          "target": "self",
+          "quote": "我有两根短网线",
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "response_guidance": [
+        "先回答走线比较与核查方法；verify_compatibility明确暂缓，required_for_action追问是得出具体兼容结论的必要条件，不等于可选。",
+        "不要推定CAT6、千兆、插头规格或精确米数；两根现有网线不算购买数量或推荐件数。",
+        "顾客问的是现场走线与接头核查，画像不应替代设备事实；不使用历史不扣分。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。",
+        "兼容结论是当前请求；保留局部暂缓与必要追问，通用走线比较先答。50ft精确换算15.24m，但仍about。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification",
+            "verify_compatibility"
+          ],
+          "evidence": [
+            "扁平线会不会更好从门边走？",
+            "那个转接头能用吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "routing_plan",
+            "value": "路由器换房间、考虑门边走线",
+            "quote": "想把路由器挪到另一间屋"
+          },
+          {
+            "name": "existing_cables",
+            "value": "已有两根短网线待连接，不是买两件",
+            "quote": "我有两根短网线想接起来"
+          },
+          {
+            "name": "specific_compatibility_question_unresolved",
+            "value": "具体接头能否使用尚未回答；需额外信息才能确认",
+            "quote": "那个转接头能用吗？"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "比较扁平线与其他线形在门边走线的适用条件",
+            "quote": "扁平线会不会更好从门边走？",
+            "kind": "comparison"
+          },
+          {
+            "need": "说明两根线连接时如何核对接头，并明确当前不能确认该接头兼容",
+            "quote": "我有两根短网线想接起来，那个转接头能用吗？",
+            "kind": "verification_steps"
+          },
+          {
+            "kind": "compatibility_verdict",
+            "need": "具体转接头能否连接两根现有线暂不能确认，明确待取得接头身份与两端接口后再核查。",
+            "quote": "那个转接头能用吗？"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "route-length",
+            "kind": "approximate",
+            "field": "length",
+            "relation": "about",
+            "value": 50,
+            "unit": "ft",
+            "quote": "大概50英尺够用"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "connector_identity",
+            "reason": "那个接头没有可识别型号；可先说明方法，但不能确认其能用",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "existing_cable_ends",
+            "reason": "两根线端口与规格未知，用于具体接头核对",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "answer_partially_then_clarify",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [
+            "verify_compatibility"
+          ],
+          "questions": [
+            {
+              "question": "你说的转接头是什么型号或接口，两根网线的两端是什么插头？发清晰照片也可以。",
+              "slots": [
+                "connector_identity",
+                "existing_cable_ends"
+              ],
+              "necessity": "required_for_action",
+              "reason": "先回答走线和核查方法；具体接头能否用必须等信息补齐才能确认"
+            }
+          ]
+        },
+        "recipient": {
+          "target": "self",
+          "quote": "我有两根短网线",
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "扁平线会不会更好从门边走？",
+            "valid": true,
+            "start": 28,
+            "end": 41
+          },
+          {
+            "path": "/intent/evidence/1",
+            "quote": "那个转接头能用吗？",
+            "valid": true,
+            "start": 55,
+            "end": 64
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "想把路由器挪到另一间屋",
+            "valid": true,
+            "start": 0,
+            "end": 11
+          },
+          {
+            "path": "/context_facts/1/quote",
+            "quote": "我有两根短网线想接起来",
+            "valid": true,
+            "start": 43,
+            "end": 54
+          },
+          {
+            "path": "/context_facts/2/quote",
+            "quote": "那个转接头能用吗？",
+            "valid": true,
+            "start": 55,
+            "end": 64
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "扁平线会不会更好从门边走？",
+            "valid": true,
+            "start": 28,
+            "end": 41
+          },
+          {
+            "path": "/answer_requirements/1/quote",
+            "quote": "我有两根短网线想接起来，那个转接头能用吗？",
+            "valid": true,
+            "start": 43,
+            "end": 64
+          },
+          {
+            "path": "/answer_requirements/2/quote",
+            "quote": "那个转接头能用吗？",
+            "valid": true,
+            "start": 55,
+            "end": 64
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "大概50英尺够用",
+            "valid": true,
+            "start": 19,
+            "end": 27
+          },
+          {
+            "path": "/recipient/quote",
+            "quote": "我有两根短网线",
+            "valid": true,
+            "start": 43,
+            "end": 50
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    },
+    {
+      "candidate_id": "synth-003-01",
+      "title": "网线方案选择：近似长度与先解释后追问",
+      "disputes": [
+        {
+          "issue": "大概50英尺被写成字符串精确等值条件",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "走线大概需要50英尺",
+          "suggestion": "改成数值50、单位ft、approximate/about；不自动规定必须正好50英尺或固定富余比例。"
+        },
+        {
+          "issue": "要求理清选型和确认步骤，不是已经决定购买某类线",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "不太确定要买成品线还是散装线自己处理",
+          "suggestion": "记录compare和guide_verification，成品/散装作为备选方案，不硬筛某个方案。"
+        },
+        {
+          "issue": "追问有关但不应替代先给方案分支",
+          "certainty": "clear_protocol_or_semantic_issue",
+          "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？",
+          "suggestion": "先解释成品、散装、接头延长各要核实什么，再问已有线与走线情况用于具体选择。"
+        }
+      ],
+      "revision_proposal": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification"
+          ],
+          "evidence": [
+            "不太确定要买成品线还是散装线自己处理",
+            "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "network_route",
+            "value": "路由器连接另一房间电脑",
+            "quote": "我想把路由器接到另一间房的电脑"
+          },
+          {
+            "name": "alternatives",
+            "value": [
+              "成品线",
+              "散装线自行处理",
+              "现有线接头延长"
+            ],
+            "quote": "不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "解释成品线、散装线和接头延长的选择条件",
+            "quote": "不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长",
+            "kind": "comparison"
+          },
+          {
+            "need": "列出每种方案应确认的现场情况和所需材料",
+            "quote": "该先确认哪些情况、分别需要什么",
+            "kind": "verification_steps"
+          },
+          {
+            "kind": "decision_support",
+            "need": "说明成品线、散装线和现有线延长各自适用条件，不强制选唯一商品。",
+            "quote": "不太确定要买成品线还是散装线自己处理"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "route-length",
+            "kind": "approximate",
+            "field": "length",
+            "relation": "about",
+            "value": 15.24,
+            "unit": "m",
+            "quote": "走线大概需要50英尺"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "existing_cable_connectors",
+            "reason": "实际线与接头信息决定延长方案是否适用",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "routing_and_termination",
+            "reason": "是否穿墙和是否需自行端接影响后续具体选择，但不阻塞通用决策解释",
+            "needed_for": [
+              "recommend"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "answer_then_optional_question",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": [
+            {
+              "question": "现有网线和两端插头是什么样的，有外皮标识或照片吗？",
+              "slots": [
+                "existing_cable_connectors"
+              ],
+              "necessity": "optional",
+              "reason": "用于后续核对延长方案，不阻塞先解释方案分支"
+            },
+            {
+              "question": "这段线要穿墙或小孔吗，你是否打算自己裁线、压接？",
+              "slots": [
+                "routing_and_termination"
+              ],
+              "necessity": "optional",
+              "reason": "据现场条件细化成品线与散装线选择"
+            }
+          ]
+        },
+        "recipient": {
+          "target": "self",
+          "quote": "我想把路由器接到另一间房的电脑",
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "response_guidance": [
+        "原审核响应未保存，本次不补造模型审核结论；修订必须等待人审。",
+        "评分方向应是决策解释覆盖和事实边界，不要求给出唯一商品或利用无关历史。",
+        "长度、路由和端接条件都未定稿，不承诺具体接头兼容或任何真实库存状态。"
+      ],
+      "revision_changes": [
+        "升级v3，回答目标分类与画像适用理由显式保留；原话、旧草案和旧结果不覆盖。",
+        "补方案选择目标；长度规范到m不改近似强度，未来现场适配信息不阻塞当前核查清单。"
+      ],
+      "draft_before_normalization": {
+        "schema_version": "rs-shopping-request/3",
+        "intent": {
+          "primary": "mixed",
+          "actions": [
+            "compare",
+            "guide_verification"
+          ],
+          "evidence": [
+            "不太确定要买成品线还是散装线自己处理",
+            "能帮我理一下该先确认哪些情况、分别需要什么吗？"
+          ]
+        },
+        "context_facts": [
+          {
+            "name": "network_route",
+            "value": "路由器连接另一房间电脑",
+            "quote": "我想把路由器接到另一间房的电脑"
+          },
+          {
+            "name": "alternatives",
+            "value": [
+              "成品线",
+              "散装线自行处理",
+              "现有线接头延长"
+            ],
+            "quote": "不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长"
+          }
+        ],
+        "answer_requirements": [
+          {
+            "need": "解释成品线、散装线和接头延长的选择条件",
+            "quote": "不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长",
+            "kind": "comparison"
+          },
+          {
+            "need": "列出每种方案应确认的现场情况和所需材料",
+            "quote": "该先确认哪些情况、分别需要什么",
+            "kind": "verification_steps"
+          },
+          {
+            "kind": "decision_support",
+            "need": "说明成品线、散装线和现有线延长各自适用条件，不强制选唯一商品。",
+            "quote": "不太确定要买成品线还是散装线自己处理"
+          }
+        ],
+        "requirements": [
+          {
+            "id": "route-length",
+            "kind": "approximate",
+            "field": "length",
+            "relation": "about",
+            "value": 50,
+            "unit": "ft",
+            "quote": "走线大概需要50英尺"
+          }
+        ],
+        "unknowns": [
+          {
+            "slot": "existing_cable_connectors",
+            "reason": "实际线与接头信息决定延长方案是否适用",
+            "needed_for": [
+              "verify_compatibility"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          },
+          {
+            "slot": "routing_and_termination",
+            "reason": "是否穿墙和是否需自行端接影响后续具体选择，但不阻塞通用决策解释",
+            "needed_for": [
+              "recommend"
+            ],
+            "blocking_level": "needed_for_specific_item"
+          }
+        ],
+        "clarification": {
+          "mode": "answer_then_optional_question",
+          "safe_answer_before_clarification": true,
+          "unresolved_actions": [],
+          "questions": [
+            {
+              "question": "现有网线和两端插头是什么样的，有外皮标识或照片吗？",
+              "slots": [
+                "existing_cable_connectors"
+              ],
+              "necessity": "optional",
+              "reason": "用于后续核对延长方案，不阻塞先解释方案分支"
+            },
+            {
+              "question": "这段线要穿墙或小孔吗，你是否打算自己裁线、压接？",
+              "slots": [
+                "routing_and_termination"
+              ],
+              "necessity": "optional",
+              "reason": "据现场条件细化成品线与散装线选择"
+            }
+          ]
+        },
+        "recipient": {
+          "target": "self",
+          "quote": "我想把路由器接到另一间房的电脑",
+          "profile_policy": "not_relevant",
+          "profile_reason": "本轮为技术比较或核查方法；购物评价不证明现有设备与安装条件，无须使用历史。"
+        }
+      },
+      "evidence_validation": {
+        "offset_unit": "unicode_codepoint",
+        "range": "zero_based_half_open_first_occurrence",
+        "records": [
+          {
+            "path": "/intent/evidence/0",
+            "quote": "不太确定要买成品线还是散装线自己处理",
+            "valid": true,
+            "start": 28,
+            "end": 46
+          },
+          {
+            "path": "/intent/evidence/1",
+            "quote": "能帮我理一下该先确认哪些情况、分别需要什么吗？",
+            "valid": true,
+            "start": 67,
+            "end": 90
+          },
+          {
+            "path": "/context_facts/0/quote",
+            "quote": "我想把路由器接到另一间房的电脑",
+            "valid": true,
+            "start": 0,
+            "end": 15
+          },
+          {
+            "path": "/context_facts/1/quote",
+            "quote": "不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长",
+            "valid": true,
+            "start": 28,
+            "end": 66
+          },
+          {
+            "path": "/answer_requirements/0/quote",
+            "quote": "不太确定要买成品线还是散装线自己处理，也不清楚家里现有的网线能不能用接头延长",
+            "valid": true,
+            "start": 28,
+            "end": 66
+          },
+          {
+            "path": "/answer_requirements/1/quote",
+            "quote": "该先确认哪些情况、分别需要什么",
+            "valid": true,
+            "start": 73,
+            "end": 88
+          },
+          {
+            "path": "/answer_requirements/2/quote",
+            "quote": "不太确定要买成品线还是散装线自己处理",
+            "valid": true,
+            "start": 28,
+            "end": 46
+          },
+          {
+            "path": "/requirements/0/quote",
+            "quote": "走线大概需要50英尺",
+            "valid": true,
+            "start": 16,
+            "end": 26
+          },
+          {
+            "path": "/recipient/quote",
+            "quote": "我想把路由器接到另一间房的电脑",
+            "valid": true,
+            "start": 0,
+            "end": 15
+          }
+        ],
+        "errors": [],
+        "all_quotes_valid": true
+      }
+    }
+  ],
+  "contract": {
+    "request_schema_version": "rs-shopping-request/3",
+    "audit_schema_version": "rs-shopping-audit/3",
+    "canonical_fields": [
+      "battery_hours",
+      "brand",
+      "category",
+      "category_path",
+      "connection_type",
+      "cooling_goal",
+      "dual_band",
+      "installation_difficulty",
+      "length",
+      "microphone",
+      "music_and_calls",
+      "noise_control",
+      "operating_system",
+      "price",
+      "priority",
+      "product_type",
+      "purchase_quantity",
+      "recommendation_count",
+      "reliability",
+      "store",
+      "thermal_coverage",
+      "tip_mm",
+      "use_case",
+      "warranty_years",
+      "wearing_comfort",
+      "wireless",
+      "writing"
+    ],
+    "field_aliases": {
+      "budget": "price",
+      "cable_length": "length",
+      "installation_complexity": "installation_difficulty",
+      "wireless_band_support": "dual_band",
+      "wearing_pressure": "wearing_comfort",
+      "noise_cancellation": "noise_control"
+    },
+    "length_unit": "m",
+    "length_conversions": {
+      "m": "1",
+      "米": "1",
+      "cm": "0.01",
+      "厘米": "0.01",
+      "mm": "0.001",
+      "毫米": "0.001",
+      "ft": "0.3048",
+      "feet": "0.3048",
+      "英尺": "0.3048"
+    },
+    "price_policy": "币种未知保持null；不从画像、目录或中文表达猜币种",
+    "answer_kinds": [
+      "comparison",
+      "compatibility_verdict",
+      "decision_support",
+      "explanation",
+      "recommendation",
+      "verification_steps"
+    ],
+    "quote_offsets": "zero_based_unicode_codepoint_half_open",
+    "profile_scope": "仅推荐允许条件式弱参考；纯技术咨询不要求使用历史；送礼不迁移本人画像",
+    "validation_scope": "结构、受控规范化、逐字证据及跨字段一致性；不是语义认证或人工gold",
+    "is_gold": false,
+    "auto_deploy": false
+  },
+  "source_v2_proposals_sha256": "118300e05ba2dc6fa181d49dd58340d7bf57212fe0b8e091ca9e5b379e4797d7",
+  "new_model_calls": 0,
+  "added_requests": 0,
+  "human_reviewed": false,
+  "auto_deploy": false,
+  "input_file_sha256": {
+    "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\.runs\\request-preview-20261011-6luna-01\\request-candidates.json": "0d8e63e79058740ff29bd26f279efe1a7695f284c968858defa396eb6afc7c8c",
+    "D:\\sinrotic_code\\python_project\\summer\\RS_agent\\python_agent\\.runs\\request-preview-20261011-6luna-01\\protocol-review-01\\revision-proposals.json": "fd27d2965283d4b3141e3afd52c452220f919151d1b4a19da9b4aeebcf469ac4"
+  }
+}

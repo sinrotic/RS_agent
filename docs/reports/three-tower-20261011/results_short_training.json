@@ -1,0 +1,297 @@
+{
+  "scope": "SMOKE_PROXY_NOT_PRODUCTION",
+  "candidate_count": 4820,
+  "updates": 20,
+  "batch_size": 64,
+  "negatives_per_example": 32,
+  "explicit_negatives_enabled": false,
+  "baseline_bge_mean_history": {
+    "recommendation": {
+      "queries": 1000,
+      "hit_at_10": 0.05,
+      "hit_at_50": 0.109,
+      "hit_at_100": 0.147,
+      "mrr": 0.030865521558350987
+    },
+    "semantic_source_recovery": {
+      "queries": 10,
+      "hit_at_10": 0.9,
+      "hit_at_50": 1.0,
+      "hit_at_100": 1.0,
+      "mrr": 0.5604589371980676
+    },
+    "semantic_by_language": {
+      "en": {
+        "queries": 4,
+        "hit_at_10": 1.0,
+        "hit_at_50": 1.0,
+        "hit_at_100": 1.0,
+        "mrr": 0.75
+      },
+      "zh": {
+        "queries": 6,
+        "hit_at_10": 0.8333333333333334,
+        "hit_at_50": 1.0,
+        "hit_at_100": 1.0,
+        "mrr": 0.43409822866344605
+      }
+    }
+  },
+  "runs": {
+    "semantic": {
+      "metrics": {
+        "recommendation": {
+          "queries": 1000,
+          "hit_at_10": 0.002,
+          "hit_at_50": 0.007,
+          "hit_at_100": 0.014,
+          "mrr": 0.0018324670570207958
+        },
+        "semantic_source_recovery": {
+          "queries": 10,
+          "hit_at_10": 0.1,
+          "hit_at_50": 0.3,
+          "hit_at_100": 0.4,
+          "mrr": 0.026577446204331844
+        },
+        "semantic_by_language": {
+          "en": {
+            "queries": 4,
+            "hit_at_10": 0.0,
+            "hit_at_50": 0.25,
+            "hit_at_100": 0.5,
+            "mrr": 0.02466692222506176
+          },
+          "zh": {
+            "queries": 6,
+            "hit_at_10": 0.16666666666666666,
+            "hit_at_50": 0.3333333333333333,
+            "hit_at_100": 0.3333333333333333,
+            "mrr": 0.027851128857178564
+          }
+        }
+      },
+      "initial_metrics": {
+        "recommendation": {
+          "queries": 1000,
+          "hit_at_10": 0.004,
+          "hit_at_50": 0.015,
+          "hit_at_100": 0.023,
+          "mrr": 0.001943267096137267
+        },
+        "semantic_source_recovery": {
+          "queries": 10,
+          "hit_at_10": 0.6,
+          "hit_at_50": 0.8,
+          "hit_at_100": 0.9,
+          "mrr": 0.37945733028758855
+        },
+        "semantic_by_language": {
+          "en": {
+            "queries": 4,
+            "hit_at_10": 1.0,
+            "hit_at_50": 1.0,
+            "hit_at_100": 1.0,
+            "mrr": 0.7083333333333333
+          },
+          "zh": {
+            "queries": 6,
+            "hit_at_10": 0.3333333333333333,
+            "hit_at_50": 0.6666666666666666,
+            "hit_at_100": 0.8333333333333334,
+            "mrr": 0.16020666159042543
+          }
+        }
+      },
+      "seconds": 0.28129176888614893,
+      "loss_log": [
+        {
+          "step": 1,
+          "semantic": 1.7894978523254395
+        },
+        {
+          "step": 20,
+          "semantic": 0.0004195641085971147
+        }
+      ],
+      "peak_cuda_gib": 0.0555424690246582,
+      "semantic_examples_seen": 1280,
+      "rec_examples_seen": 0
+    },
+    "rec": {
+      "metrics": {
+        "recommendation": {
+          "queries": 1000,
+          "hit_at_10": 0.003,
+          "hit_at_50": 0.014,
+          "hit_at_100": 0.031,
+          "mrr": 0.0018468166640137921
+        },
+        "semantic_source_recovery": {
+          "queries": 10,
+          "hit_at_10": 0.6,
+          "hit_at_50": 0.8,
+          "hit_at_100": 0.9,
+          "mrr": 0.36339393105616924
+        },
+        "semantic_by_language": {
+          "en": {
+            "queries": 4,
+            "hit_at_10": 1.0,
+            "hit_at_50": 1.0,
+            "hit_at_100": 1.0,
+            "mrr": 0.7083333333333333
+          },
+          "zh": {
+            "queries": 6,
+            "hit_at_10": 0.3333333333333333,
+            "hit_at_50": 0.6666666666666666,
+            "hit_at_100": 0.8333333333333334,
+            "mrr": 0.13343432953805973
+          }
+        }
+      },
+      "initial_metrics": {
+        "recommendation": {
+          "queries": 1000,
+          "hit_at_10": 0.004,
+          "hit_at_50": 0.015,
+          "hit_at_100": 0.023,
+          "mrr": 0.001943267096137267
+        },
+        "semantic_source_recovery": {
+          "queries": 10,
+          "hit_at_10": 0.6,
+          "hit_at_50": 0.8,
+          "hit_at_100": 0.9,
+          "mrr": 0.37945733028758855
+        },
+        "semantic_by_language": {
+          "en": {
+            "queries": 4,
+            "hit_at_10": 1.0,
+            "hit_at_50": 1.0,
+            "hit_at_100": 1.0,
+            "mrr": 0.7083333333333333
+          },
+          "zh": {
+            "queries": 6,
+            "hit_at_10": 0.3333333333333333,
+            "hit_at_50": 0.6666666666666666,
+            "hit_at_100": 0.8333333333333334,
+            "mrr": 0.16020666159042543
+          }
+        }
+      },
+      "seconds": 0.29450029227882624,
+      "loss_log": [
+        {
+          "step": 1,
+          "rec": 3.7147698402404785
+        },
+        {
+          "step": 20,
+          "rec": 3.446100950241089
+        }
+      ],
+      "peak_cuda_gib": 0.056826114654541016,
+      "semantic_examples_seen": 0,
+      "rec_examples_seen": 1280
+    },
+    "joint": {
+      "metrics": {
+        "recommendation": {
+          "queries": 1000,
+          "hit_at_10": 0.001,
+          "hit_at_50": 0.012,
+          "hit_at_100": 0.028,
+          "mrr": 0.0016083487184821296
+        },
+        "semantic_source_recovery": {
+          "queries": 10,
+          "hit_at_10": 0.2,
+          "hit_at_50": 0.4,
+          "hit_at_100": 0.6,
+          "mrr": 0.05598447041043177
+        },
+        "semantic_by_language": {
+          "en": {
+            "queries": 4,
+            "hit_at_10": 0.25,
+            "hit_at_50": 0.5,
+            "hit_at_100": 1.0,
+            "mrr": 0.06222531998888681
+          },
+          "zh": {
+            "queries": 6,
+            "hit_at_10": 0.16666666666666666,
+            "hit_at_50": 0.3333333333333333,
+            "hit_at_100": 0.3333333333333333,
+            "mrr": 0.05182390402479508
+          }
+        }
+      },
+      "initial_metrics": {
+        "recommendation": {
+          "queries": 1000,
+          "hit_at_10": 0.004,
+          "hit_at_50": 0.015,
+          "hit_at_100": 0.023,
+          "mrr": 0.001943267096137267
+        },
+        "semantic_source_recovery": {
+          "queries": 10,
+          "hit_at_10": 0.6,
+          "hit_at_50": 0.8,
+          "hit_at_100": 0.9,
+          "mrr": 0.37945733028758855
+        },
+        "semantic_by_language": {
+          "en": {
+            "queries": 4,
+            "hit_at_10": 1.0,
+            "hit_at_50": 1.0,
+            "hit_at_100": 1.0,
+            "mrr": 0.7083333333333333
+          },
+          "zh": {
+            "queries": 6,
+            "hit_at_10": 0.3333333333333333,
+            "hit_at_50": 0.6666666666666666,
+            "hit_at_100": 0.8333333333333334,
+            "mrr": 0.16020666159042543
+          }
+        }
+      },
+      "seconds": 0.4785573184490204,
+      "loss_log": [
+        {
+          "step": 1,
+          "semantic": 1.7894978523254395,
+          "rec": 3.7147698402404785
+        },
+        {
+          "step": 20,
+          "semantic": 0.007098333910107613,
+          "rec": 3.46567702293396
+        }
+      ],
+      "peak_cuda_gib": 0.05878114700317383,
+      "semantic_examples_seen": 1280,
+      "rec_examples_seen": 1280
+    }
+  },
+  "gradient_routing": {
+    "semantic": {
+      "query": true,
+      "user": false,
+      "item": true
+    },
+    "rec": {
+      "query": false,
+      "user": true,
+      "item": true
+    }
+  },
+  "initial_probe_item_gradient_cosine": -0.018174007534980774
+}

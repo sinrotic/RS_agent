@@ -4,6 +4,7 @@ import com.sinrotic.rs.inventory.domain.dto.InventoryLockRequestDTO;
 import com.sinrotic.rs.inventory.domain.dto.InventoryConfirmRequestDTO;
 import com.sinrotic.rs.inventory.domain.dto.InventoryReleaseRequestDTO;
 import com.sinrotic.rs.inventory.domain.entity.StockLog;
+import com.sinrotic.rs.inventory.domain.vo.ItemAvailabilityVO;
 import com.sinrotic.rs.inventory.mapper.SkuStockMapper;
 import com.sinrotic.rs.inventory.mapper.StockLogMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,14 @@ class InventoryServiceTest {
         assertNotNull(transactional);
         assertEquals(1, transactional.rollbackFor().length);
         assertSame(Exception.class, transactional.rollbackFor()[0]);
+    }
+
+    @Test
+    void itemAvailabilityUsesNormalizedItemId() {
+        ItemAvailabilityVO availability = new ItemAvailabilityVO("item-1", 2, 7);
+        when(skuStockMapper.findItemAvailability("item-1")).thenReturn(availability);
+
+        assertSame(availability, inventoryService.getItemAvailability(" item-1 "));
     }
 
     @Test
@@ -131,7 +140,7 @@ class InventoryServiceTest {
     @Test
     void confirmDeductUsesConfirmTypeAndMapperOperation() {
         InventoryConfirmRequestDTO request = new InventoryConfirmRequestDTO("req-2", 10L, "sku-1", 2);
-        when(stockLogMapper.findByOrderSkuType(10L, "sku-1", "LOCK"))
+        when(stockLogMapper.findByOrderSkuTypeForUpdate(10L, "sku-1", "LOCK"))
                 .thenReturn(log("lock-req", 10L, "sku-1", 2, "LOCK"));
         when(stockLogMapper.insertLog(any())).thenReturn(1);
         when(skuStockMapper.confirmDeduct("sku-1", 2)).thenReturn(1);
@@ -148,7 +157,7 @@ class InventoryServiceTest {
 
         assertThrows(InventoryServiceException.class, () -> inventoryService.confirmDeduct(request));
 
-        verify(stockLogMapper).findByOrderSkuType(10L, "sku-1", "LOCK");
+        verify(stockLogMapper).findByOrderSkuTypeForUpdate(10L, "sku-1", "LOCK");
         verify(stockLogMapper, never()).insertLog(any());
         verify(skuStockMapper, never()).confirmDeduct(any(), any());
     }
@@ -156,7 +165,7 @@ class InventoryServiceTest {
     @Test
     void confirmDeductThrowsWhenLockQuantityDoesNotMatch() {
         InventoryConfirmRequestDTO request = new InventoryConfirmRequestDTO("req-2", 10L, "sku-1", 2);
-        when(stockLogMapper.findByOrderSkuType(10L, "sku-1", "LOCK"))
+        when(stockLogMapper.findByOrderSkuTypeForUpdate(10L, "sku-1", "LOCK"))
                 .thenReturn(log("lock-req", 10L, "sku-1", 1, "LOCK"));
 
         assertThrows(InventoryServiceException.class, () -> inventoryService.confirmDeduct(request));
@@ -168,7 +177,7 @@ class InventoryServiceTest {
     @Test
     void releaseStockUsesReleaseTypeAndMapperOperation() {
         InventoryReleaseRequestDTO request = new InventoryReleaseRequestDTO("req-3", 10L, "sku-1", 2);
-        when(stockLogMapper.findByOrderSkuType(10L, "sku-1", "LOCK"))
+        when(stockLogMapper.findByOrderSkuTypeForUpdate(10L, "sku-1", "LOCK"))
                 .thenReturn(log("lock-req", 10L, "sku-1", 2, "LOCK"));
         when(stockLogMapper.insertLog(any())).thenReturn(1);
         when(skuStockMapper.releaseStock("sku-1", 2)).thenReturn(1);
@@ -185,7 +194,7 @@ class InventoryServiceTest {
 
         assertThrows(InventoryServiceException.class, () -> inventoryService.releaseStock(request));
 
-        verify(stockLogMapper).findByOrderSkuType(10L, "sku-1", "LOCK");
+        verify(stockLogMapper).findByOrderSkuTypeForUpdate(10L, "sku-1", "LOCK");
         verify(stockLogMapper, never()).insertLog(any());
         verify(skuStockMapper, never()).releaseStock(any(), any());
     }

@@ -1,0 +1,60 @@
+2026-10-11：20 商品语义生成对照及服务地址更新
+
+结论
+本轮优先选用服务提供的 gpt-6-luna 继续扩大语义生成试验。它的可解析性、短引用和商品事实表达优于这批历史 Qwen 输出，但不足以证明后续召回模型一定提升。全部质量判定是 Codex 非盲复核，不是人工黄金标注。
+
+接口
+旧配置 https://api.sinrotic233.com 在本机和服务器均返回 HTTP 530 / Cloudflare 1033。
+现用接口 https://cpa2api.sinrotic233.com/v1/chat/completions。使用服务器已有配置中的鉴权，不保存或输出密钥。
+/models 仅列出 gpt-6.1-sol，但直接指定 gpt-6-luna 可调用；40 条响应都返回 model=gpt-6-luna。此名称是服务声明，未独立验证底层模型身份。
+正式 40 次调用前另做过一次 256 token 上限的连通性请求；该请求不进入质量对照，消耗 606 tokens。
+
+比较设计
+取历史 Qwen 实际完成的相同 20 个商品，每个中文、英文各一条，共 40 条。
+从历史 three_tower_smoke.py 的 AST 提取原 prompt 表达式，逐字复用；输入商品事实相同。
+Qwen 使用本地 Qwen3.5-4B、greedy、max_new_tokens=200；Luna 使用 temperature=0、max_tokens=200。
+可见提示词和输出上限相同；分词器、模型模板、推理设置及硬件不同，速度不是纯模型性能比较。
+只发送商品文本，没有发送用户序列、账号信息或购买记录。
+
+结果（分母均为 40）
+指标                                      Qwen      Luna
+可解析 JSON                               39        40
+沿用历史自动检查通过                       36        39
+引用超过 80 字符的样本                     16         0
+复核保留（尚未执行引用长度限制）             22        37
+完整执行本轮筛选后保留                      13        37
+
+历史报告中的 Qwen 保留 26 条，与这里不是同一口径：旧复核遗漏了四条品牌/系列要求违规，本次统一排除后为 22；再执行提示词已规定、旧代码未实现的引用长度限制后为 13。因此 13/40 不是“事实正确率”，不可将格式/任务约束违规统称幻觉。
+本轮的通用需求任务排除品牌/型号；真实搜索需要兼容性需求，后续应单设任务模板，而不是永久禁止这些信息。
+
+具体观察
+1. 便签：Qwen 将 48x58mm 尺寸写成“每色48张”；Luna 生成彩色自粘便签，未出现数量混淆。
+2. 平板保护套：Qwen 将手写笔无线充电归到保护套；Luna 使用自动休眠唤醒或笔槽属性。
+3. 电视转接板：Qwen 中文写成电视支架；Luna 正确保留“VESA 转接板”。
+4. 150W 充电器：Qwen 省略总功率与单口功率区分；Luna 改为四口充电器，规避了该歧义。但这不证明它能正确生成复杂功率约束。
+5. Luna 办公椅脚轮英文样本将标题中的原文归到 features_text，自动检查拒绝。
+6. Luna 英文摄像头支架需求包含 Blink，违反本轮提示词的品牌约束；中文打印头需求“兼容打印机”无有效区分属性，复核排除。
+7. Luna 很多句子使用“想买……”或“I'm looking for…”，且部分表达较宽泛。后续需要增加自然表达、场景与属性组合的多样性。
+8. 引用字符串存在不代表它覆盖全部主张。例如密码本、实时充电显示等 Luna 需求的完整依据存在于输入，但所选短引用未覆盖所有属性；扩大生成时应要求逐项属性证据。
+
+时间与用量
+正式 40 条串行调用耗时 108.49 秒；prompt_tokens=27428，completion_tokens=2063，总计29491。
+计入一次探针，总计30097 tokens。不知道服务计费单价，未估算金额。
+若保持同一响应速度和每商品两条，1000 商品生成时间线性估算约90分钟、约147万 tokens；不含限流、失败、质量复核，也不作为承诺。
+Qwen 原运行由主动停止结束，原 metrics 没有完整精确耗时，不能给出严谨速度倍数。
+
+产物
+luna_raw.jsonl：40 条原始输出、响应模型名、用量、耗时及 prompt 哈希。
+luna_samples_reviewed.jsonl：37 条候选训练样本，明确标记非人工复核。
+paired_review.json：两个模型共80条判定及排除理由。
+comparison_summary.json：可重放的统计。
+generation_raw.jsonl、generation_inputs.jsonl、agent_review.json：原 Qwen 数据与历史复核。
+luna_metrics.json：生成配置与来源哈希。
+未把这37条用于训练或当作独立测试集；没有运行新训练任务。
+
+地址修改
+本地：simulation_model.local.json、simulation_model.example.json、offline/simulation/model_client.py 默认值及对应测试地址。
+远程：/home/luo/RS_agent_remote/configs 下的 simulation_model.local.json 和 example.json。
+Java application.yml、docker-compose.yml 和服务器 /home/luo/RS_agent_java/app_deploy/.env 原本已经指向新地址；无需重启或修改在线模型名。
+Python 客户端自己拼接 /v1/chat/completions，因此 api_base 保留裸域名，避免重复 /v1。
+验证：test_simulation_roles.py 的15项测试通过。

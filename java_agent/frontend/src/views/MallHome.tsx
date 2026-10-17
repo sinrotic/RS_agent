@@ -1,36 +1,65 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { RefreshCw, Heart, Compass, Cpu, EyeOff } from 'lucide-react';
-import { recommendHome, refreshHome } from '../api/recommendClient';
-import { recordEvent, recordExposure } from '../api/interactionClient';
+import { homeFeedbackCursor, recommendHome, refreshHome } from '../api/recommendClient';
+import { recordEvent, waitForFeedbackApplied } from '../api/interactionClient';
 import { startSession } from '../api/sessionClient';
 import { buildDisplayViewModel, DisplayProduct, DisplayViewModel } from '../utils/displayViewModel';
 import { GroupedRecommendationGrid } from '../components/GroupedRecommendationGrid';
-import { RecommendationIntentSummary } from '../components/RecommendationIntentSummary';
 import { ProductFeedbackAction } from '../components/ProductCard';
-import { getStoredProfileUserId } from '../api/shared';
-import { enrichRecommendedProducts } from '../utils/catalogEnrichment';
+import { RecommendationIntentSummary } from '../components/RecommendationIntentSummary';
+import { ApiError, getStoredProfileUserId, isMockMode } from '../api/shared';
+import { hydrateRecommendedProducts } from '../api/catalogHydration';
+import { useVisibleRecommendationExposure } from '../hooks/useVisibleRecommendationExposure';
 
-export function MallHome() {
+interface MallHomeProps {
+  onOpenProduct: (product: DisplayProduct) => void;
+}
+
+export function MallHome({ onOpenProduct }: MallHomeProps) {
   const [profileUserId, setProfileUserId] = useState<string>('');
   const [sessionId, setSessionId] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [status, setStatus] = useState<string>('Initializing Mall Feed...');
   const [products, setProducts] = useState<DisplayProduct[]>([]);
   const [viewModel, setViewModel] = useState<DisplayViewModel | null>(null);
+  const [feedError, setFeedError] = useState<string>('');
   const [lastRequestId, setLastRequestId] = useState<string>('');
-  const [catalogUnavailable, setCatalogUnavailable] = useState<boolean>(false);
-  const [feedError, setFeedError] = useState<string | null>(null);
+  const [pageStartCursor, setPageStartCursor] = useState('');
+  const [nextCursor, setNextCursor] = useState('');
+  const [hasMore, setHasMore] = useState(true);
+  const [degraded, setDegraded] = useState(false);
+  const [explanationProduct, setExplanationProduct] = useState<DisplayProduct | null>(null);
 
   // Wishlist state
   const [wishlist, setWishlist] = useState<DisplayProduct[]>([]);
 
   // Obs Details
-  const [selectedProduct, setSelectedProduct] = useState<DisplayProduct | null>(null);
   const [explanation, setExplanation] = useState<string>('');
   const [explaining, setExplaining] = useState<boolean>(false);
+  const exposureRootRef = useRef<HTMLDivElement>(null);
+  const initializeStartedRef = useRef(false);
+
+  useVisibleRecommendationExposure(exposureRootRef, lastRequestId, sessionId, products);
+
+  const recoverEndedSession = (error: unknown): boolean => {
+    if (!(error instanceof ApiError) || error.status !== 410) return false;
+    setSessionId('');
+    setLastRequestId('');
+    setProducts([]);
+    setViewModel(null);
+    setPageStartCursor('');
+    setNextCursor('');
+    setHasMore(true);
+    setExplanationProduct(null);
+    setFeedError('推荐会话已结束，请重新加载以创建新会话。');
+    setStatus('推荐会话已结束。');
+    return true;
+  };
 
   // Read stored user on mount
   useEffect(() => {
+    if (initializeStartedRef.current) return;
+    initializeStartedRef.current = true;
     const stored = getStoredProfileUserId() || 'guest_user';
     setProfileUserId(stored);
     handleInitialize(stored);
@@ -38,7 +67,7 @@ export function MallHome() {
 
   const handleInitialize = async (userId: string) => {
     setLoading(true);
-    setFeedError(null);
+    setFeedError('');
     setStatus('正在创建推荐会话并生成初始个性化商品流...');
     try {
       // 1. Start session
@@ -47,79 +76,65 @@ export function MallHome() {
 
       // 2. Fetch recommend items
       const recRes = await recommendHome({
-        profileUserId: userId,
+        sessionId: sessionRes.sessionId,
         scene: 'home',
         limit: 6,
         debug: true
       });
       setLastRequestId(recRes.request_id);
+      setDegraded(recRes.recommendation_mode === 'degraded');
 
-      // 3. Enrich recommendation metadata with Catalog card details when available.
-      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
-      setCatalogUnavailable(!catalogAvailable);
+      // 3. Enrich details from catalog service
+      const hydration = await hydrateRecommendedProducts(recRes.items);
+      const mergedProducts = hydration.products;
+      setPageStartCursor('');
+      setNextCursor(recRes.next_cursor);
+      setHasMore(recRes.has_more);
       setProducts(mergedProducts);
 
       // 5. Build viewModel
-      const vm = buildDisplayViewModel(recRes, mergedProducts, '', null, '为您定制了以下数码配件精选列表：');
+      const vm = buildDisplayViewModel(recRes, mergedProducts, '', null, recRes.recommendation_mode === 'discovery' ? '先探索一些商品，喜欢后会为你寻找相似选择：' : '根据你的兴趣，为你推荐以下商品：');
       setViewModel(vm);
 
-      // 6. Record Exposure
-      await recordExposure({
-        request_id: recRes.request_id,
-        session_id: sessionRes.sessionId,
-        item_ids: mergedProducts.map(item => item.itemId),
-        exposed_at: Date.now()
-      });
-
-      setStatus(catalogAvailable
-        ? '个性化推荐加载成功！'
-        : '推荐已加载，商品详情服务暂时不可用，当前展示推荐摘要。');
+      setStatus(hydration.catalogUnavailable ? '推荐已加载，商品详情暂不可用。' : '个性化推荐加载成功！');
     } catch (e: any) {
       console.error(e);
-      const message = `初始化推荐失败: ${e.message}`;
-      setFeedError(message);
-      setStatus(message);
+      const message = e instanceof Error ? e.message : '未知错误';
+      setFeedError(`初始化推荐失败：${message}`);
+      setStatus(`初始化推荐失败: ${message}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleRefresh = async () => {
-    if (!sessionId || loading) return;
+    if (!sessionId || loading || (!hasMore && !isMockMode())) return;
     setLoading(true);
-    setFeedError(null);
-    setStatus('正在根据交互历史刷新重排首页推荐...');
+    setStatus('正在寻找不同方向的推荐商品...');
     try {
       const recRes = await refreshHome({
         sessionId,
-        profileUserId,
         scene: 'home',
         limit: 6,
+        cursor: nextCursor,
         refreshAction: 'rerecall_pool500'
       });
       setLastRequestId(recRes.request_id);
+      setDegraded(recRes.recommendation_mode === 'degraded');
 
-      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
-      setCatalogUnavailable(!catalogAvailable);
+      const hydration = await hydrateRecommendedProducts(recRes.items);
+      const mergedProducts = hydration.products;
+      setPageStartCursor(nextCursor);
+      setNextCursor(recRes.next_cursor);
+      setHasMore(recRes.has_more);
       setProducts(mergedProducts);
 
-      const vm = buildDisplayViewModel(recRes, mergedProducts, '点击刷新', { actionType: 'show_different', label: '换一批' }, '已完成推荐流重排与多样化探索：');
+      const vm = buildDisplayViewModel(recRes, mergedProducts, '换个方向', { actionType: 'show_different', label: '换一批' }, '换个方向看看，为你挑选了以下商品：');
       setViewModel(vm);
 
-      await recordExposure({
-        request_id: recRes.request_id,
-        session_id: sessionId,
-        item_ids: mergedProducts.map(item => item.itemId),
-        exposed_at: Date.now()
-      });
-
-      setStatus(catalogAvailable
-        ? '首页推荐流刷新成功！'
-        : '推荐已刷新，商品详情服务暂时不可用，当前展示推荐摘要。');
+      setStatus(hydration.catalogUnavailable ? '推荐已刷新，商品详情暂不可用。' : '首页推荐流刷新成功！');
     } catch (e: any) {
-      const message = `刷新失败: ${e.message}`;
-      setFeedError(message);
-      setStatus(message);
+      if (!recoverEndedSession(e)) setStatus(`刷新失败: ${e.message}`);
     } finally {
       setLoading(false);
     }
@@ -127,8 +142,9 @@ export function MallHome() {
 
   const handleFeedback = async (actionType: ProductFeedbackAction, itemId: string) => {
     if (!sessionId || loading) return;
+
     if (!lastRequestId) {
-      setFeedError('服务端尚未返回 request_id，无法提交反馈。');
+      setStatus('服务端尚未返回 request_id，无法提交反馈。');
       return;
     }
 
@@ -139,29 +155,28 @@ export function MallHome() {
           session_id: sessionId,
           item_id: itemId,
           event_type: 'why',
+          event_value: 0,
           occurred_at: Date.now()
         });
-      } catch (error) {
-        setFeedError(`Explanation request failed: ${(error as Error).message}`);
-        return;
-      }
-      const item = products.find(p => p.itemId === itemId);
-      if (item) {
-        setSelectedProduct(item);
-        setExplanation(item.reason || '推荐服务暂未返回该商品的解释。');
-        setExplaining(false);
+        const item = products.find(p => p.itemId === itemId);
+        if (item) {
+          setExplanationProduct(item);
+          setExplanation(item.reason || '推荐服务暂未返回该商品的解释。');
+          setExplaining(false);
+        }
+      } catch (e: any) {
+        if (!recoverEndedSession(e)) setStatus(`推荐理由事件记录失败: ${e.message}`);
       }
       return;
     }
 
     setLoading(true);
-    setFeedError(null);
     const label = actionType === 'like' ? '喜欢，找相似' : '不感兴趣';
     setStatus(`已捕获交互信号 [${label}]，正在更新推荐兴趣模型...`);
 
     try {
       // 1. Record event
-      await recordEvent({
+      let ack = await recordEvent({
         request_id: lastRequestId,
         session_id: sessionId,
         item_id: itemId,
@@ -169,6 +184,18 @@ export function MallHome() {
         event_value: actionType === 'like' ? 1.0 : -1.0,
         occurred_at: Date.now()
       });
+
+      if (ack.application_status === 'PENDING') {
+        setStatus('反馈已保存，在线偏好正在同步...');
+        ack = await waitForFeedbackApplied(ack.feedback_id);
+        if (ack.application_status !== 'APPLIED') {
+          setStatus('反馈已保存，推荐仍在等待在线偏好同步。');
+          return;
+        }
+      }
+      if (!ack.accepted) {
+        throw new Error('推荐服务拒绝了本次反馈');
+      }
 
       // 2. Perform local update or request reload
       if (actionType === 'like') {
@@ -181,15 +208,18 @@ export function MallHome() {
       // Re-trigger recommend refresh
       const recRes = await refreshHome({
         sessionId,
-        profileUserId,
         scene: 'home',
         limit: 6,
-        refreshAction: 'rerank_existing'
+        cursor: homeFeedbackCursor(actionType, nextCursor, lastRequestId, pageStartCursor),
+        refreshAction: actionType === 'like' ? 'find_similar' : 'rerank_existing'
       });
       setLastRequestId(recRes.request_id);
+      setDegraded(recRes.recommendation_mode === 'degraded');
 
-      const { products: mergedProducts, catalogAvailable } = await enrichRecommendedProducts(recRes.items);
-      setCatalogUnavailable(!catalogAvailable);
+      const hydration = await hydrateRecommendedProducts(recRes.items);
+      const mergedProducts = hydration.products;
+      setNextCursor(recRes.next_cursor);
+      setHasMore(recRes.has_more);
       setProducts(mergedProducts);
 
       const vm = buildDisplayViewModel(
@@ -201,24 +231,20 @@ export function MallHome() {
       );
       setViewModel(vm);
 
-      setStatus(catalogAvailable
-        ? '模型状态已同步更新，推荐网格已重排！'
-        : '推荐已重排，商品详情服务暂时不可用，当前展示推荐摘要。');
+      const applied = recRes.preference_version >= ack.preference_version
+        && recRes.applied_feedback_event_ids.includes(ack.feedback_id);
+      setStatus(applied ? '推荐已根据反馈更新。' : '反馈已保存，推荐结果仍在等待偏好版本同步。');
     } catch (e: any) {
-      const message = `反馈提交失败: ${e.message}`;
-      setFeedError(message);
-      setStatus(message);
+      if (!recoverEndedSession(e)) setStatus(`反馈提交失败: ${e.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  // Removed unused addToCart helper
-
   return (
-    <div className="flex-1 flex flex-col gap-6 text-slate-100 overflow-y-auto min-h-0 text-left">
+    <div ref={exposureRootRef} className="flex-1 flex flex-col gap-6 text-slate-100 overflow-y-auto min-h-0 text-left">
       {/* Top Banner */}
-      <div className="relative rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-900 to-slate-950 p-6 md:p-8 shadow-xl overflow-hidden flex-shrink-0">
+      <div className="relative rounded-2xl bg-linear-to-r from-indigo-600 via-indigo-900 to-slate-950 p-6 md:p-8 shadow-xl overflow-hidden shrink-0">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-15"></div>
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
@@ -237,45 +263,53 @@ export function MallHome() {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={handleRefresh}
-              disabled={loading || !sessionId}
+              disabled={loading || !sessionId || (!hasMore && !isMockMode())}
+              title="换个方向，看看不同的商品"
               className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white transition-all font-bold rounded-xl px-5 py-3 text-xs flex items-center gap-1.5 shadow-lg shadow-indigo-600/25 cursor-pointer"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-              换一批推荐
+              {!hasMore && !isMockMode() ? '已浏览完当前商品' : '换一批推荐'}
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Grid: Left for Feed / Right for cart&detail */}
+      {degraded && <div role="status" className="rounded-xl border border-amber-500/30 bg-amber-950/20 px-4 py-3 text-sm text-amber-200">
+        部分推荐能力暂时不可用，当前展示可用的商品推荐。你的反馈会继续保存。
+      </div>}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Recommend Feed */}
         <div className="lg:col-span-3 space-y-6">
           {viewModel && <RecommendationIntentSummary viewModel={viewModel} />}
 
-          {catalogUnavailable && (
-            <div role="status" className="flex items-center justify-between gap-3 border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-xs text-amber-200">
-              <span>商品详情暂时无法加载，正在展示推荐结果。</span>
-              <button type="button" onClick={handleRefresh} disabled={loading} className="rounded border border-amber-400/40 px-2 py-1 hover:bg-amber-400/10 disabled:opacity-50">
-                重试商品详情
-              </button>
-            </div>
-          )}
-
-          {feedError ? (
-            <div role="alert" className="border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
-              {feedError}
-            </div>
-          ) : loading ? (
+          {loading ? (
             <div className="py-20 flex flex-col items-center justify-center gap-3">
               <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
               <div className="text-xs text-indigo-400 font-bold tracking-widest uppercase">{status}</div>
+            </div>
+          ) : feedError ? (
+            <div role="alert" className="rounded-2xl border border-rose-500/30 bg-rose-950/30 px-6 py-10 text-center">
+              <div className="font-bold text-rose-200">推荐内容暂时没有加载出来</div>
+              <div className="mt-2 text-xs text-rose-300/80">{feedError}</div>
+              <button
+                type="button"
+                onClick={() => handleInitialize(profileUserId || 'guest_user')}
+                className="mt-5 rounded-xl bg-rose-500/20 px-4 py-2 text-xs font-bold text-rose-100 hover:bg-rose-500/30"
+              >
+                重新加载
+              </button>
+            </div>
+          ) : viewModel && viewModel.groups.length === 0 ? (
+            <div role="status" className="rounded-2xl border border-slate-700 bg-slate-900/40 px-6 py-10 text-center text-sm text-slate-300">
+              {hasMore ? '当前这一批没有可展示的商品，请继续换一批。' : '已浏览完当前可用商品。'}
             </div>
           ) : (
             viewModel && (
               <GroupedRecommendationGrid
                 groups={viewModel.groups}
                 onFeedback={handleFeedback}
+                onOpen={product => onOpenProduct({ ...product, sessionId, recommendRequestId: lastRequestId })}
                 disabled={loading || !sessionId}
                 variant="mall"
               />
@@ -317,16 +351,16 @@ export function MallHome() {
           </div>
 
           {/* Explain Panel */}
-          {selectedProduct && (
+          {explanationProduct && (
             <div className="bg-slate-800/90 border border-indigo-500/20 rounded-2xl p-4 space-y-3 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl"></div>
               <div className="flex items-center justify-between border-b border-slate-700/50 pb-2">
                 <span className="text-xs font-bold text-indigo-300 flex items-center gap-1">
                   <Cpu size={14} />
-                  底层得分可解释面板
+                  推荐理由
                 </span>
                 <button 
-                  onClick={() => setSelectedProduct(null)} 
+                  onClick={() => setExplanationProduct(null)}
                   className="text-slate-500 hover:text-slate-350 cursor-pointer"
                 >
                   <EyeOff size={14} />
@@ -334,7 +368,7 @@ export function MallHome() {
               </div>
 
               <div className="text-left space-y-2">
-                <div className="text-[11px] text-slate-200 font-extrabold line-clamp-1">{selectedProduct.title}</div>
+                <div className="text-[11px] text-slate-200 font-extrabold line-clamp-1">{explanationProduct.title}</div>
                 {explaining ? (
                   <div className="py-4 text-center">
                     <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin inline-block"></div>

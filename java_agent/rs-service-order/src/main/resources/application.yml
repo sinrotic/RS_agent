@@ -20,5 +20,9 @@ mybatis:
     map-underscore-to-camel-case: true
 
 rs:
+  promotion:
+    base-url: http://localhost:8095
+  checkout:
+    mock-payment-enabled: false
   inventory:
     base-url: http://localhost:8092

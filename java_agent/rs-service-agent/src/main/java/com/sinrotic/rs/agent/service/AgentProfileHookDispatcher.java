@@ -8,4 +8,6 @@ public interface AgentProfileHookDispatcher {
     boolean supports(String agentName);
 
     AgentLoopHookResult dispatch(AgentLoopHookContext context);
+
+    default boolean supportsDirectRecommendation() { return false; }
 }

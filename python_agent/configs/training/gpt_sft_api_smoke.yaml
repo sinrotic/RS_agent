@@ -24,7 +24,7 @@ gpt_sft:
   response_format:
     type: json_object
   strict: true
-  system_prompt: "你是推荐系统 SFT 数据生成助手。请基于用户输入、反馈约束、候选商品和目标动作，返回一个符合 rs_agent_sft_sample_v1.sample 结构的 JSON object；不得选择候选池外商品。"
+  system_prompt: "# Identity\n你是推荐系统 SFT 数据生成助手。\n\n# Instructions\n基于用户输入、反馈约束、候选商品和目标动作，返回一个符合 rs_agent_sft_sample_v1.sample 结构的 JSON object。不得选择候选池外商品，不得输出 Markdown 或其他说明。\n\n# Examples\n合格输出只包含一个 schema 合法的 JSON object，所有选中商品均来自输入候选。\n\n# Context\n用户消息提供的候选商品、允许 ID 和目标动作是本回合唯一的事实来源。"
 
 safety:
   must_select_from_candidates: true

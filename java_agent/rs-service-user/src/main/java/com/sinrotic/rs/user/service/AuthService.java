@@ -50,7 +50,6 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SecureRandom secureRandom;
 
-    @Autowired
     public AuthService(
             AuthAccountMapper authAccountMapper,
             AccountProfileBindingMapper accountProfileBindingMapper,
@@ -66,6 +65,7 @@ public class AuthService {
         );
     }
 
+    @Autowired
     public AuthService(
             AuthAccountMapper authAccountMapper,
             AccountProfileBindingMapper accountProfileBindingMapper,
@@ -164,8 +164,10 @@ public class AuthService {
             throw new UserServiceException("account is not active");
         }
 
-        authSessionMapper.revokeSession(session.sessionId(), "refresh");
-        tokenSessionStore.revokeSession(session.sessionId());
+        if (authSessionMapper.revokeSession(session.sessionId(), "refresh") != 1) {
+            throw new UserServiceException("invalid refresh token");
+        }
+        tokenSessionStore.revokeSession(session.sessionId(), null, sha256Hex(refreshToken));
         return issueToken(
                 session.accountId(),
                 session.username(),
@@ -190,7 +192,7 @@ public class AuthService {
     public void logout(String authorizationHeader) {
         AuthSessionCurrentAccountRecord session = validCurrentSession(authorizationHeader);
         authSessionMapper.revokeSession(session.sessionId(), "logout");
-        tokenSessionStore.revokeSession(session.sessionId());
+        tokenSessionStore.revokeSession(session.sessionId(), sha256Hex(bearerToken(authorizationHeader)), null);
     }
 
     private AuthTokenVO issueToken(String accountId, String username, String nickname, String profileUserId) {

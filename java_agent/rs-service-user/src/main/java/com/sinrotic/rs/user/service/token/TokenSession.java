@@ -12,6 +12,34 @@ public record TokenSession(
         String refreshTokenHash,
         LocalDateTime accessExpiresAt,
         LocalDateTime refreshExpiresAt,
-        String accountStatus
+        String accountStatus,
+        String roles
 ) {
+
+    public TokenSession(
+            String sessionId,
+            String accountId,
+            String username,
+            String nickname,
+            String profileUserId,
+            String accessTokenHash,
+            String refreshTokenHash,
+            LocalDateTime accessExpiresAt,
+            LocalDateTime refreshExpiresAt,
+            String accountStatus
+    ) {
+        this(
+                sessionId,
+                accountId,
+                username,
+                nickname,
+                profileUserId,
+                accessTokenHash,
+                refreshTokenHash,
+                accessExpiresAt,
+                refreshExpiresAt,
+                accountStatus,
+                "USER"
+        );
+    }
 }

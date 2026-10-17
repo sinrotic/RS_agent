@@ -1,0 +1,59 @@
+groups:
+  - name: rs-commerce-reliability
+    rules:
+      - alert: RsCommerceServiceUnavailable
+        expr: up{job="rs-commerce-java"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "交易服务指标入口不可达：{{ $labels.instance }}"
+      - alert: RsCommerceTaskNeedsReview
+        expr: rs_commerce_tasks_review > 0
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "交易待核对任务：{{ $labels.component }}"
+      - alert: RsCommerceTaskStalled
+        expr: rs_commerce_tasks_oldest_seconds > 1200
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "交易任务滞留超过 20 分钟：{{ $labels.component }}"
+      - alert: RsCommerceKafkaProbeUnavailable
+        expr: rs_commerce_kafka_probe_success == 0
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "Kafka 交易探测失败，消费积压状态未知"
+      - alert: RsCommerceKafkaLag
+        expr: rs_commerce_kafka_consumer_lag > 100
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "秒杀消费者持续积压超过 100 条消息"
+      - alert: RsCommerceKafkaDeadLetters
+        expr: rs_commerce_kafka_dead_letter_records > 0
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "秒杀死信 topic 存在记录，需核对处理情况"
+  - name: rs-service-reliability
+    rules:
+      - alert: RsServiceUnavailable
+        expr: up{job="rs-agent-java"} == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "RS 服务指标入口不可达：{{ $labels.instance }}"
+      - alert: RsHttpServerErrorRate
+        expr: sum by (instance) (rate(http_server_requests_seconds_count{job="rs-agent-java",status=~"5.."}[5m])) / clamp_min(sum by (instance) (rate(http_server_requests_seconds_count{job="rs-agent-java"}[5m])), 0.001) > 0.05
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "RS 服务五分钟 HTTP 5xx 比例超过 5%：{{ $labels.instance }}"
+      - alert: RsFeedbackProjectionRetryFailures
+        expr: increase(rs_recommend_feedback_projection_retry_total{success="false"}[5m]) > 5
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "反馈偏好投影重试持续失败"
