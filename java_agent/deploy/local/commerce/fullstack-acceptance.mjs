@@ -12,7 +12,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 async function request(url,body,token,expected,extra={}) {
   const start=performance.now(), method=body===undefined?'GET':'POST';
   const response=await fetch(url,{method,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...extra},body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(15000)});
-  const key=method+' '+new URL(url).pathname.replace(/\d{8,}/g,':id').replace(/[a-f0-9]{8}-[a-f0-9-]{27,}/g,':uuid');
+  const key=method+' '+new URL(url).pathname.replace(/\/\d+(?=\/|$)/g,'/:id').replace(/[a-f0-9]{8}-[a-f0-9-]{27,}/g,':uuid');
   const metric=metrics.get(key)||{latencies:[],statuses:{}};metric.latencies.push(performance.now()-start);metric.statuses[response.status]=(metric.statuses[response.status]||0)+1;metrics.set(key,metric);
   if(expected!==undefined) {assert.equal(response.status,expected,key);return;}
   assert.ok(response.ok,`${key}: HTTP ${response.status}`);const text=await response.text();return text?JSON.parse(text):null;
@@ -98,9 +98,9 @@ try {
     await seckill(users,'initial');
     const protectedOrder=await order(users[0]);await api(`/api/checkout/orders/${protectedOrder.orderId}`,users[1],undefined,404,{'X-Account-Id':users[0].accountId});
     await api(`/api/checkout/orders/${protectedOrder.orderId}/cancel`,users[0],{});
-    const started=performance.now(),until=Date.now()+Number(env.RS_IT_DURATION||60)*1000,completed=[];
+    metrics.clear();const started=performance.now(),until=Date.now()+Number(env.RS_IT_DURATION||60)*1000,completed=[];
     await Promise.all(users.map(async (user,index)=>{let count=0;do {completed.push(await cycle(user,coupons[index],count++===0?(index===0?'DECLINED':index===1?'RESPONSE_LOST':'SUCCESS'):'SUCCESS'));}while(Date.now()<until);}));
-    const durationMs=performance.now()-started;
+    const durationMs=performance.now()-started,loadMetrics=structuredClone([...metrics]);
     for(let i=0;i<users.length;i++) {const wallet=await api('/api/promotions/coupons/page',users[i]);assert.equal(wallet.items.find(c=>c.couponId===coupons[i]).status,'AVAILABLE');const found=await pages('/api/checkout/orders/page',users[i],'orderId','beforeId');assert.ok(found.length>1);await pages('/api/promotions/coupons/page',users[i],'couponId','afterId');}
     const receipt={requestId:randomUUID(),skuId:'it-sku',itemId:'it-item',type:'RECEIPT',quantity:2,expectedVersion:null,reason:'验证入库账本'};
     await admin('inventory','/internal/inventory/management/adjustments',receipt);await admin('inventory','/internal/inventory/management/adjustments',receipt);
@@ -110,7 +110,7 @@ try {
     const reconciled=await admin('inventory','/internal/inventory/management/reconciliations',{});assert.ok(reconciled.every(row=>row.healthy));
     assert.equal((await admin('inventory','/internal/inventory/management/reconciliations',undefined,undefined,true)).length,0);
     await wait(()=>admin('order','/internal/checkout/events',undefined,undefined,true),v=>v.length===0,'交易事实完整交付');
-    const report={timestamp:new Date().toISOString(),gatewayAuthentication:true,middleware:'MYSQL_REDIS_THREE_BROKER_KAFKA',durationMs,clients:users.length,completedOrders:completed.length,completedOrderTps:completed.length/(durationMs/1000),gatewayRateLimitPerMinute:100000,mockMoneyMoved:false,scenarios:['DUPLICATE_PAYMENT_CALLBACK','FORGED_CALLBACK','OWNER_HEADER_SPOOF','LIMITED_COUPON','SECKILL_FULL_REFUND','REFUND_DECLINED_RETRY','REFUND_RESPONSE_LOST','SEEK_PAGINATION'],routes:[...metrics].map(([route,m])=>{const sorted=m.latencies.toSorted((a,b)=>a-b);return {route,requests:sorted.length,p95Ms:sorted[Math.ceil(sorted.length*.95)-1],p99Ms:sorted[Math.ceil(sorted.length*.99)-1],statuses:m.statuses};}),note:'低内存闭环持续联调，不代表峰值容量；资金渠道为 Mock。'};
+    const report={timestamp:new Date().toISOString(),gatewayAuthentication:true,middleware:'MYSQL_REDIS_THREE_BROKER_KAFKA',durationMs,clients:users.length,completedOrders:completed.length,completedOrderTps:completed.length/(durationMs/1000),requestQps:loadMetrics.reduce((sum,[,m])=>sum+m.latencies.length,0)/(durationMs/1000),gatewayRateLimitPerMinute:100000,mockMoneyMoved:false,scenarios:['DUPLICATE_PAYMENT_CALLBACK','FORGED_CALLBACK','OWNER_HEADER_SPOOF','LIMITED_COUPON','SECKILL_FULL_REFUND','REFUND_DECLINED_RETRY','REFUND_RESPONSE_LOST','SEEK_PAGINATION'],routes:loadMetrics.map(([route,m])=>{const sorted=m.latencies.toSorted((a,b)=>a-b);return {route,requests:sorted.length,p95Ms:sorted[Math.ceil(sorted.length*.95)-1],p99Ms:sorted[Math.ceil(sorted.length*.99)-1],statuses:m.statuses};}),note:'低内存闭环持续联调，不代表峰值容量；资金渠道为 Mock。请求指标包含轮询和重复/拒绝回调，统计窗口为持续闭环阶段。'};
     await writeFile(env.RS_IT_REPORT,JSON.stringify(report,null,2));console.log(JSON.stringify({completedOrders:report.completedOrders,durationMs,completedOrderTps:report.completedOrderTps}));
   } else {
     const {users,coupons}=JSON.parse(await readFile(checkpoint,'utf8'));
