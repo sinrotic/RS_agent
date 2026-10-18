@@ -35,8 +35,8 @@ def main():
     artifacts = output / 'artifacts'; artifacts.mkdir(exist_ok=True)
     project = 'rs-commerce-v2-it-' + secrets.token_hex(4)
     assert re.fullmatch(r'rs-commerce-v2-it-[0-9a-f]{8}', project)
-    secret_keys = ('RS_IT_DB_PASSWORD', 'RS_COMMERCE_OPS_READ_TOKEN', 'RS_COMMERCE_OPS_WRITE_TOKEN', 'RS_COMMERCE_SERVICE_TOKEN', 'RS_PAYMENT_MOCK_CALLBACK_SECRET')
-    env = dict(os.environ, **{key: secrets.token_urlsafe(32) for key in secret_keys}, RS_IT_JAR_DIR=str(artifacts),
+    secret_keys = ('RS_IT_DB_PASSWORD', 'RS_IT_REPLICATION_PASSWORD', 'RS_COMMERCE_OPS_READ_TOKEN', 'RS_COMMERCE_OPS_WRITE_TOKEN', 'RS_COMMERCE_SERVICE_TOKEN', 'RS_PAYMENT_MOCK_CALLBACK_SECRET')
+    env = dict(os.environ, **{key: secrets.token_urlsafe(24 if key == 'RS_IT_REPLICATION_PASSWORD' else 32) for key in secret_keys}, RS_IT_JAR_DIR=str(artifacts),
                RS_IT_DURATION=str(args.duration), RS_IT_CLIENTS=str(args.clients), RS_IT_REPORT=str(output / 'load-report.json'),
                RS_IT_PRIVATE_STATE=str(output / 'private-accounts.json'), RS_IT_OUTPUT_DIR=str(output))
     compose = ['docker', 'compose', '-p', project, '-f', str(directory / 'fullstack.compose.yml')]
@@ -121,7 +121,8 @@ def main():
         status['stage'] = 'initial-replica-restore'
         backup = dump('mysql'); restore('mysql-replica', backup)
         assert counts('mysql') == counts('mysql-replica')
-        password = env['RS_IT_DB_PASSWORD']
+        # 复制协议的口令长度上限与 root 登录不同，独立生成 32 字符凭证。
+        password = env['RS_IT_REPLICATION_PASSWORD']
         sql('mysql', f"CREATE USER 'replication'@'%' IDENTIFIED BY '{password}'; GRANT REPLICATION SLAVE ON *.* TO 'replication'@'%';")
         sql('mysql-replica', f"CHANGE REPLICATION SOURCE TO SOURCE_HOST='mysql',SOURCE_USER='replication',SOURCE_PASSWORD='{password}',SOURCE_AUTO_POSITION=1,GET_SOURCE_PUBLIC_KEY=1; START REPLICA;")
         status['initialRestorePassed'] = True

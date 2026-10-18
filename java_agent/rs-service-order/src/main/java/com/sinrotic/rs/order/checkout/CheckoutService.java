@@ -195,11 +195,17 @@ public class CheckoutService {
         if (transactionId == null || transactionId.isBlank() || transactionId.length() > 128) throw bad("支付流水不合法");
         if (amount == null || amount <= 0) throw conflict("支付金额与订单应付金额不符");
         tx.executeWithoutResult(s -> {
-            transition(orderId,"PAID",true,amount);
+            // 支付通知可能在响应丢失后晚于退款重放。先核对不可变原支付，不能把退款状态退回 PAID。
+            if(jdbc.queryForList("SELECT o.order_id FROM checkout_workflow w JOIN orders o ON o.order_id=w.order_id WHERE w.order_id=? FOR UPDATE",orderId).isEmpty())
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"订单不存在");
             var previous=jdbc.queryForList("SELECT * FROM checkout_payment_fact WHERE order_id=?",orderId);
-            if(previous.isEmpty()) jdbc.update("INSERT INTO checkout_payment_fact(order_id,provider,transaction_id,amount,mock,created_at) VALUES (?,?,?,?,?,?)",orderId,provider,transactionId,amount,"mock".equalsIgnoreCase(provider),now());
-            else if(!provider.equals(previous.getFirst().get("provider")) || !transactionId.equals(previous.getFirst().get("transaction_id"))
-                    || amount!=((Number)previous.getFirst().get("amount")).longValue()) throw conflict("支付事实与原流水不一致");
+            if(!previous.isEmpty()) {
+                if(!provider.equals(previous.getFirst().get("provider")) || !transactionId.equals(previous.getFirst().get("transaction_id"))
+                        || amount!=((Number)previous.getFirst().get("amount")).longValue()) throw conflict("支付事实与原流水不一致");
+                return;
+            }
+            transition(orderId,"PAID",true,amount);
+            jdbc.update("INSERT INTO checkout_payment_fact(order_id,provider,transaction_id,amount,mock,created_at) VALUES (?,?,?,?,?,?)",orderId,provider,transactionId,amount,"mock".equalsIgnoreCase(provider),now());
             OrderTradeEvents.append(jdbc,orderId,"PAID",now());
         });
     }

@@ -92,6 +92,15 @@ class RefundWorkflowTest {
         refunds.process(refund.refundId());assertThat(refunds.get("account",id).status()).isEqualTo("REFUNDED");
         verify(payment,times(2)).refund(eq(refund.refundId()),eq(id),eq(2500L),eq("RESPONSE_LOST"),eq(false));
     }
+    @Test void originalPaymentNotificationCanReplayDuringAndAfterRefundWithoutReactivatingOrder() {
+        long id=paid(false);var refund=refunds.request("account",id,new RefundService.Request("refund","整单退款","SUCCESS"));
+        checkout.paidFromProvider(id,2500L,"mock","payment-"+id);
+        assertThat(checkout.get("account",id).status()).isEqualTo("REFUNDING");
+        refunds.process(refund.refundId());checkout.paidFromProvider(id,2500L,"mock","payment-"+id);
+        assertThat(checkout.get("account",id).status()).isEqualTo("REFUNDED");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM commerce_order_event",Integer.class)).isEqualTo(2);
+        assertThatThrownBy(()->checkout.paidFromProvider(id,2500L,"mock","different-tx")).isInstanceOf(ResponseStatusException.class);
+    }
     @Test void closedActivityRefundReturnsOrdinaryStockWithoutReopeningPool() {
         long id=paid(true);pools.close("activity");
         var refund=refunds.request("account",id,new RefundService.Request("refund-key","整单退款","SUCCESS"));refunds.process(refund.refundId());
