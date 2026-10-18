@@ -67,4 +67,4 @@ python java_agent/deploy/local/commerce/fullstack.py --ha --duration 60 --client
 
 最后将快照恢复到独立 MySQL，对比业务行数、退款结清、库存与券守恒、Mock 隔离，再由隔离 Alertmanager 向隔离 webhook 投递合成告警。安全报告可上传；私密账号、SQL 备份、凭证及命令日志不入 Git/CI artifact。
 
-GitHub Actions `Commerce completion validation` 在 `codex/commerce-*` 交易代码推送时运行，也支持手动指定时长。任一步失败则工作流失败，不将脚本存在当作验证通过。本机已通过后端、前端、工作台代理及 Chromium 夹具验证；Docker Desktop 因运行时套接字异常无法启动，本机真实持续联调和主从演练未成功执行，远程结果以分支 CI 报告为准。未部署正式环境、未发送外部告警。
+GitHub Actions `Commerce completion validation` 在 `codex/commerce-*` 交易代码推送时运行，也支持手动指定时长。任一步失败则工作流失败，不将脚本存在当作验证通过。本机 Docker Desktop 因运行时套接字异常无法启动，真实持续联调、三副本 Kafka 单点故障、MySQL/Redis 计划内提升、备份恢复及合成通知已转由 Linux CI 全部验证通过，见 [完整验收报告](reports/commerce-completion-20261019/README.md)。代码提交 `ca66a38e`：后端 429 项、前端 109 项、Node 10 项、运维 3 项及 Chromium 夹具通过；4 并发约 62 秒完成 112 笔下单/支付/退款闭环。未部署正式环境、未发送外部告警。
