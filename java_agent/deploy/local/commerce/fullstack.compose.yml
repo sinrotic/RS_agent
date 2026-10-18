@@ -68,7 +68,7 @@ x-kafka: &kafka
     KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
     KAFKA_HEAP_OPTS: -Xms128m -Xmx192m -XX:ActiveProcessorCount=2
   healthcheck:
-    test: [CMD-SHELL, '/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null']
+    test: [CMD-SHELL, 'KAFKA_HEAP_OPTS="-Xms16m -Xmx64m -XX:ActiveProcessorCount=2" /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null']
     interval: 5s
     timeout: 10s
     retries: 40

@@ -48,7 +48,10 @@ def main():
             text = (result.stderr if private else result.stdout + result.stderr).decode('utf-8', 'replace')
             for key in secret_keys: text = text.replace(env[key], '[REDACTED]')
             with (output / 'commands.log').open('a', encoding='utf-8') as file: file.write(text)
-        if result.returncode: raise RuntimeError('隔离联调命令失败；查看脱敏 commands.log（私密 SQL 不记录）')
+        if result.returncode:
+            detail = result.stderr.decode('utf-8', 'replace')[-3000:]
+            for key in secret_keys: detail = detail.replace(env[key], '[REDACTED]')
+            raise RuntimeError('隔离联调命令失败：' + detail)
         return result.stdout
 
     def sql(service, statement):
@@ -104,6 +107,7 @@ def main():
             target = artifacts / jar; shutil.copyfile(directory.parents[2] / name / 'target' / jar, target)
             status['artifactHashes'][jar] = hashlib.sha256(target.read_bytes()).hexdigest()
         print('启动独立中间件（容器上限约 5.8GB），准备 GTID 备份与副本', flush=True)
+        status['stage'] = 'middleware-startup'
         started = True
         run(compose + ['up', '-d', '--wait', 'mysql', 'mysql-replica', 'redis', 'redis-replica', 'kafka', 'kafka-2', 'kafka-3'], 600)
         # 健康检查只保证 MySQL 可连接；初始化脚本全部执行完才可以取快照。
@@ -114,16 +118,18 @@ def main():
             except RuntimeError: pass
             if time.monotonic() >= deadline: raise RuntimeError('数据库迁移未完成')
             time.sleep(2)
+        status['stage'] = 'initial-replica-restore'
         backup = dump('mysql'); restore('mysql-replica', backup)
         assert counts('mysql') == counts('mysql-replica')
         password = env['RS_IT_DB_PASSWORD']
         sql('mysql', f"CREATE USER 'replication'@'%' IDENTIFIED BY '{password}'; GRANT REPLICATION SLAVE ON *.* TO 'replication'@'%';")
         sql('mysql-replica', f"CHANGE REPLICATION SOURCE TO SOURCE_HOST='mysql',SOURCE_USER='replication',SOURCE_PASSWORD='{password}',SOURCE_AUTO_POSITION=1,GET_SOURCE_PUBLIC_KEY=1; START REPLICA;")
         status['initialRestorePassed'] = True
+        status['stage'] = 'application-startup'
         run(compose + ['up', '-d', *APPS], 600); ready()
         before = sql('mysql', "SHOW GLOBAL STATUS WHERE Variable_name IN ('Innodb_row_lock_current_waits','Innodb_row_lock_time','Innodb_row_lock_waits')")
         print('开始登录网关→领券→下单→支付回调→退款持续闭环', flush=True)
-        node('load')
+        status['stage'] = 'authenticated-load'; node('load')
         # 等后台 outbox 清空，随后采集池/队列/消费者指标。
         deadline = time.monotonic() + 120
         while sql('mysql', "SELECT COUNT(*) FROM commerce_event_delivery WHERE status<>'DONE'") != '0':
@@ -140,11 +146,13 @@ def main():
         status['fullstackPassed'] = True
         primary = 'mysql'
         if args.ha:
+            status['stage'] = 'single-broker-failure'
             print('验证单 broker 停机后继续异步秒杀', flush=True)
             run(compose + ['stop', '-t', '5', 'kafka'], 40); node('broker-down')
             run(compose + ['start', 'kafka'], 40)
             status['singleBrokerFailurePassed'] = True
             print('验证 MySQL 追平后计划内提升，重启应用切换连接', flush=True)
+            status['stage'] = 'mysql-planned-promotion'
             run(compose + ['stop', '-t', '10', *APPS], 90)
             gtid = sql('mysql', 'SELECT @@GLOBAL.gtid_executed')
             assert sql('mysql-replica', f"SELECT WAIT_FOR_EXECUTED_GTID_SET('{gtid}',60)") == '0'
@@ -155,6 +163,7 @@ def main():
             run(compose + ['start', *APPS], 90); ready(); node('mysql-promoted')
             status['mysqlPlannedPromotionPassed'] = True
             print('验证 Redis 复制确认后计划内提升，既有登录令牌继续有效', flush=True)
+            status['stage'] = 'redis-planned-promotion'
             run(compose + ['stop', '-t', '10', *APPS], 90)
             # 同一连接写入屏障并 WAIT；不能用独立连接的 WAIT 冒充复制确认。
             ack = run(compose + ['exec', '-T', 'redis', 'redis-cli'], data=b'SET it-promotion-barrier ready\nWAIT 1 10000\n').decode().strip().splitlines()
@@ -165,6 +174,7 @@ def main():
             run(compose + ['start', *APPS], 90); ready(); node('redis-promoted')
             status['redisPlannedPromotionPassed'] = True
         # 停写快照→压缩→恢复到隔离 restore 容器，核对业务行数和财务守恒。
+        status['stage'] = 'backup-restore'
         run(compose + ['stop', '-t', '10', *APPS], 90)
         backup = dump(primary); path = output / 'private-backup.sql.gz'
         with gzip.open(path, 'wb') as file: file.write(backup)
@@ -175,6 +185,7 @@ def main():
         assert counts(primary) == counts('mysql-restore'); database_invariants('mysql-restore')
         status['backupRestore'] = {'passed': True, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest(), 'counts': counts(primary)}
         print('验证 Alertmanager 到隔离 webhook 接收器的通知', flush=True)
+        status['stage'] = 'notification'
         run(compose + ['--profile', 'notifications', 'up', '-d', 'webhook', 'alertmanager'], 180)
         deadline = time.monotonic() + 60
         while True:
@@ -193,9 +204,15 @@ def main():
         status['error'] = str(error); print(str(error), flush=True)
     finally:
         if started:
-            try: run(compose + ['logs', '--no-color'], 60)
+            try:
+                logs = run(compose + ['logs', '--no-color'], 60).decode('utf-8', 'replace')
+                if not status.get('notificationPassed'):
+                    errors = [line for line in logs.splitlines() if re.search(r'ERROR|FATAL|Exception|Error:|error:', line)]
+                    safe = '\n'.join(errors[-25:])
+                    for key in secret_keys: safe = safe.replace(env[key], '[REDACTED]')
+                    status['startupDiagnostics'] = safe
             except Exception: pass
-            try: run(compose + ['--profile', 'notifications', 'down', '--volumes', '--remove-orphans'], 90); status['cleanupPassed'] = True
+            try: run(compose + ['--profile', 'restore', '--profile', 'notifications', 'down', '--volumes', '--remove-orphans'], 90); status['cleanupPassed'] = True
             except Exception: status['cleanupPassed'] = False
         else: status['cleanupPassed'] = True
         (output / 'verification.json').write_text(json.dumps(status, ensure_ascii=False, indent=2), encoding='utf-8')

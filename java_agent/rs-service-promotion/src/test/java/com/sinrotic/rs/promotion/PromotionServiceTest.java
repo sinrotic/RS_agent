@@ -48,7 +48,7 @@ class PromotionServiceTest {
 
     @Test void campaignPublicationReplayDoesNotReplenishClaimedQuotaOrDuplicateAudit() {
         var manager=new DataSourceTransactionManager(Objects.requireNonNull(jdbc.getDataSource()));
-        var management=new PromotionManagement(jdbc,manager,service);var now=LocalDateTime.now(clock);
+        var management=new PromotionManagement(jdbc,manager,service);var now=LocalDateTime.now(clock).withNano(123456789);
         var input=new PromotionService.Campaign("managed","限量",null,2,2,2000,500,now.minusHours(1),now.plusHours(1),now.plusDays(1));
         management.create(input,"operator");service.claim("account","managed","claim-managed");management.create(input,"operator");
         assertThat(jdbc.queryForObject("SELECT remaining_quantity FROM promotion_campaign WHERE campaign_id='managed'",Integer.class)).isOne();

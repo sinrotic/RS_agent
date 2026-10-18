@@ -49,12 +49,16 @@ public class PromotionService {
                 || c.expiresAt() == null || !c.startsAt().isBefore(c.endsAt()) || c.endsAt().isAfter(c.expiresAt()))
             throw bad("活动额度、金额或有效期不合法");
         if (c.itemId() != null) text(c.itemId());
+        var starts=c.startsAt().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        var ends=c.endsAt().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        var expires=c.expiresAt().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+        if(!starts.isBefore(ends) || ends.isAfter(expires)) throw bad("活动时间精度必须满足数据库微秒边界");
         jdbc.update("""
                 INSERT INTO promotion_campaign
                 (campaign_id,title,item_id,total_quantity,remaining_quantity,minimum_amount,discount_amount,starts_at,ends_at,expires_at)
                 VALUES (?,?,?,?,?,?,?,?,?,?)
                 """, c.campaignId(), c.title(), c.itemId(), c.totalQuantity(), c.totalQuantity(),
-                c.minimumAmount(), c.discountAmount(), c.startsAt(), c.endsAt(), c.expiresAt());
+                c.minimumAmount(), c.discountAmount(), starts, ends, expires);
     }
 
     public List<Campaign> campaigns(String itemId) {
