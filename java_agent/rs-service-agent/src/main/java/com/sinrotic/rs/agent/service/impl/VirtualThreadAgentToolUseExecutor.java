@@ -84,6 +84,10 @@ public class VirtualThreadAgentToolUseExecutor implements AgentToolUseExecutor, 
             if ("load_skill".equals(event.toolName())) {
                 String skillName = String.valueOf(event.arguments().getOrDefault("skill_name", ""));
                 var skill = runtimeConfigurationService.skill(skillName);
+                if (!skill.enabled()) {
+                    return Map.of("status", "FAILED", "error_code", "SKILL_DISABLED", "loaded", false,
+                            "error_message", "Skill is disabled");
+                }
                 return Map.of(
                         "status", "SUCCESS",
                         "tool_type", "skill",
