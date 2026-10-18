@@ -7,6 +7,22 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class AgentInterruptContext {
 
+    private AgentTurnBudget budget;
+    private String callKind = "generation";
+    public AgentTurnBudget budget() { return budget; }
+    void attachBudget(AgentTurnBudget value) {
+        if (budget != null && budget != value) throw new IllegalStateException("Turn budget already attached");
+        budget = value;
+    }
+    public String callKind() { return callKind; }
+    public AgentInterruptContext fork(String kind) {
+        if (!List.of("generation", "summary", "worker", "drift_check").contains(kind)) throw new IllegalArgumentException("Unknown model call kind");
+        var child = new AgentInterruptContext(requestId, sessionId, accountId, profileUserId);
+        child.budget = budget; child.callKind = kind;
+        onInterrupt(() -> child.interrupt(reason()));
+        return child;
+    }
+
     private final String requestId;
 
     private final String sessionId;

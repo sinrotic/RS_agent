@@ -21,8 +21,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@EnableConfigurationProperties({AgentModelProviderProperties.class, AgentDelegateProperties.class})
+@EnableConfigurationProperties({AgentModelProviderProperties.class, AgentDelegateProperties.class, AgentReasoningProperties.class})
 public class AgentModelProviderConfiguration {
+
+    @Bean
+    public com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy agentReasoningPolicy(AgentReasoningProperties properties,
+            ObjectProvider<org.springframework.ai.model.openai.autoconfigure.OpenAiChatProperties> chatProperties) {
+        var chat = chatProperties.getIfAvailable();
+        if (properties.isBudgetEnabled() && chat != null && chat.getMaxRetries() != 0)
+            throw new IllegalArgumentException("Budget enforcement requires spring.ai.openai.chat.max-retries=0; request options do not override SDK retries");
+        return new com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy(properties);
+    }
 
     @Bean
     @ConditionalOnProperty(prefix = "rs.agent.model-provider", name = "type", havingValue = "spring_ai")
@@ -60,9 +69,10 @@ public class AgentModelProviderConfiguration {
     )
     public AgentModelStreamClient pythonAgentApiModelStreamClient(
             AgentModelProviderProperties properties,
-            AgentModelProviderHttpClient httpClient
+            AgentModelProviderHttpClient httpClient,
+            com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy policy
     ) {
-        return new PythonAgentApiModelStreamClient(properties, httpClient);
+        return new PythonAgentApiModelStreamClient(properties, httpClient, policy);
     }
 
     @Bean
@@ -73,9 +83,10 @@ public class AgentModelProviderConfiguration {
     )
     public AgentModelStreamClient selfHostedModelStreamClient(
             AgentModelProviderProperties properties,
-            AgentModelProviderHttpClient httpClient
+            AgentModelProviderHttpClient httpClient,
+            com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy policy
     ) {
-        return new SelfHostedModelStreamClient(properties, httpClient);
+        return new SelfHostedModelStreamClient(properties, httpClient, policy);
     }
 
     @Bean
@@ -90,7 +101,8 @@ public class AgentModelProviderConfiguration {
             AgentModelProviderProperties properties,
             ObjectProvider<AgentRuntimeConfigurationService> runtimeConfigurationServiceProvider,
             ObjectProvider<AgentToolResultStore> toolResultStoreProvider,
-            OpenAiModelStreamResources streamResources
+            OpenAiModelStreamResources streamResources,
+            com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy policy
     ) {
         return new SpringAiAgentModelStreamClient(
                 chatModel,
@@ -99,7 +111,7 @@ public class AgentModelProviderConfiguration {
                 properties.isConstrainedDecodingEnabled(),
                 streamResources,
                 properties.getFinalAnswerMaxTokens(),
-                properties.isCompactToolSchemasEnabled()
+                properties.isCompactToolSchemasEnabled(), policy
         );
     }
 }

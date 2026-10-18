@@ -73,7 +73,7 @@ final class AgentUsageLedger {
                 "completed_observations", calls.values().stream().filter(call -> call.snapshot != null).count(),
                 "conflicting_observations", calls.values().stream().filter(call -> call.conflict).count(),
                 "legacy_runs", legacyRuns.size(), "fields", fields,
-                "basis", "observed_generation_client_invocations_only");
+                "basis", "observed_model_client_invocations_only");
         return new Result(totals.get("prompt_tokens"), totals.get("completion_tokens"), totals.get("total_tokens"), coverage);
     }
 

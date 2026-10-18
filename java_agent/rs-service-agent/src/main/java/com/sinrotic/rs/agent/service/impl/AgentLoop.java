@@ -180,7 +180,8 @@ public abstract class AgentLoop {
                 AgentLoopTransition.complete(AgentFinishReason.FINAL_ANSWER),
                 null
         ));
-        try (var turnTools = toolUseExecutor.openTurn(interruptContext)) {
+        try (var reasoning = modelStreamClient.reasoningPolicy().openTurn(interruptContext, request, consumer, modelStreamClient, executionLimiter);
+             var turnTools = toolUseExecutor.openTurn(interruptContext)) {
             var toolUseOrchestrator = new StreamingAgentToolUseOrchestrator(turnTools);
             onReady.run();
             AgentChatRequestDTO loopRequest = withRuntimeContext(request);
@@ -216,7 +217,7 @@ public abstract class AgentLoop {
                     boolean executionLimit = toolResults.stream().anyMatch(result -> result.get("metadata") instanceof Map<?, ?> metadata
                             && (Set.of("TOOL_BUDGET_EXHAUSTED", "TOOL_NO_PROGRESS").contains(String.valueOf(metadata.get("error_code")))
                             || metadata.get("governance") instanceof Map<?, ?> governance && Boolean.TRUE.equals(governance.get("no_progress"))));
-                    if (executionLimit || (loopIndex == maxLoops() - 1 && !toolResults.isEmpty())
+                    if (executionLimit || reasoning.finalAnswerOnly() || (loopIndex == maxLoops() - 1 && !toolResults.isEmpty())
                             || failures >= MAX_FAILED_TOOLS_PER_TURN) {
                         var finalContext = new java.util.LinkedHashMap<String, Object>(loopRequest.resolvedContext());
                         finalContext.put("final_answer_only", true);
@@ -277,7 +278,7 @@ public abstract class AgentLoop {
                                     "tool_name", toolEvent.toolName(),
                                     "arguments", toolEvent.arguments()
                             )));
-                            if (Boolean.TRUE.equals(currentLoopRequest.resolvedContext().get("final_answer_only"))) {
+                            if (Boolean.TRUE.equals(currentLoopRequest.resolvedContext().get("final_answer_only")) || reasoning.finalAnswerOnly()) {
                                 toolRun.complete(toolCallId, toolEvent, Map.of("status", "FAILED", "error_code", "TOOL_FINAL_ANSWER_ONLY",
                                         "error_message", "Only the final answer is allowed after execution limits"));
                                 return;
@@ -293,6 +294,9 @@ public abstract class AgentLoop {
                                 return;
                             }
                             state.set(state.get().withPhase(AgentLoopPhase.TOOL_EXECUTING));
+                            var drift = reasoning.beforeTool(toolEvent);
+                            throwIfInterrupted(interruptContext);
+                            if (drift.blocked()) { toolRun.complete(toolCallId,toolEvent,drift.result()); return; }
                             if ("emit_ui".equals(toolEvent.toolName())) {
                                 try {
                                     if (runtimeConfigurationService.tools().stream().noneMatch(tool ->
@@ -673,6 +677,9 @@ public abstract class AgentLoop {
                 }
             }, interruptContext::interrupted);
         } catch (RuntimeException error) {
+            if (error instanceof AgentModelBudgetException budgetFailure) {
+                interruptContext.interrupt(budgetFailure.code().toLowerCase(java.util.Locale.ROOT));
+            }
             if (error instanceof AgentLoopFinalAnswerSignal || error instanceof AgentLoopHookStoppedSignal) {
                 throw error;
             }

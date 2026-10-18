@@ -59,13 +59,17 @@ public final class AgentModelCallObservation {
 
     public AgentModelCallObservation(String requestId, String sessionId, int loopIndex,
                                      Consumer<AgentStreamEventVO> sink, LongSupplier nanoTime) {
+        this(requestId,sessionId,loopIndex,sink,nanoTime,"generation");
+    }
+    public AgentModelCallObservation(String requestId, String sessionId, int loopIndex,
+                                     Consumer<AgentStreamEventVO> sink, LongSupplier nanoTime, String kind) {
         this.requestId = requestId;
         this.sink = sink;
         this.nanoTime = nanoTime;
         this.started = nanoTime.getAsLong();
         this.identity = Map.of("model_call_id", "model_" + UUID.randomUUID(), "run_id", requestId,
                 "turn_id", requestId, "session_id", sessionId, "loop_index", loopIndex,
-                "call_kind", "generation", "attempt_scope", "agent_model_stream_client_invocation");
+                "call_kind", kind, "attempt_scope", "agent_model_stream_client_invocation");
         publish("model_call_started", identity);
     }
 

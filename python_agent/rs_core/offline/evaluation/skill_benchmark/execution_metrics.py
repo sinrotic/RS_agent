@@ -53,14 +53,18 @@ def summarize_trace_usage(trace):
         if event.get("event") not in {"model_call_started", "model_call_completed"}:
             continue
         data = event["data"]
+        kind = data.get("call_kind", "unknown")
+        kind = kind if isinstance(kind, str) and kind in {"generation", "summary", "worker", "drift_check", "judge"} else "unknown"
         call_id = data.get("model_call_id")
         if not isinstance(call_id, str) or not call_id:
             raise ValueError("模型观测缺少 model_call_id")
         calls.setdefault(call_id, {"model_call_id": call_id, "status": "incomplete",
+                                   "call_kind": kind,
                                    "usage": {}, "usage_final": False,
                                    "request_fingerprint": {"fingerprint_status": "not_reported"}})
         if event["event"] == "model_call_completed":
             row = {"model_call_id": call_id, "status": data["status"],
+                   "call_kind": kind,
                    "usage": data["usage"], "usage_final": data["usage_final"],
                    "request_fingerprint": _request_fingerprint(data)}
             if call_id in completed and calls[call_id] != row:
@@ -69,7 +73,8 @@ def summarize_trace_usage(trace):
             completed.add(call_id)
     report = summarize_model_usage(calls.values())
     report["completed_observations"] = len(completed)
-    report["coverage_basis"] = "observed_generation_attempts_only"
+    report["coverage_basis"] = "observed_model_client_invocations_only"
+    report["call_kinds"] = dict(Counter(call["call_kind"] for call in calls.values()))
     report["request_fingerprints"] = [
         {"model_call_id": key, **call["request_fingerprint"]} for key, call in calls.items()
     ]

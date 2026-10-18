@@ -1,0 +1,131 @@
+{
+  "scope": "预算与语义漂移；含真实受控 HTTP、并发与执行门禁",
+  "count": 25,
+  "cases": [
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentModelBudgetHttpTest",
+      "method": "exhaustedBudgetRejectsBeforeHttpAndTheLoopReportsAnExplicitInterruptedReason",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentModelBudgetHttpTest",
+      "method": "earlyConsumerCancellationKeepsTheReservationAndCannotBeCountedAsFree",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentModelBudgetHttpTest",
+      "method": "unsupportedHttpAdaptersCannotSilentlyDropTheBudgetFromEitherContextOverload",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentModelBudgetHttpTest",
+      "method": "anHttpFailureDoesNotHideSdkRetriesOrRefundUnknownProviderUsage",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentModelBudgetHttpTest",
+      "method": "actualWireUsesReservedOutputLimitAndFinalUsageSettlesTheSharedWorkerLedger",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentModelBudgetHttpTest",
+      "method": "startupRejectsHiddenSdkRetriesInsteadOfQuietlyOverspendingTheReservation",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftHttpTest",
+      "method": "aJudgeCannotSpendAgainAfterGenerationHasConsumedTheSharedCallBudget",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftHttpTest",
+      "method": "actualModelReviewUsesNoToolsAndSettlesAgainstTheSameTurnBudget(String)[1]",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftHttpTest",
+      "method": "actualModelReviewUsesNoToolsAndSettlesAgainstTheSameTurnBudget(String)[2]",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftHttpTest",
+      "method": "actualModelReviewUsesNoToolsAndSettlesAgainstTheSameTurnBudget(String)[3]",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "observationFailuresCannotAuthorizeAToolOrDisableTheDriftGate",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "categorySignalsDoNotConfuseNecessaryAttributesMultipleGoalsOrANewUserGoal",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "periodicSemanticChecksCanDetectDriftWithoutRepeatingAQueryOrChangingKnownCategories",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "unknownAndUnreviewedAreNotSuccessAndSuspiciousQueriesRemainBlocked",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "reviewerOutputMustIdentifyTheSameQueryAndCannotSmuggleExtraInstructions",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "driftEnforcementStopsFurtherToolsInTheSameStreamButStillAllowsAFinalAnswer",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "failedReviewDoesNotGrantPermissionAndIsBoundedByItsOwnDeadline",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentSemanticDriftTest",
+      "method": "correctedQueryAndNewTurnsDoNotInheritAStaleDriftGoal",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "modelAttemptsShareTheSameCallLimitIncludingSummaryAndDriftChecks",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "atomicFeeReservationAndActualSettlementReleaseOnlyKnownUnusedCost",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "feeLimitsRequireConfiguredRatesAndUnknownPricingIsNeverReportedAsFree",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "closedTurnsAcceptLateUsageButCannotSpendAgainAndOverrunsStayVisible",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "duplicateFinalReceiptsDoNotDoubleBillAndConflictsBlockNewCalls",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "missingPartialInvalidAndProvisionalUsageCannotRefundTheReservation",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentTurnBudgetTest",
+      "method": "parallelWorkersCannotReserveTheSameRemainingTokens",
+      "status": "passed"
+    }
+  ]
+}

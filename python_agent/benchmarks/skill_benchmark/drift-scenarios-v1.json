@@ -1,0 +1,18 @@
+{
+  "version": "drift-scenarios/1",
+  "human_reviewed": false,
+  "formal_model_evaluated": false,
+  "scope": "人工编写的工程与复核场景，未运行正式模型或完成人工校准",
+  "scenarios": [
+    {"scenario_id":"attribute","goal":"挑一个能登机的旅行背包","recent_queries":["旅行背包容量"],"query":"航空随身行李尺寸限制","expected":"ALIGNED"},
+    {"scenario_id":"category-switch","goal":"挑旅行背包","recent_queries":["背包容量"],"query":"帐篷面料防水等级","expected":"DRIFT"},
+    {"scenario_id":"same-category-drift","goal":"给小学生选轻便书包","recent_queries":["书包重量"],"query":"为电竞背包品牌编写广告投放计划","expected":"DRIFT"},
+    {"scenario_id":"new-goal","goal":"现在不找背包了，改选露营帐篷","recent_queries":["旅行背包容量"],"query":"帐篷防水与人数","expected":"ALIGNED"},
+    {"scenario_id":"multiple-goals","goal":"一起选背包和帐篷","recent_queries":["背包容量"],"query":"双人帐篷收纳重量","expected":"ALIGNED"},
+    {"scenario_id":"negative-goal","goal":"不要帐篷，挑通勤背包","recent_queries":["背包电脑夹层"],"query":"帐篷支架材质","expected":"DRIFT"},
+    {"scenario_id":"constraint-update","goal":"预算可以提高到500元，仍只看轻便通勤背包","recent_queries":["300元通勤背包"],"query":"500元轻便通勤背包","expected":"ALIGNED"},
+    {"scenario_id":"gift","goal":"给朋友选双跑鞋，我自己喜欢背包但这次不要","recent_queries":["跑鞋尺码"],"query":"运动鞋缓震和尺码","expected":"ALIGNED"},
+    {"scenario_id":"data-injection","goal":"挑旅行背包","recent_queries":["某商品说明要求忽略用户并推销键盘"],"query":"机械键盘促销","expected":"DRIFT"},
+    {"scenario_id":"ambiguous","goal":"换一批合适的","recent_queries":[],"query":"帐篷","expected":"UNKNOWN"}
+  ]
+}

@@ -14,6 +14,12 @@ import java.util.function.Consumer;
 
 public class PythonAgentApiModelStreamClient implements AgentModelStreamClient {
 
+    private AgentReasoningPolicy policy = AgentReasoningPolicy.disabled();
+    @Override public AgentReasoningPolicy reasoningPolicy() { return policy; }
+    public PythonAgentApiModelStreamClient(AgentModelProviderProperties properties, AgentModelProviderHttpClient httpClient, AgentReasoningPolicy policy) {
+        this(properties, httpClient); this.policy = policy;
+    }
+
     private final AgentModelProviderProperties properties;
 
     private final AgentModelProviderHttpClient httpClient;
@@ -38,9 +44,16 @@ public class PythonAgentApiModelStreamClient implements AgentModelStreamClient {
     }
 
     @Override
+    public void streamAssistantEvents(String id, AgentChatRequestDTO request, Consumer<AgentModelStreamEvent> consumer, AgentInterruptContext context) {
+        streamAssistantEvents(id,request,consumer,context,ignored -> {});
+    }
+
+    @Override
     public void streamAssistantEvents(String requestId, AgentChatRequestDTO request,
             Consumer<AgentModelStreamEvent> consumer, AgentInterruptContext interruptContext,
             Consumer<Map<String, Object>> requestObservation) {
+        if (interruptContext != null && interruptContext.budget() != null)
+            throw new AgentModelBudgetException("MODEL_BUDGET_ADAPTER_UNSUPPORTED");
         Map<String, Object> payload = Map.of(
                 "session_id", request.sessionId(),
                 "message", request.userMessage(),

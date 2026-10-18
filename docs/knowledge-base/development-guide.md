@@ -230,6 +230,8 @@ Set-Location python_agent
 
 ## 完成一次迭代的最小清单
 
+预算与语义漂移的配置、真实 HTTP 故障和离线评测口径见 [验收报告](../reports/agent-budget-and-drift-20261018/README.md)。Spring AI 预算默认开启，费用上限默认关闭；启用 USD 上限前必须显式确认模型名及两类费率。预算开启时 `spring.ai.openai.chat.max-retries` 必须为 0：单请求 options 的 maxRetries 不能代替 SDK 配置校验。语义复核会增加受同账约束的模型请求，默认可疑类目切换时复核，并每 3 次搜索抽查一次；费用/语义开关互相独立。离线 CLI 从 `python_agent` 运行 `python -m scripts.evaluation.agent_drift_evaluate --scenarios benchmarks/skill_benchmark/drift-scenarios-v1.json --reviews <真实复核JSONL> --output <报告JSON>`，标签和实际结果分别提供，未知/未检查不得作为通过。
+
 工具执行治理的启动参数、故障注入、取消与熔断测试见 [工具治理验收](../reports/agent-tool-governance-20261018/README.md)。`RS_AGENT_TOOL_GOVERNANCE_ENABLED` 默认开启；执行超时与既有许可获取超时分开设置。关闭治理会旁路该包装器，不会移除 Capability 授权。期限从进入 Agent Loop 开始，排队、同步直达推荐及不响应取消的下游不能据此声称硬超时已覆盖。复跑本批测试不需正式模型、数据库或训练依赖。
 
 逐次请求版本摘要、真实 Spring AI HTTP 校验和 Java/Python 账本范围见 [请求指纹报告](../reports/agent-request-fingerprints-20261018/README.md)。复跑跨语言验收前先用 JDK21 对 Agent 执行 package，再显式设置 `RS_BENCHMARK_TEST_JAVA`；不要并行编译与读取类指纹。未接入回调的自定义评测 Adapter 应保留 `not_reported`。

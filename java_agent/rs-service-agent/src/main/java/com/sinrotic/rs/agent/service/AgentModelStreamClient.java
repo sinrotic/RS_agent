@@ -11,6 +11,10 @@ import java.util.function.Consumer;
 
 public interface AgentModelStreamClient {
 
+    default com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy reasoningPolicy() {
+        return com.sinrotic.rs.agent.service.impl.AgentReasoningPolicy.disabled();
+    }
+
     void streamAssistantEvents(
             String requestId,
             AgentChatRequestDTO request,

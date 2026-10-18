@@ -27,6 +27,8 @@ spring:
       base-url: ${RS_AGENT_OPENAI_BASE_URL:https://cpa2api.sinrotic233.com/v1}
       api-key: ${RS_AGENT_API_KEY:${RS_agent:}}
       chat:
+        # SDK 隐藏重试不能绕过逐次预留；预算开启时启动校验要求为 0。
+        max-retries: 0
         options:
           model: ${RS_AGENT_OPENAI_MODEL:gpt-5.3-codex-spark}
           temperature: ${RS_AGENT_OPENAI_TEMPERATURE:0.55}
@@ -90,6 +92,24 @@ rs:
         maximum-pool-size: ${RS_AGENT_MYSQL_MAXIMUM_POOL_SIZE:8}
         minimum-idle: ${RS_AGENT_MYSQL_MINIMUM_IDLE:2}
         connection-timeout-ms: ${RS_AGENT_MYSQL_CONNECTION_TIMEOUT_MS:3000}
+    reasoning:
+      budget-enabled: ${RS_AGENT_MODEL_BUDGET_ENABLED:true}
+      max-tokens: ${RS_AGENT_TURN_MAX_TOKENS:131072}
+      max-model-calls: ${RS_AGENT_TURN_MAX_MODEL_CALLS:32}
+      max-output-tokens: ${RS_AGENT_CALL_MAX_OUTPUT_TOKENS:4096}
+      input-padding-tokens: ${RS_AGENT_INPUT_PADDING_TOKENS:512}
+      # 费用为显式配置费率的估算；0 关闭费用上限，不表示实际免费。
+      max-usd: ${RS_AGENT_TURN_MAX_USD:0}
+      pricing-configured: ${RS_AGENT_PRICING_CONFIGURED:false}
+      priced-model: ${RS_AGENT_PRICED_MODEL:}
+      input-usd-per-million: ${RS_AGENT_INPUT_USD_PER_MILLION:0}
+      output-usd-per-million: ${RS_AGENT_OUTPUT_USD_PER_MILLION:0}
+      drift-enabled: ${RS_AGENT_DRIFT_ENABLED:true}
+      semantic-review-enabled: ${RS_AGENT_SEMANTIC_REVIEW_ENABLED:true}
+      review-every: ${RS_AGENT_DRIFT_REVIEW_EVERY:3}
+      max-drift-violations: ${RS_AGENT_MAX_DRIFT_VIOLATIONS:2}
+      review-max-tokens: ${RS_AGENT_DRIFT_REVIEW_MAX_TOKENS:256}
+      review-timeout-ms: ${RS_AGENT_DRIFT_REVIEW_TIMEOUT_MS:5000}
     tool-governance:
       enabled: ${RS_AGENT_TOOL_GOVERNANCE_ENABLED:true}
       max-attempts: ${RS_AGENT_TOOL_MAX_ATTEMPTS:2}

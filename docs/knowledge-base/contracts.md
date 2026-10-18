@@ -161,6 +161,8 @@ Python 当前有两类入口：
 
 ## 兼容性规则
 
+2026-10-18：受控 Spring AI Loop 新增内部 `model_budget_completed` 和 `drift_check_completed`，公开 SSE 投影仍过滤这两类事件。预算区分 `settled_tokens`、`held_tokens` 与 `unknown_usage_calls`；费用只在模型和费率显式匹配时提供配置费率估值，不等同供应商账单。`MODEL_BUDGET_*` / `MODEL_PRICE_UNKNOWN` 转成明确中断原因；漂移返回 `TOOL_SEMANTIC_DRIFT` 或 `TOOL_DRIFT_NOT_REVIEWED`，不替代 Capability 授权。模型调用观测通过 `call_kind=drift_check` 标记复核，平台 coverage basis 与 Python coverage_basis 改为 `observed_model_client_invocations_only`，包括已接入复核而不承诺全系统所有模型调用。Python 账本新增有界 `call_kinds` 分类统计。默认新行为、开关、调用范围与限制见 [预算与语义漂移验收](../reports/agent-budget-and-drift-20261018/README.md)。
+
 2026-10-18：Agent 工具结果的内部 metadata 新增 `governance`，包含 `category/attempts/elapsed_ms`；实际尝试完成时另含 `circuit_state/no_progress`。`TOOL_BUDGET_EXHAUSTED` 表示工具执行次数额度，不表示 token 或费用耗尽；`TOOL_CIRCUIT_OPEN`、`TOOL_TIMEOUT`、`TOOL_NO_PROGRESS`、`TOOL_FINAL_ANSWER_ONLY` 保持可区分。外置工具正文可附 `result_sha256`，只有完整摘要存在时，重复检查才忽略变化的 `result_ref`，回查参数中的引用仍参与比较。Skill 禁用返回 `SKILL_DISABLED`、`loaded=false`，不返回正文。公开 SSE 类型和现有展示投影保持原契约；这些内部字段不直接授权动作。接入范围、配置和行为测试见 [工具治理验收](../reports/agent-tool-governance-20261018/README.md)。
 
 1. 新增可选字段通常可以向后兼容；删除、重命名、改变类型或语义必须版本化或提供迁移窗口。

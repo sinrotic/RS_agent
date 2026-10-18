@@ -192,7 +192,8 @@ class SpringAiAgentModelStreamClientSmokeTest {
                         OpenAiChatAutoConfiguration.class, ChatClientAutoConfiguration.class))
                 .withUserConfiguration(AgentModelProviderConfiguration.class, InMemoryAgentRuntimeConfigurationService.class)
                 .withPropertyValues("rs.agent.model-provider.type=spring_ai", "rs.agent.model-provider.constrained-decoding-enabled=true",
-                        "spring.ai.model.chat=openai", "spring.ai.chat.client.tool-calling.enabled=false",
+                        "spring.ai.model.chat=openai",
+                            "spring.ai.openai.chat.max-retries=0", "spring.ai.chat.client.tool-calling.enabled=false",
                         "spring.ai.openai.base-url=http://127.0.0.1:" + port,
                         "spring.ai.openai.api-key=test-key", "spring.ai.openai.chat.options.model=mock-model",
                         "spring.ai.openai.custom-headers[X-provider-test]=kept");
@@ -302,6 +303,7 @@ class SpringAiAgentModelStreamClientSmokeTest {
                             "rs.agent.model-provider.final-answer-max-tokens=" + finalBudget,
                             "rs.agent.model-provider.compact-tool-schemas-enabled=" + compact,
                             "spring.ai.model.chat=openai",
+                            "spring.ai.openai.chat.max-retries=0",
                             "spring.ai.chat.client.tool-calling.enabled=false",
                             "spring.ai.openai.base-url=http://127.0.0.1:" + port,
                             "spring.ai.openai.api-key=test-key",
@@ -440,6 +442,7 @@ class SpringAiAgentModelStreamClientSmokeTest {
                     .withPropertyValues(
                             "rs.agent.model-provider.type=spring_ai",
                             "spring.ai.model.chat=openai",
+                            "spring.ai.openai.chat.max-retries=0",
                             "spring.ai.chat.client.tool-calling.enabled=false",
                             "spring.ai.openai.base-url=http://127.0.0.1:" + port,
                             "spring.ai.openai.api-key=test-key",
