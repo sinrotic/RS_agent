@@ -15,6 +15,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 class StreamingAgentToolUseOrchestratorTest {
 
     @Test
+    void cancellationBeforeTheRawFutureIsPublishedStillCancelsThatFuture() throws Exception {
+        var entered = new java.util.concurrent.CountDownLatch(1); var release = new java.util.concurrent.CountDownLatch(1);
+        var raw = new java.util.concurrent.CompletableFuture<Map<String, Object>>();
+        var run = new StreamingAgentToolUseOrchestrator(event -> {
+            entered.countDown(); try { release.await(); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+            return raw;
+        }).start();
+        var submission = java.util.concurrent.CompletableFuture.runAsync(() -> run.submit("call", AgentModelStreamEvent.toolUse("load_skill", Map.of())));
+        try {
+            assertThat(entered.await(1, java.util.concurrent.TimeUnit.SECONDS)).isTrue(); run.cancel(); release.countDown();
+            submission.get(1, java.util.concurrent.TimeUnit.SECONDS);
+            assertThat(raw.isCancelled()).isTrue();
+            assertThat(run.awaitResults()).hasSize(1);
+        } finally { release.countDown(); }
+    }
+
+    @Test
     void concurrentSafeToolsStartWithoutWaitingForEachOther() {
         AtomicInteger running = new AtomicInteger();
         AtomicInteger maxRunning = new AtomicInteger();

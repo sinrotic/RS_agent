@@ -44,6 +44,9 @@ class AgentToolResultExternalizer {
         Map<String, Object> compact = new LinkedHashMap<>(result);
         compact.remove("result");
         compact.putAll(referencePayload(resultRef, lines, "json"));
+        // 回查引用随调用变化；保留完整正文摘要，供无进展检查区别引用变化与隐藏内容刷新。
+        try { compact.put("result_sha256", AgentModelRequestFingerprint.sha256(result.get("result"))); }
+        catch (RuntimeException nonJson) { /* 缺摘要时仍保留引用差异，不猜测正文相同，也不破坏原有回查。 */ }
         return Map.copyOf(compact);
     }
 

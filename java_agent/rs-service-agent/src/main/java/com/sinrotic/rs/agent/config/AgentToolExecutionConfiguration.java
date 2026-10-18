@@ -8,11 +8,14 @@ import com.sinrotic.rs.agent.service.AgentToolResultStore;
 import com.sinrotic.rs.agent.service.AgentToolUseExecutor;
 import com.sinrotic.rs.agent.service.impl.AgentCapabilityToolUseExecutor;
 import com.sinrotic.rs.agent.service.impl.VirtualThreadAgentToolUseExecutor;
+import com.sinrotic.rs.agent.service.impl.GovernedAgentToolUseExecutor;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 @Configuration(proxyBeanMethods = false)
+@EnableConfigurationProperties(AgentToolGovernanceProperties.class)
 public class AgentToolExecutionConfiguration {
 
     @Bean(destroyMethod = "close")
@@ -31,7 +34,6 @@ public class AgentToolExecutionConfiguration {
     }
 
     @Bean
-    @Primary
     public AgentToolUseExecutor agentCapabilityToolUseExecutor(
             VirtualThreadAgentToolUseExecutor delegate,
             AgentCapabilityRegistry capabilityRegistry,
@@ -42,5 +44,14 @@ public class AgentToolExecutionConfiguration {
                 capabilityRegistry,
                 runtimeConfigurationService
         );
+    }
+
+    @Bean(destroyMethod = "close")
+    @Primary
+    public GovernedAgentToolUseExecutor governedAgentToolUseExecutor(
+            @org.springframework.beans.factory.annotation.Qualifier("agentCapabilityToolUseExecutor") AgentToolUseExecutor delegate,
+            AgentToolGovernanceProperties properties, AgentRuntimeConfigurationService runtime,
+            AgentCapabilityRegistry registry) {
+        return new GovernedAgentToolUseExecutor(delegate, properties, runtime, registry);
     }
 }

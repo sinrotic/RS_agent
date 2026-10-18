@@ -90,6 +90,16 @@ rs:
         maximum-pool-size: ${RS_AGENT_MYSQL_MAXIMUM_POOL_SIZE:8}
         minimum-idle: ${RS_AGENT_MYSQL_MINIMUM_IDLE:2}
         connection-timeout-ms: ${RS_AGENT_MYSQL_CONNECTION_TIMEOUT_MS:3000}
+    tool-governance:
+      enabled: ${RS_AGENT_TOOL_GOVERNANCE_ENABLED:true}
+      max-attempts: ${RS_AGENT_TOOL_MAX_ATTEMPTS:2}
+      max-attempts-per-turn: ${RS_AGENT_TOOL_MAX_ATTEMPTS_PER_TURN:32}
+      call-timeout-ms: ${RS_AGENT_TOOL_EXECUTION_TIMEOUT_MS:30000}
+      turn-timeout-ms: ${RS_AGENT_TURN_TIMEOUT_MS:120000}
+      retry-delay-ms: ${RS_AGENT_TOOL_RETRY_DELAY_MS:50}
+      no-progress-limit: ${RS_AGENT_TOOL_NO_PROGRESS_LIMIT:3}
+      circuit-failure-threshold: ${RS_AGENT_TOOL_CIRCUIT_FAILURE_THRESHOLD:3}
+      circuit-open-ms: ${RS_AGENT_TOOL_CIRCUIT_OPEN_MS:10000}
     trace:
       enabled: ${RS_AGENT_TRACE_ENABLED:false}
       queue-capacity: ${RS_AGENT_TRACE_QUEUE_CAPACITY:512}

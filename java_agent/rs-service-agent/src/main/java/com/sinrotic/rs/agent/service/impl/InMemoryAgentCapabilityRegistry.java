@@ -80,7 +80,10 @@ public class InMemoryAgentCapabilityRegistry implements AgentCapabilityRegistry 
         try {
             return record(request, capability.execute(request));
         } catch (RuntimeException error) {
-            return record(request, AgentCapabilityResult.failure(descriptor.id(), "CAPABILITY_EXECUTION_FAILED", error.getMessage()));
+            var category = AgentToolFailure.from(error);
+            return record(request, AgentCapabilityResult.failure(descriptor.id(),
+                    category == AgentToolFailure.UNKNOWN ? "CAPABILITY_EXECUTION_FAILED" : category.code(),
+                    category == AgentToolFailure.UNKNOWN ? error.getMessage() : "Tool execution failed: " + category.name()));
         }
     }
 

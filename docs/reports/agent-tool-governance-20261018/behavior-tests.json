@@ -1,0 +1,146 @@
+{
+  "scope": "Skill 禁用、工具治理、取消及生产装配行为回归",
+  "count": 28,
+  "cases": [
+    {
+      "class": "com.sinrotic.rs.agent.service.AgentToolExecutionConfigurationTest",
+      "method": "exposesGovernanceWrappingTheCapabilityGuardAsThePrimaryToolExecutor",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "closedTurnDoesNotLaterInterruptItsContextOrTheNextTurn",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "externalizedResultReferencesDoNotHideRepeatsOrDiscardChangesBeyondThePreview",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "attemptsAreSharedAcrossCallsInATurnAndUnknownResultsDoNotResetTheBudget",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "callerCancellationPropagatesToTheWorkerAndDoesNotTripTheDependency",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "replaySafeTemporaryFailuresRetryButValidationAuthorizationAndUnknownFailuresDoNot",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "noProgressEntersFinalAnswerModeAndTheModelCannotBypassTheExecutionGate",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "unchangedEvidenceStopsButPaginationUpdatedResultsAndNewTurnsRemainUsable",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "turnDeadlineAlsoStopsAWaitingModel",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "parallelToolsShareOneAttemptBudgetRatherThanReadingTheSameRemainingValue",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "aWorkerIgnoringInterruptKeepsItsPermitUntilItActuallyExitsAndIsNotRetried",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "timeoutInterruptsTheActualWorkerAndReleasesCapacityWithoutRetrying",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "circuitIsSharedBetweenTurnsAndOnlyOneRecoveryProbeRuns",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+      "method": "nonReplaySafeAndRevokedToolsCannotBeAutomaticallyRetried",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.impl.AgentToolCircuitBreakerTest",
+      "method": "oneProbeIsAdmittedAndStaleResultsCannotCloseOrReopenAnotherEpoch",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.impl.AgentToolCircuitBreakerTest",
+      "method": "businessRejectionsDoNotTripTheCircuitAndCancelledProbeDoesNotReleaseTraffic",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.SkillDisableExecutionTest",
+      "method": "anOldExplicitNameCannotLoadDisabledContentAndReenableUsesCurrentContent",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.SkillDisableExecutionTest",
+      "method": "disableWhileWaitingForCapacityIsCheckedWhenTheToolActuallyRuns",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.StreamingAgentToolUseOrchestratorTest",
+      "method": "serialToolWaitsForPreviousToolsAndBlocksLaterConcurrentTools",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.StreamingAgentToolUseOrchestratorTest",
+      "method": "cancellationBeforeTheRawFutureIsPublishedStillCancelsThatFuture",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.StreamingAgentToolUseOrchestratorTest",
+      "method": "concurrentSafeToolsStartWithoutWaitingForEachOther",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.ToolGovernanceHttpTest",
+      "method": "actualHttp503RetriesAnAllowedReadBut401AndMalformedResponsesDoNot",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.ToolGovernanceHttpTest",
+      "method": "capabilityErrorClassificationSurvivesTheRegistryAndEveryRetryIsReauthorized",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.VirtualThreadAgentToolUseExecutorTest",
+      "method": "ragSupportToolUseDelegatesToRagAgentOnVirtualThread",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.VirtualThreadAgentToolUseExecutorTest",
+      "method": "renderProductCardsReturnsCardSetForSelectedItemsOnVirtualThread",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.VirtualThreadAgentToolUseExecutorTest",
+      "method": "ragEvidenceSearchToolUseDelegatesToRagAgentOnVirtualThread",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.VirtualThreadAgentToolUseExecutorTest",
+      "method": "callAgentToolUseDelegatesToRagAgentOnVirtualThread",
+      "status": "passed"
+    },
+    {
+      "class": "com.sinrotic.rs.agent.service.VirtualThreadAgentToolUseExecutorTest",
+      "method": "loadSkillToolUseReturnsSkillContentOnVirtualThread",
+      "status": "passed"
+    }
+  ]
+}

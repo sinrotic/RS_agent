@@ -135,6 +135,7 @@ public class StreamingAgentToolUseOrchestrator implements AgentToolUseOrchestrat
             }
             CompletableFuture<Map<String, Object>> rawFuture = toolUseExecutor.execute(event);
             rawFutures.add(rawFuture);
+            if (cancelled.get()) rawFuture.cancel(true);
             return rawFuture.handle((metadata, error) -> new AgentToolUseResult(
                     toolCallId,
                     event,

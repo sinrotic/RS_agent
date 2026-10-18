@@ -230,6 +230,8 @@ Set-Location python_agent
 
 ## 完成一次迭代的最小清单
 
+工具执行治理的启动参数、故障注入、取消与熔断测试见 [工具治理验收](../reports/agent-tool-governance-20261018/README.md)。`RS_AGENT_TOOL_GOVERNANCE_ENABLED` 默认开启；执行超时与既有许可获取超时分开设置。关闭治理会旁路该包装器，不会移除 Capability 授权。期限从进入 Agent Loop 开始，排队、同步直达推荐及不响应取消的下游不能据此声称硬超时已覆盖。复跑本批测试不需正式模型、数据库或训练依赖。
+
 逐次请求版本摘要、真实 Spring AI HTTP 校验和 Java/Python 账本范围见 [请求指纹报告](../reports/agent-request-fingerprints-20261018/README.md)。复跑跨语言验收前先用 JDK21 对 Agent 执行 package，再显式设置 `RS_BENCHMARK_TEST_JAVA`；不要并行编译与读取类指纹。未接入回调的自定义评测 Adapter 应保留 `not_reported`。
 
 2026-10-18 起，个人推荐 Agent 的固定多轮 API 验收及计量口径见 [本地基线](../reports/agent-capability-baseline-20261018/README.md)。真实模型尝试的逐次观测、Skill Benchmark 用量账本与 Trace 有界导出参数见 [P1 首批实现](../reports/agent-model-observation-20261018/README.md)。平台现已接入最终调用账本和覆盖率，缺失或提前停止的未确认用量不能当作 0；独立 OTLP/Langfuse 开关、外发字段控制与本地验收见 [平台计量及 OTLP 报告](../reports/agent-otlp-and-usage-20261018/README.md)。外部导出默认关闭，真实远程验收和运维指标注册仍待补齐。

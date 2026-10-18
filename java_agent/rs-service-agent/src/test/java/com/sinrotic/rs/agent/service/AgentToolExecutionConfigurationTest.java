@@ -2,7 +2,6 @@ package com.sinrotic.rs.agent.service;
 
 import com.sinrotic.rs.agent.config.AgentToolExecutionConfiguration;
 import com.sinrotic.rs.agent.config.AgentExecutionProperties;
-import com.sinrotic.rs.agent.service.impl.AgentCapabilityToolUseExecutor;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentCapabilityRegistry;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentRuntimeConfigurationService;
 import com.sinrotic.rs.agent.service.impl.InMemoryAgentToolResultStore;
@@ -16,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class AgentToolExecutionConfigurationTest {
 
     @Test
-    void exposesCapabilityGuardAsThePrimaryToolExecutor() {
+    void exposesGovernanceWrappingTheCapabilityGuardAsThePrimaryToolExecutor() {
         try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
             context.registerBean(AgentRuntimeConfigurationService.class, () -> new InMemoryAgentRuntimeConfigurationService());
             context.registerBean(AgentDelegateService.class, () -> (requestId, agentName, arguments) -> Map.of());
@@ -27,7 +26,7 @@ class AgentToolExecutionConfigurationTest {
             context.refresh();
 
             assertThat(context.getBean(AgentToolUseExecutor.class))
-                    .isInstanceOf(AgentCapabilityToolUseExecutor.class);
+                    .isInstanceOf(com.sinrotic.rs.agent.service.impl.GovernedAgentToolUseExecutor.class);
         }
     }
 }

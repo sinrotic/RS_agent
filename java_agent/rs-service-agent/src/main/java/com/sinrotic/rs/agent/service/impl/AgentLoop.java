@@ -57,7 +57,7 @@ public abstract class AgentLoop {
 
     private final AgentRuntimeConfigurationService runtimeConfigurationService;
 
-    private final AgentToolUseOrchestrator toolUseOrchestrator;
+    private final AgentToolUseExecutor toolUseExecutor;
 
     private final AgentModelStreamClient modelStreamClient;
 
@@ -132,7 +132,7 @@ public abstract class AgentLoop {
     ) {
         this.profile = profile;
         this.runtimeConfigurationService = runtimeConfigurationService;
-        this.toolUseOrchestrator = new StreamingAgentToolUseOrchestrator(toolUseExecutor);
+        this.toolUseExecutor = toolUseExecutor;
         this.modelStreamClient = modelStreamClient;
         this.executionLimiter = executionLimiter == null ? new AgentExecutionLimiter(new AgentExecutionProperties()) : executionLimiter;
         this.hookDispatcher = hookDispatcher == null ? new NoopAgentLoopHookDispatcher() : hookDispatcher;
@@ -180,7 +180,8 @@ public abstract class AgentLoop {
                 AgentLoopTransition.complete(AgentFinishReason.FINAL_ANSWER),
                 null
         ));
-        try {
+        try (var turnTools = toolUseExecutor.openTurn(interruptContext)) {
+            var toolUseOrchestrator = new StreamingAgentToolUseOrchestrator(turnTools);
             onReady.run();
             AgentChatRequestDTO loopRequest = withRuntimeContext(request);
             state.set(state.get().withRequest(loopRequest).withPhase(AgentLoopPhase.SESSION_START_HOOK));
@@ -212,7 +213,10 @@ public abstract class AgentLoop {
                     );
                     long failures = toolCalls.stream().filter(call -> Set.of("FAILED", "ERROR", "UNAVAILABLE")
                             .contains(call.status())).count();
-                    if ((loopIndex == maxLoops() - 1 && !toolResults.isEmpty())
+                    boolean executionLimit = toolResults.stream().anyMatch(result -> result.get("metadata") instanceof Map<?, ?> metadata
+                            && (Set.of("TOOL_BUDGET_EXHAUSTED", "TOOL_NO_PROGRESS").contains(String.valueOf(metadata.get("error_code")))
+                            || metadata.get("governance") instanceof Map<?, ?> governance && Boolean.TRUE.equals(governance.get("no_progress"))));
+                    if (executionLimit || (loopIndex == maxLoops() - 1 && !toolResults.isEmpty())
                             || failures >= MAX_FAILED_TOOLS_PER_TURN) {
                         var finalContext = new java.util.LinkedHashMap<String, Object>(loopRequest.resolvedContext());
                         finalContext.put("final_answer_only", true);
@@ -273,6 +277,11 @@ public abstract class AgentLoop {
                                     "tool_name", toolEvent.toolName(),
                                     "arguments", toolEvent.arguments()
                             )));
+                            if (Boolean.TRUE.equals(currentLoopRequest.resolvedContext().get("final_answer_only"))) {
+                                toolRun.complete(toolCallId, toolEvent, Map.of("status", "FAILED", "error_code", "TOOL_FINAL_ANSWER_ONLY",
+                                        "error_message", "Only the final answer is allowed after execution limits"));
+                                return;
+                            }
                             throwIfInterrupted(interruptContext);
                             if (preToolHook.blocked()) {
                                 AgentToolCallVO toolCall = blockedToolCall(toolCallId, toolEvent, preToolHook.message());

@@ -1,6 +1,7 @@
 package com.sinrotic.rs.agent.service.impl;
 
 import com.sinrotic.rs.agent.service.AgentModelProviderHttpClient;
+import com.sinrotic.rs.agent.service.AgentToolDependencyException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,7 +29,7 @@ public class JavaNetAgentModelProviderHttpClient implements AgentModelProviderHt
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException("model provider returned HTTP " + response.statusCode());
+                throw new AgentToolDependencyException(response.statusCode());
             }
             return response.body();
         } catch (IOException ex) {
@@ -49,10 +50,10 @@ public class JavaNetAgentModelProviderHttpClient implements AgentModelProviderHt
                 .build();
         try {
             HttpResponse<Stream<String>> response = httpClient.send(request, HttpResponse.BodyHandlers.ofLines());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException("model provider returned HTTP " + response.statusCode());
-            }
             try (Stream<String> lines = response.body()) {
+                if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                    throw new AgentToolDependencyException(response.statusCode());
+                }
                 lines.forEach(lineConsumer);
             }
         } catch (IOException ex) {

@@ -1,0 +1,534 @@
+{
+  "date": "2026-10-18",
+  "scope": "skill-disable-and-agent-tool-execution-governance",
+  "skill_fix_commit": "b88167ea",
+  "java_agent_package": {
+    "command": "mvn -B -f java_agent/pom.xml package",
+    "scope": "最终全量构建中的 rs-service-agent 模块",
+    "earlier_focused_command": "mvn -B -f java_agent/pom.xml -pl rs-service-agent -am package",
+    "exit_code": 0,
+    "totals": {
+      "tests": 283,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "suites": [
+      {
+        "suite": "com.sinrotic.rs.agent.config.AgentDelegatePropertiesTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.config.AgentMysqlPoolTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.config.AgentSessionSchemaValidatorTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.config.JacksonConfigTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.controller.app.AgentChatControllerTest",
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.controller.app.AgentInterruptOwnershipTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.controller.platform.PlatformAgentRuntimeControllerTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.controller.platform.PlatformAgentTraceControllerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.A2uiMessageProjectorTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentCapabilityConfigurationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentCapabilityRegistryTest",
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentCapabilityToolUseExecutorTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentDependencyReadinessTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentDirectRecommendationTest",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentEffectiveContextServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentExecutionLimiterTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentLoopHookDispatcherTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentLoopTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentModelCallObservationTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentModelProviderConfigurationTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentModelRequestFingerprintTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentProjectionTransactionTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentServiceCompletionTest",
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentSessionColdLoadServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentSessionCompactionServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentSessionExpirationArchiveServiceTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentSessionPersistenceFlowTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentSessionTurnSchedulerTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentTemplateConfigurationTest",
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentToolExecutionConfigurationTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentToolResultSegmentToolTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentTraceReporterConfigurationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.AgentTranscriptRecoveryServiceTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.CapabilityToolOrchestrationTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.GovernedAgentToolUseExecutorTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.HttpAgentDelegateServiceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.HttpAgentRecommendationClientTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.HttpAgentSessionAdmissionClientTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.HttpAgentTraceReporterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.impl.AgentToolCircuitBreakerTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.impl.SessionLaneRaceTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.InMemoryAgentOrchestrationServiceTest",
+        "tests": 14,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.InMemoryAgentRuntimeConfigurationServiceTest",
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.JdbcAgentSessionProjectionStoreTest",
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.LocalVllmConstrainedDecodingSmokeTest",
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 1
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.MysqlAgentMemoryIndexStoreTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.OnlineEvaluationShadowTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.OtlpAgentTraceEncoderTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.OtlpAgentTraceReporterTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.PublicAgentResponseProjectorTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.PublicAgentStreamProjectorTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.RedisAgentHotSessionStoreTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.RedisAgentToolResultStoreTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.ScyllaAgentMemoryItemStoreTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.ScyllaAgentTranscriptStoreTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.SkillDisableExecutionTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.SpringAiAgentModelStreamCancellationTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.SpringAiAgentModelStreamClientSmokeTest",
+        "tests": 16,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.SpringAiAgentToolCallbackFactoryTest",
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.SpringAiChatResponseMapperTest",
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.StreamingAgentToolUseOrchestratorTest",
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.ToolGovernanceHttpTest",
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      {
+        "suite": "com.sinrotic.rs.agent.service.VirtualThreadAgentToolUseExecutorTest",
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    ]
+  },
+  "java_full_reactor": {
+    "command": "mvn -B -f java_agent/pom.xml package",
+    "exit_code": 0,
+    "successful_reactor_projects": 14,
+    "totals": {
+      "tests": 773,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 1
+    },
+    "basis": "本轮 Maven 日志每个模块的最终 Results 汇总",
+    "earlier_full_test_command": "mvn -B -f java_agent/pom.xml test"
+  },
+  "root_contracts": {
+    "command": "pytest tests -q",
+    "passed": 56,
+    "exit_code": 0
+  },
+  "python_java_interop": {
+    "command": "pytest tests/test_skill_benchmark.py tests/test_agent_execution_metrics.py -q",
+    "passed": 42,
+    "exit_code": 0,
+    "java": "explicit Corretto JDK21 after package; no concurrent compilation",
+    "scope": "自定义 benchmark Adapter 与账本；生产治理另由实际 Loop/装配/HTTP 测试验证"
+  },
+  "configuration": {
+    "versioned_governance_keys_checked": 9,
+    "files": [
+      "application.yml",
+      "docker-compose.yml",
+      ".env.example"
+    ],
+    "status": "matched_defaults_and_wiring",
+    "runtime_probe": false
+  },
+  "behavior_suite_cases": 28,
+  "not_run": [
+    "前端回归（未修改）",
+    "正式模型效果/性能实验",
+    "训练",
+    "远程部署与生产接收验收"
+  ],
+  "limits": [
+    "token/费用原子预留未完成",
+    "语义漂移未完成",
+    "已加载 Skill 正文撤销未完成",
+    "直达推荐和 Recommend 内部依赖未由工具包装器完整治理",
+    "忽略中断的物理任务不提前释放许可"
+  ],
+  "known_engineering_contract_violations": {
+    "count": 36,
+    "basis": "既有基线；本批未修复或重新计数"
+  },
+  "course_comparison": {
+    "chapters": [
+      "16-4",
+      "16-5",
+      "17-2",
+      "17-3",
+      "19-5"
+    ],
+    "reading_scope": "本批浏览器可见课程目标、导言与首节，不是全文验收",
+    "completed_plan_items": [
+      "P2.2",
+      "P2.3"
+    ],
+    "overall_plan": "incomplete"
+  },
+  "artifact_verification": {
+    "source_hashes": "matched",
+    "compiled_classes_in_packaged_jar": "matched",
+    "local_document_links_checked": 45,
+    "git_diff_check": "passed"
+  }
+}
