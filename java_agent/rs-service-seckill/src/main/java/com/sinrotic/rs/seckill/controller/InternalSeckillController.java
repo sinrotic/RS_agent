@@ -9,6 +9,8 @@ public class InternalSeckillController {
     public InternalSeckillController(SeckillService service) { this.service=service; }
     @PostMapping("/internal/seckill/activities")
     public void create(@RequestBody SeckillService.Activity activity) { service.createActivity(activity); }
+    @GetMapping("/internal/seckill/activities")
+    public com.sinrotic.rs.common.commerce.CommerceInput.Page<java.util.Map<String,Object>> activities(@RequestParam(required=false) String afterId,@RequestParam(defaultValue="20") int limit) {return service.managementActivities(afterId,limit);}
     @GetMapping("/internal/seckill/tasks")
     public java.util.List<SeckillService.TaskView> tasks(@RequestParam(defaultValue="60") int minimumAgeSeconds) {
         return service.stalledTasks(minimumAgeSeconds);

@@ -1,0 +1,200 @@
+# 独立环境；八个 Java 服务 + 三副本 Kafka + MySQL/Redis 副本约 5.8GB 内存上限。
+x-app: &app
+  image: eclipse-temurin:21-jre
+  mem_limit: 320m
+  volumes:
+    - ${RS_IT_JAR_DIR:?运行器生成}:/app:ro
+    - ./gateway-integration.yml:/config/gateway.yml:ro
+  environment: &env
+    JAVA_TOOL_OPTIONS: -Xms32m -Xmx144m -XX:ActiveProcessorCount=2
+    SPRING_CLOUD_NACOS_DISCOVERY_ENABLED: "false"
+    SPRING_CLOUD_DISCOVERY_ENABLED: "false"
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/rs_agent?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    SPRING_DATASOURCE_USERNAME: root
+    SPRING_DATASOURCE_PASSWORD: ${RS_IT_DB_PASSWORD:?运行器生成}
+    SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "4"
+    SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "1"
+    SPRING_DATA_REDIS_HOST: redis
+    SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092,kafka-2:9092,kafka-3:9092
+    RS_INVENTORY_BASE_URL: http://inventory:8092
+    RS_PROMOTION_BASE_URL: http://promotion:8095
+    RS_ORDER_BASE_URL: http://order:8091
+    RS_PAYMENT_BASE_URL: http://payment:8093
+    RS_RECOMMEND_BASE_URL: http://recommend:18103
+    RS_SECKILL_BASE_URL: http://seckill:8094
+    RS_COMMERCE_SERVICE_TOKEN: ${RS_COMMERCE_SERVICE_TOKEN:?运行器生成}
+    RS_COMMERCE_OPERATIONS_READ_TOKEN: ${RS_COMMERCE_OPS_READ_TOKEN:?运行器生成}
+    RS_COMMERCE_OPERATIONS_WRITE_TOKEN: ${RS_COMMERCE_OPS_WRITE_TOKEN:?运行器生成}
+    RS_COMMERCE_OPERATIONS_OPERATOR_ID: integration-operator
+    RS_CHECKOUT_MOCK_PAYMENT_ENABLED: "true"
+    RS_PAYMENT_MOCK_REFUND_ENABLED: "true"
+    RS_PAYMENT_MOCK_CALLBACK_SECRET: ${RS_PAYMENT_MOCK_CALLBACK_SECRET:?运行器生成}
+    RS_CHECKOUT_WORKER_CONCURRENCY: "2"
+    RS_SECKILL_WORKER_PUBLISH_CONCURRENCY: "2"
+    RS_SECKILL_WORKER_RECONCILE_CONCURRENCY: "2"
+    MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,prometheus
+  depends_on:
+    mysql: {condition: service_healthy}
+    redis: {condition: service_healthy}
+    kafka-init: {condition: service_completed_successfully}
+x-mysql: &mysql
+  image: mysql:8.0
+  mem_limit: 512m
+  environment:
+    MYSQL_ROOT_PASSWORD: ${RS_IT_DB_PASSWORD:?运行器生成}
+    MYSQL_ROOT_HOST: "%"
+    MYSQL_DATABASE: rs_agent
+  healthcheck:
+    test: [CMD-SHELL, 'MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -e "SELECT 1" >/dev/null 2>&1']
+    interval: 3s
+    timeout: 3s
+    retries: 60
+x-kafka: &kafka
+  image: apache/kafka:3.9.1
+  mem_limit: 448m
+  environment: &kafka-env
+    CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    KAFKA_NODE_ID: 1
+    KAFKA_PROCESS_ROLES: broker,controller
+    KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+    KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093,2@kafka-2:9093,3@kafka-3:9093
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
+    KAFKA_MIN_INSYNC_REPLICAS: 2
+    KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    KAFKA_HEAP_OPTS: -Xms128m -Xmx192m -XX:ActiveProcessorCount=2
+  healthcheck:
+    test: [CMD-SHELL, '/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null']
+    interval: 5s
+    timeout: 10s
+    retries: 40
+services:
+  mysql:
+    <<: *mysql
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=128M", "--server-id=1", "--log-bin=mysql-bin", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+    volumes:
+      - ../../../sql/rs_service_trade_schema.sql:/docker-entrypoint-initdb.d/01-trade.sql:ro
+      - ../../../sql/rs_service_commerce_v1_schema.sql:/docker-entrypoint-initdb.d/02-commerce.sql:ro
+      - ../../../sql/rs_service_user_schema.sql:/docker-entrypoint-initdb.d/03-user.sql:ro
+      - ../../../sql/rs_service_recommend_schema.sql:/docker-entrypoint-initdb.d/04-recommend.sql:ro
+      - ./fullstack-fixture.sql:/docker-entrypoint-initdb.d/05-fixture.sql:ro
+  mysql-replica:
+    <<: *mysql
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=128M", "--server-id=2", "--log-bin=mysql-bin", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+  mysql-restore:
+    <<: *mysql
+    profiles: [restore]
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M", "--server-id=3", "--log-bin=mysql-bin", "--gtid-mode=ON", "--enforce-gtid-consistency=ON"]
+  redis:
+    image: redis:7.2-alpine
+    mem_limit: 96m
+    command: [redis-server, --maxmemory, 48mb, --maxmemory-policy, noeviction]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+  redis-replica:
+    image: redis:7.2-alpine
+    mem_limit: 96m
+    command: [redis-server, --replicaof, redis, "6379", --maxmemory, 48mb, --maxmemory-policy, noeviction]
+    depends_on:
+      redis: {condition: service_healthy}
+  kafka: {<<: *kafka}
+  kafka-2:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 2
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
+  kafka-3:
+    <<: *kafka
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: 3
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
+  kafka-init:
+    image: apache/kafka:3.9.1
+    mem_limit: 256m
+    entrypoint: ["/bin/bash", "/scripts/init-commerce-topics.sh"]
+    volumes: ["../../remote/infra/init-commerce-topics.sh:/scripts/init-commerce-topics.sh:ro"]
+    environment:
+      RS_KAFKA_BOOTSTRAP_SERVERS: kafka:9092,kafka-2:9092,kafka-3:9092
+      RS_COMMERCE_KAFKA_PARTITIONS: 3
+      RS_COMMERCE_KAFKA_REPLICAS: 3
+      KAFKA_HEAP_OPTS: -Xmx128m
+    depends_on:
+      kafka: {condition: service_healthy}
+      kafka-2: {condition: service_healthy}
+      kafka-3: {condition: service_healthy}
+  inventory:
+    <<: *app
+    command: [java, -jar, /app/rs-service-inventory.jar]
+    ports: ["127.0.0.1:24492:8092"]
+  promotion:
+    <<: *app
+    command: [java, -jar, /app/rs-service-promotion-exec.jar]
+    ports: ["127.0.0.1:24495:8095"]
+  order:
+    <<: *app
+    command: [java, -jar, /app/rs-service-order.jar]
+    ports: ["127.0.0.1:24491:8091"]
+  payment:
+    <<: *app
+    command: [java, -jar, /app/rs-service-payment.jar]
+    ports: ["127.0.0.1:24493:8093"]
+  seckill:
+    <<: *app
+    command: [java, -jar, /app/rs-service-seckill.jar]
+    ports: ["127.0.0.1:24494:8094"]
+  user:
+    <<: *app
+    command: [java, -jar, /app/rs-service-user.jar]
+    environment:
+      <<: *env
+      SERVER_PORT: 18101
+      RS_AUTH_TOKEN_STORE_TYPE: redis
+    ports: ["127.0.0.1:24401:18101"]
+  recommend:
+    <<: *app
+    command: [java, -jar, /app/rs-service-recommend.jar]
+    environment:
+      <<: *env
+      SERVER_PORT: 18103
+      RS_RECOMMEND_FEEDBACK_PERSISTENCE: jdbc
+      RS_RECOMMEND_FEEDBACK_JDBC_URL: jdbc:mysql://mysql:3306/rs_agent?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      RS_RECOMMEND_FEEDBACK_JDBC_USERNAME: root
+      RS_RECOMMEND_FEEDBACK_JDBC_PASSWORD: ${RS_IT_DB_PASSWORD}
+      RS_RECOMMEND_FEEDBACK_JDBC_MAXIMUM_POOL_SIZE: "4"
+      RS_RECOMMEND_FEEDBACK_JDBC_MINIMUM_IDLE: "1"
+      RS_RECOMMEND_COMMERCE_ENABLED: "true"
+    ports: ["127.0.0.1:24403:18103"]
+  gateway:
+    <<: *app
+    command: [java, -jar, /app/rs-api-gateway.jar]
+    environment:
+      <<: *env
+      SERVER_PORT: 18088
+      SPRING_CONFIG_ADDITIONAL_LOCATION: file:/config/gateway.yml
+      RS_GATEWAY_AUTH_TOKEN_VALIDATION: redis
+      RS_GATEWAY_MAX_REQUESTS_PER_MINUTE: "100000"
+    ports: ["127.0.0.1:24488:18088"]
+  webhook:
+    image: python:3.12-alpine
+    profiles: [notifications]
+    mem_limit: 64m
+    command: [python, /scripts/notification-sink.py]
+    volumes:
+      - ./notification-sink.py:/scripts/notification-sink.py:ro
+      - ${RS_IT_OUTPUT_DIR:?运行器生成}:/output
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    profiles: [notifications]
+    mem_limit: 96m
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml"]
+    volumes: ["./alertmanager-integration.yml:/etc/alertmanager/alertmanager.yml:ro"]
+    ports: ["127.0.0.1:24499:9093"]

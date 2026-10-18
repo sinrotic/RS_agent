@@ -37,6 +37,12 @@ groups:
         labels: { severity: warning }
         annotations:
           summary: "秒杀死信 topic 存在记录，需核对处理情况"
+      - alert: RsCommerceDatabasePoolWaiting
+        expr: hikaricp_connections_pending{job="rs-commerce-java"} > 0
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "交易服务持续等待数据库连接：{{ $labels.instance }}"
   - name: rs-service-reliability
     rules:
       - alert: RsServiceUnavailable
@@ -46,7 +52,7 @@ groups:
         annotations:
           summary: "RS 服务指标入口不可达：{{ $labels.instance }}"
       - alert: RsHttpServerErrorRate
-        expr: sum by (instance) (rate(http_server_requests_seconds_count{job="rs-agent-java",status=~"5.."}[5m])) / clamp_min(sum by (instance) (rate(http_server_requests_seconds_count{job="rs-agent-java"}[5m])), 0.001) > 0.05
+        expr: sum by (instance) (rate(http_server_requests_seconds_count{job=~"rs-agent-java|rs-commerce-java",status=~"5.."}[5m])) / clamp_min(sum by (instance) (rate(http_server_requests_seconds_count{job=~"rs-agent-java|rs-commerce-java"}[5m])), 0.001) > 0.05
         for: 5m
         labels: { severity: warning }
         annotations:

@@ -11,6 +11,9 @@ import org.springframework.web.client.RestClient;
 public class RestInventoryClient implements InventoryClient {
 
     private final RestClient restClient;
+    @Override public void refund(String requestId,Long orderId,String skuId,Integer quantity) {
+        restClient.post().uri("/internal/inventory/refund").body(new InventoryReleaseRequestDTO(requestId,orderId,skuId,quantity)).retrieve().toBodilessEntity();
+    }
     public record ActivityMovement(String activityId,long orderId,String skuId,int quantity) {}
     @Override
     public void activity(String action,String activityId,Long orderId,String skuId,Integer quantity) {

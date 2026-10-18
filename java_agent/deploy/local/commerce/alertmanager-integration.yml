@@ -1,0 +1,11 @@
+route:
+  receiver: isolated-webhook
+  group_by: [alertname]
+  group_wait: 1s
+  group_interval: 1s
+  repeat_interval: 1h
+receivers:
+  - name: isolated-webhook
+    webhook_configs:
+      - url: http://webhook:8080/alerts
+        send_resolved: true

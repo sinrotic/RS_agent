@@ -160,6 +160,16 @@ public class CheckoutService {
         text(accountId);
         return views("w.account_id = ? ORDER BY w.created_at DESC, w.order_id DESC LIMIT 50",accountId);
     }
+    public com.sinrotic.rs.common.commerce.CommerceInput.Page<OrderView> page(String accountId,Long beforeId,String itemId,int limit) {
+        text(accountId);com.sinrotic.rs.common.commerce.CommerceInput.limit(limit);optional(itemId);
+        if(beforeId!=null && beforeId<=0) throw bad("订单游标不合法");
+        var args=new java.util.ArrayList<Object>();args.add(accountId);args.add(beforeId==null ? Long.MAX_VALUE : beforeId);
+        String filter="w.account_id=? AND w.order_id<?";
+        if(itemId!=null) {filter+=" AND i.item_id=?";args.add(itemId);}
+        args.add(limit+1);var found=views(filter+" ORDER BY w.order_id DESC LIMIT ?",args.toArray());
+        boolean more=found.size()>limit;var items=more ? found.subList(0,limit) : found;
+        return new com.sinrotic.rs.common.commerce.CommerceInput.Page<>(items,more ? Long.toString(items.getLast().orderId()) : null);
+    }
     public OrderView get(String accountId, long orderId) {
         text(accountId);
         var rows = views("w.account_id = ? AND w.order_id = ?",accountId,orderId);
@@ -184,7 +194,14 @@ public class CheckoutService {
         text(provider);
         if (transactionId == null || transactionId.isBlank() || transactionId.length() > 128) throw bad("支付流水不合法");
         if (amount == null || amount <= 0) throw conflict("支付金额与订单应付金额不符");
-        transition(orderId,"PAID",true,amount);
+        tx.executeWithoutResult(s -> {
+            transition(orderId,"PAID",true,amount);
+            var previous=jdbc.queryForList("SELECT * FROM checkout_payment_fact WHERE order_id=?",orderId);
+            if(previous.isEmpty()) jdbc.update("INSERT INTO checkout_payment_fact(order_id,provider,transaction_id,amount,mock,created_at) VALUES (?,?,?,?,?,?)",orderId,provider,transactionId,amount,"mock".equalsIgnoreCase(provider),now());
+            else if(!provider.equals(previous.getFirst().get("provider")) || !transactionId.equals(previous.getFirst().get("transaction_id"))
+                    || amount!=((Number)previous.getFirst().get("amount")).longValue()) throw conflict("支付事实与原流水不一致");
+            OrderTradeEvents.append(jdbc,orderId,"PAID",now());
+        });
     }
     public void closeTimeout(long orderId) {
         var expiry = jdbc.queryForList("SELECT expires_at FROM checkout_workflow WHERE order_id = ? AND expires_at <= ?",orderId,now());

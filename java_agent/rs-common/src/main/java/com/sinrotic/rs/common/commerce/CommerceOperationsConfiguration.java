@@ -44,7 +44,7 @@ public class CommerceOperationsConfiguration {
         @Override protected boolean shouldNotFilter(HttpServletRequest request) {
             String path=request.getServletPath();
             if(path.isEmpty()) path=request.getRequestURI().substring(request.getContextPath().length());
-            return !path.matches("/internal/(checkout/tasks|payment/notifications|seckill/(tasks|allocations|activities))(/.*)?");
+            return !path.matches("/internal/(checkout/(tasks|refunds|events|offers)|payment/notifications|seckill/(tasks|allocations|activities)|inventory/management|promotions/campaigns)(/.*)?");
         }
         @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
             String header=request.getHeader("Authorization");

@@ -25,6 +25,11 @@ public class CheckoutController {
             @RequestBody CheckoutService.CreateRequest request) { return service.create(accountId,profileId,request); }
     @GetMapping("/orders")
     public List<CheckoutService.OrderView> list(@RequestHeader("X-Account-Id") String accountId) { return service.list(accountId); }
+    @GetMapping("/orders/page")
+    public com.sinrotic.rs.common.commerce.CommerceInput.Page<CheckoutService.OrderView> page(@RequestHeader("X-Account-Id") String accountId,
+            @RequestParam(required=false) Long beforeId,@RequestParam(required=false) String itemId,@RequestParam(defaultValue="20") int limit) {
+        return service.page(accountId,beforeId,itemId,limit);
+    }
     @GetMapping("/orders/{orderId}")
     public CheckoutService.OrderView get(@RequestHeader("X-Account-Id") String accountId,@PathVariable long orderId) {
         return service.get(accountId,orderId);

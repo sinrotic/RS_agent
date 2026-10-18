@@ -50,7 +50,7 @@ public class SeckillService {
     private final ExecutorService reconcilers;
     private final java.util.concurrent.locks.ReentrantLock dispatchLock=new java.util.concurrent.locks.ReentrantLock();
     private final java.util.concurrent.locks.ReentrantLock reconcileLock=new java.util.concurrent.locks.ReentrantLock();
-    private static final List<String> TERMINAL = List.of("PAID","FAILED","CANCELED","TIMEOUT_CLOSED");
+    private static final List<String> TERMINAL = List.of("PAID","FAILED","CANCELED","TIMEOUT_CLOSED","REFUNDED");
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(SeckillService.class);
     private static final DefaultRedisScript<Long> ADMISSION = new DefaultRedisScript<>("""
             local count = tonumber(redis.call('GET',KEYS[1]) or '0')
@@ -121,6 +121,11 @@ public class SeckillService {
     public List<ActivityView> activities(String accountId,String itemId) {
         text(accountId);text(itemId);
         return activityViews("a.item_id=? AND a.ends_at>? ORDER BY a.starts_at,a.activity_id LIMIT 100",accountId,itemId,now().minusDays(1));
+    }
+    public com.sinrotic.rs.common.commerce.CommerceInput.Page<Map<String,Object>> managementActivities(String afterId,int limit) {
+        com.sinrotic.rs.common.commerce.CommerceInput.limit(limit);if(afterId!=null) text(afterId);
+        var rows=jdbc.queryForList("SELECT a.*,p.status AS allocation_status,p.last_error FROM seckill_activity_v1 a LEFT JOIN seckill_activity_allocation p ON p.activity_id=a.activity_id WHERE a.activity_id>? ORDER BY a.activity_id LIMIT ?",afterId==null ? "" : afterId,limit+1);
+        boolean more=rows.size()>limit;var items=more ? rows.subList(0,limit) : rows;return new com.sinrotic.rs.common.commerce.CommerceInput.Page<>(items,more ? (String)items.getLast().get("activity_id") : null);
     }
     public ActivityView activity(String accountId,String activityId) {
         text(accountId);text(activityId);
@@ -206,7 +211,7 @@ public class SeckillService {
                 boolean closing=Boolean.TRUE.equals(tx.execute(s -> {
                     if(!leases.owns("allocation",id,token)) return false;
                     jdbc.queryForMap("SELECT activity_id FROM seckill_activity_v1 WHERE activity_id=? FOR UPDATE",id);
-                    int unfinished=jdbc.queryForObject("SELECT COUNT(*) FROM seckill_request_v1 WHERE activity_id=? AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED')",Integer.class,id);
+                    int unfinished=jdbc.queryForObject("SELECT COUNT(*) FROM seckill_request_v1 WHERE activity_id=? AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED')",Integer.class,id);
                     if(unfinished!=0) {
                         jdbc.update("UPDATE seckill_activity_allocation SET next_attempt_at=? WHERE activity_id=?",now().plusSeconds(10),id);
                         return false;
@@ -299,7 +304,7 @@ public class SeckillService {
         try {
         var rows=jdbc.queryForList("""
                 SELECT event_id,payload FROM seckill_request_v1 WHERE dispatched=FALSE AND order_id IS NULL
-                AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REVIEW_REQUIRED') AND next_attempt_at<=?
+                AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED','REVIEW_REQUIRED') AND next_attempt_at<=?
                 ORDER BY next_attempt_at,event_id LIMIT ?
                 """,now(),batchSize);
         runBatch(publishers,rows,this::dispatchOne);
@@ -310,7 +315,7 @@ public class SeckillService {
             String token=leases.acquire("seckill-publish",id);if(token==null) return;
             try {
             // 扫描与认领之间可能已被另一个实例完成；认领后重新检查。
-            int due=jdbc.queryForObject("SELECT COUNT(*) FROM seckill_request_v1 WHERE event_id=? AND dispatched=FALSE AND order_id IS NULL AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REVIEW_REQUIRED') AND next_attempt_at<=?",Integer.class,id,now());
+            int due=jdbc.queryForObject("SELECT COUNT(*) FROM seckill_request_v1 WHERE event_id=? AND dispatched=FALSE AND order_id IS NULL AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED','REVIEW_REQUIRED') AND next_attempt_at<=?",Integer.class,id,now());
             if(due!=1) return;
             try {
                 kafka.send("checkout-seckill-accepted",id,(String)row.get("payload")).get(3,TimeUnit.SECONDS);
@@ -318,7 +323,7 @@ public class SeckillService {
                 if(!leases.owns("seckill-publish",id,token)) return;
                 jdbc.update("""
                         UPDATE seckill_request_v1 SET dispatched=TRUE,published_at=?,last_error=NULL
-                        WHERE event_id=? AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REVIEW_REQUIRED')
+                        WHERE event_id=? AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED','REVIEW_REQUIRED')
                         """,now(),id);
                 });
             } catch(InterruptedException interrupted) {
@@ -329,7 +334,7 @@ public class SeckillService {
                 if(!leases.owns("seckill-publish",id,token)) return;
                 jdbc.update("""
                         UPDATE seckill_request_v1 SET attempts=attempts+1,next_attempt_at=?,last_error=? WHERE event_id=? AND dispatched=FALSE
-                        AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REVIEW_REQUIRED')
+                        AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED','REVIEW_REQUIRED')
                         """,now().plusSeconds(5),"消息待重试",id);
                 });
                 log.warn("秒杀事件 {} 发布未确认，将使用原事件重试",id);
@@ -342,7 +347,7 @@ public class SeckillService {
         if(!reconcileLock.tryLock()) return;
         try {
         var rows=jdbc.queryForList("""
-                SELECT event_id,account_id FROM seckill_request_v1 WHERE status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED')
+                SELECT event_id,account_id FROM seckill_request_v1 WHERE status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED')
                 AND next_attempt_at<=? ORDER BY next_attempt_at,event_id LIMIT ?
                 """,now(),batchSize);
         runBatch(reconcilers,rows,this::reconcileOne);
@@ -352,7 +357,7 @@ public class SeckillService {
             String id=(String)row.get("event_id");
             String token=leases.acquire("seckill-reconcile",id);if(token==null) return;
             try {
-            int due=jdbc.queryForObject("SELECT COUNT(*) FROM seckill_request_v1 WHERE event_id=? AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED') AND next_attempt_at<=?",Integer.class,id,now());
+            int due=jdbc.queryForObject("SELECT COUNT(*) FROM seckill_request_v1 WHERE event_id=? AND status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED') AND next_attempt_at<=?",Integer.class,id,now());
             if(due!=1) return;
             try {
                 var result=orders.result(id,(String)row.get("account_id"));
@@ -370,7 +375,7 @@ public class SeckillService {
                     boolean failed=List.of("CREATION_FAILED","CANCELED","TIMEOUT_CLOSED").contains(result.status());
                     boolean complete=List.of("DONE","FAILED").contains(result.phase());
                     String state=result.status().equals("CREATION_FAILED") ? "FAILED" : result.status();
-                    if(!List.of("CREATING","WAITING_PAYMENT","PAID","FAILED","CANCELED","TIMEOUT_CLOSED").contains(state))
+                    if(!List.of("CREATING","WAITING_PAYMENT","PAID","FAILED","CANCELED","TIMEOUT_CLOSED","REFUNDING","REFUNDED").contains(state))
                         throw new IllegalStateException("未知订单状态");
                     if("WAITING_PAYMENT".equals(current) && "CREATING".equals(state)) return;
                     if(stored.get("order_id")!=null && ((Number)stored.get("order_id")).longValue()!=result.orderId())
@@ -414,7 +419,7 @@ public class SeckillService {
     public List<TaskView> stalledTasks(int minimumAgeSeconds) {
         if(minimumAgeSeconds<0 || minimumAgeSeconds>86400*30) throw bad("查询年龄范围不合法");
         return jdbc.query("""
-                SELECT * FROM seckill_request_v1 WHERE status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED')
+                SELECT * FROM seckill_request_v1 WHERE status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED')
                 AND created_at<=? ORDER BY created_at LIMIT 100
                 """,(r,n)->new TaskView(r.getString("event_id"),r.getString("request_id"),r.getString("activity_id"),
                 r.getString("status"),r.getObject("order_id",Long.class),r.getInt("attempts"),r.getString("last_error"),
@@ -427,7 +432,7 @@ public class SeckillService {
                 SELECT COUNT(*) AS pending,
                 COALESCE(SUM(CASE WHEN dispatched=FALSE AND order_id IS NULL AND status<>'REVIEW_REQUIRED' THEN 1 ELSE 0 END),0) AS unpublished,
                 COALESCE(SUM(CASE WHEN status='REVIEW_REQUIRED' THEN 1 ELSE 0 END),0) AS review_count
-                FROM seckill_request_v1 WHERE status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED')
+                FROM seckill_request_v1 WHERE status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED')
                 """,(r,n)->Map.of("pending",r.getLong("pending"),"unpublished",r.getLong("unpublished"),"reviewRequired",r.getLong("review_count")));
         var allocations=jdbc.queryForObject("SELECT COUNT(*) AS pending,COALESCE(SUM(CASE WHEN status='REVIEW' THEN 1 ELSE 0 END),0) AS review_count FROM seckill_activity_allocation WHERE status IN ('PENDING','REVIEW','CLOSING')",
                 (r,n)->Map.of("pending",r.getLong("pending"),"review",r.getLong("review_count")));

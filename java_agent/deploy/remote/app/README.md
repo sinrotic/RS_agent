@@ -276,3 +276,6 @@ Recommend 与前端一同更新。`DELETE /api/recommend/preferences` 保留偏�
 语义排序与已有候选重排使用和首页相同的 `SessionPreferenceReader`，按真实 Account、Profile User 与 Session 恢复强偏好。首页响应的 `display` 新增可选 `price` 字段，Agent 转换保留 Catalog 价格；各成功与回退路径使用同一套预算约束，有预算时不接受未知价格，非法约束返回 400。Agent 候选入口使用 Task 对应的真实 Session 写入响应、交付和追踪，Profile User 仍为独立字段。
 
 此轮只需更新 Recommend 代码，无新增数据库迁移或配置项。修复前基线、隔离复验和模块回归记录位于 `outputs/service-completion-20261011/eighth-audit`；本轮未部署，未处理离线部分。
+## 2026-10-19 交易补全
+
+整单退款、库存入库/盘点、分页历史和业务管理页面已接入。发布前执行更新后的交易/commerce SQL，核对 `commerce_completion_v2`，配置 `RS_COMMERCE_SERVICE_TOKEN`；Mock 退款由 `RS_PAYMENT_MOCK_REFUND_ENABLED` 控制，推荐购买事件由 `RS_RECOMMEND_COMMERCE_ENABLED` 控制。详细发布顺序及验证命令见 [补全说明](../../../../docs/commerce-completion-20261019.md)。工作台新增 `/manage`，默认只绑定回环地址。

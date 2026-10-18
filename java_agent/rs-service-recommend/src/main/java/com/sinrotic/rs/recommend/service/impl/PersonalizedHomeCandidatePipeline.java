@@ -16,6 +16,9 @@ import org.springframework.http.HttpStatus;
 
 @Service
 public class PersonalizedHomeCandidatePipeline {
+    private CommercePurchaseSignals purchases;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    public void setPurchases(CommercePurchaseSignals purchases) {this.purchases=purchases;}
     private static final int RANK_LIMIT = 96;
     private final CatalogEmbeddingTextClient catalog;
     private final UserHistoryClient history;
@@ -261,7 +264,8 @@ public class PersonalizedHomeCandidatePipeline {
         int pageSize = Math.max(1, Math.min(20, request.pageSize()));
         var explorationIds = sourceById.entrySet().stream().filter(e -> "catalog_exploration".equals(e.getValue()))
                 .map(Map.Entry::getKey).collect(java.util.stream.Collectors.toSet());
-        var ranked = new HomeFeedDiversity().select(preferences.rerank(candidates, snapshot, candidates.size(), scores),
+        var ranked = new HomeFeedDiversity().select(preferences.rerankWithPurchases(candidates, snapshot, candidates.size(), scores,
+                        purchases==null ? Map.of() : purchases.load(identity.profileUserId(),candidates.stream().map(ItemEmbeddingText::itemId).toList())),
                 explorationIds, recentItems, pageSize, cursor.startsWith("feed:"), cursor.startsWith("similar:"));
         if (ranked.isEmpty()) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "本轮候选与最近浏览商品过于相似，请稍后重试");
         boolean rankedByModel = modelRanked;

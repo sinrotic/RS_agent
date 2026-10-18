@@ -30,7 +30,7 @@ function clearCommercePending() {
     const keys: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key?.startsWith('checkout-pending:') || key?.startsWith('seckill-pending:')) keys.push(key);
+      if (key?.startsWith('checkout-pending:') || key?.startsWith('seckill-pending:') || key?.startsWith('refund-pending:')) keys.push(key);
     }
     keys.forEach(key => sessionStorage.removeItem(key));
   } catch { /* 禁用存储时仍可退出账号。 */ }
@@ -48,14 +48,14 @@ export function saveAccountId(accountId: string) {
     const keys: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && /^(checkout|seckill)-pending:[^:]+$/.test(key)) keys.push(key);
+      if (key && /^(checkout|seckill|refund)-pending:[^:]+$/.test(key)) keys.push(key);
     }
     keys.forEach(key => sessionStorage.removeItem(key));
   } catch { /* 存储不可用时仅依赖服务端记录。 */ }
   if (changed) accountListeners.forEach(listener => listener());
 }
 
-export function commerceStorageKey(kind: 'checkout' | 'seckill', itemId: string): string | null {
+export function commerceStorageKey(kind: 'checkout' | 'seckill' | 'refund', itemId: string): string | null {
   return currentAccountId ? `${kind}-pending:${encodeURIComponent(currentAccountId)}:${encodeURIComponent(itemId)}` : null;
 }
 

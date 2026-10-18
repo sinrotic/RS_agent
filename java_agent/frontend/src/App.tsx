@@ -9,9 +9,10 @@ import { getMe } from './api/authClient';
 import { AuthSessionChangedError, captureAuthSession, isCurrentAuthSession } from './api/shared';
 import { ProductDetail } from './views/ProductDetail';
 import { Preferences } from './views/Preferences';
+import { CommerceHistory } from './views/CommerceHistory';
 import { DisplayProduct } from './utils/displayViewModel';
 
-type MainView = 'login' | 'mall' | 'chat' | 'preferences';
+type MainView = 'login' | 'mall' | 'chat' | 'preferences' | 'commerce';
 
 function productIdFromLocation(): string | null {
   const match = window.location.pathname.match(/^\/products\/([^/]+)$/);
@@ -25,6 +26,7 @@ function productIdFromLocation(): string | null {
 
 function mainViewFromLocation(): Exclude<MainView, 'login'> {
   if (window.location.pathname === '/preferences') return 'preferences';
+  if (window.location.pathname === '/commerce') return 'commerce';
   return window.location.pathname === '/chat' ? 'chat' : 'mall';
 }
 
@@ -109,7 +111,7 @@ export default function App() {
     setSelectedProduct(null);
     setProductId(null);
     setView(target);
-    window.history.pushState({}, '', target === 'chat' ? '/chat' : target === 'preferences' ? '/preferences' : '/');
+    window.history.pushState({}, '', target === 'chat' ? '/chat' : target === 'preferences' ? '/preferences' : target === 'commerce' ? '/commerce' : '/');
   };
 
   const openProduct = (product: DisplayProduct, origin: 'mall' | 'chat') => {
@@ -196,6 +198,7 @@ export default function App() {
                   className={`rounded-xl px-4 py-2 text-xs font-bold ${view === 'preferences' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
                   我的偏好
                 </button>
+                <button onClick={() => navigateToView('commerce')} className={`rounded-xl px-4 py-2 text-xs font-bold ${view === 'commerce' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>订单与券包</button>
               </nav>
             )}
 
@@ -270,6 +273,7 @@ export default function App() {
           <AgentChat onOpenProduct={product => openProduct(product, 'chat')} />
         )}
         {!isObserveRoute && view === 'preferences' && !productId && <Preferences />}
+        {!isObserveRoute && view === 'commerce' && !productId && <CommerceHistory />}
       </main>
     </div>
   );

@@ -31,6 +31,9 @@ import java.util.UUID;
  */
 @Service
 public class DefaultHomeRecommendService implements HomeRecommendService {
+    private CommercePurchaseSignals purchases;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    public void setPurchases(CommercePurchaseSignals purchases) {this.purchases=purchases;}
 
     private static final HomeRecommendConfigVO HOME_CONFIG = new HomeRecommendConfigVO(500, 100, 50, 20, 8);
 
@@ -137,7 +140,8 @@ public class DefaultHomeRecommendService implements HomeRecommendService {
             if (consumed.isEmpty()) break;
             candidates.addAll(consumed);
             scannedCursor = consumed.getLast().itemId();
-            rankedCandidates = preferenceReranker.rerank(candidates, preference, request.pageSize());
+            rankedCandidates = preferenceReranker.rerankWithPurchases(candidates, preference, request.pageSize(),java.util.Map.of(),
+                    purchases==null ? java.util.Map.of() : purchases.load(identity.profileUserId(),candidates.stream().map(ItemEmbeddingText::itemId).toList()));
             if (!hasMore) break;
         }
         List<RecommendItemVO> items = toRecommendItems(rankedCandidates);

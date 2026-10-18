@@ -11,6 +11,9 @@ import java.util.*;
 /** Agent 候选的在线最终处理。训练模型可选，偏好、约束、交付与追踪始终执行。 */
 @Service
 public class TrainedAgentCandidateRanker {
+    private CommercePurchaseSignals purchases;
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    public void setPurchases(CommercePurchaseSignals purchases) {this.purchases=purchases;}
     private final TrainedRankingClient ranking;
     private final HomeModelRanker relevance;
     private final CatalogEmbeddingTextClient catalog;
@@ -83,7 +86,8 @@ public class TrainedAgentCandidateRanker {
             if (!trained && !bge) for (int i=0;i<candidates.size();i++) scores.put(candidates.get(i).itemId(),.65-i*.003);
         }
         int limit=Math.max(1,Math.min(20,request.returnCount()));
-        var adjusted=adjustment.rerank(candidates,preference,candidates.size(),scores);
+        var adjusted=adjustment.rerankWithPurchases(candidates,preference,candidates.size(),scores,
+                purchases==null ? Map.of() : purchases.load(identity.profileUserId(),candidates.stream().map(ItemEmbeddingText::itemId).toList()));
         var selected=new HomeFeedDiversity().select(adjusted,Set.of(),List.of(),limit,false,true);
         var deliveryItems=new ArrayList<RecommendationDeliveryItem>();var traceItems=new ArrayList<RecommendTraceItemVO>();
         var result=new ArrayList<AgentRecommendCandidateItemVO>();

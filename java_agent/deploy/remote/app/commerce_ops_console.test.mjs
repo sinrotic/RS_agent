@@ -19,7 +19,7 @@ test('工作台限制代理路由、保留角色校验并阻止跨站恢复', as
   const port = reservation.address().port; await new Promise(resolve => reservation.close(resolve));
   const host = `http://127.0.0.1:${port}`, base = `http://127.0.0.1:${upstream.address().port}`;
   const child = spawn(process.execPath, [fileURLToPath(new URL('commerce_ops_console.mjs', import.meta.url))], {
-    env: { ...process.env, RS_COMMERCE_CONSOLE_PORT: String(port), RS_ORDER_INTERNAL_URL: base },
+    env: { ...process.env, RS_COMMERCE_CONSOLE_PORT: String(port), RS_ORDER_INTERNAL_URL: base, RS_INVENTORY_INTERNAL_URL: base, RS_PROMOTION_INTERNAL_URL: base },
   });
   let logs = '';
   try {
@@ -42,6 +42,16 @@ test('工作台限制代理路由、保留角色校验并阻止跨站恢复', as
     assert.deepEqual(received.body, { reason: '已核对库存' });
     assert.equal((await fetch(host + '/proxy/checkout/../orders')).status, 404);
     assert.equal((await fetch(host + '/proxy/checkout/summary', options)).status, 405);
+    assert.match(await (await fetch(host+'/manage')).text(), /库存入库与盘点/);
+    await fetch(host+'/manage/api/stocks?afterId=sku-a&limit=20',{headers:{Authorization:`Bearer ${reader}`}});
+    assert.equal(received.path,'/internal/inventory/management/stocks?afterId=sku-a&limit=20');
+    assert.equal((await fetch(host+'/manage/api/stocks?host=evil')).status,400);
+    assert.equal((await fetch(host+'/manage/api/stocks/adjust',{...options,headers:{...options.headers,Origin:'https://untrusted.example'}})).status,403);
+    assert.equal((await fetch(host+'/manage/api/stocks/adjust',options)).status,200);
+    assert.deepEqual(received.body,{reason:'已核对库存'});
+    assert.equal(received.path,'/internal/inventory/management/adjustments');
+    await fetch(host+'/manage/api/events/order%3A1%3APAID/recommend/retry',options);
+    assert.equal(received.path,'/internal/checkout/events/order%3A1%3APAID/recommend/retry');
     assert.ok(!logs.includes(reader) && !logs.includes(writer));
   } finally { child.kill(); await new Promise(resolve => upstream.close(resolve)); }
 });

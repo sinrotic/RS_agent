@@ -1,0 +1,27 @@
+spring:
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: auth
+              uri: http://user:18101
+              predicates: ["Path=/api/auth/**"]
+            - id: checkout
+              uri: http://order:8091
+              predicates: ["Path=/api/checkout/**"]
+            - id: promotions
+              uri: http://promotion:8095
+              predicates: ["Path=/api/promotions/**"]
+            - id: payment
+              uri: http://payment:8093
+              predicates: ["Path=/api/payments/**,/callback/payments/**"]
+            - id: seckill
+              uri: http://seckill:8094
+              predicates: ["Path=/api/seckill/**"]
+            - id: inventory
+              uri: http://inventory:8092
+              predicates: ["Path=/api/inventory/**"]
+            - id: recommend
+              uri: http://recommend:18103
+              predicates: ["Path=/api/recommend/**"]

@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-async function fixture({ seckillReview = true, checkoutReview = false } = {}) {
+async function fixture({ seckillReview = true, checkoutReview = false,refundReview=false,eventReview=false,inventoryDifference=false } = {}) {
   let quota = 2, stock = 10;
   const records = new Map();
   const server = createServer(async (request, response) => {
@@ -49,6 +49,9 @@ async function fixture({ seckillReview = true, checkoutReview = false } = {}) {
     else if (url.pathname.startsWith('/internal/checkout/tasks')) value = checkoutReview ? [{ orderId: 7, status: 'PAID', phase: 'REVIEW_CONFIRM_STOCK', attempts: 20 }] : [];
     else if (url.pathname === '/internal/payment/notifications/summary') value = { pending: 0, reviewRequired: 0 };
     else if (url.pathname === '/internal/payment/notifications') value = [];
+    else if (url.pathname === '/internal/checkout/refunds') value = refundReview?[{refund_id:'refund',order_id:1,status:'REVIEW_REQUIRED'}]:[];
+    else if (url.pathname === '/internal/checkout/events') value = eventReview?[{event_id:'order:1:PAID',status:'PENDING',created_at:'2026-01-01T00:00:00'}]:[];
+    else if (url.pathname === '/internal/inventory/management/reconciliations') value = inventoryDifference?[{case_id:'case',status:'OPEN'}]:[];
     else { code = 404; value = {}; }
     response.writeHead(code, { 'Content-Type': 'application/json' }); response.end(JSON.stringify(value));
   });
@@ -91,23 +94,30 @@ test('并发脚本区分请求吞吐和订单生成，并在取消后检查额�
 test('巡检发现待核对任务使用退出码 2', async () => {
   const server = await fixture();
   try {
-    const result = await run('seckill_health.mjs', { RS_SECKILL_INTERNAL_URL: server.base, RS_ORDER_INTERNAL_URL: server.base, RS_PAYMENT_INTERNAL_URL: server.base });
+    const result = await run('seckill_health.mjs', { RS_SECKILL_INTERNAL_URL: server.base, RS_ORDER_INTERNAL_URL: server.base, RS_PAYMENT_INTERNAL_URL: server.base, RS_INVENTORY_INTERNAL_URL: server.base });
     assert.equal(result.code, 2, result.stderr); assert.equal(JSON.parse(result.stdout).summary.reviewRequired, 1);
   } finally { await server.close(); }
 });
 test('秒杀记录正常但已支付订单卡在库存核销时，巡检仍告警', async () => {
   const server = await fixture({ seckillReview: false, checkoutReview: true });
   try {
-    const result = await run('seckill_health.mjs', { RS_SECKILL_INTERNAL_URL: server.base, RS_ORDER_INTERNAL_URL: server.base, RS_PAYMENT_INTERNAL_URL: server.base });
+    const result = await run('seckill_health.mjs', { RS_SECKILL_INTERNAL_URL: server.base, RS_ORDER_INTERNAL_URL: server.base, RS_PAYMENT_INTERNAL_URL: server.base, RS_INVENTORY_INTERNAL_URL: server.base });
     assert.equal(result.code, 2, result.stderr);
     const value = JSON.parse(result.stdout);
     assert.equal(value.summary.reviewRequired, 0); assert.equal(value.checkout.stalled[0].phase, 'REVIEW_CONFIRM_STOCK');
   } finally { await server.close(); }
 });
-test('三个服务均没有异常待办时，巡检返回成功', async () => {
+test('交易链路均没有异常待办时，巡检返回成功', async () => {
   const server = await fixture({ seckillReview: false, checkoutReview: false });
   try {
-    const result = await run('seckill_health.mjs', { RS_SECKILL_INTERNAL_URL: server.base, RS_ORDER_INTERNAL_URL: server.base, RS_PAYMENT_INTERNAL_URL: server.base });
+    const result = await run('seckill_health.mjs', { RS_SECKILL_INTERNAL_URL: server.base, RS_ORDER_INTERNAL_URL: server.base, RS_PAYMENT_INTERNAL_URL: server.base, RS_INVENTORY_INTERNAL_URL: server.base });
     assert.equal(result.code, 0, result.stderr);
   } finally { await server.close(); }
+});
+for(const condition of ['refundReview','eventReview','inventoryDifference']) test(`巡检覆盖新增异常：${condition}`,async()=>{
+  const server=await fixture({seckillReview:false,[condition]:true});
+  try{
+    const result=await run('seckill_health.mjs',{RS_SECKILL_INTERNAL_URL:server.base,RS_ORDER_INTERNAL_URL:server.base,RS_PAYMENT_INTERNAL_URL:server.base,RS_INVENTORY_INTERNAL_URL:server.base});
+    assert.equal(result.code,2,result.stderr);
+  }finally{await server.close();}
 });

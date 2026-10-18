@@ -25,6 +25,7 @@ public class RestPromotionClient implements PromotionClient {
     }
     public void confirm(long orderId, String couponId) { finish(orderId, couponId, "confirm"); }
     public void release(long orderId, String couponId) { finish(orderId, couponId, "release"); }
+    public void refund(long orderId,String couponId) {finish(orderId,couponId,"refund");}
     public void cancel(long orderId, String couponId, String accountId, String itemId, long originalAmount) {
         client.post().uri("/internal/promotions/reservations/cancel")
                 .body(Map.of("orderId",orderId,"couponId",couponId,"accountId",accountId,"itemId",itemId,"originalAmount",originalAmount))

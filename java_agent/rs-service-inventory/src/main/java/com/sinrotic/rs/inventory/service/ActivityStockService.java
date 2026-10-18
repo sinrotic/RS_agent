@@ -58,9 +58,9 @@ public class ActivityStockService {
     public void move(String action,Movement input) {
         if(input==null || input.orderId()<=0) throw bad("订单参数不合法");
         text(input.activityId());text(input.skuId());quantity(input.quantity());
-        if(!java.util.List.of("LOCK","CONFIRM","RELEASE","CANCEL").contains(action)) throw bad("库存操作不合法");
+        if(!java.util.List.of("LOCK","CONFIRM","RELEASE","CANCEL","REFUND").contains(action)) throw bad("库存操作不合法");
         tx.executeWithoutResult(s -> {
-            if("CONFIRM".equals(action)) lockSku(input.skuId());
+            if("CONFIRM".equals(action) || "REFUND".equals(action)) lockSku(input.skuId());
             var pool=pool(input.activityId());
             if(!input.skuId().equals(pool.get("sku_id"))) throw conflict("SKU 与活动库存不匹配");
             var rows=jdbc.queryForList("SELECT * FROM inventory_activity_reservation WHERE order_id=? FOR UPDATE",input.orderId());
@@ -69,9 +69,15 @@ public class ActivityStockService {
                     || !input.skuId().equals(reservation.get("sku_id")) || number(reservation,"quantity")!=input.quantity()))
                 throw conflict("订单库存预留参数冲突");
             String state=reservation==null ? null : (String)reservation.get("status");
-            String target=switch(action) {case "LOCK" -> "LOCKED";case "CONFIRM" -> "CONFIRMED";case "RELEASE" -> "RELEASED";default -> "CANCELED";};
+            String target=switch(action) {case "LOCK" -> "LOCKED";case "CONFIRM" -> "CONFIRMED";case "RELEASE" -> "RELEASED";case "REFUND" -> "REFUNDED";default -> "CANCELED";};
             if(target.equals(state)) return;
-            if("LOCK".equals(action)) {
+            if("REFUND".equals(action)) {
+                if(!"CONFIRMED".equals(state)) throw conflict("仅可退回已确认售出的活动库存");
+                if(jdbc.update("UPDATE sku_stock SET sold_stock=sold_stock-?,available_stock=available_stock+?,version=version+1 WHERE sku_id=? AND sold_stock>=?",
+                        input.quantity(),input.quantity(),input.skuId(),input.quantity())!=1) throw conflict("已售库存不足，需核对");
+                // 售后不重新开放秒杀名额，实物一律返普通库存，关闭的活动池也能退款。
+                jdbc.update("UPDATE inventory_activity_pool SET sold_quantity=sold_quantity-?,returned_quantity=returned_quantity+? WHERE activity_id=?",input.quantity(),input.quantity(),input.activityId());
+            } else if("LOCK".equals(action)) {
                 if(state!=null || !"OPEN".equals(pool.get("status"))) throw conflict("活动预留已结束");
                 if(jdbc.update("UPDATE inventory_activity_pool SET available_quantity=available_quantity-?,reserved_quantity=reserved_quantity+? WHERE activity_id=? AND available_quantity>=?",
                         input.quantity(),input.quantity(),input.activityId(),input.quantity())!=1) throw conflict("活动库存不足");

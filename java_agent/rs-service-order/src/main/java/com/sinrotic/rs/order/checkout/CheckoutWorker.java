@@ -11,6 +11,6 @@ import org.springframework.stereotype.Component;
 public class CheckoutWorker {
     private final CheckoutService service;
     public CheckoutWorker(CheckoutService service) { this.service = service; }
-    @Scheduled(fixedDelayString="${rs.checkout.worker.delay-ms:500}")
+    @Scheduled(scheduler="commerceWorkflowScheduler",fixedDelayString="${rs.checkout.worker.delay-ms:500}")
     public void tick() { service.processPending(); }
 }

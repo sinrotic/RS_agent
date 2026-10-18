@@ -5,6 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
+@org.springframework.context.annotation.Import(com.sinrotic.rs.common.commerce.CommerceOperationsConfiguration.class)
 @MapperScan("com.sinrotic.rs.inventory.mapper")
 public class InventoryServiceApplication {
 

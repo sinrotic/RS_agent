@@ -52,6 +52,10 @@ public class PreferenceAwareFinalReranker {
 
     public List<PreferenceRankedCandidate> rerank(List<ItemEmbeddingText> candidates,
             OnlinePreferenceSnapshot snapshot, int limit, Map<String, Double> modelScores) {
+        return rerankWithPurchases(candidates,snapshot,limit,modelScores,Map.of());
+    }
+    public List<PreferenceRankedCandidate> rerankWithPurchases(List<ItemEmbeddingText> candidates,
+            OnlinePreferenceSnapshot snapshot,int limit,Map<String,Double> modelScores,Map<String,Integer> purchases) {
         List<PreferenceRankedCandidate> ranked = new ArrayList<>();
         for (int index = 0; index < candidates.size(); index++) {
             ItemEmbeddingText candidate = candidates.get(index);
@@ -60,9 +64,11 @@ public class PreferenceAwareFinalReranker {
             }
             double baseScore = modelScores.getOrDefault(candidate.itemId(), 1.0 - (index * 0.01));
             Adjustment adjustment = adjustment(candidate, snapshot.itemPreferences());
-            double bounded = Math.max(-MAX_ADJUSTMENT, Math.min(MAX_ADJUSTMENT, adjustment.value()));
+            double purchaseBoost=Math.min(.15,Math.max(0,purchases.getOrDefault(candidate.itemId(),0))*.05);
+            var tags=new ArrayList<>(adjustment.tags());if(purchaseBoost>0) tags.add("verified_purchase");
+            double bounded = Math.max(-MAX_ADJUSTMENT, Math.min(MAX_ADJUSTMENT, adjustment.value()+purchaseBoost));
             ranked.add(new PreferenceRankedCandidate(
-                    candidate, baseScore, bounded, baseScore + bounded, List.copyOf(adjustment.tags())));
+                    candidate, baseScore, bounded, baseScore + bounded, List.copyOf(tags)));
         }
         List<PreferenceRankedCandidate> sorted = ranked.stream()
                 .sorted(Comparator.comparingDouble(PreferenceRankedCandidate::finalScore).reversed()

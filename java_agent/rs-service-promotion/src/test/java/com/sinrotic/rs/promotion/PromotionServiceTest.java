@@ -36,6 +36,26 @@ class PromotionServiceTest {
                 now.minusHours(1),now.plusHours(1),now.plusDays(1)));
     }
 
+    @Test void walletPaginationPassesTwoHundredAndRemainsAccountScoped() {
+        for(int i=0;i<205;i++) {
+            String id=String.format("history-%03d",i);campaign(id,2);service.claim("account",id,"claim-"+i);
+        }
+        service.claim("other","history-000","other-claim");
+        var found=new HashSet<String>();String cursor=null;int count=0;
+        do {var page=service.walletPage("account",cursor,20);for(var coupon:page.items()){assertThat(coupon.accountId()).isEqualTo("account");assertThat(found.add(coupon.couponId())).isTrue();count++;}cursor=page.nextCursor();}while(cursor!=null);
+        assertThat(count).isEqualTo(205);
+    }
+
+    @Test void campaignPublicationReplayDoesNotReplenishClaimedQuotaOrDuplicateAudit() {
+        var manager=new DataSourceTransactionManager(Objects.requireNonNull(jdbc.getDataSource()));
+        var management=new PromotionManagement(jdbc,manager,service);var now=LocalDateTime.now(clock);
+        var input=new PromotionService.Campaign("managed","限量",null,2,2,2000,500,now.minusHours(1),now.plusHours(1),now.plusDays(1));
+        management.create(input,"operator");service.claim("account","managed","claim-managed");management.create(input,"operator");
+        assertThat(jdbc.queryForObject("SELECT remaining_quantity FROM promotion_campaign WHERE campaign_id='managed'",Integer.class)).isOne();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM commerce_operation_audit WHERE resource_id='managed'",Integer.class)).isOne();
+        assertThatThrownBy(()->management.create(new PromotionService.Campaign("managed","限量",null,3,3,2000,500,input.startsAt(),input.endsAt(),input.expiresAt()),"operator")).isInstanceOf(ResponseStatusException.class);
+    }
+
     @Test
     void concurrentClaimsNeverExceedQuotaAndDoNotLeakStock() throws Exception {
         try (var pool = Executors.newFixedThreadPool(8)) {

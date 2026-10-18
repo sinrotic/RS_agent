@@ -1,10 +1,18 @@
 // 本地运维工作台：只绑定回环，凭证只留在浏览器内存，后端负责角色校验和审计身份。
 import { createServer } from 'node:http';
+import { managementHtml } from './commerce_management_ui.mjs';
 const port = Number(process.env.RS_COMMERCE_CONSOLE_PORT || 18096);
 if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error('工作台端口不合法');
 const hosts = { seckill: process.env.RS_SECKILL_INTERNAL_URL || 'http://127.0.0.1:18094',
   checkout: process.env.RS_ORDER_INTERNAL_URL || 'http://127.0.0.1:18091', payment: process.env.RS_PAYMENT_INTERNAL_URL || 'http://127.0.0.1:18093' };
 const prefixes = { seckill: '/internal/seckill/tasks', checkout: '/internal/checkout/tasks', payment: '/internal/payment/notifications', allocation: '/internal/seckill/allocations' };
+const management = {
+  stocks: [process.env.RS_INVENTORY_INTERNAL_URL || 'http://127.0.0.1:18092', '/internal/inventory/management/stocks'],
+  offers: [hosts.checkout, '/internal/checkout/offers'], activities: [hosts.seckill, '/internal/seckill/activities'],
+  campaigns: [process.env.RS_PROMOTION_INTERNAL_URL || 'http://127.0.0.1:18095', '/internal/promotions/campaigns'],
+  reconciliations: [process.env.RS_INVENTORY_INTERNAL_URL || 'http://127.0.0.1:18092', '/internal/inventory/management/reconciliations'],
+  refunds: [hosts.checkout, '/internal/checkout/refunds'], events: [hosts.checkout, '/internal/checkout/events'],
+};
 const html = String.raw`<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>交易任务工作台</title><style>
 body{background:#0f172a;color:#e2e8f0;font:15px system-ui;max-width:1200px;margin:36px auto;padding:0 24px}h1{font-size:28px}
@@ -13,6 +21,7 @@ button{cursor:pointer;background:#312e81}label{display:inline-flex;flex-directio
 table{width:100%;border-collapse:collapse;margin-bottom:26px}td,th{text-align:left;padding:12px;border-bottom:1px solid #334155;word-break:break-word}
 .error{color:#fca5a5}.summary{color:#a5b4fc}#reason{width:420px}
 </style><h1>交易任务工作台</h1><p>查看秒杀、订单、支付和活动库存异常。恢复操作沿用原业务请求，并记录认证操作人的身份与原因。</p>
+<p><a href="/manage" style="color:#a5b4fc">库存、报价和优惠券活动管理</a></p>
 <label>只读运维凭证<input id="read" type="password" autocomplete="off"></label><label>写入运维凭证<input id="write" type="password" autocomplete="off"></label>
 <label>恢复原因<input id="reason" maxlength="255" placeholder="先核对根因，再填写恢复原因"></label><button id="refresh">刷新任务</button>
 <p id="notice" role="status">凭证由部署管理员提供，本页面不保存凭证。</p><main id="tasks"></main>
@@ -51,9 +60,35 @@ document.getElementById('refresh').onclick=refresh;
 </script></html>`;
 const server = createServer(async (request, response) => {
   response.setHeader('Cache-Control', 'no-store'); response.setHeader('X-Content-Type-Options', 'nosniff');
-  if (request.url === '/' && request.method === 'GET') {
+  if ((request.url === '/' || request.url === '/manage') && request.method === 'GET') {
     response.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'");
-    response.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8' }); response.end(html); return;
+    response.writeHead(200, { 'Content-Type': 'text/html;charset=utf-8' }); response.end(request.url === '/manage' ? managementHtml : html); return;
+  }
+  if (request.url.startsWith('/manage/api/')) {
+    const url = new URL(request.url, 'http://localhost');
+    const match = /^\/manage\/api\/(stocks|offers|activities|campaigns|reconciliations|refunds|events)(.*)$/.exec(url.pathname);
+    if (!match || !['GET', 'POST'].includes(request.method)) { response.writeHead(404); response.end(); return; }
+    const [, kind, suffix] = match;
+    const allowed = suffix === '' || kind === 'stocks' && suffix === '/adjust'
+      || ['refunds', 'reconciliations'].includes(kind) && /^\/[A-Za-z0-9_-]{1,64}\/(retry|acknowledge)$/.test(suffix)
+      || kind === 'events' && /^\/[A-Za-z0-9_:%-]{1,192}\/(recommend|seckill)\/retry$/.test(suffix);
+    const write = request.method === 'POST';
+    if (!allowed || write && kind === 'stocks' && suffix !== '/adjust' || !write && suffix) { response.writeHead(405); response.end(); return; }
+    if (write && ![`http://127.0.0.1:${port}`, `http://localhost:${port}`].includes(request.headers.origin)) { response.writeHead(403); response.end(); return; }
+    if ([...url.searchParams.keys()].some(key => !['afterId', 'limit'].includes(key))) { response.writeHead(400); response.end(); return; }
+    try {
+      let body;
+      if (write) {
+        let raw = ''; for await (const chunk of request) { raw += chunk; if (raw.length > 16384) throw new Error('请求过大'); }
+        const input = JSON.parse(raw || '{}'); delete input.operatorId; body = JSON.stringify(input);
+      }
+      const [host, path] = management[kind];
+      const endpoint = kind === 'stocks' && suffix === '/adjust' ? '/internal/inventory/management/adjustments' : path + suffix;
+      const upstream = await fetch(host.replace(/\/$/, '') + endpoint + url.search, { method: request.method,
+        headers: { Authorization: request.headers.authorization || '', 'Content-Type': 'application/json' }, body, signal: AbortSignal.timeout(10000) });
+      response.writeHead(upstream.status, { 'Content-Type': 'application/json;charset=utf-8' }); response.end(await upstream.text());
+    } catch { response.writeHead(502); response.end('{"message":"业务管理接口暂不可用"}'); }
+    return;
   }
   const match = /^\/proxy\/(seckill|checkout|payment|allocation)(\/(?:summary|[A-Za-z0-9_-]{1,64}\/retry))?(\?minimumAgeSeconds=\d+)?$/.exec(request.url);
   if (!match || !['GET', 'POST'].includes(request.method)) { response.writeHead(404); response.end(); return; }

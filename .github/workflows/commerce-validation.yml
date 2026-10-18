@@ -1,0 +1,89 @@
+name: Commerce completion validation
+on:
+  push:
+    branches: ["codex/commerce-*"]
+    paths:
+      - "java_agent/rs-common/**"
+      - "java_agent/rs-service-order/**"
+      - "java_agent/rs-service-inventory/**"
+      - "java_agent/rs-service-payment/**"
+      - "java_agent/rs-service-promotion/**"
+      - "java_agent/rs-service-seckill/**"
+      - "java_agent/rs-service-recommend/**"
+      - "java_agent/deploy/local/commerce/**"
+      - "java_agent/deploy/remote/app/commerce*"
+      - "java_agent/deploy/remote/ops/**"
+      - "java_agent/frontend/**"
+      - "java_agent/sql/**"
+      - ".github/workflows/commerce-validation.yml"
+  workflow_dispatch:
+    inputs:
+      duration:
+        description: "持续闭环秒数，10..3600"
+        default: "60"
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: commerce-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  commerce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: java_agent/frontend/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: 交易相关后端测试与打包
+        run: mvn -B -f java_agent/pom.xml -pl rs-service-order,rs-service-payment,rs-service-seckill,rs-service-recommend,rs-api-gateway,rs-service-user -am package
+      - name: 前端、工作台与运维脚本测试
+        run: |
+          npm --prefix java_agent/frontend ci
+          npm --prefix java_agent/frontend test
+          npm --prefix java_agent/frontend run build
+          node --test java_agent/deploy/remote/app/commerce_ops_console.test.mjs
+          node --test java_agent/deploy/remote/app/seckill_scripts.test.mjs
+          python -m unittest discover -s java_agent/deploy/local/commerce -p 'test_*.py'
+      - name: 浏览器验证
+        working-directory: java_agent/frontend
+        shell: bash
+        run: |
+          npx playwright install --with-deps chromium
+          npm run dev -- --host 127.0.0.1 --port 5174 --strictPort > "$RUNNER_TEMP/commerce-browser.log" 2>&1 &
+          frontend_pid=$!
+          trap 'kill "$frontend_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5174 >/dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/verify-commerce-completion.cjs
+      - name: 登录网关持续联调、主从恢复及通知演练
+        env:
+          COMMERCE_DURATION: ${{ inputs.duration || '60' }}
+        run: python java_agent/deploy/local/commerce/fullstack.py --ha --duration "$COMMERCE_DURATION" --output outputs/commerce-ci
+      - name: 保存脱敏报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commerce-validation
+          # 只上传安全报告；不包含账号、SQL 备份、环境变量或命令日志。
+          path: |
+            outputs/commerce-ci/verification.json
+            outputs/commerce-ci/load-report.json
+            outputs/commerce-ci/notification-receipt.json
+            outputs/commerce-completion-browser/report.json
+            outputs/commerce-completion-browser/*.png
+            java_agent/**/target/surefire-reports/TEST-*.xml
+          retention-days: 7

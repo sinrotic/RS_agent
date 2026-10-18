@@ -116,6 +116,27 @@ public class PromotionService {
         text(accountId);
         return coupons("c.account_id = ?", accountId);
     }
+    public com.sinrotic.rs.common.commerce.CommerceInput.Page<Coupon> walletPage(String accountId,String afterId,int limit) {
+        text(accountId);com.sinrotic.rs.common.commerce.CommerceInput.limit(limit);
+        if(afterId!=null) text(afterId);
+        var found=queryCoupons("c.account_id=? AND c.coupon_id>? ORDER BY c.coupon_id LIMIT ?",accountId,afterId==null ? "" : afterId,limit+1);
+        boolean more=found.size()>limit;var items=more ? found.subList(0,limit) : found;
+        return new com.sinrotic.rs.common.commerce.CommerceInput.Page<>(items,more ? items.getLast().couponId() : null);
+    }
+    public void refund(long orderId,String couponId) {
+        text(couponId);
+        tx.executeWithoutResult(s -> {
+            if(jdbc.queryForList("SELECT coupon_id FROM promotion_coupon WHERE coupon_id=? FOR UPDATE",couponId).isEmpty()) throw missing("优惠券不存在");
+            var reservation=reservation(orderId);
+            if(reservation==null || !couponId.equals(reservation.couponId())) throw conflict("找不到对应核销记录");
+            if("REFUNDED".equals(reservation.status())) return;
+            if(!"USED".equals(reservation.status())) throw conflict("只能退还已核销的优惠券");
+            var coupon=coupons("c.coupon_id=?",couponId).getFirst();
+            if(!"USED".equals(coupon.status())) throw conflict("优惠券状态不一致");
+            jdbc.update("UPDATE promotion_coupon SET status=?,locked_order_id=NULL WHERE coupon_id=?",now().isBefore(coupon.expiresAt()) ? "AVAILABLE" : "EXPIRED",couponId);
+            jdbc.update("UPDATE promotion_reservation SET status='REFUNDED',updated_at=? WHERE order_id=?",now(),orderId);
+        });
+    }
 
     public Reservation lock(LockRequest request) {
         if (request == null || request.orderId() == null || request.orderId() <= 0
@@ -212,10 +233,13 @@ public class PromotionService {
         return coupon;
     }
     private List<Coupon> coupons(String where, Object... args) {
+        return queryCoupons(where+" ORDER BY c.created_at DESC, c.coupon_id LIMIT 200",args);
+    }
+    private List<Coupon> queryCoupons(String suffix,Object... args) {
         return jdbc.query("""
                 SELECT c.*, p.title,p.item_id,p.minimum_amount,p.discount_amount,p.expires_at
                 FROM promotion_coupon c JOIN promotion_campaign p ON p.campaign_id = c.campaign_id WHERE
-                """ + where + " ORDER BY c.created_at DESC, c.coupon_id LIMIT 200", (r, n) -> {
+                """ + suffix, (r, n) -> {
             String state = r.getString("status");
             LocalDateTime expiry = r.getObject("expires_at",LocalDateTime.class);
             if ("AVAILABLE".equals(state) && !now().isBefore(expiry)) state = "EXPIRED";

@@ -85,6 +85,9 @@ class PaymentNotificationPersistenceTest {
         assertThatThrownBy(()->new PaymentOperationsService(jdbc,manager,false).mockRefund(10L,action))
                 .isInstanceOfSatisfying(org.springframework.web.server.ResponseStatusException.class,e->assertThat(e.getStatusCode().value()).isEqualTo(404));
         var ops=new PaymentOperationsService(jdbc,manager,true);
+        var refundProcessor=mock(PaymentRefundService.class);
+        when(refundProcessor.refund(any())).thenAnswer(i->new PaymentRefundService.Result(((PaymentRefundService.Request)i.getArgument(0)).refundId(),"SUCCEEDED",true,false));
+        ops.setRefunds(refundProcessor);
         jdbc.update("UPDATE payment_orders SET provider='real' WHERE order_id=10");
         assertThatThrownBy(()->ops.mockRefund(10L,action)).isInstanceOf(org.springframework.web.server.ResponseStatusException.class);
         assertThat(state()).isEqualTo("REVIEW");

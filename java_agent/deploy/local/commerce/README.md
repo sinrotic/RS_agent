@@ -1,5 +1,16 @@
 # 隔离交易联调
 
+完整登录网关、Payment 回调、退款、购买事件及计划内恢复使用新增运行器：
+
+```powershell
+mvn -f java_agent/pom.xml -pl rs-service-order,rs-service-payment,rs-service-seckill,rs-service-recommend,rs-api-gateway,rs-service-user -am package
+python java_agent/deploy/local/commerce/fullstack.py --ha --duration 60 --clients 4 --output outputs/commerce-fullstack
+```
+
+八个 Java 服务、三副本 Kafka、MySQL/Redis 副本及恢复/通知夹具总容器上限低于 6GiB；端口仅回环，使用 24401/24403/24488/24491..24495/24499。报告分开记录完成订单 TPS、请求延迟、行锁等待与池/队列指标，默认 60 秒不代表峰值容量。`--ha` 验证单 broker 故障及停写追平后的 MySQL/Redis 人工编排提升，不承诺自动故障转移。退出仅清理随机 project。
+
+仅将 `verification.json / load-report.json / notification-receipt.json` 视为可公开报告。`private-accounts.json`、SQL 备份和日志含隔离敏感数据，不得提交或上传。部署规则、配置及验证边界见 [补全说明](../../../../docs/commerce-completion-20261019.md)。旧双实例验收入口保留如下。
+
 先在仓库根目录构建当前交易模块，再运行真实 MySQL、Redis、Kafka 联调：
 
 ```powershell

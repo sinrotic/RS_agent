@@ -56,3 +56,8 @@ python3 verify_backup_restore.py --work-dir /home/luo/RS_agent_java/validation/b
 ```bash
 python java_agent/deploy/remote/ops/verify_session_lifecycle.py --host server --output outputs/service-completion-20261010/fixes-evidence/session-lifecycle-mysql.json
 ```
+## 2026-10-19 交易通知与恢复入口
+
+新增退款、交易事件和库存差异指标，交易服务的 5xx 与数据库连接池等待纳入告警。要启用实际接收器，将 `RS_ALERT_WEBHOOK_URL` 通过部署环境注入，执行 `python3 configure_alerts.py --output /私密部署目录/alertmanager-private.json`，再将 `RS_ALERTMANAGER_CONFIG` 指向该文件；配置不得放入 Git 仓库。先运行下文的 `amtool check-config`。默认配置不发送外部通知。
+
+隔离的持续交易、三副本 Kafka 单点故障、MySQL/Redis 计划内提升、交易备份恢复及合成通知演练见 [补全说明](../../../../docs/commerce-completion-20261019.md)。这些演练不等于正式数据灾备或自动主从切换已上线。

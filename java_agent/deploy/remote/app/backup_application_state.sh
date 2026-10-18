@@ -13,7 +13,7 @@ trap 'rm -f -- "$TMP"' EXIT
 docker exec "$MYSQL_CONTAINER" sh -ec '
   export MYSQL_PWD="$MYSQL_PASSWORD"
   tables=$(mysql -N -u "$MYSQL_USER" "$MYSQL_DATABASE" -e "SHOW TABLES" |
-    grep -E "^(rs_schema_version$|rs_auth_|rs_account_profile_binding$|rs_user_session$|agent_|rs_recommendation_|rs_preference_version$|rs_recommend_feedback_|rs_profile_item_preference_projection$|checkout_|promotion_|seckill_|orders$|order_items$|sku_stock$|stock_logs$|payment_|consumer_message_log$)")
+    grep -E "^(rs_schema_version$|rs_auth_|rs_account_profile_binding$|rs_user_session$|agent_|rs_recommendation_|rs_preference_version$|rs_recommend_feedback_|rs_profile_item_preference_projection$|recommendation_(trade_event|purchase_signal)$|inventory_|commerce_|checkout_|promotion_|seckill_|orders$|order_items$|sku_stock$|stock_logs$|payment_|consumer_message_log$)")
   test -n "$tables"
   exec mysqldump -u "$MYSQL_USER" --single-transaction --no-tablespaces --hex-blob "$MYSQL_DATABASE" $tables
 ' | gzip > "$TMP"

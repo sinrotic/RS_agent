@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class SeckillMetrics {
     public SeckillMetrics(MeterRegistry registry,JdbcTemplate jdbc) {
-        String pending="status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED')";
+        String pending="status NOT IN ('PAID','FAILED','CANCELED','TIMEOUT_CLOSED','REFUNDED')";
         CommerceTaskMetrics.registerUtc(registry,jdbc,"seckill",
                 "SELECT COUNT(*) FROM seckill_request_v1 WHERE "+pending,
                 "SELECT COUNT(*) FROM seckill_request_v1 WHERE status='REVIEW_REQUIRED'",

@@ -1,6 +1,7 @@
 package com.sinrotic.rs.order.client;
 
 public interface InventoryClient {
+    default void refund(String requestId,Long orderId,String skuId,Integer quantity) {throw new IllegalStateException("退款退库能力未配置");}
     default void activity(String action,String activityId,Long orderId,String skuId,Integer quantity) {
         throw new IllegalStateException("活动库存能力未配置");
     }

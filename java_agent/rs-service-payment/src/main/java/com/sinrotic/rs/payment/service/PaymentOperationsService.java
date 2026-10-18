@@ -17,6 +17,9 @@ public class PaymentOperationsService {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final boolean mockRefundEnabled;
+    private PaymentRefundService refunds;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setRefunds(PaymentRefundService refunds) {this.refunds=refunds;}
     public record OperatorAction(String operatorId,String reason) {}
     public record TaskView(long orderId,String status,int attempts,String lastError,LocalDateTime nextAttemptAt) {}
     public record MockRefundResult(long orderId,String status,boolean mock,boolean moneyMoved) {}
@@ -44,6 +47,15 @@ public class PaymentOperationsService {
     public void retry(long orderId,OperatorAction action) { update(orderId,action,false); }
     public MockRefundResult mockRefund(long orderId,OperatorAction action) {
         if(!mockRefundEnabled) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        if(action==null || action.reason()==null || action.reason().isBlank() || action.reason().length()>255
+                || action.operatorId()==null || action.operatorId().isBlank()) throw bad("操作人和原因不合法");
+        var rows=jdbc.queryForList("SELECT n.status,p.amount FROM payment_order_notifications n JOIN payment_orders p ON p.order_id=n.order_id WHERE n.order_id=? AND p.status='PAID' AND p.provider='mock'",orderId);
+        if(rows.isEmpty() || !List.of("REVIEW","MOCK_REFUNDED").contains(rows.getFirst().get("status"))) throw new ResponseStatusException(HttpStatus.CONFLICT,"仅可处理模拟支付的待核对通知");
+        if("MOCK_REFUNDED".equals(rows.getFirst().get("status"))) return new MockRefundResult(orderId,"MOCK_REFUNDED",true,false);
+        if(refunds==null) throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"退款处理器未配置");
+        String id=java.util.UUID.nameUUIDFromBytes(("late-payment:"+orderId).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
+        var result=refunds.refund(new PaymentRefundService.Request(id,orderId,((Number)rows.getFirst().get("amount")).longValue(),"SUCCESS",false));
+        if(!"SUCCEEDED".equals(result.status())) throw new ResponseStatusException(HttpStatus.CONFLICT,"退款尚未确认");
         update(orderId,action,true);
         return new MockRefundResult(orderId,"MOCK_REFUNDED",true,false);
     }

@@ -44,3 +44,10 @@ export const submitSeckill = (activityId: string, request: SeckillRequest) =>
   postJson<SeckillResult>(`/seckill/activities/${encodeURIComponent(activityId)}/submit`, request);
 export const getSeckillResult = (requestId: string) => getJson<SeckillResult>(`/seckill/requests/${encodeURIComponent(requestId)}`);
 export const getCheckoutOrder = (id: number) => getJson<CheckoutOrder>(`/checkout/orders/${id}`);
+export interface CommercePage<T> { items: T[]; nextCursor: string | null; }
+export interface RefundRequest { requestId: string; reason: string; scenario: MockPaymentScenario; }
+export interface Refund { refundId: string; orderId: number; amount: number; status: string; phase: string; reason: string; lastError: string | null; }
+export const listOrderPage = (beforeId?: string) => getJson<CommercePage<CheckoutOrder>>(`/checkout/orders/page?limit=20${beforeId ? `&beforeId=${encodeURIComponent(beforeId)}` : ''}`);
+export const listCouponPage = (afterId?: string) => getJson<CommercePage<Coupon>>(`/promotions/coupons/page?limit=20${afterId ? `&afterId=${encodeURIComponent(afterId)}` : ''}`);
+export const requestOrderRefund = (id: number, request: RefundRequest) => postJson<Refund>(`/checkout/orders/${id}/refunds`, request);
+export const getOrderRefund = (id: number) => getJson<Refund>(`/checkout/orders/${id}/refund`);
