@@ -46,7 +46,7 @@ async function pay(user,value) {
   await api('/api/payments/prepay',user,{orderId:value.orderId,amount:value.totalAmount,provider:'mock'});
   const transaction='it-'+value.orderId,payload='{"paid":true}';
   const body={providerTransactionId:transaction,orderId:value.orderId,amount:value.totalAmount,rawPayload:payload,signature:signature('mock',transaction,value.orderId,value.totalAmount,payload)};
-  await api('/callback/payments/mock',null,{...body,signature:'forged'},401);
+  await api('/callback/payments/mock',null,{...body,signature:'0'.repeat(64)},401);
   await api('/callback/payments/mock',null,body);await api('/callback/payments/mock',null,body);
   return wait(()=>api(`/api/checkout/orders/${value.orderId}`,user),v=>v.status==='PAID'&&v.phase==='DONE','支付确认');
 }
