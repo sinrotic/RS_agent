@@ -63,7 +63,7 @@ public class InventoryManagement {
     }
     public void tick() {
         String cursor=jdbc.queryForList("SELECT after_sku_id FROM inventory_reconciliation_cursor WHERE id=1",String.class).stream().findFirst().orElse("");
-        var page=stocks(cursor,100);for(var row:page.items()) check((String)row.get("sku_id"));
+        var page=stocks(cursor.isEmpty() ? null : cursor,100);for(var row:page.items()) check((String)row.get("sku_id"));
         String next=page.nextCursor()==null ? "" : page.nextCursor();
         jdbc.update("INSERT INTO inventory_reconciliation_cursor(id,after_sku_id) VALUES (1,?) ON DUPLICATE KEY UPDATE after_sku_id=VALUES(after_sku_id)",next);
     }

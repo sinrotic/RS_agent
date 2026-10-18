@@ -15,6 +15,11 @@ class InventoryManagementTest {
         jdbc=new JdbcTemplate(ds);service=new InventoryManagement(jdbc,new DataSourceTransactionManager(ds));
     }
     void receipt() {service.adjust(new InventoryManagement.Adjustment("receipt","sku","item","RECEIPT",10,null,"采购入库"),"operator");}
+    @Test void backgroundReconciliationWrapsEmptyCursorAndRechecksResolvedStock() {
+        receipt();jdbc.update("UPDATE sku_stock SET available_stock=9");service.tick();assertThat(service.cases()).hasSize(1);
+        jdbc.update("UPDATE sku_stock SET available_stock=10");service.tick();assertThat(service.cases()).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT after_sku_id FROM inventory_reconciliation_cursor",String.class)).isEmpty();
+    }
     @Test void receiptIsIdempotentAndStocktakeRejectsStaleVersionAndReservedShortage() {
         receipt();receipt();assertThat(service.check("sku")).containsEntry("healthy",true);
         assertThat(jdbc.queryForObject("SELECT available_stock FROM sku_stock",Integer.class)).isEqualTo(10);

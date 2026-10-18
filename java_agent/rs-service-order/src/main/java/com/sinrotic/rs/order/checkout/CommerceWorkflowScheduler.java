@@ -3,7 +3,7 @@ import org.springframework.context.annotation.*;
 import org.springframework.scheduling.annotation.*;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-@Configuration(proxyBeanMethods=false)
+@Configuration(value="commerceWorkflowSchedulingConfiguration",proxyBeanMethods=false)
 @EnableScheduling
 @ConditionalOnProperty(name="rs.checkout.worker.enabled",havingValue="true",matchIfMissing=true)
 public class CommerceWorkflowScheduler {
